@@ -272,7 +272,11 @@ window.AryanPlayerEngine = {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
             const finalIframeUrl = this.getProxiedUrl(currentServer.url);
-            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" class="w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="no-referrer"></iframe>`;
+            const isProxied = finalIframeUrl.includes('/api/embed');
+            const sandboxAttr = isProxied
+                ? 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups"'
+                : 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
+            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" ${sandboxAttr} class="w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="no-referrer"></iframe>`;
         }
 
         html += `</div>`;
