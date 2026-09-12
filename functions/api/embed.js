@@ -54,9 +54,7 @@ export async function onRequest(context) {
             html = html.replace('<head>', `<head>\n    <base href="${parsedTarget.origin}/">`);
         }
 
-        // Inject in-memory storage polyfills, cookie polyfill, and history search sync
-        // This ensures the sandboxed opaque origin (Origin: null) never throws SecurityErrors
-        // and enables Amazon AIV-CDN to return HTTP 200 without CORS/Manifest rejections
+        // Inject in-memory storage polyfills, cookie polyfill, history search sync, and auto-dismiss loading overlay
         const injectScript = `<script>
 (function() {
     var mem = {};
@@ -77,8 +75,57 @@ export async function onRequest(context) {
             window.history.replaceState(null, '', '${parsedTarget.search || ""}');
         }
     } catch (e) {}
+
+    // Force hide 'Loading up the stream...' overlay once video stream starts playback
+    function hideStreamLoadingOverlay() {
+        var overlay = document.getElementById('loading-overlay');
+        if (overlay) {
+            overlay.classList.add('hidden');
+            overlay.style.setProperty('display', 'none', 'important');
+            overlay.style.setProperty('opacity', '0', 'important');
+            overlay.style.setProperty('visibility', 'hidden', 'important');
+            overlay.style.setProperty('pointer-events', 'none', 'important');
+        }
+        var msg = document.getElementById('loading-message');
+        if (msg) msg.innerText = '';
+    }
+
+    document.addEventListener('play', hideStreamLoadingOverlay, true);
+    document.addEventListener('playing', hideStreamLoadingOverlay, true);
+    document.addEventListener('timeupdate', function(e) {
+        if (e.target && (e.target.currentTime > 0.05 || !e.target.paused)) {
+            hideStreamLoadingOverlay();
+        }
+    }, true);
+
+    // Watch video status periodically
+    var checkInterval = setInterval(function() {
+        var vids = document.querySelectorAll('video');
+        for (var i = 0; i < vids.length; i++) {
+            var v = vids[i];
+            if (!v.paused || v.currentTime > 0 || v.readyState >= 2) {
+                hideStreamLoadingOverlay();
+                break;
+            }
+        }
+    }, 300);
+
+    // Safety fallback: auto-hide after 6 seconds once player initializes
+    setTimeout(function() {
+        var vids = document.querySelectorAll('video');
+        if (vids.length > 0) hideStreamLoadingOverlay();
+    }, 6000);
 })();
-</script>`;
+</script>
+<style>
+#loading-overlay.hidden,
+#loading-overlay[style*="display: none"] {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+</style>`;
         html = html.replace('<head>', `<head>\n    ${injectScript}`);
 
         // Neutralize annoying popup scripts
