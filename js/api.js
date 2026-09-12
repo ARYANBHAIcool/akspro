@@ -321,6 +321,9 @@
                         this.isLoading = false;
                         this.sortMatches();
                         this.emitUpdate();
+                        if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            this.autoResolveAllAlphaSources();
+                        }
                         try {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
@@ -454,19 +457,12 @@
                     if (matchedAlpha) {
                         currentWatchItem.alphaStreamId = matchedAlpha.stream_id;
                         currentWatchItem.alphaItem = matchedAlpha;
-                        this.resolveAlphaSourcesForMatch(currentWatchItem).then((resolved) => {
-                            if (resolved && typeof currentWatchItem !== 'undefined' && currentWatchItem) {
-                                const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                                if (typeof renderWatchSources === 'function') {
-                                    renderWatchSources(currentWatchItem, activeIdx);
-                                }
-                            }
-                        });
+                        this.resolveAlphaSourcesForMatch(currentWatchItem);
                     }
                 }
 
-                // Alpha feeds solely enrich matching PPV fixtures with extra broadcast channels
-                this.preFetchLiveAlphaSources();
+                // Automatically resolve and attach all StreamCorner broadcast channels across all matches
+                this.autoResolveAllAlphaSources();
             } catch (err) {
                 console.warn('StreamCorner Alpha feeds load failed:', err);
             }
@@ -522,19 +518,14 @@
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
                         const seenUrls = new Set();
                         (match.servers || []).forEach(s => {
-                            if (s.url) {
-                                seenUrls.add(s.url);
-                                try {
-                                    const u = new URL(s.url, 'https://dummy.local');
-                                    seenUrls.add(u.origin + u.pathname);
-                                } catch (e) {}
-                            }
+                            if (s.url) seenUrls.add(s.url);
+                            if (s.rawUrl) seenUrls.add(s.rawUrl);
                         });
 
                         const newServers = [];
 
                         detail.streams.forEach((s) => {
-                            const rawUrl = s.embed_url || s.stream_url;
+                            const rawUrl = (s.embed_url || s.stream_url || '').trim();
                             if (!rawUrl) return;
 
                             let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
@@ -567,10 +558,22 @@
                         if (newServers.length > 0) {
                             match.servers = [...match.servers, ...newServers];
                             match.sources = match.servers;
+
+                            // Real-time update if user is currently viewing this match
+                            if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
+                                currentWatchItem.servers = match.servers;
+                                currentWatchItem.sources = match.servers;
+                                currentWatchItem._alphaResolved = true;
+                                if (typeof renderWatchSources === 'function') {
+                                    const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                                    renderWatchSources(currentWatchItem, activeIdx);
+                                }
+                            }
+
                             // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                             try {
-                                const CACHE_KEY = 'aryan_cached_matches_v2';
-                                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 150)));
+                                const CACHE_KEY = 'aryan_cached_matches_v3';
+                                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                             } catch (e) {}
                         }
                     }
@@ -589,28 +592,42 @@
         },
 
         /**
-         * Pre-fetch broadcast channels in the background for active/upcoming games
+         * Automatically resolve StreamCorner broadcast feeds for all matched fixtures across all categories
          */
-        async preFetchLiveAlphaSources() {
-            if (this._preFetching) return;
-            this._preFetching = true;
+        async autoResolveAllAlphaSources() {
+            if (this._resolvingAllAlpha) return;
+            this._resolvingAllAlpha = true;
 
             try {
-                const targets = this.matches
-                    .filter(m => m.alphaStreamId && !m._alphaResolved && !m._resolvingAlpha && (m.isLive || (m.startTime - Date.now()) < 7200000))
-                    .slice(0, 10);
-
+                const targets = this.matches.filter(m => m.alphaStreamId && !m._alphaResolved);
                 if (targets.length === 0) {
-                    this._preFetching = false;
+                    this._resolvingAllAlpha = false;
                     return;
                 }
 
-                await Promise.allSettled(targets.map(t => this.resolveAlphaSourcesForMatch(t)));
+                // Sort: Live fixtures first, then upcoming starting soonest
+                targets.sort((a, b) => {
+                    if (a.isLive && !b.isLive) return -1;
+                    if (!a.isLive && b.isLive) return 1;
+                    return (a.startTime || 0) - (b.startTime || 0);
+                });
+
+                // Concurrently resolve in batches of 4
+                const BATCH_SIZE = 4;
+                for (let i = 0; i < targets.length; i += BATCH_SIZE) {
+                    const batch = targets.slice(i, i + BATCH_SIZE);
+                    await Promise.allSettled(batch.map(m => this.resolveAlphaSourcesForMatch(m)));
+                }
             } catch (e) {
                 // Silent
             } finally {
-                this._preFetching = false;
+                this._resolvingAllAlpha = false;
             }
+        },
+
+        // Backward compatibility alias
+        async preFetchLiveAlphaSources() {
+            return await this.autoResolveAllAlphaSources();
         },
 
         /**
@@ -669,18 +686,7 @@
                 });
             }
 
-            // 3. Official broadcast TV Channels from PPV/Dami feed (e.g. Willow Cricket, Sky Sports, Astro, SuperSport)
-            if (Array.isArray(s.tvChannels)) {
-                s.tvChannels.forEach(ch => {
-                    if (!ch || !ch.id) return;
-                    const chName = (ch.name || 'Broadcast Feed').trim();
-                    const chUrl = `https://embedindia.st/embed/${ch.id}`;
-                    const srvIndex = servers.length + 1;
-                    addServer(`Server ${srvIndex} [${chName}]`, chUrl);
-                });
-            }
-
-            // 4. Fallback backup feed
+            // 3. Fallback backup feed (guarantees authentic Server 1 [Main HD] and Server 2 [Backup HD])
             if (servers.length === 1 && mainEmbed) {
                 const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
                 addServer('Server 2 [Backup HD Feed]', backupUrl);
