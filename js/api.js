@@ -205,10 +205,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v10';
-            // 1. Explicitly purge any bloated legacy caches containing old channel dumps
+            const CACHE_KEY = 'aryan_cached_matches_v12';
+            // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -280,7 +280,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v10';
+            const CACHE_KEY = 'aryan_cached_matches_v12';
             try {
                 let categories = null;
 
@@ -342,7 +342,7 @@
                                         && !/embedindia\.st\/embed\/\d+$/i.test(u);
                                 });
                                 if (alphaFeeds.length > 0) {
-                                    norm.servers = sanitizeMatchServers({ servers: [...norm.servers, ...alphaFeeds] }).servers;
+                                    norm.servers = sanitizeMatchServers({ servers: [...alphaFeeds, ...norm.servers] }).servers;
                                     norm.sources = norm.servers;
                                 }
                             } else if (existing && existing.alphaStreamId) {
@@ -607,7 +607,8 @@
                             });
                         });
 
-                        const combined = [...baseServers, ...newServers];
+                        // Place StreamCorner feeds first, followed by base PPV feeds
+                        const combined = [...newServers, ...baseServers];
                         // Re-index all servers cleanly: Server 1, Server 2, Server 3...
                         combined.forEach((s, idx) => {
                             const labelMatch = (s.name || '').match(/\[(.*?)\]/);
@@ -623,6 +624,9 @@
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
+                            if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === 0 && newServers.length > 0) {
+                                window.AryanPlayerEngine.switchServer(0);
+                            }
                             if (typeof renderWatchSources === 'function') {
                                 const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                                 renderWatchSources(currentWatchItem, activeIdx);
@@ -631,7 +635,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v10';
+                            const CACHE_KEY = 'aryan_cached_matches_v12';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }

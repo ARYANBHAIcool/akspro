@@ -94,15 +94,10 @@
                     <button onclick="switchView('home')" id="nav-home" class="text-green-400 flex items-center gap-1 transition-colors">
                         <span>MATCHES</span>
                     </button>
-                    <button onclick="switchView('prmtv')" id="nav-prmtv" class="hover:text-blue-400 flex items-center gap-1 transition-colors px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 font-black">
-                        <span>PRMTV</span>
-                    </button>
-                    <button onclick="switchView('channels')" id="nav-channels" class="hover:text-green-400 flex items-center gap-1 transition-colors">
-                        <span>24/7 TV</span>
-                    </button>
-                    <button onclick="switchView('multiviewer')" id="nav-multiviewer" class="hover:text-green-400 flex items-center gap-1 transition-colors">
-                        <span>MULTIVIEWER</span>
-                    </button>
+                    <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0088cc]/15 hover:bg-[#0088cc]/25 border border-[#0088cc]/40 text-[#38bdf8] hover:text-white transition-all shadow-sm">
+                        <svg class="w-3.5 h-3.5 text-[#38bdf8]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                        <span>TELEGRAM</span>
+                    </a>
                 </nav>
 
                 <!-- Hamburger Menu Button (Mobile & Tablet) -->
@@ -119,39 +114,49 @@
         <div class="bg-[#0b1220] border-l border-gray-800 w-80 max-w-[85vw] h-full p-6 flex flex-col justify-between shadow-2xl">
             <div class="space-y-6">
                 <div class="flex items-center justify-between pb-4 border-b border-gray-800">
-                    <div class="flex items-center gap-2">
-                        <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-green-600 to-emerald-400 flex items-center justify-center text-black font-black text-sm">
-                            ▶
+                    <a href="#" onclick="toggleMobileMenu(); switchView('home')" class="flex items-center gap-2.5 group">
+                        <img src="assets/img/logo-icon.png" alt="AS Logo" class="h-8 w-auto object-contain flex-shrink-0 transition-transform group-hover:scale-105">
+                        <div class="flex items-center gap-1.5">
+                            <img src="assets/img/logo-text.png" alt="AryanStreams" class="h-5 sm:h-6 w-auto object-contain flex-shrink-0">
+                            <span class="text-[8px] font-extrabold uppercase px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-400 border border-sky-500/30">
+                                GLOBAL
+                            </span>
                         </div>
-                        <span class="text-sm font-black tracking-wider uppercase text-white">
-                            ARYAN<span class="text-green-400">STREAMS</span>
-                        </span>
-                    </div>
+                    </a>
                     <button onclick="toggleMobileMenu()" class="text-gray-400 hover:text-white p-1 rounded-lg hover:bg-gray-800">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                <nav class="space-y-2 text-sm font-bold uppercase tracking-wider">
+                <nav class="space-y-3 text-sm font-bold uppercase tracking-wider">
                     <button onclick="toggleMobileMenu(); switchView('home')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/80 text-white transition-colors text-left">
                         <span class="text-lg">⚽</span> <span>All Matches</span>
                     </button>
                     <button onclick="toggleMobileMenu(); filterCategory('LIVE NOW')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/80 text-red-400 transition-colors text-left">
                         <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse ml-1 mr-0.5"></span> <span id="nav-live-count">Live Now</span>
                     </button>
-                    <button onclick="toggleMobileMenu(); switchView('prmtv')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-blue-600/20 text-blue-400 transition-colors text-left">
-                        <span class="text-lg">⭐</span> <span>PRMTV / Paramount+</span>
-                    </button>
-                    <button onclick="toggleMobileMenu(); switchView('channels')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-green-600/20 text-green-400 transition-colors text-left">
-                        <span class="text-lg">📺</span> <span>24/7 TV Channels</span>
-                    </button>
-                    <button onclick="toggleMobileMenu(); switchView('multiviewer')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/80 text-gray-200 transition-colors text-left">
-                        <span class="text-lg">⊞</span> <span>Multiviewer</span>
-                    </button>
+                    <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-[#0088cc]/20 to-[#29b6f6]/10 border border-[#0088cc]/40 hover:border-[#0088cc] text-[#38bdf8] transition-all group shadow-md shadow-[#0088cc]/10">
+                        <div class="flex items-center gap-3">
+                            <svg class="w-5 h-5 text-[#38bdf8] group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                            </svg>
+                            <div class="flex flex-col text-left">
+                                <span class="font-bold text-white text-xs tracking-wider">Join Telegram</span>
+                                <span class="text-[10px] text-sky-400 font-medium lowercase">@aryanstreams</span>
+                            </div>
+                        </div>
+                        <span class="text-[10px] uppercase font-black px-2.5 py-1 rounded-lg bg-[#0088cc] text-white shadow group-hover:scale-105 transition-transform">
+                            JOIN
+                        </span>
+                    </a>
                 </nav>
             </div>
-            <div class="pt-4 border-t border-gray-800 text-xs text-gray-400 space-y-1.5">
-                <div class="font-extrabold text-white uppercase tracking-wider">AryanStreams Network:</div>
-                <div class="text-green-400 font-mono">aryanstreamsglobal.pages.dev</div>
+            <div class="pt-4 border-t border-gray-800 text-xs text-gray-400 space-y-2">
+                <div class="font-extrabold text-white uppercase tracking-wider">Official Telegram Channel:</div>
+                <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-white flex items-center gap-2 font-medium transition-colors">
+                    <svg class="w-4 h-4 text-[#0088cc]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
+                    <span>@aryanstreams</span>
+                </a>
+                <div class="text-[11px] text-gray-500 font-mono">aryanstreamsglobal.pages.dev</div>
             </div>
         </div>
     </div>
@@ -308,11 +313,24 @@
         </div>
     </div>
 
+    <!-- FLOATING TELEGRAM BUTTON (DIRECT REDIRECTION TO @ARYANSTREAMS) -->
+    <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" title="Join @aryanstreams on Telegram"
+       class="fixed bottom-20 right-4 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2.5 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full bg-gradient-to-r from-[#0088cc] via-[#0ea5e9] to-[#29b6f6] hover:from-[#0077b5] hover:to-[#0288d1] text-white shadow-2xl shadow-[#0088cc]/40 hover:shadow-[#0088cc]/60 hover:scale-105 transition-all duration-300 group select-none cursor-pointer border border-white/20">
+        <svg class="w-5 h-5 text-white flex-shrink-0 group-hover:rotate-12 transition-transform duration-300" fill="currentColor" viewBox="0 0 24 24">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+        </svg>
+        <span class="text-xs font-black uppercase tracking-wider hidden xs:inline sm:inline">Join Telegram</span>
+        <span class="relative flex h-2 w-2">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+            <span class="relative inline-flex rounded-full h-2 w-2 bg-white"></span>
+        </span>
+    </a>
+
     <!-- SCRIPTS -->
-    <script src="js/paramount-core.js?v=3.0"></script>
-    <script src="js/paramount.js?v=3.0"></script>
-    <script src="js/player.js?v=3.0"></script>
-    <script src="js/api.js?v=3.0"></script>
+    <script src="js/paramount-core.js?v=3.1"></script>
+    <script src="js/paramount.js?v=3.1"></script>
+    <script src="js/player.js?v=3.1"></script>
+    <script src="js/api.js?v=3.1"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
