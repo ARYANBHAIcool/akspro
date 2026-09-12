@@ -293,11 +293,11 @@
                     }
                 }
 
-                // Preserve any Alpha-only matches (id starts with 'alpha-')
-                const alphaOnlyMatches = this.matches.filter(m => m.id && String(m.id).startsWith('alpha-'));
-
-                this.matches = [...newPpvMatches, ...alphaOnlyMatches];
-                this.sortMatches();
+                // Master catalog remains strictly authentic PPV fixtures with genuine posters
+                if (newPpvMatches.length > 0) {
+                    this.matches = newPpvMatches;
+                    this.sortMatches();
+                }
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
             }
@@ -418,22 +418,7 @@
                     }
                 }
 
-                // 2. Add Alpha-only fixtures (e.g. Formula 1, MotoGP, cricket leagues, Championship, LaLiga 2)
-                for (const alpha of alphaList) {
-                    if (matchedAlphaIds.has(alpha.stream_id)) continue;
-                    const existing = this.matches.find(m => m.id === `alpha-${alpha.stream_id}` || m.alphaStreamId === alpha.stream_id);
-                    if (!existing) {
-                        const normAlpha = this.normalizeAlphaMatch(alpha);
-                        if (normAlpha) {
-                            this.matches.push(normAlpha);
-                        }
-                    }
-                }
-
-                this.sortMatches();
-                this.emitUpdate();
-
-                // 3. Pre-fetch live alpha streams in the background
+                // Alpha feeds solely enrich matching PPV fixtures with extra broadcast channels
                 this.preFetchLiveAlphaSources();
             } catch (err) {
                 console.warn('StreamCorner Alpha feeds load failed:', err);
@@ -508,50 +493,59 @@
                     const detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
 
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
-                        const seenUrls = new Set((match.servers || []).map(s => s.url));
+                        const seenUrls = new Set();
+                        (match.servers || []).forEach(s => {
+                            if (s.url) {
+                                seenUrls.add(s.url);
+                                try {
+                                    const u = new URL(s.url, 'https://dummy.local');
+                                    seenUrls.add(u.origin + u.pathname);
+                                } catch (e) {}
+                            }
+                        });
+
                         const newServers = [];
 
                         detail.streams.forEach((s) => {
                             const rawUrl = s.embed_url || s.stream_url;
-                            if (rawUrl && !seenUrls.has(rawUrl)) {
-                                seenUrls.add(rawUrl);
-                                const isDirectHls = rawUrl.includes('.m3u8');
-                                const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
-                                seenUrls.add(srvUrl);
-                                let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase();
-                                label = label.replace(/\s*-\s*$/, '');
-                                newServers.push({
-                                    name: `Server ${match.servers.length + newServers.length + 1} [${label}]`,
-                                    url: srvUrl,
-                                    type: isDirectHls ? 'video' : 'iframe',
-                                    hd: true
-                                });
-                            }
-                        });
+                            if (!rawUrl) return;
 
-                        // Add StreamCorner HD fallback embed
-                        const rawScEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${match.alphaStreamId}`;
-                        const scEmbedUrl = toProxiedEmbedUrl(rawScEmbedUrl);
-                        if (!seenUrls.has(rawScEmbedUrl) && !seenUrls.has(scEmbedUrl)) {
-                            seenUrls.add(rawScEmbedUrl);
-                            seenUrls.add(scEmbedUrl);
+                            let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
+
+                            // 1. Strictly drop any unwanted streamcorner-branded fallback links
+                            if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
+
+                            // 2. Strictly drop duplicate ppv / embedindia / damitv streams (Server 1 & Server 2 already provide them)
+                            if (/embedindia|damitv|ppv/i.test(rawUrl) || /embedindia|damitv|ppv/i.test(label)) return;
+
+                            // 3. Deduplicate against seen URLs
+                            if (seenUrls.has(rawUrl)) return;
+                            let pathnameOnly = '';
+                            try {
+                                const u = new URL(rawUrl, 'https://dummy.local');
+                                pathnameOnly = u.origin + u.pathname;
+                                if (seenUrls.has(pathnameOnly)) return;
+                            } catch (e) {}
+
+                            const isDirectHls = rawUrl.includes('.m3u8');
+                            const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
+                            if (seenUrls.has(srvUrl)) return;
+
+                            seenUrls.add(rawUrl);
+                            if (pathnameOnly) seenUrls.add(pathnameOnly);
+                            seenUrls.add(srvUrl);
+
+                            const srvIndex = match.servers.length + newServers.length + 1;
                             newServers.push({
-                                name: `Server ${match.servers.length + newServers.length + 1} [StreamCorner HD]`,
-                                url: scEmbedUrl,
-                                type: 'iframe',
+                                name: `Server ${srvIndex} [${label}]`,
+                                url: srvUrl,
+                                type: isDirectHls ? 'video' : 'iframe',
                                 hd: true
                             });
-                        }
+                        });
 
                         if (newServers.length > 0) {
-                            if (match.source === 'streamcorner' && match.servers.length === 1 && match.servers[0].url === scEmbedUrl) {
-                                match.servers = newServers.map((srv, i) => ({
-                                    ...srv,
-                                    name: `Server ${i + 1} [${srv.name.replace(/^Server \d+\s*\[/, '').replace(/\]$/, '')}]`
-                                }));
-                            } else {
-                                match.servers = [...match.servers, ...newServers];
-                            }
+                            match.servers = [...match.servers, ...newServers];
                             match.sources = match.servers;
                         }
                     }
@@ -707,7 +701,7 @@
 
         getItemById(id) {
             if (!id) return null;
-            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id || m.alphaStreamId === id || ('alpha-' + m.alphaStreamId) === id)
+            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id || m.alphaStreamId === id)
                 || this.channels.find(c => c.id === id)
                 || null;
         },
