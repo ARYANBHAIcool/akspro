@@ -86,7 +86,7 @@
             </div>
 
             <!-- Right Nav Links -->
-            <nav class="flex items-center gap-3 sm:gap-5 text-xs font-bold uppercase tracking-wider text-gray-300">
+            <nav class="flex items-center gap-2 sm:gap-4 text-xs font-bold uppercase tracking-wider text-gray-300">
                 <button onclick="switchView('home')" id="nav-home" class="text-green-400 flex items-center gap-1.5 transition-colors">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                     <span>MATCHES</span>
@@ -94,6 +94,10 @@
                 <button onclick="filterCategory('LIVE NOW')" class="hover:text-red-400 flex items-center gap-1.5 transition-colors">
                     <span class="w-2 h-2 rounded-full bg-red-500 pulse-live"></span>
                     <span id="nav-live-count" class="text-red-400 font-extrabold">LIVE</span>
+                </button>
+                <button onclick="switchView('prmtv')" id="nav-prmtv" class="hover:text-blue-400 flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 text-blue-400 font-black">
+                    <span class="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></span>
+                    <span>PRMTV</span>
                 </button>
                 <button onclick="switchView('channels')" id="nav-channels" class="hover:text-green-400 flex items-center gap-1.5 transition-colors">
                     <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
@@ -151,6 +155,9 @@
             <div class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-2 pt-1">
                 <button onclick="filterCategory('ALL')" class="cat-pill px-4 py-2 bg-[#121a2c] hover:bg-gray-800 text-gray-200 text-xs font-black uppercase tracking-wider rounded-xl border border-gray-800 transition-all flex-shrink-0 flex items-center gap-1.5 active-pill">
                     ⚡ ALL SPORTS
+                </button>
+                <button onclick="switchView('prmtv')" class="cat-pill px-4 py-2 bg-gradient-to-r from-blue-600/30 to-indigo-600/30 hover:bg-blue-600/40 text-blue-400 text-xs font-black uppercase tracking-wider rounded-xl border border-blue-500/50 transition-all flex-shrink-0 flex items-center gap-1.5 shadow-md shadow-blue-500/10">
+                    ⭐ PRMTV / PARAMOUNT+
                 </button>
                 <button onclick="filterCategory('FOOTBALL')" class="cat-pill px-4 py-2 bg-[#121a2c] hover:bg-gray-800 text-gray-300 text-xs font-bold uppercase tracking-wider rounded-xl border border-gray-800 transition-all flex-shrink-0 flex items-center gap-1.5">
                     ⚽ FOOTBALL
@@ -282,6 +289,15 @@
             </div>
         </div>
 
+        <!-- VIEW 4: PRMTV / PARAMOUNT+ VIEW (StreamCorner Mirror) -->
+        <div id="view-prmtv" class="space-y-6 hidden">
+            <!-- Populated dynamically by AryanParamountAPI.renderPrmtvView() -->
+            <div class="py-20 text-center space-y-3">
+                <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Connecting StreamCorner Paramount+ live schedule & marquee carousel...</p>
+            </div>
+        </div>
+
     </main>
 
     <!-- PLAYER MODAL CONTAINER -->
@@ -314,6 +330,8 @@
     <!-- SCRIPTS -->
     <script src="js/api.js"></script>
     <script src="js/player.js"></script>
+    <script src="js/paramount-core.js"></script>
+    <script src="js/paramount.js"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -344,6 +362,14 @@
                 populateMultiviewerDropdowns();
             });
 
+            if (window.AryanParamountAPI) {
+                window.AryanParamountAPI.onUpdate(() => {
+                    if (currentView === 'prmtv') {
+                        window.AryanParamountAPI.renderPrmtvView();
+                    }
+                });
+            }
+
             // Start countdown interval to update match times every second
             setInterval(updateCountdowns, 1000);
         });
@@ -353,8 +379,14 @@
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-channels').classList.add('hidden');
             document.getElementById('view-multiviewer').classList.add('hidden');
+            const prmtvView = document.getElementById('view-prmtv');
+            if (prmtvView) prmtvView.classList.add('hidden');
 
             document.getElementById('nav-home').className = viewName === 'home' ? 'text-green-400 flex items-center gap-1.5 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors';
+            const navPrmtv = document.getElementById('nav-prmtv');
+            if (navPrmtv) {
+                navPrmtv.className = viewName === 'prmtv' ? 'text-white flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-blue-600 border border-blue-400 shadow-md shadow-blue-500/20 font-black' : 'hover:text-blue-400 text-blue-400 flex items-center gap-1.5 transition-colors px-2.5 py-1 rounded-lg bg-blue-500/10 border border-blue-500/30 font-black';
+            }
             document.getElementById('nav-channels').className = viewName === 'channels' ? 'text-green-400 flex items-center gap-1.5 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors';
             document.getElementById('nav-multiviewer').className = viewName === 'multiviewer' ? 'text-green-400 flex items-center gap-1.5 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors';
 
@@ -362,6 +394,7 @@
             if (activeView) activeView.classList.remove('hidden');
 
             if (viewName === 'home') renderMatchesGrid();
+            if (viewName === 'prmtv' && window.AryanParamountAPI) window.AryanParamountAPI.renderPrmtvView();
             if (viewName === 'channels') renderChannelsView();
             if (viewName === 'multiviewer') populateMultiviewerDropdowns();
         }
@@ -580,7 +613,10 @@
         }
 
         function openPlayerModal(id) {
-            const item = window.AryanGlobalAPI.getItemById(id);
+            let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
+            if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
+                item = window.AryanParamountAPI.getEventById(id);
+            }
             if (!item) return;
 
             document.getElementById('player-match-title').innerText = item.title || item.name;
@@ -621,7 +657,10 @@
                 return;
             }
 
-            const item = window.AryanGlobalAPI.getItemById(id);
+            let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
+            if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
+                item = window.AryanParamountAPI.getEventById(id);
+            }
             if (!item) return;
 
             const server = (item.servers && item.servers[0]) ? item.servers[0] : item;
