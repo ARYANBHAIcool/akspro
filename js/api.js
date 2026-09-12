@@ -40,6 +40,34 @@
         return rawUrl;
     }
 
+    function sanitizeMatchServers(match) {
+        if (!match || !Array.isArray(match.servers)) return match;
+        const clean = [];
+        const seen = new Set();
+        for (const s of match.servers) {
+            if (!s || !s.url) continue;
+            const url = s.url;
+            // Drop any unwanted broadcast TV channel dumps (embedindia.st/embed/<numeric_id>)
+            if (/embedindia\.st\/embed\/\d+$/i.test(url) && !url.includes('backup=')) {
+                continue;
+            }
+            if (seen.has(url)) continue;
+            seen.add(url);
+            clean.push(s);
+        }
+
+        // Re-index server names cleanly: Server 1, Server 2, Server 3...
+        clean.forEach((s, idx) => {
+            const labelMatch = (s.name || '').match(/\[(.*?)\]/);
+            const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+            s.name = `Server ${idx + 1} [${label}]`;
+        });
+
+        match.servers = clean;
+        match.sources = clean;
+        return match;
+    }
+
     const MATCH_STOP_WORDS = new Set([
         'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
         'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day', 'grand', 'prix',
@@ -177,14 +205,21 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v3';
-            // 1. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
+            const CACHE_KEY = 'aryan_cached_matches_v10';
+            // 1. Explicitly purge any bloated legacy caches containing old channel dumps
+            try {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6'].forEach(k => {
+                    localStorage.removeItem(k);
+                });
+            } catch (e) {}
+
+            // 2. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
             try {
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (cached) {
                     const parsed = JSON.parse(cached);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        this.matches = parsed;
+                        this.matches = parsed.map(m => sanitizeMatchServers(m));
                         this.isLoading = false;
                         this.sortMatches();
                         this.emitUpdate();
@@ -245,7 +280,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v3';
+            const CACHE_KEY = 'aryan_cached_matches_v10';
             try {
                 let categories = null;
 
@@ -300,8 +335,16 @@
                                 norm.alphaStreamId = existing.alphaStreamId;
                                 norm.alphaItem = existing.alphaItem;
                                 norm._alphaResolved = existing._alphaResolved;
-                                norm.servers = existing.servers;
-                                norm.sources = existing.servers;
+                                // Strictly preserve only genuine StreamCorner Alpha broadcast channels
+                                const alphaFeeds = (existing.servers || []).filter(srv => {
+                                    const u = srv.url || '';
+                                    return (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho') || u.includes('.m3u8'))
+                                        && !/embedindia\.st\/embed\/\d+$/i.test(u);
+                                });
+                                if (alphaFeeds.length > 0) {
+                                    norm.servers = sanitizeMatchServers({ servers: [...norm.servers, ...alphaFeeds] }).servers;
+                                    norm.sources = norm.servers;
+                                }
                             } else if (existing && existing.alphaStreamId) {
                                 norm.alphaStreamId = existing.alphaStreamId;
                                 norm.alphaItem = existing.alphaItem;
@@ -516,8 +559,18 @@
                     const detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
 
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
+                        // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out any stray channels
+                        const baseServers = (match.servers || []).filter(s => {
+                            const u = s.url || '';
+                            // Drop unwanted broadcast channels (embedindia.st/embed/<numeric_id>)
+                            if (/embedindia\.st\/embed\/\d+$/i.test(u) && !u.includes('backup=')) return false;
+                            // Drop previous alpha feeds so they are cleanly refreshed without accumulating duplicates
+                            if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho')) return false;
+                            return true;
+                        });
+
                         const seenUrls = new Set();
-                        (match.servers || []).forEach(s => {
+                        baseServers.forEach(s => {
                             if (s.url) seenUrls.add(s.url);
                             if (s.rawUrl) seenUrls.add(s.rawUrl);
                         });
@@ -545,9 +598,8 @@
                             if (seenUrls.has(srvUrl)) return;
                             seenUrls.add(srvUrl);
 
-                            const srvIndex = match.servers.length + newServers.length + 1;
                             newServers.push({
-                                name: `Server ${srvIndex} [${label}]`,
+                                name: `Server [${label}]`,
                                 url: srvUrl,
                                 rawUrl: rawUrl,
                                 type: isDirectHls ? 'video' : 'iframe',
@@ -555,27 +607,33 @@
                             });
                         });
 
-                        if (newServers.length > 0) {
-                            match.servers = [...match.servers, ...newServers];
-                            match.sources = match.servers;
+                        const combined = [...baseServers, ...newServers];
+                        // Re-index all servers cleanly: Server 1, Server 2, Server 3...
+                        combined.forEach((s, idx) => {
+                            const labelMatch = (s.name || '').match(/\[(.*?)\]/);
+                            const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+                            s.name = `Server ${idx + 1} [${label}]`;
+                        });
 
-                            // Real-time update if user is currently viewing this match
-                            if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
-                                currentWatchItem.servers = match.servers;
-                                currentWatchItem.sources = match.servers;
-                                currentWatchItem._alphaResolved = true;
-                                if (typeof renderWatchSources === 'function') {
-                                    const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                                    renderWatchSources(currentWatchItem, activeIdx);
-                                }
+                        match.servers = combined;
+                        match.sources = combined;
+
+                        // Real-time update if user is currently viewing this match
+                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
+                            currentWatchItem.servers = match.servers;
+                            currentWatchItem.sources = match.servers;
+                            currentWatchItem._alphaResolved = true;
+                            if (typeof renderWatchSources === 'function') {
+                                const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                                renderWatchSources(currentWatchItem, activeIdx);
                             }
-
-                            // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
-                            try {
-                                const CACHE_KEY = 'aryan_cached_matches_v3';
-                                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
-                            } catch (e) {}
                         }
+
+                        // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
+                        try {
+                            const CACHE_KEY = 'aryan_cached_matches_v10';
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                        } catch (e) {}
                     }
 
                     match._alphaResolved = true;
@@ -767,8 +825,34 @@
 
         getItemById(id) {
             if (!id) return null;
-            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id || m.alphaStreamId === id)
-                || this.channels.find(c => c.id === id)
+            const decoded = decodeURIComponent(String(id)).trim();
+            const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+            const stripped = decoded.replace(/^(ppv|dami)-/i, '');
+
+            // 1. Direct ID, rawId, or slug match
+            let found = this.matches.find(m => {
+                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded) return true;
+                if (m.rawId === stripped || m.id === stripped) return true;
+                if (m.slug && m.slug === slug) return true;
+                const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
+                return false;
+            });
+
+            // 2. Token overlap match (e.g. "ppv-pl/2026-09-12/liv-ful" -> "Liverpool vs. Fulham")
+            if (!found) {
+                const qToks = tokenizeMatchStr(stripped);
+                if (qToks.length >= 2) {
+                    found = this.matches.find(m => {
+                        const tToks = tokenizeMatchStr(m.title);
+                        if (tToks.length < 2) return false;
+                        return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
+                    });
+                }
+            }
+
+            return found
+                || this.channels.find(c => c.id === decoded || (c.channelId && String(c.channelId) === decoded))
                 || null;
         },
 
