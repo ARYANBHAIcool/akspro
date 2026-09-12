@@ -22,9 +22,19 @@ export async function onRequest(context) {
     try {
         const parsedTarget = new URL(targetUrl);
 
-        // Forward any extra query parameters like ?player=shaka/bitmovin if not in target
+        // Sync requested player parameter to upstream target
+        const reqEngine = requestUrl.searchParams.get('player');
+        if (reqEngine) {
+            if (reqEngine === 'bitmovin') {
+                parsedTarget.searchParams.delete('player');
+            } else {
+                parsedTarget.searchParams.set('player', reqEngine);
+            }
+        }
+
+        // Forward any extra query parameters
         for (const [key, value] of requestUrl.searchParams.entries()) {
-            if (key !== 'url' && !parsedTarget.searchParams.has(key)) {
+            if (key !== 'url' && key !== 'player' && !parsedTarget.searchParams.has(key)) {
                 parsedTarget.searchParams.set(key, value);
             }
         }
@@ -54,7 +64,7 @@ export async function onRequest(context) {
             html = html.replace('<head>', `<head>\n    <base href="${parsedTarget.origin}/">`);
         }
 
-        // Inject in-memory storage polyfills, cookie polyfill, history search sync, and auto-dismiss loading overlay
+        // Inject in-memory storage polyfills, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
     var mem = {};
@@ -71,16 +81,46 @@ export async function onRequest(context) {
     } catch (e) {}
 
     try {
-        if (!window.location.search || window.location.search.indexOf('url=') !== -1) {
-            window.history.replaceState(null, '', '${parsedTarget.search || ""}');
+        var targetSearch = '${parsedTarget.search || ""}';
+        if (targetSearch) {
+            window.history.replaceState(null, '', targetSearch);
+        } else if (window.location.search && window.location.search.indexOf('url=') !== -1) {
+            window.history.replaceState(null, '', '');
         }
     } catch (e) {}
+
+    // Genuine sound restoration: ensure sound icon accurately reflects active audio and unmuted status
+    var userToggledMute = false;
+    document.addEventListener('click', function(e) {
+        if (e.target && e.target.closest && e.target.closest('.bmpui-ui-volumetogglebutton, .op-volume, .shaka-mute-button, .jw-icon-volume, [class*="volume"], [class*="mute"]')) {
+            userToggledMute = true;
+        }
+    }, true);
+
+    function syncAndUnmuteAudio() {
+        if (userToggledMute) return;
+        var vids = document.querySelectorAll('video');
+        for (var i = 0; i < vids.length; i++) {
+            var v = vids[i];
+            if (v.muted) v.muted = false;
+            if (v.volume === 0) v.volume = 1.0;
+        }
+        var mutedElements = document.querySelectorAll('.bmpui-ui-volumetogglebutton.bmpui-muted, button.bmpui-muted, .op-volume--muted');
+        for (var j = 0; j < mutedElements.length; j++) {
+            mutedElements[j].classList.remove('bmpui-muted', 'op-volume--muted');
+        }
+    }
+
+    document.addEventListener('click', syncAndUnmuteAudio, true);
+    document.addEventListener('touchstart', syncAndUnmuteAudio, true);
+    document.addEventListener('play', syncAndUnmuteAudio, true);
+    document.addEventListener('playing', syncAndUnmuteAudio, true);
 
     // Force hide 'Loading up the stream...' overlay once video stream starts playback
     function hideStreamLoadingOverlay() {
         var overlay = document.getElementById('loading-overlay');
         if (overlay) {
-            overlay.classList.add('hidden');
+            overlay.classList.add('hidden', 'force-hide');
             overlay.style.setProperty('display', 'none', 'important');
             overlay.style.setProperty('opacity', '0', 'important');
             overlay.style.setProperty('visibility', 'hidden', 'important');
@@ -105,20 +145,22 @@ export async function onRequest(context) {
             var v = vids[i];
             if (!v.paused || v.currentTime > 0 || v.readyState >= 2) {
                 hideStreamLoadingOverlay();
+                syncAndUnmuteAudio();
                 break;
             }
         }
     }, 300);
 
-    // Safety fallback: auto-hide after 6 seconds once player initializes
+    // Safety fallback: auto-hide after 5 seconds once player initializes
     setTimeout(function() {
         var vids = document.querySelectorAll('video');
         if (vids.length > 0) hideStreamLoadingOverlay();
-    }, 6000);
+    }, 5000);
 })();
 </script>
 <style>
 #loading-overlay.hidden,
+#loading-overlay.force-hide,
 #loading-overlay[style*="display: none"] {
     display: none !important;
     opacity: 0 !important;
