@@ -16,17 +16,107 @@
         ? '/api/damitv'
         : 'https://damitv.st';
 
+    const ALPHA_WORKER_NODES = [
+        'data.gigav.workers.dev',
+        'data.yedmzoa.workers.dev',
+        'data.ngagzipx.workers.dev',
+        'data.senbon001.workers.dev',
+        'data.senbon002.workers.dev',
+        'data.phamviet444.workers.dev',
+        'data.kanghaerin444.workers.dev',
+        'data.minjikim444.workers.dev'
+    ];
+
+    function getRandomAlphaWorker() {
+        return ALPHA_WORKER_NODES[Math.floor(Math.random() * ALPHA_WORKER_NODES.length)];
+    }
+
+    const MATCH_STOP_WORDS = new Set([
+        'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
+        'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day', 'grand', 'prix',
+        'afc', '1', '2', '07', '04', 'sv', 'rb', 'cd', 'ud', 'sk', 'san', 'south', 'north', 'east', 'west'
+    ]);
+
+    function tokenizeMatchStr(str) {
+        if (!str) return [];
+        return str.toLowerCase()
+            .replace(/[^a-z0-9]/g, ' ')
+            .split(/\s+/)
+            .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
+    }
+
+    function hasTokenOverlap(arr1, arr2) {
+        for (const t1 of arr1) {
+            if (arr2.some(t2 => t1 === t2 || (t1.length > 4 && t2.length > 4 && (t1.includes(t2) || t2.includes(t1))))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function isSameMatch(ppv, alpha) {
+        const ppvTime = typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0);
+        const alphaTime = (alpha.timestamp || 0) * 1000;
+        if (ppvTime && alphaTime) {
+            const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+            if (diffHours > 14) return false;
+        }
+
+        const pHomeName = (ppv.teams && ppv.teams.home && ppv.teams.home.name) || (ppv.title || '').split(/ vs\.? | @ /)[0] || '';
+        const pAwayName = (ppv.teams && ppv.teams.away && ppv.teams.away.name) || (ppv.title || '').split(/ vs\.? | @ /)[1] || '';
+
+        const aHomeName = alpha.home_team || (alpha.event_name || '').split(/ vs\.? | @ /)[0] || '';
+        const aAwayName = alpha.away_team || (alpha.event_name || '').split(/ vs\.? | @ /)[1] || '';
+
+        const pHomeToks = tokenizeMatchStr(pHomeName);
+        const pAwayToks = tokenizeMatchStr(pAwayName);
+        const aHomeToks = tokenizeMatchStr(aHomeName);
+        const aAwayToks = tokenizeMatchStr(aAwayName);
+
+        const homeMatchesHome = hasTokenOverlap(pHomeToks, aHomeToks);
+        const awayMatchesAway = hasTokenOverlap(pAwayToks, aAwayToks);
+        const homeMatchesAway = hasTokenOverlap(pHomeToks, aAwayToks);
+        const awayMatchesHome = hasTokenOverlap(pAwayToks, aHomeToks);
+
+        if ((homeMatchesHome && awayMatchesAway) || (homeMatchesAway && awayMatchesHome)) {
+            return true;
+        }
+
+        const pAll = tokenizeMatchStr(ppv.title);
+        const aAll = tokenizeMatchStr(alpha.event_name);
+        const common = aAll.filter(t => pAll.includes(t));
+        if (common.length >= 2) return true;
+
+        return false;
+    }
+
     const SPORT_MAPPINGS = {
         'football': 'FOOTBALL',
         'soccer': 'FOOTBALL',
         'laliga': 'FOOTBALL',
+        'laliga 2': 'FOOTBALL',
+        'laliga-2': 'FOOTBALL',
         'premier-league': 'FOOTBALL',
+        'epl': 'FOOTBALL',
+        'championship': 'FOOTBALL',
+        'bundesliga': 'FOOTBALL',
+        '2. bundesliga': 'FOOTBALL',
+        'serie a': 'FOOTBALL',
+        'serie-a': 'FOOTBALL',
+        'eredivisie': 'FOOTBALL',
+        'brasileirão': 'FOOTBALL',
+        'brasileirao': 'FOOTBALL',
+        'liga mx': 'FOOTBALL',
+        'liga-mx': 'FOOTBALL',
+        'liga portugal': 'FOOTBALL',
+        'liga-portugal': 'FOOTBALL',
         'basketball': 'BASKETBALL',
         'nba': 'BASKETBALL',
         'americanfootball': 'AMERICAN FOOTBALL',
         'american-football': 'AMERICAN FOOTBALL',
         'nfl': 'AMERICAN FOOTBALL',
         'cfb': 'AMERICAN FOOTBALL',
+        'cfl': 'AMERICAN FOOTBALL',
         'arm-wrestling': 'ARM WRESTLING',
         'armwrestling': 'ARM WRESTLING',
         'afl': 'AUSTRALIAN FOOTBALL',
@@ -44,14 +134,20 @@
         'motorsports': 'MOTORSPORTS',
         'motor-sports': 'MOTORSPORTS',
         'f1': 'MOTORSPORTS',
+        'motogp': 'MOTORSPORTS',
         'tennis': 'TENNIS',
         'cricket': 'CRICKET',
+        'etpl': 'CRICKET',
+        'caribbean premier league': 'CRICKET',
+        'asia cup': 'CRICKET',
         'darts': 'DARTS',
         'wrestling': 'WRESTLING',
         'nhl': 'HOCKEY',
         'icehockey': 'HOCKEY',
         'hockey': 'HOCKEY',
         'rugby': 'RUGBY',
+        'nrl rugby': 'RUGBY',
+        'nrl': 'RUGBY',
         'golf': 'GOLF',
         '24/7-streams': '24/7 STREAMS',
         'others': 'OTHERS'
@@ -62,10 +158,12 @@
         'BASKETBALL': 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop&q=60',
         'AMERICAN FOOTBALL': 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&auto=format&fit=crop&q=60',
         'BASEBALL': 'https://images.unsplash.com/photo-1508344928928-7165b67de128?w=800&auto=format&fit=crop&q=60',
+        'COMBAT SPORTS': 'https://images.unsplash.com/photo-1517438322307-e67111335449?w=800&auto=format&fit=crop&q=60',
         'FIGHTING': 'https://images.unsplash.com/photo-1517438322307-e67111335449?w=800&auto=format&fit=crop&q=60',
         'MOTORSPORTS': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&auto=format&fit=crop&q=60',
         'TENNIS': 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=60',
         'CRICKET': 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&auto=format&fit=crop&q=60',
+        'RUGBY': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60',
         'DEFAULT': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=60'
     };
 
@@ -73,8 +171,10 @@
         isLoading: true,
         matches: [],
         channels: [],
+        alphaCatalog: [],
         listeners: [],
         refreshInterval: null,
+        _preFetching: false,
 
         async init() {
             this.isLoading = true;
@@ -85,14 +185,17 @@
                 this.loadChannelsCatalog()
             ]);
 
+            await this.loadStreamCornerAlphaFeeds();
+
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
 
-            // Auto-refresh PPV match feeds & statuses every 60 seconds
+            // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
                     await this.loadPPVFeeds();
+                    await this.loadStreamCornerAlphaFeeds();
                     this.updateLiveStatuses();
                     this.emitUpdate();
                 }, 60000);
@@ -149,16 +252,36 @@
                 ];
 
                 const seenIds = new Set();
-                const uniqueMatches = [];
+                const newPpvMatches = [];
 
                 for (const raw of rawList) {
                     if (!raw || !raw.id || !raw.title) continue;
                     if (seenIds.has(raw.id)) continue;
                     seenIds.add(raw.id);
-                    uniqueMatches.push(this.normalizePPVMatch(raw));
+
+                    const existing = this.matches.find(m => m.id === raw.id || m.rawId === raw.id);
+                    if (existing && existing._alphaResolved) {
+                        const norm = this.normalizePPVMatch(raw);
+                        norm.alphaStreamId = existing.alphaStreamId;
+                        norm.alphaItem = existing.alphaItem;
+                        norm._alphaResolved = existing._alphaResolved;
+                        norm.servers = existing.servers;
+                        norm.sources = existing.servers;
+                        newPpvMatches.push(norm);
+                    } else if (existing && existing.alphaStreamId) {
+                        const norm = this.normalizePPVMatch(raw);
+                        norm.alphaStreamId = existing.alphaStreamId;
+                        norm.alphaItem = existing.alphaItem;
+                        newPpvMatches.push(norm);
+                    } else {
+                        newPpvMatches.push(this.normalizePPVMatch(raw));
+                    }
                 }
 
-                this.matches = uniqueMatches;
+                // Preserve any Alpha-only matches (id starts with 'alpha-')
+                const alphaOnlyMatches = this.matches.filter(m => m.id && String(m.id).startsWith('alpha-'));
+
+                this.matches = [...newPpvMatches, ...alphaOnlyMatches];
                 this.sortMatches();
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
@@ -251,6 +374,203 @@
                         ]
                     }
                 ];
+            }
+        },
+
+        /**
+         * Load StreamCorner Alpha live & sports fixtures
+         * Pairs with PPV fixtures and introduces independent Alpha matches
+         */
+        async loadStreamCornerAlphaFeeds() {
+            if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
+                return;
+            }
+            try {
+                const worker = getRandomAlphaWorker();
+                const alphaList = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                if (!Array.isArray(alphaList) || alphaList.length === 0) return;
+
+                this.alphaCatalog = alphaList;
+                const matchedAlphaIds = new Set();
+
+                // 1. Link matching PPV matches with their Alpha counterparts
+                for (const alpha of alphaList) {
+                    const matchedPPV = this.matches.find(m => isSameMatch(m, alpha));
+                    if (matchedPPV) {
+                        matchedAlphaIds.add(alpha.stream_id);
+                        matchedPPV.alphaStreamId = alpha.stream_id;
+                        matchedPPV.alphaItem = alpha;
+                    }
+                }
+
+                // 2. Add Alpha-only fixtures (e.g. Formula 1, MotoGP, cricket leagues, Championship, LaLiga 2)
+                for (const alpha of alphaList) {
+                    if (matchedAlphaIds.has(alpha.stream_id)) continue;
+                    const existing = this.matches.find(m => m.id === `alpha-${alpha.stream_id}` || m.alphaStreamId === alpha.stream_id);
+                    if (!existing) {
+                        const normAlpha = this.normalizeAlphaMatch(alpha);
+                        if (normAlpha) {
+                            this.matches.push(normAlpha);
+                        }
+                    }
+                }
+
+                this.sortMatches();
+                this.emitUpdate();
+
+                // 3. Pre-fetch live alpha streams in the background
+                this.preFetchLiveAlphaSources();
+            } catch (err) {
+                console.warn('StreamCorner Alpha feeds load failed:', err);
+            }
+        },
+
+        /**
+         * Normalize a standalone StreamCorner Alpha event
+         */
+        normalizeAlphaMatch(alpha) {
+            if (!alpha || !alpha.stream_id) return null;
+            const title = alpha.event_name || 'Live Sports';
+            const catKey = (alpha.category || '').toLowerCase().trim();
+            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[(alpha.league || '').toLowerCase().trim()] || 'OTHERS';
+
+            const startTime = alpha.timestamp ? (alpha.timestamp * 1000) : Date.now();
+            const endTime = startTime + 10800000;
+            const now = Date.now();
+            const isLive = startTime <= now && now <= endTime;
+
+            const homeTeam = alpha.home_team || title.split(/ vs\.? | @ /)[0] || title;
+            const awayTeam = alpha.away_team || title.split(/ vs\.? | @ /)[1] || '';
+
+            const poster = alpha.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
+            const scEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${alpha.stream_id}`;
+
+            const servers = [
+                {
+                    name: 'Server 1 [StreamCorner HD]',
+                    url: scEmbedUrl,
+                    type: 'iframe',
+                    hd: true
+                }
+            ];
+
+            return {
+                id: `alpha-${alpha.stream_id}`,
+                rawId: alpha.stream_id,
+                alphaStreamId: alpha.stream_id,
+                alphaItem: alpha,
+                _alphaResolved: false,
+                source: 'streamcorner',
+                title: title,
+                sport: sport,
+                league: (alpha.league || alpha.category || 'Live Sports').toUpperCase(),
+                startTime: startTime,
+                endTime: endTime,
+                isLive: isLive,
+                status: isLive ? 'live' : 'upcoming',
+                poster: poster,
+                team1: { name: homeTeam, logo: alpha.home_team_logo || '' },
+                team2: { name: awayTeam, logo: alpha.away_team_logo || '' },
+                rawCategory: catKey,
+                servers: servers,
+                sources: servers
+            };
+        },
+
+        /**
+         * Resolve extra broadcast channels for a match from StreamCorner Alpha
+         * e.g. Fox Sports, TNT Sports, Sky Sports, Fancode, Apple TV, Willow, etc.
+         */
+        async resolveAlphaSourcesForMatch(match) {
+            if (!match || !match.alphaStreamId) return false;
+            if (match._alphaResolved) return true;
+            if (match._alphaPromise) return await match._alphaPromise;
+            if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
+
+            match._alphaPromise = (async () => {
+                try {
+                    const worker = getRandomAlphaWorker();
+                    const detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+
+                    if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
+                        const seenUrls = new Set((match.servers || []).map(s => s.url));
+                        const newServers = [];
+
+                        detail.streams.forEach((s) => {
+                            const srvUrl = s.embed_url || s.stream_url;
+                            if (srvUrl && !seenUrls.has(srvUrl)) {
+                                seenUrls.add(srvUrl);
+                                let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase();
+                                label = label.replace(/\s*-\s*$/, '');
+                                newServers.push({
+                                    name: `Server ${match.servers.length + newServers.length + 1} [${label}]`,
+                                    url: srvUrl,
+                                    type: srvUrl.includes('.m3u8') ? 'video' : 'iframe',
+                                    hd: true
+                                });
+                            }
+                        });
+
+                        // Add StreamCorner HD fallback embed
+                        const scEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${match.alphaStreamId}`;
+                        if (!seenUrls.has(scEmbedUrl)) {
+                            seenUrls.add(scEmbedUrl);
+                            newServers.push({
+                                name: `Server ${match.servers.length + newServers.length + 1} [StreamCorner HD]`,
+                                url: scEmbedUrl,
+                                type: 'iframe',
+                                hd: true
+                            });
+                        }
+
+                        if (newServers.length > 0) {
+                            if (match.source === 'streamcorner' && match.servers.length === 1 && match.servers[0].url === scEmbedUrl) {
+                                match.servers = newServers.map((srv, i) => ({
+                                    ...srv,
+                                    name: `Server ${i + 1} [${srv.name.replace(/^Server \d+\s*\[/, '').replace(/\]$/, '')}]`
+                                }));
+                            } else {
+                                match.servers = [...match.servers, ...newServers];
+                            }
+                            match.sources = match.servers;
+                        }
+                    }
+
+                    match._alphaResolved = true;
+                    return true;
+                } catch (err) {
+                    console.warn('Resolve Alpha sources failed:', match.title, err);
+                    return false;
+                } finally {
+                    match._alphaPromise = null;
+                }
+            })();
+
+            return await match._alphaPromise;
+        },
+
+        /**
+         * Pre-fetch broadcast channels in the background for active/upcoming games
+         */
+        async preFetchLiveAlphaSources() {
+            if (this._preFetching) return;
+            this._preFetching = true;
+
+            try {
+                const targets = this.matches
+                    .filter(m => m.alphaStreamId && !m._alphaResolved && !m._resolvingAlpha && (m.isLive || (m.startTime - Date.now()) < 7200000))
+                    .slice(0, 10);
+
+                if (targets.length === 0) {
+                    this._preFetching = false;
+                    return;
+                }
+
+                await Promise.allSettled(targets.map(t => this.resolveAlphaSourcesForMatch(t)));
+            } catch (e) {
+                // Silent
+            } finally {
+                this._preFetching = false;
             }
         },
 
@@ -367,7 +687,7 @@
 
         getItemById(id) {
             if (!id) return null;
-            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id)
+            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id || m.alphaStreamId === id || ('alpha-' + m.alphaStreamId) === id)
                 || this.channels.find(c => c.id === id)
                 || null;
         },

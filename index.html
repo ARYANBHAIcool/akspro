@@ -314,10 +314,10 @@
     </div>
 
     <!-- SCRIPTS -->
-    <script src="js/api.js"></script>
-    <script src="js/player.js"></script>
     <script src="js/paramount-core.js"></script>
     <script src="js/paramount.js"></script>
+    <script src="js/player.js"></script>
+    <script src="js/api.js"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -699,6 +699,16 @@
             switchView('watch');
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
+
+            // If this match has StreamCorner Alpha sources that haven't been resolved yet, resolve them now
+            if (window.AryanGlobalAPI && item.alphaStreamId && !item._alphaResolved) {
+                window.AryanGlobalAPI.resolveAlphaSourcesForMatch(item).then((resolved) => {
+                    if (resolved && currentWatchItem && currentWatchItem.id === item.id) {
+                        const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                        renderWatchSources(item, activeIdx);
+                    }
+                });
+            }
         }
 
         // Backward-compatible alias so existing clicks automatically open the exact StreamCorner match interface
