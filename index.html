@@ -127,7 +127,7 @@
     <main class="flex-1 max-w-[1500px] w-full mx-auto px-4 sm:px-6 py-6 space-y-6">
 
         <!-- CATEGORY & STATUS FILTER BAR -->
-        <div class="space-y-4">
+        <div id="category-filter-bar" class="space-y-4">
             
             <!-- Main Filter Tabs -->
             <div class="flex flex-wrap items-center justify-between gap-3">
@@ -298,6 +298,11 @@
             </div>
         </div>
 
+        <!-- VIEW 5: STREAMCORNER MATCH WATCH INTERFACE VIEW -->
+        <div id="view-watch" class="space-y-6 hidden">
+            <!-- Populated dynamically by renderWatchView(item) -->
+        </div>
+
     </main>
 
     <!-- PLAYER MODAL CONTAINER -->
@@ -374,6 +379,9 @@
             setInterval(updateCountdowns, 1000);
         });
 
+        let previousView = 'home';
+        let currentWatchItem = null;
+
         function switchView(viewName) {
             currentView = viewName;
             document.getElementById('view-home').classList.add('hidden');
@@ -381,6 +389,21 @@
             document.getElementById('view-multiviewer').classList.add('hidden');
             const prmtvView = document.getElementById('view-prmtv');
             if (prmtvView) prmtvView.classList.add('hidden');
+            const watchView = document.getElementById('view-watch');
+            if (watchView) watchView.classList.add('hidden');
+
+            const filterBar = document.getElementById('category-filter-bar');
+            if (filterBar) {
+                if (viewName === 'watch') {
+                    filterBar.classList.add('hidden');
+                } else {
+                    filterBar.classList.remove('hidden');
+                }
+            }
+
+            if (viewName !== 'watch' && window.AryanPlayerEngine) {
+                window.AryanPlayerEngine.destroy();
+            }
 
             document.getElementById('nav-home').className = viewName === 'home' ? 'text-green-400 flex items-center gap-1.5 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors';
             const navPrmtv = document.getElementById('nav-prmtv');
@@ -478,14 +501,17 @@
             const countdownText = isLive ? 'LIVE NOW' : window.AryanGlobalAPI.getCountdownText(m.startTime);
             const timeDisplay = window.AryanGlobalAPI.formatDate(m.startTime);
             const serversCount = (m.servers && m.servers.length) || 1;
+            const hasTeam1Badge = m.team1 && m.team1.logo && !m.team1.logo.includes('avatar.vercel.sh');
+            const hasTeam2Badge = m.team2 && m.team2.logo && !m.team2.logo.includes('avatar.vercel.sh');
+            const isRealVsMatch = hasTeam1Badge && hasTeam2Badge && m.team2.name && m.team2.name !== 'Opponent' && m.team2.name.trim() !== '';
 
             return `
-                <div onclick="openPlayerModal('${m.id}')" class="card-hover bg-[#0f1726] border border-gray-800/90 rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-between group shadow-xl">
+                <div onclick="openWatchView('${m.id}')" class="card-hover bg-[#0f1726] border border-gray-800/90 rounded-2xl overflow-hidden cursor-pointer flex flex-col justify-between group shadow-xl">
                     
-                    <!-- POSTER / BANNER AREA -->
-                    <div class="h-[145px] relative overflow-hidden bg-gradient-to-b from-[#162035] to-[#0c1322] border-b border-gray-800/80 flex items-center justify-center p-3">
-                        <img src="${m.poster}" class="absolute inset-0 w-full h-full object-cover opacity-35 group-hover:scale-105 group-hover:opacity-45 transition-all duration-300" alt="${m.title}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800';">
-                        <div class="absolute inset-0 bg-gradient-to-t from-[#0f1726] via-[#0f1726]/40 to-black/50"></div>
+                    <!-- POSTER / BANNER AREA (Clean, High-Res, Unobstructed) -->
+                    <div class="h-[155px] relative overflow-hidden bg-[#0a0f1d] border-b border-gray-800/80 flex items-center justify-center">
+                        <img src="${m.poster}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-300 brightness-95" alt="${m.title}" loading="lazy" onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800';">
+                        <div class="absolute inset-0 bg-gradient-to-t from-[#0f1726] via-transparent to-black/35"></div>
 
                         <!-- Top Badges -->
                         <div class="absolute top-2.5 left-2.5 right-2.5 flex items-center justify-between z-10">
@@ -499,31 +525,23 @@
                                     ${countdownText}
                                 </span>
                             `}
-                            <span class="bg-black/80 backdrop-blur-md text-gray-300 font-bold text-[9px] uppercase px-2 py-0.5 rounded-md border border-gray-700/80">
+                            <span class="bg-black/80 backdrop-blur-md text-gray-200 font-bold text-[9px] uppercase px-2 py-0.5 rounded-md border border-white/10 shadow">
                                 ${serversCount} ${serversCount === 1 ? 'Server' : 'Servers'}
                             </span>
                         </div>
 
-                        <!-- VS Teams Display -->
-                        <div class="relative z-10 flex items-center justify-between w-full px-2 mt-4">
-                            <div class="flex flex-col items-center gap-1 max-w-[40%] text-center">
-                                <div class="w-11 h-11 rounded-full bg-black/60 border border-gray-700/80 flex items-center justify-center p-1.5 shadow-lg overflow-hidden group-hover:scale-110 transition-transform">
-                                    <img src="${m.team1.logo}" class="max-h-full max-w-full object-contain" alt="" onerror="this.onerror=null; this.src='https://avatar.vercel.sh/${encodeURIComponent(m.team1.name)}.png';">
+                        <!-- Authentic Club Badges (Only shown when authentic team logos exist from API) -->
+                        ${isRealVsMatch ? `
+                            <div class="absolute bottom-2.5 left-3 right-3 flex items-center justify-between z-10">
+                                <div class="w-8 h-8 rounded-full bg-black/75 backdrop-blur-md p-1 border border-white/20 flex items-center justify-center shadow-lg">
+                                    <img src="${m.team1.logo}" class="max-h-full max-w-full object-contain" alt="${m.team1.name}">
                                 </div>
-                                <span class="text-[10px] font-extrabold text-white truncate w-full">${m.team1.name}</span>
-                            </div>
-
-                            <div class="px-2 py-1 rounded-full bg-black/70 border border-gray-700 text-[10px] font-black text-gray-300 uppercase tracking-widest">
-                                VS
-                            </div>
-
-                            <div class="flex flex-col items-center gap-1 max-w-[40%] text-center">
-                                <div class="w-11 h-11 rounded-full bg-black/60 border border-gray-700/80 flex items-center justify-center p-1.5 shadow-lg overflow-hidden group-hover:scale-110 transition-transform">
-                                    <img src="${m.team2.logo}" class="max-h-full max-w-full object-contain" alt="" onerror="this.onerror=null; this.src='https://avatar.vercel.sh/${encodeURIComponent(m.team2.name || 'Opponent')}.png';">
+                                <span class="text-[9px] font-black text-gray-200 uppercase px-2 py-0.5 rounded-full bg-black/80 border border-white/15 shadow">VS</span>
+                                <div class="w-8 h-8 rounded-full bg-black/75 backdrop-blur-md p-1 border border-white/20 flex items-center justify-center shadow-lg">
+                                    <img src="${m.team2.logo}" class="max-h-full max-w-full object-contain" alt="${m.team2.name}">
                                 </div>
-                                <span class="text-[10px] font-extrabold text-white truncate w-full">${m.team2.name || 'Opponent'}</span>
                             </div>
-                        </div>
+                        ` : ''}
                     </div>
 
                     <!-- TITLE & LEAGUE DETAILS -->
@@ -612,27 +630,218 @@
             `).join('');
         }
 
-        function openPlayerModal(id) {
+        function openWatchView(id) {
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
                 item = window.AryanParamountAPI.getEventById(id);
             }
             if (!item) return;
 
-            document.getElementById('player-match-title').innerText = item.title || item.name;
-            document.getElementById('player-match-league').innerText = (item.league || item.country || 'Sports') + ' • ' + (item.sport || '24/7 TV');
-            document.getElementById('player-status-badge').innerText = item.isLive ? 'LIVE' : 'UPCOMING';
-            document.getElementById('player-status-badge').className = item.isLive
-                ? 'px-2.5 py-0.5 bg-red-600 text-white font-black text-[10px] uppercase rounded-md tracking-wider flex-shrink-0'
-                : 'px-2.5 py-0.5 bg-amber-500 text-black font-black text-[10px] uppercase rounded-md tracking-wider flex-shrink-0';
+            if (currentView !== 'watch') {
+                previousView = currentView;
+            }
+            currentWatchItem = item;
+            switchView('watch');
+            renderWatchView(item);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
 
-            document.getElementById('player-modal').classList.remove('hidden');
-            window.AryanPlayerEngine.init('player-viewport-container', item);
+        // Backward-compatible alias so existing clicks automatically open the exact StreamCorner match interface
+        function openPlayerModal(id) {
+            openWatchView(id);
+        }
+
+        function goBackFromWatch() {
+            if (window.AryanPlayerEngine) {
+                window.AryanPlayerEngine.destroy();
+            }
+            switchView(previousView || 'home');
+        }
+
+        let isWatchTheater = false;
+        function toggleWatchTheater() {
+            isWatchTheater = !isWatchTheater;
+            const wrapper = document.getElementById('watch-wrapper');
+            const label = document.getElementById('watch-theater-label');
+            if (!wrapper) return;
+            if (isWatchTheater) {
+                wrapper.classList.remove('max-w-5xl');
+                wrapper.classList.add('max-w-[98vw]');
+                if (label) label.innerText = 'Exit Theater';
+            } else {
+                wrapper.classList.remove('max-w-[98vw]');
+                wrapper.classList.add('max-w-5xl');
+                if (label) label.innerText = 'Theater Mode';
+            }
+        }
+
+        function renderWatchView(item) {
+            const container = document.getElementById('view-watch');
+            if (!container || !item) return;
+
+            const isLive = item.isLive;
+
+            container.innerHTML = `
+                <div class="max-w-5xl mx-auto space-y-4" id="watch-wrapper">
+                    
+                    <!-- Back Button & Status Header -->
+                    <div class="flex items-center justify-between gap-3">
+                        <button onclick="goBackFromWatch()" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors bg-[#0f1726] hover:bg-[#152035] border border-gray-800 px-3.5 py-2 rounded-xl shadow-lg group">
+                            <svg class="w-4 h-4 text-green-400 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                            <span>Back to Matches</span>
+                        </button>
+
+                        <div class="flex items-center gap-2">
+                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isLive ? 'bg-red-600 text-white animate-pulse shadow-md shadow-red-600/30' : 'bg-amber-500 text-black'}">
+                                ${isLive ? 'LIVE' : 'UPCOMING'}
+                            </span>
+                            <span class="text-xs text-gray-400 font-extrabold uppercase hidden sm:inline">
+                                ${item.league || item.country || ''} ${item.sport ? '• ' + item.sport : ''}
+                            </span>
+                        </div>
+                    </div>
+
+                    <!-- Match Title & StreamCorner Green Accent Underline (Exact Image 1 Header) -->
+                    <div class="pt-1">
+                        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
+                            ${item.title || item.name}
+                        </h1>
+                        <div class="h-1.5 w-24 bg-green-500 rounded-full mt-2.5 mb-5 shadow-lg shadow-green-500/50"></div>
+                    </div>
+
+                    <!-- Video Player Container (StreamCorner 16:9 Viewport) -->
+                    <div id="watch-player-container" class="relative w-full aspect-video bg-black rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-800 shadow-2xl">
+                        <!-- Rendered by AryanPlayerEngine -->
+                    </div>
+
+                    <!-- CONTROLS Section (Exact StreamCorner Image 1 Format) -->
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black uppercase tracking-widest text-gray-400">CONTROLS</span>
+                            <div class="flex-1 h-px bg-gray-800/80"></div>
+                        </div>
+                        
+                        <div class="bg-[#0f1726] border border-gray-800/90 rounded-2xl divide-y divide-gray-800/60 shadow-xl overflow-hidden">
+                            
+                            <!-- Control Row 1: Player Selector -->
+                            <div class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3">
+                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider">
+                                    <svg class="w-4 h-4 text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Player</span>
+                                </div>
+                                <select id="watch-player-select" onchange="AryanPlayerEngine.changePlayerEngine(this.value)" class="bg-[#141d30] border border-gray-700/80 rounded-xl px-3 py-1.5 text-xs text-white font-bold focus:outline-none focus:border-green-500 transition-colors">
+                                    <option value="bitmovin">Bitmovin</option>
+                                    <option value="shaka">Shaka</option>
+                                    <option value="jwplayer">JWPlayer</option>
+                                    <option value="direct">Direct HD</option>
+                                </select>
+                            </div>
+
+                            <!-- Control Row 2: Reload Player -->
+                            <div onclick="AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
+                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    <span>Reload Player</span>
+                                </div>
+                                <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Click to Reload</span>
+                            </div>
+
+                            <!-- Control Row 3: Theater Mode -->
+                            <div onclick="toggleWatchTheater()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
+                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                    <span id="watch-theater-label">Theater Mode</span>
+                                </div>
+                                <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Toggle Size</span>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- AVAILABLE SOURCES Section (Exact StreamCorner Image 1 Format) -->
+                    <div class="space-y-2 pt-2">
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs font-black uppercase tracking-widest text-gray-400">AVAILABLE SOURCES</span>
+                            <div class="flex-1 h-px bg-gray-800/80"></div>
+                        </div>
+
+                        <div id="watch-sources-container" class="space-y-2.5">
+                            <!-- Populated dynamically by renderWatchSources -->
+                        </div>
+                    </div>
+
+                </div>
+            `;
+
+            renderWatchSources(item, 0);
+            window.AryanPlayerEngine.init('watch-player-container', item);
+        }
+
+        function renderWatchSources(item, activeIdx = 0) {
+            const container = document.getElementById('watch-sources-container');
+            if (!container) return;
+            const servers = (item.servers && item.servers.length) ? item.servers : [item];
+
+            container.innerHTML = servers.map((srv, idx) => {
+                const isActive = idx === activeIdx;
+                const srvName = srv.name || `Source ${idx + 1}`;
+
+                return `
+                    <div onclick="switchWatchServer(${idx})" 
+                         class="cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all ${
+                             isActive
+                                 ? 'border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15'
+                                 : 'border border-gray-800 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]'
+                         }">
+                        <div class="flex items-center gap-3 overflow-hidden">
+                            <span class="w-6 h-6 rounded-full flex-shrink-0 flex items-center justify-center font-black text-xs ${
+                                isActive ? 'bg-green-500 text-black shadow' : 'bg-gray-800 text-gray-400'
+                            }">
+                                ${idx + 1}
+                            </span>
+                            <span class="${isActive ? 'text-green-400 font-black' : 'text-gray-500 font-bold'} text-xs flex-shrink-0">
+                                ((o))
+                            </span>
+                            <div class="flex items-center gap-2.5 overflow-hidden flex-wrap">
+                                <span class="font-extrabold text-xs sm:text-sm uppercase tracking-wide truncate ${
+                                    isActive ? 'text-white' : 'text-gray-200'
+                                }">
+                                    ${srvName}
+                                </span>
+                                <span class="inline-flex items-center gap-1 text-xs opacity-75" title="Cross-Platform Supported">
+                                    <span>🍎</span>
+                                    <span>🤖</span>
+                                    <span>🐧</span>
+                                    <span>🪟</span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="flex-shrink-0 flex items-center">
+                            ${isActive ? `
+                                <div class="w-6 h-6 rounded-full bg-green-500 text-black flex items-center justify-center font-black text-xs shadow-md shadow-green-500/30">
+                                    ✓
+                                </div>
+                            ` : `
+                                <span class="text-xs font-bold text-gray-500 uppercase tracking-wider hover:text-green-400">
+                                    Select
+                                </span>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function switchWatchServer(idx) {
+            if (!currentWatchItem) return;
+            window.AryanPlayerEngine.switchServer(idx);
+            renderWatchSources(currentWatchItem, idx);
         }
 
         function closePlayerModal() {
             document.getElementById('player-modal').classList.add('hidden');
-            window.AryanPlayerEngine.destroy();
+            if (window.AryanPlayerEngine) window.AryanPlayerEngine.destroy();
             const container = document.getElementById('player-viewport-container');
             if (container) container.innerHTML = '';
         }

@@ -173,11 +173,11 @@
                 poster: poster,
                 team1: {
                     name: title.split(/ vs\.? | @ /)[0] || title,
-                    logo: ev.logo || ev.channel_logo || `https://avatar.vercel.sh/${encodeURIComponent(title)}.png`
+                    logo: ev.logo || ev.channel_logo || ''
                 },
                 team2: {
                     name: title.split(/ vs\.? | @ /)[1] || '',
-                    logo: title.split(/ vs\.? | @ /)[1] ? `https://avatar.vercel.sh/${encodeURIComponent(title.split(/ vs\.? | @ /)[1])}.png` : ''
+                    logo: ''
                 },
                 servers: servers,
                 sources: servers

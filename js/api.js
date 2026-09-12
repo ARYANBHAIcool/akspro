@@ -396,11 +396,11 @@
                 poster: poster,
                 team1: {
                     name: team1Name,
-                    logo: `https://wsrv.nl/?url=https://avatar.vercel.sh/${encodeURIComponent(team1Name)}.png&w=96&h=96&fit=contain`
+                    logo: ''
                 },
                 team2: {
-                    name: team2Name || 'Opponent',
-                    logo: team2Name ? `https://wsrv.nl/?url=https://avatar.vercel.sh/${encodeURIComponent(team2Name)}.png&w=96&h=96&fit=contain` : ''
+                    name: team2Name || '',
+                    logo: ''
                 },
                 servers: servers,
                 sources: servers
@@ -423,8 +423,8 @@
             const team1Name = (raw.teams && raw.teams.home && raw.teams.home.name) || title.split(/ vs\.? | @ /)[0] || title;
             const team2Name = (raw.teams && raw.teams.away && raw.teams.away.name) || title.split(/ vs\.? | @ /)[1] || '';
 
-            const team1Badge = (raw.teams && raw.teams.home && raw.teams.home.badge) || `https://wsrv.nl/?url=https://avatar.vercel.sh/${encodeURIComponent(team1Name)}.png&w=96&h=96&fit=contain`;
-            const team2Badge = (raw.teams && raw.teams.away && raw.teams.away.badge) || (team2Name ? `https://wsrv.nl/?url=https://avatar.vercel.sh/${encodeURIComponent(team2Name)}.png&w=96&h=96&fit=contain` : '');
+            const team1Badge = (raw.teams && raw.teams.home && raw.teams.home.badge) ? raw.teams.home.badge : '';
+            const team2Badge = (raw.teams && raw.teams.away && raw.teams.away.badge) ? raw.teams.away.badge : '';
 
             const poster = raw.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
 
