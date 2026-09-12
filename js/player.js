@@ -51,14 +51,49 @@ window.AryanPlayerEngine = {
 
     getProxiedUrl(rawUrl) {
         if (!rawUrl) return '';
-        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
+
+        const engine = this.currentPlayerEngine || 'bitmovin';
+
+        // Check if rawUrl is already proxied via /api/embed
+        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) {
+            try {
+                const parsed = new URL(rawUrl, window.location.origin);
+                const target = parsed.searchParams.get('url');
+                if (target) {
+                    const parsedTarget = new URL(target);
+                    if (engine && engine !== 'bitmovin') {
+                        parsedTarget.searchParams.set('player', engine);
+                        parsed.searchParams.set('player', engine);
+                    } else {
+                        parsedTarget.searchParams.delete('player');
+                        parsed.searchParams.delete('player');
+                    }
+                    parsed.searchParams.set('url', parsedTarget.toString());
+                    return parsed.pathname + parsed.search;
+                } else {
+                    if (engine && engine !== 'bitmovin') {
+                        parsed.searchParams.set('player', engine);
+                    } else {
+                        parsed.searchParams.delete('player');
+                    }
+                    return parsed.pathname + parsed.search;
+                }
+            } catch (e) {
+                return rawUrl;
+            }
+        }
 
         // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
             try {
-                const parsed = new URL(rawUrl);
-                const search = parsed.search ? parsed.search.replace(/^\?/, '') + '&' : '';
-                return `/api/embed?${search}url=${encodeURIComponent(rawUrl)}`;
+                const parsedTarget = new URL(rawUrl);
+                if (engine && engine !== 'bitmovin') {
+                    parsedTarget.searchParams.set('player', engine);
+                } else {
+                    parsedTarget.searchParams.delete('player');
+                }
+                const playerParam = (engine && engine !== 'bitmovin') ? `player=${encodeURIComponent(engine)}&` : '';
+                return `/api/embed?${playerParam}url=${encodeURIComponent(parsedTarget.toString())}`;
             } catch (e) {
                 return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
             }
@@ -100,23 +135,17 @@ window.AryanPlayerEngine = {
     },
 
     changePlayerEngine(engine) {
-        this.currentPlayerEngine = engine;
+        this.currentPlayerEngine = engine || 'bitmovin';
         const servers = this.getServers();
         const currentServer = servers[this.activeServerIdx] || servers[0];
-        if (!currentServer || !currentServer.url) return;
-
-        let url = currentServer.url;
-        // Strip any existing player parameter
-        url = url.replace(/([?&])player=[^&]*/g, '');
-        url = url.replace(/[?&]$/, '');
-
-        // If an engine is specified and not 'direct', append it
-        if (engine && engine !== 'direct') {
-            const sep = url.includes('?') ? '&' : '?';
-            url = `${url}${sep}player=${engine}`;
+        if (currentServer && currentServer.url) {
+            currentServer.url = this.getProxiedUrl(currentServer.url);
         }
-        currentServer.url = url;
         this.reloadPlayer();
+
+        if (typeof updatePlayerDropdownUI === 'function') {
+            updatePlayerDropdownUI(this.currentPlayerEngine);
+        }
     },
 
     toggleTheater() {
@@ -272,11 +301,8 @@ window.AryanPlayerEngine = {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
             const finalIframeUrl = this.getProxiedUrl(currentServer.url);
-            const isProxied = finalIframeUrl.includes('/api/embed');
-            const sandboxAttr = isProxied
-                ? 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups"'
-                : 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
-            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" ${sandboxAttr} class="w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="no-referrer"></iframe>`;
+            const sandboxAttr = 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
+            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" ${sandboxAttr} class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
         }
 
         html += `</div>`;
