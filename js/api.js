@@ -64,18 +64,22 @@
     }
 
     function isSameMatch(ppv, alpha) {
-        const ppvTime = typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0);
+        if (!ppv || !alpha) return false;
+        const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
         const alphaTime = (alpha.timestamp || 0) * 1000;
         if (ppvTime && alphaTime) {
             const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
-            if (diffHours > 14) return false;
+            if (diffHours > 16) return false;
         }
 
-        const pHomeName = (ppv.teams && ppv.teams.home && ppv.teams.home.name) || (ppv.title || '').split(/ vs\.? | @ /)[0] || '';
-        const pAwayName = (ppv.teams && ppv.teams.away && ppv.teams.away.name) || (ppv.title || '').split(/ vs\.? | @ /)[1] || '';
+        const pTitle = ppv.title || ppv.name || '';
+        const aTitle = alpha.event_name || alpha.title || '';
 
-        const aHomeName = alpha.home_team || (alpha.event_name || '').split(/ vs\.? | @ /)[0] || '';
-        const aAwayName = alpha.away_team || (alpha.event_name || '').split(/ vs\.? | @ /)[1] || '';
+        const pHomeName = (ppv.teams && ppv.teams.home && ppv.teams.home.name) || pTitle.split(/ vs\.? | @ /)[0] || '';
+        const pAwayName = (ppv.teams && ppv.teams.away && ppv.teams.away.name) || pTitle.split(/ vs\.? | @ /)[1] || '';
+
+        const aHomeName = alpha.home_team || aTitle.split(/ vs\.? | @ /)[0] || '';
+        const aAwayName = alpha.away_team || aTitle.split(/ vs\.? | @ /)[1] || '';
 
         const pHomeToks = tokenizeMatchStr(pHomeName);
         const pAwayToks = tokenizeMatchStr(pAwayName);
@@ -91,8 +95,8 @@
             return true;
         }
 
-        const pAll = tokenizeMatchStr(ppv.title);
-        const aAll = tokenizeMatchStr(alpha.event_name);
+        const pAll = tokenizeMatchStr(pTitle);
+        const aAll = tokenizeMatchStr(aTitle);
         const common = aAll.filter(t => pAll.includes(t));
         if (common.length >= 2) return true;
 
@@ -162,20 +166,6 @@
         'others': 'OTHERS'
     };
 
-    const DEFAULT_POSTERS = {
-        'FOOTBALL': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60',
-        'BASKETBALL': 'https://images.unsplash.com/photo-1546519638-68e109498ffc?w=800&auto=format&fit=crop&q=60',
-        'AMERICAN FOOTBALL': 'https://images.unsplash.com/photo-1566577739112-5180d4bf9390?w=800&auto=format&fit=crop&q=60',
-        'BASEBALL': 'https://images.unsplash.com/photo-1508344928928-7165b67de128?w=800&auto=format&fit=crop&q=60',
-        'COMBAT SPORTS': 'https://images.unsplash.com/photo-1517438322307-e67111335449?w=800&auto=format&fit=crop&q=60',
-        'FIGHTING': 'https://images.unsplash.com/photo-1517438322307-e67111335449?w=800&auto=format&fit=crop&q=60',
-        'MOTORSPORTS': 'https://images.unsplash.com/photo-1568605117036-5fe5e7bab0b7?w=800&auto=format&fit=crop&q=60',
-        'TENNIS': 'https://images.unsplash.com/photo-1595435934249-5df7ed86e1c0?w=800&auto=format&fit=crop&q=60',
-        'CRICKET': 'https://images.unsplash.com/photo-1531415074968-036ba1b575da?w=800&auto=format&fit=crop&q=60',
-        'RUGBY': 'https://images.unsplash.com/photo-1508098682722-e99c43a406b2?w=800&auto=format&fit=crop&q=60',
-        'DEFAULT': 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=800&auto=format&fit=crop&q=60'
-    };
-
     window.AryanGlobalAPI = {
         isLoading: true,
         matches: [],
@@ -187,7 +177,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v2';
+            const CACHE_KEY = 'aryan_cached_matches_v3';
             // 1. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
             try {
                 const cached = localStorage.getItem(CACHE_KEY);
@@ -207,24 +197,21 @@
                 this.emitUpdate();
             }
 
-            // Immediately launch Alpha feed aggregation in parallel with PPV feeds and catalog
+            // Immediately launch Alpha feed aggregation and PPV feeds in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
             await Promise.allSettled([
                 this.loadPPVFeeds(),
+                this._alphaLoadingPromise,
                 this.loadChannelsCatalog()
             ]);
 
-            // Render PPV matches and channels immediately without waiting for background Alpha resolution
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
 
-            // Enrich fixtures with StreamCorner Alpha sources asynchronously as soon as Alpha finishes
-            this._alphaLoadingPromise.then(() => {
-                this.sortMatches();
-                this.emitUpdate();
-            }).catch(e => console.warn('Alpha background sync:', e));
+            // Pre-fetch live StreamCorner Alpha sources in background so clicking has 0ms delay
+            this.preFetchLiveAlphaSources();
 
             // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {
@@ -251,85 +238,89 @@
         },
 
         /**
-         * Fetch all matches directly from official PPV API
-         * Deduplicates strictly by raw.id to eliminate duplicate matches
+         * Fetch all matches directly from official PPV.st Streams API
+         * Guarantees 100% genuine authentic posters, zero duplicate stock photos,
+         * and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v2';
+            const CACHE_KEY = 'aryan_cached_matches_v3';
             try {
-                const endpoints = [
-                    `${DAMITV_API_BASE}/papi/matches/all-today`,
-                    `${DAMITV_API_BASE}/papi/matches/live`
-                ];
+                let categories = null;
 
-                const fetches = endpoints.map(async (url) => {
-                    try {
-                        const res = await fetch(url, {
-                            signal: AbortSignal.timeout(12000),
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        if (res.ok) return await res.json();
-                    } catch (e) {
-                        try {
-                            const directUrl = url.replace('/api/damitv', 'https://damitv.st');
-                            const res2 = await fetch(directUrl, {
-                                signal: AbortSignal.timeout(12000),
-                                headers: { 'Accept': 'application/json' }
-                            });
-                            if (res2.ok) return await res2.json();
-                        } catch (e2) {}
-                    }
-                    return [];
-                });
-
-                const [todayMatches, liveMatches] = await Promise.all(fetches);
-                const rawList = [
-                    ...(Array.isArray(liveMatches) ? liveMatches : []),
-                    ...(Array.isArray(todayMatches) ? todayMatches : [])
-                ];
-
-                const seenIds = new Set();
-                const newPpvMatches = [];
-
-                for (const raw of rawList) {
-                    if (!raw || !raw.id || !raw.title) continue;
-                    if (seenIds.has(raw.id)) continue;
-                    seenIds.add(raw.id);
-
-                    const existing = this.matches.find(m => m.id === raw.id || m.rawId === raw.id);
-                    if (existing && existing._alphaResolved) {
-                        const norm = this.normalizePPVMatch(raw);
-                        norm.alphaStreamId = existing.alphaStreamId;
-                        norm.alphaItem = existing.alphaItem;
-                        norm._alphaResolved = existing._alphaResolved;
-                        norm.servers = existing.servers;
-                        norm.sources = existing.servers;
-                        newPpvMatches.push(norm);
-                    } else if (existing && existing.alphaStreamId) {
-                        const norm = this.normalizePPVMatch(raw);
-                        norm.alphaStreamId = existing.alphaStreamId;
-                        norm.alphaItem = existing.alphaItem;
-                        newPpvMatches.push(norm);
-                    } else {
-                        const norm = this.normalizePPVMatch(raw);
-                        if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                            const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
-                            if (matchedAlpha) {
-                                norm.alphaStreamId = matchedAlpha.stream_id;
-                                norm.alphaItem = matchedAlpha;
-                            }
+                // 1. Direct fetch from official PPV Streams API
+                try {
+                    const res = await fetch('https://api.ppv.st/api/streams', {
+                        signal: AbortSignal.timeout(8000),
+                        headers: { 'Accept': 'application/json' }
+                    });
+                    if (res.ok) {
+                        const json = await res.json();
+                        if (json && Array.isArray(json.streams)) {
+                            categories = json.streams;
                         }
-                        newPpvMatches.push(norm);
                     }
+                } catch (e) {
+                    console.warn('Direct api.ppv.st fetch failed, trying proxy fallback:', e);
                 }
 
-                // Master catalog remains strictly authentic PPV fixtures with genuine posters
-                if (newPpvMatches.length > 0) {
-                    this.matches = newPpvMatches;
-                    this.sortMatches();
+                // 2. Fallback to damitv if api.ppv.st is unreachable
+                if (!categories) {
                     try {
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 150)));
+                        const fallbackUrl = `${DAMITV_API_BASE}/papi/matches/all-today`;
+                        const res = await fetch(fallbackUrl, { signal: AbortSignal.timeout(6000) });
+                        if (res.ok) {
+                            const rawList = await res.json();
+                            if (Array.isArray(rawList)) {
+                                categories = [{ category: 'Live Sports', streams: rawList }];
+                            }
+                        }
                     } catch (e) {}
+                }
+
+                if (categories && Array.isArray(categories)) {
+                    const seenIds = new Set();
+                    const newMatches = [];
+
+                    for (const cat of categories) {
+                        const catName = (cat.category || 'Sports').trim();
+                        const is247Cat = cat.always_live || catName.toLowerCase().includes('24/7');
+                        const streams = Array.isArray(cat.streams) ? cat.streams : [];
+
+                        for (const s of streams) {
+                            if (!s || !s.id || !s.name) continue;
+                            if (seenIds.has(s.id)) continue;
+                            seenIds.add(s.id);
+
+                            const existing = this.matches.find(m => m.id === `ppv-${s.id}` || m.rawId === s.id);
+                            const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
+
+                            if (existing && existing._alphaResolved) {
+                                norm.alphaStreamId = existing.alphaStreamId;
+                                norm.alphaItem = existing.alphaItem;
+                                norm._alphaResolved = existing._alphaResolved;
+                                norm.servers = existing.servers;
+                                norm.sources = existing.servers;
+                            } else if (existing && existing.alphaStreamId) {
+                                norm.alphaStreamId = existing.alphaStreamId;
+                                norm.alphaItem = existing.alphaItem;
+                            } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
+                                if (matchedAlpha) {
+                                    norm.alphaStreamId = matchedAlpha.stream_id;
+                                    norm.alphaItem = matchedAlpha;
+                                }
+                            }
+                            newMatches.push(norm);
+                        }
+                    }
+
+                    if (newMatches.length > 0) {
+                        this.matches = newMatches;
+                        this.sortMatches();
+                        try {
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                        } catch (e) {}
+                    }
                 }
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
@@ -619,31 +610,26 @@
         },
 
         /**
-         * Normalize a match object from PPV.st API
-         * Attaches primary embed + all authentic substreams + backup HD feed
-         * Excludes viewer numbers and random emojis
+         * Normalize a stream item from official PPV.st Streams API
+         * Ensures 100% authentic poster thumbnails, zero Unsplash duplicates,
+         * accurate timestamps, and clean server embeds.
          */
-        normalizePPVMatch(raw) {
-            const title = raw.title || 'Live Match';
-            const catKey = (raw.category || '').toLowerCase();
-            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[raw.league ? raw.league.toLowerCase() : ''] || 'OTHERS';
-
-            const startTime = typeof raw.date === 'number' ? raw.date : (new Date(raw.date).getTime() || Date.now());
-            const endTime = startTime + 10800000;
+        normalizePPVStreamItem(s, catName, is247Cat) {
+            const startTs = (s.starts_at || 0) * 1000;
+            const endTs = (s.ends_at || 0) * 1000 || (startTs ? startTs + 10800000 : 0);
             const now = Date.now();
-            const isLive = raw.status === 'live' || (startTime <= now && now <= endTime);
+            const isAlwaysLive = Boolean(s.always_live || is247Cat || s.tag === '24/7 channel' || s.tag === '24/7 streams' || !startTs);
+            const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
 
-            const team1Name = (raw.teams && raw.teams.home && raw.teams.home.name) || title.split(/ vs\.? | @ /)[0] || title;
-            const team2Name = (raw.teams && raw.teams.away && raw.teams.away.name) || title.split(/ vs\.? | @ /)[1] || '';
+            const title = s.name || 'Live Event';
+            const catKey = (catName || '').toLowerCase();
+            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[s.tag ? s.tag.toLowerCase() : ''] || (catName ? catName.toUpperCase() : 'OTHERS');
 
-            const team1Badge = (raw.teams && raw.teams.home && raw.teams.home.badge) ? raw.teams.home.badge : '';
-            const team2Badge = (raw.teams && raw.teams.away && raw.teams.away.badge) ? raw.teams.away.badge : '';
-
-            const poster = raw.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
+            const team1Name = title.split(/ vs\.? | @ /)[0] || title;
+            const team2Name = title.split(/ vs\.? | @ /)[1] || '';
 
             const servers = [];
             const seenUrls = new Set();
-
             const addServer = (name, url, isHd = true) => {
                 if (!url || seenUrls.has(url)) return;
                 seenUrls.add(url);
@@ -655,18 +641,18 @@
                 });
             };
 
-            // 1. Primary Embed URL
-            if (raw.embedUrl) {
-                addServer('Server 1 [Main HD 1080p]', raw.embedUrl);
+            // 1. Primary Embed from PPV
+            if (s.iframe) {
+                addServer('Server 1 [Main HD 1080p]', s.iframe);
             }
 
-            // 2. Substreams from official PPV feed (e.g. F1 Apple TV, Sky F1, DAZN, ESPN2)
-            if (Array.isArray(raw.substreams)) {
-                raw.substreams.forEach((sub) => {
-                    const subUrl = sub.iframe || sub.embedUrl || sub.url;
+            // 2. Substreams from official PPV feed
+            if (Array.isArray(s.substreams)) {
+                s.substreams.forEach(sub => {
+                    const subUrl = sub.url || sub.iframe || sub.embedUrl;
                     if (subUrl) {
                         const srvIndex = servers.length + 1;
-                        let label = sub.name || '';
+                        let label = sub.source || sub.name || '';
                         if (sub.locale && !label.toLowerCase().includes(sub.locale.toLowerCase())) {
                             label += ` [${sub.locale.toUpperCase()}]`;
                         }
@@ -676,34 +662,53 @@
                 });
             }
 
-            // 3. Fallback backup feed so every match has at least 2 servers
-            if (servers.length === 1 && raw.embedUrl) {
-                const backupUrl = raw.embedUrl + (raw.embedUrl.includes('?') ? '&backup=1' : '?backup=1');
+            // 3. Fallback backup feed
+            if (servers.length === 1 && s.iframe) {
+                const backupUrl = s.iframe + (s.iframe.includes('?') ? '&backup=1' : '?backup=1');
                 addServer('Server 2 [Backup HD Feed]', backupUrl);
             } else if (servers.length === 0) {
-                const streamId = (raw.sources && raw.sources[0] && raw.sources[0].id) || raw.id;
-                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${streamId}`);
-                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${streamId}?backup=1`);
+                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
+                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
             }
 
             return {
-                id: raw.id,
-                rawId: raw.id,
+                id: `ppv-${s.id}`,
+                rawId: s.id,
                 source: 'ppv',
                 title: title,
                 sport: sport,
-                league: (raw.league || raw.category || 'Live Sports').toUpperCase(),
-                startTime: startTime,
-                endTime: endTime,
+                league: (s.tag || catName || 'Sports').toUpperCase(),
+                rawLeague: s.tag || '',
+                category: catName,
+                startTime: startTs,
+                endTime: endTs,
                 isLive: isLive,
-                status: isLive ? 'live' : 'upcoming',
-                poster: poster,
-                team1: { name: team1Name, logo: team1Badge },
-                team2: { name: team2Name || '', logo: team2Badge },
-                rawCategory: (raw.category || '').toLowerCase(),
+                always_live: isAlwaysLive ? 1 : 0,
+                isAlwaysLive: isAlwaysLive,
+                tag: s.tag || '',
+                status: isLive ? 'live' : (isAlwaysLive ? 'live_tv' : 'upcoming'),
+                poster: s.poster || '',
+                colors: s.colors || [],
+                team1: { name: team1Name, logo: '' },
+                team2: { name: team2Name, logo: '' },
+                rawCategory: catKey,
                 servers: servers,
                 sources: servers
             };
+        },
+
+        normalizePPVMatch(raw) {
+            return this.normalizePPVStreamItem({
+                id: raw.id,
+                name: raw.title,
+                tag: raw.league,
+                poster: raw.poster,
+                starts_at: typeof raw.date === 'number' ? Math.floor(raw.date / 1000) : (Math.floor(new Date(raw.date).getTime() / 1000) || 0),
+                ends_at: 0,
+                always_live: raw.always_live || 0,
+                iframe: raw.embedUrl,
+                substreams: raw.substreams
+            }, raw.category || 'Sports', Boolean(raw.always_live));
         },
 
         normalizeDamiMatch(raw) {
@@ -712,19 +717,26 @@
 
         sortMatches() {
             this.matches.sort((a, b) => {
+                const aLive = a.isLive && !this.isExcludedFromLiveNow(a);
+                const bLive = b.isLive && !this.isExcludedFromLiveNow(b);
                 // Live matches always on top
-                if (a.isLive && !b.isLive) return -1;
-                if (!a.isLive && b.isLive) return 1;
+                if (aLive && !bLive) return -1;
+                if (!aLive && bLive) return 1;
                 // Then chronological by start time
-                return a.startTime - b.startTime;
+                return (a.startTime || 0) - (b.startTime || 0);
             });
         },
 
         updateLiveStatuses() {
             const now = Date.now();
             this.matches.forEach(m => {
-                m.isLive = m.startTime <= now && now <= m.endTime;
-                m.status = m.isLive ? 'live' : 'upcoming';
+                if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams' || !m.startTime) {
+                    m.isLive = false;
+                    m.status = 'live_tv';
+                } else {
+                    m.isLive = m.startTime <= now && now <= m.endTime;
+                    m.status = m.isLive ? 'live' : 'upcoming';
+                }
             });
             this.sortMatches();
         },
@@ -784,6 +796,10 @@
 
         isExcludedFromLiveNow(m) {
             if (!m) return true;
+            if (m.isAlwaysLive || m.always_live === 1) return true;
+            if (m.tag === '24/7 channel' || m.tag === '24/7 streams') return true;
+            if (!m.startTime || m.startTime <= 0) return true;
+
             const t = (m.title || '').toLowerCase();
             const l = (m.league || '').toLowerCase();
             const s = (m.sport || '').toLowerCase();
@@ -839,8 +855,8 @@
                 m.title.toLowerCase().includes(q) ||
                 m.league.toLowerCase().includes(q) ||
                 m.sport.toLowerCase().includes(q) ||
-                m.team1.name.toLowerCase().includes(q) ||
-                m.team2.name.toLowerCase().includes(q)
+                (m.team1 && m.team1.name && m.team1.name.toLowerCase().includes(q)) ||
+                (m.team2 && m.team2.name && m.team2.name.toLowerCase().includes(q))
             );
         },
 
@@ -855,18 +871,19 @@
 
         getMatchesGroupedByCategory() {
             const categoryOrder = [
-                'AMERICAN FOOTBALL',
-                'ARM WRESTLING',
-                'AUSTRALIAN FOOTBALL',
-                'BASEBALL',
-                'COMBAT SPORTS',
-                'CRICKET',
                 'FOOTBALL',
+                'CRICKET',
+                'AMERICAN FOOTBALL',
+                'COMBAT SPORTS',
                 'MOTORSPORTS',
-                'RUGBY',
-                'TENNIS',
-                'WRESTLING',
+                'BASEBALL',
                 'BASKETBALL',
+                'TENNIS',
+                'DARTS',
+                'AUSTRALIAN FOOTBALL',
+                'RUGBY',
+                'ARM WRESTLING',
+                'WRESTLING',
                 'HOCKEY',
                 'PARAMOUNT+',
                 'OTHERS'
@@ -874,6 +891,9 @@
 
             const grouped = {};
             this.matches.forEach(m => {
+                // Strictly exclude 24/7 linear channels from scheduled sport match categories
+                if (m.isAlwaysLive || m.tag === '24/7 channel' || m.tag === '24/7 streams') return;
+
                 const sport = m.sport || 'OTHERS';
                 if (!grouped[sport]) grouped[sport] = [];
                 grouped[sport].push(m);
