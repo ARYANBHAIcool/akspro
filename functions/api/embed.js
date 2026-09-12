@@ -52,14 +52,37 @@ export async function onRequest(context) {
 
         let html = await upstreamResponse.text();
 
-        // Inject <base href="..."> so relative fonts, images, or assets load cleanly from upstream origin
-        if (!html.includes('<base ') && html.includes('<head>')) {
-            html = html.replace('<head>', `<head>\n    <base href="${parsedTarget.origin}/">`);
-        }
-
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
+    // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
+    var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
+    var origFetch = window.fetch;
+    window.fetch = function(input, init) {
+        try {
+            var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
+            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+                var proxied = nitroBase + encodeURIComponent(urlStr);
+                if (typeof input === 'string') {
+                    input = proxied;
+                } else if (input && input.url) {
+                    input = new Request(proxied, input);
+                }
+            }
+        } catch (e) {}
+        return origFetch.apply(this, arguments);
+    };
+
+    var origOpen = XMLHttpRequest.prototype.open;
+    XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+        try {
+            if (typeof url === 'string' && !url.startsWith(nitroBase) && (url.includes('aiv-cdn.net') || url.includes('cenc.mpd') || url.includes('pv-cdn.net') || (url.includes('.mpd') && !url.includes('akamaized')))) {
+                url = nitroBase + encodeURIComponent(url);
+            }
+        } catch (e) {}
+        return origOpen.call(this, method, url, async, user, pass);
+    };
+
     // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
     try {
         window.localStorage.getItem('_test');
