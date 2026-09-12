@@ -200,11 +200,16 @@
                 this.loadChannelsCatalog()
             ]);
 
-            await this.loadStreamCornerAlphaFeeds();
-
+            // Render PPV matches and channels immediately without waiting for background Alpha resolution
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
+
+            // Enrich fixtures with StreamCorner Alpha sources asynchronously in the background
+            this.loadStreamCornerAlphaFeeds().then(() => {
+                this.sortMatches();
+                this.emitUpdate();
+            }).catch(e => console.warn('Alpha background sync:', e));
 
             // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {

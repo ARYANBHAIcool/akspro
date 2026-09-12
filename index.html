@@ -356,6 +356,19 @@
 
             // Start countdown interval to update match times every second
             setInterval(updateCountdowns, 1000);
+
+            // Immediate render if API data is already populated in memory
+            if (window.AryanGlobalAPI && window.AryanGlobalAPI.getAllMatches().length > 0) {
+                const statusEl = document.getElementById('api-status-text');
+                const liveCount = window.AryanGlobalAPI.getLiveMatches().length;
+                const totalCount = window.AryanGlobalAPI.getAllMatches().length;
+                if (statusEl) statusEl.innerText = `${liveCount} Live Matches (${totalCount} Total)`;
+                const navLive = document.getElementById('nav-live-count');
+                if (navLive) navLive.innerText = `LIVE (${liveCount})`;
+                renderMatchesGrid();
+                renderChannelsView();
+                populateMultiviewerDropdowns();
+            }
         });
 
         let previousView = 'home';
@@ -582,6 +595,27 @@
                     </div>
                 `;
             });
+
+            if (html === '') {
+                if (window.AryanGlobalAPI && window.AryanGlobalAPI.isLoading) {
+                    grid.innerHTML = `
+                        <div class="py-16 text-center space-y-3">
+                            <div class="w-12 h-12 border-4 border-green-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                            <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">Loading live matches & categories...</p>
+                        </div>
+                    `;
+                } else {
+                    grid.innerHTML = `
+                        <div class="py-16 text-center space-y-4 bg-[#0c1322] rounded-2xl border border-gray-800">
+                            <p class="text-sm font-semibold text-gray-300">No scheduled fixtures available at the moment.</p>
+                            <button onclick="window.AryanGlobalAPI.init()" class="px-4 py-2 bg-green-500 hover:bg-green-400 text-black font-bold text-xs uppercase tracking-wider rounded-xl transition-colors">
+                                Refresh Matches
+                            </button>
+                        </div>
+                    `;
+                }
+                return;
+            }
 
             grid.innerHTML = html;
         }
