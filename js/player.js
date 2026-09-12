@@ -88,16 +88,18 @@ window.AryanPlayerEngine = {
         const currentServer = servers[this.activeServerIdx] || servers[0];
         if (!currentServer || !currentServer.url) return;
 
-        if (currentServer.url.includes('/para?page=') || currentServer.url.includes('sportsembed') || currentServer.url.includes('player=')) {
-            let base = currentServer.url.replace(/&player=[^&]*/g, '');
-            if (engine !== 'direct') {
-                base += `&player=${engine}`;
-            }
-            currentServer.url = base;
-            this.reloadPlayer();
-        } else {
-            this.reloadPlayer();
+        let url = currentServer.url;
+        // Strip any existing player parameter
+        url = url.replace(/([?&])player=[^&]*/g, '');
+        url = url.replace(/[?&]$/, '');
+
+        // If an engine is specified and not 'direct', append it
+        if (engine && engine !== 'direct') {
+            const sep = url.includes('?') ? '&' : '?';
+            url = `${url}${sep}player=${engine}`;
         }
+        currentServer.url = url;
+        this.reloadPlayer();
     },
 
     toggleTheater() {

@@ -98,29 +98,8 @@
         },
 
         integrateIntoGlobalCatalog() {
-            if (!window.AryanGlobalAPI || !Array.isArray(this.scheduleData)) return;
-
-            this.scheduleData.forEach(cat => {
-                const events = Array.isArray(cat.events) ? cat.events : [];
-                events.forEach(ev => {
-                    const normalized = this.normalizeEvent(ev, cat.category);
-                    const existing = window.AryanGlobalAPI.matches.find(m => m.id === normalized.id);
-                    if (!existing) {
-                        window.AryanGlobalAPI.matches.push(normalized);
-                    } else {
-                        existing.isLive = normalized.isLive;
-                        existing.status = normalized.status;
-                        existing.servers = normalized.servers;
-                    }
-                });
-            });
-
-            if (typeof window.AryanGlobalAPI.sortMatches === 'function') {
-                window.AryanGlobalAPI.sortMatches();
-            }
-            if (typeof window.AryanGlobalAPI.emitUpdate === 'function') {
-                window.AryanGlobalAPI.emitUpdate();
-            }
+            // Paramount matches stay exclusively in the PRMTV section to keep the main PPV catalog pure and uncluttered
+            return;
         },
 
         normalizeEvent(ev, categoryName) {

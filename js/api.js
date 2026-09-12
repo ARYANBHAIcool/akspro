@@ -88,8 +88,7 @@
             this.emitUpdate();
 
             await Promise.allSettled([
-                this.loadFutbolXFeeds(),
-                this.loadDamiTVFeeds(),
+                this.loadPPVFeeds(),
                 this.loadChannelsCatalog()
             ]);
 
@@ -97,13 +96,10 @@
             this.sortMatches();
             this.emitUpdate();
 
-            // Auto-refresh match feeds & statuses every 60 seconds
+            // Auto-refresh PPV match feeds & statuses every 60 seconds
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
-                    await Promise.allSettled([
-                        this.loadFutbolXFeeds(),
-                        this.loadDamiTVFeeds()
-                    ]);
+                    await this.loadPPVFeeds();
                     this.updateLiveStatuses();
                     this.emitUpdate();
                 }, 60000);
@@ -123,110 +119,56 @@
         },
 
         /**
-         * Fetch all categories and matches from Futbol-X API
+         * Fetch all matches directly from official PPV API
+         * Deduplicates strictly by raw.id to eliminate duplicate matches
          */
-        async loadFutbolXFeeds() {
+        async loadPPVFeeds() {
             try {
-                const streamMeta = await fetch(`${FUTBOLX_API_BASE}/stream`, { signal: AbortSignal.timeout(6000) })
-                    .then(r => r.ok ? r.json() : null)
-                    .catch(() => null);
-
-                const categories = streamMeta && Array.isArray(streamMeta.categories)
-                    ? streamMeta.categories
-                    : ['football', 'tennis', 'basketball', 'fights', 'motorsports', 'americanfootball', 'nhl', 'baseball', 'rugby', 'golf', 'others', 'wrestling', 'darts'];
-
-                const categoryPromises = categories.map(async (cat) => {
-                    try {
-                        const res = await fetch(`${FUTBOLX_API_BASE}/${cat}.json`, { signal: AbortSignal.timeout(6000) });
-                        if (!res.ok) return [];
-                        const data = await res.json();
-                        if (!data || !data.success || !Array.isArray(data.streams)) return [];
-
-                        const events = [];
-                        data.streams.forEach(item => {
-                            if (item && typeof item === 'object' && Array.isArray(item.streams)) {
-                                item.streams.forEach(subItem => {
-                                    events.push(this.normalizeFutbolXMatch(subItem, cat, item.category));
-                                });
-                            } else if (item && typeof item === 'object') {
-                                events.push(this.normalizeFutbolXMatch(item, cat));
-                            }
-                        });
-                        return events;
-                    } catch (e) {
-                        return [];
-                    }
-                });
-
-                const results = await Promise.all(categoryPromises);
-                const allFutbolXMatches = results.flat().filter(Boolean);
-
-                // Add non-duplicate matches to master catalog
-                allFutbolXMatches.forEach(fxMatch => {
-                    const existingIndex = this.matches.findIndex(m => m.id === fxMatch.id || (m.title.toLowerCase() === fxMatch.title.toLowerCase() && Math.abs(m.startTime - fxMatch.startTime) < 3600000));
-                    if (existingIndex >= 0) {
-                        // Merge stream servers into existing match
-                        const existing = this.matches[existingIndex];
-                        fxMatch.servers.forEach(srv => {
-                            if (!existing.servers.some(s => s.url === srv.url)) {
-                                existing.servers.push(srv);
-                            }
-                        });
-                    } else {
-                        this.matches.push(fxMatch);
-                    }
-                });
-            } catch (err) {
-                console.warn('Futbol-X load failed:', err);
-            }
-        },
-
-        /**
-         * Fetch live and today schedule from DamiTV / PPV.st APIs
-         */
-        async loadDamiTVFeeds() {
-            try {
-                // Try today matches and live matches
                 const endpoints = [
                     `${DAMITV_API_BASE}/papi/matches/all-today`,
                     `${DAMITV_API_BASE}/papi/matches/live`
                 ];
 
-                const fetches = endpoints.map(url =>
-                    fetch(url, {
-                        signal: AbortSignal.timeout(5000),
-                        headers: { 'Accept': 'application/json' }
-                    })
-                    .then(r => r.ok ? r.json() : [])
-                    .catch(() => [])
-                );
+                const fetches = endpoints.map(async (url) => {
+                    try {
+                        const res = await fetch(url, {
+                            signal: AbortSignal.timeout(6000),
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (res.ok) return await res.json();
+                    } catch (e) {
+                        try {
+                            const directUrl = url.replace('/api/damitv', 'https://damitv.st');
+                            const res2 = await fetch(directUrl, {
+                                signal: AbortSignal.timeout(6000),
+                                headers: { 'Accept': 'application/json' }
+                            });
+                            if (res2.ok) return await res2.json();
+                        } catch (e2) {}
+                    }
+                    return [];
+                });
 
                 const [todayMatches, liveMatches] = await Promise.all(fetches);
-                const rawList = [...(Array.isArray(todayMatches) ? todayMatches : []), ...(Array.isArray(liveMatches) ? liveMatches : [])];
+                const rawList = [
+                    ...(Array.isArray(liveMatches) ? liveMatches : []),
+                    ...(Array.isArray(todayMatches) ? todayMatches : [])
+                ];
 
-                rawList.forEach(raw => {
-                    if (!raw || !raw.id || !raw.title) return;
-                    const normalized = this.normalizeDamiMatch(raw);
-                    const existingIndex = this.matches.findIndex(m => m.id === normalized.id || (m.title.toLowerCase() === normalized.title.toLowerCase() && Math.abs(m.startTime - normalized.startTime) < 3600000));
-                    if (existingIndex >= 0) {
-                        const existing = this.matches[existingIndex];
-                        // Merge any missing servers
-                        normalized.servers.forEach(srv => {
-                            if (!existing.servers.some(s => s.url === srv.url)) {
-                                existing.servers.push(srv);
-                            }
-                        });
-                        // Prefer high-res badge if present
-                        if (normalized.team1 && normalized.team1.logo && existing.team1 && !existing.team1.logo) existing.team1.logo = normalized.team1.logo;
-                        if (normalized.team2 && normalized.team2.logo && existing.team2 && !existing.team2.logo) existing.team2.logo = normalized.team2.logo;
-                        if (normalized.viewers) existing.viewers = normalized.viewers;
-                        if (normalized.poster && (!existing.poster || existing.poster.includes('unsplash'))) existing.poster = normalized.poster;
-                    } else {
-                        this.matches.push(normalized);
-                    }
-                });
+                const seenIds = new Set();
+                const uniqueMatches = [];
+
+                for (const raw of rawList) {
+                    if (!raw || !raw.id || !raw.title) continue;
+                    if (seenIds.has(raw.id)) continue;
+                    seenIds.add(raw.id);
+                    uniqueMatches.push(this.normalizePPVMatch(raw));
+                }
+
+                this.matches = uniqueMatches;
+                this.sortMatches();
             } catch (err) {
-                console.warn('DamiTV load failed:', err);
+                console.warn('PPV feeds load failed:', err);
             }
         },
 
@@ -320,106 +262,11 @@
         },
 
         /**
-         * Normalize a match object from Futbol-X API
+         * Normalize a match object from PPV.st API
+         * Attaches primary embed + all authentic substreams + backup HD feed
+         * Excludes viewer numbers and random emojis
          */
-        normalizeFutbolXMatch(item, rawCat, subCategoryName) {
-            const title = item.name || item.title || 'Live Match';
-            const uriName = item.uri_name || item.uri || item.slug || item.id || '';
-            const tag = item.tag || subCategoryName || rawCat || 'Live';
-            const sport = SPORT_MAPPINGS[rawCat.toLowerCase()] || SPORT_MAPPINGS[(item.category || '').toLowerCase()] || 'OTHERS';
-
-            // Parse start timestamp
-            let startTime = 0;
-            if (item.starts_at) {
-                const s = String(item.starts_at);
-                startTime = new Date(s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s) ? s : s + '+03:00').getTime();
-            }
-            if (!startTime || isNaN(startTime)) {
-                startTime = Date.now();
-            }
-
-            let endTime = startTime + 10800000; // 3 hours default duration
-            if (item.ends_at) {
-                const e = String(item.ends_at);
-                const parsedEnd = new Date(e.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(e) ? e : e + '+03:00').getTime();
-                if (!isNaN(parsedEnd)) endTime = parsedEnd;
-            }
-
-            const now = Date.now();
-            const isAlwaysLive = item.always_live === 1 || item.always_live === '1' || item.always_live === true;
-            const isLive = isAlwaysLive || (startTime <= now && now <= endTime);
-
-            // Parse teams
-            const teamParts = title.includes(' vs. ') ? title.split(' vs. ') : title.includes(' vs ') ? title.split(' vs ') : title.includes(' @ ') ? title.split(' @ ') : [title, ''];
-            const team1Name = (teamParts[0] || title).trim();
-            const team2Name = (teamParts[1] || '').trim();
-
-            const poster = item.poster && item.poster.trim() !== ''
-                ? item.poster
-                : (DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT']);
-
-            // Parse attached stream feeds
-            const rawStreams = Array.isArray(item.streams) ? item.streams : [];
-            const servers = [];
-
-            rawStreams.forEach((s, idx) => {
-                const url = typeof s === 'string' ? s : (s.url || '');
-                if (url) {
-                    const isM3U8 = url.includes('.m3u8');
-                    const serverTitle = (typeof s === 'object' && s.title) ? s.title : `Server ${idx + 1}`;
-                    servers.push({
-                        name: `${serverTitle} ${isM3U8 ? '[HLS 60FPS]' : '[HD]'}`,
-                        url: url,
-                        type: isM3U8 ? 'video' : 'iframe',
-                        hd: true
-                    });
-                }
-            });
-
-            // If no stream URL was present yet (upcoming game or placeholder), attach primary player servers
-            if (servers.length === 0) {
-                servers.push({
-                    name: `Server 1 [Main Player]`,
-                    url: `https://embedindia.st/embed/${rawCat}/${uriName || encodeURIComponent(title)}`,
-                    type: 'iframe',
-                    hd: true
-                });
-                servers.push({
-                    name: `Server 2 [Direct Web Feed]`,
-                    url: `https://www.futbol-x.xyz/live/${uriName}`,
-                    type: 'iframe',
-                    hd: true
-                });
-            }
-
-            return {
-                id: `fx-${uriName || Math.random().toString(36).substring(2, 9)}`,
-                source: 'futbolx',
-                title: title,
-                sport: sport,
-                league: tag.toUpperCase(),
-                startTime: startTime,
-                endTime: endTime,
-                isLive: isLive,
-                status: isLive ? 'live' : 'upcoming',
-                poster: poster,
-                team1: {
-                    name: team1Name,
-                    logo: ''
-                },
-                team2: {
-                    name: team2Name || '',
-                    logo: ''
-                },
-                servers: servers,
-                sources: servers
-            };
-        },
-
-        /**
-         * Normalize a match object from DamiTV / PPV API
-         */
-        normalizeDamiMatch(raw) {
+        normalizePPVMatch(raw) {
             const title = raw.title || 'Live Match';
             const catKey = (raw.category || '').toLowerCase();
             const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[raw.league ? raw.league.toLowerCase() : ''] || 'OTHERS';
@@ -438,41 +285,54 @@
             const poster = raw.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
 
             const servers = [];
-            if (raw.embedUrl) {
+            const seenUrls = new Set();
+
+            const addServer = (name, url, isHd = true) => {
+                if (!url || seenUrls.has(url)) return;
+                seenUrls.add(url);
                 servers.push({
-                    name: 'Server 1 [Main Feed HD]',
-                    url: raw.embedUrl,
-                    type: 'iframe',
-                    hd: true
+                    name: name,
+                    url: url,
+                    type: url.includes('.m3u8') ? 'video' : 'iframe',
+                    hd: isHd
                 });
+            };
+
+            // 1. Primary Embed URL
+            if (raw.embedUrl) {
+                addServer('Server 1 [Main HD 1080p]', raw.embedUrl);
             }
 
-            // Attached substreams or alternate feeds
+            // 2. Substreams from official PPV feed (e.g. F1 Apple TV, Sky F1, DAZN, ESPN2)
             if (Array.isArray(raw.substreams)) {
-                raw.substreams.forEach((sub, i) => {
-                    if (sub.embedUrl || sub.url) {
-                        servers.push({
-                            name: `Server ${servers.length + 1} [${sub.language || sub.title || 'Alt ' + (i + 1)}]`,
-                            url: sub.embedUrl || sub.url,
-                            type: (sub.embedUrl || sub.url).includes('.m3u8') ? 'video' : 'iframe',
-                            hd: true
-                        });
+                raw.substreams.forEach((sub) => {
+                    const subUrl = sub.iframe || sub.embedUrl || sub.url;
+                    if (subUrl) {
+                        const srvIndex = servers.length + 1;
+                        let label = sub.name || '';
+                        if (sub.locale && !label.toLowerCase().includes(sub.locale.toLowerCase())) {
+                            label += ` [${sub.locale.toUpperCase()}]`;
+                        }
+                        const finalName = label ? `Server ${srvIndex} [${label}]` : `Server ${srvIndex} [HD]`;
+                        addServer(finalName, subUrl);
                     }
                 });
             }
 
-            if (servers.length === 0) {
-                servers.push({
-                    name: 'Server 1 [HD Stream]',
-                    url: `https://embedindia.st/embed/${raw.id}`,
-                    type: 'iframe',
-                    hd: true
-                });
+            // 3. Fallback backup feed so every match has at least 2 servers
+            if (servers.length === 1 && raw.embedUrl) {
+                const backupUrl = raw.embedUrl + (raw.embedUrl.includes('?') ? '&backup=1' : '?backup=1');
+                addServer('Server 2 [Backup HD Feed]', backupUrl);
+            } else if (servers.length === 0) {
+                const streamId = (raw.sources && raw.sources[0] && raw.sources[0].id) || raw.id;
+                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${streamId}`);
+                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${streamId}?backup=1`);
             }
 
             return {
-                id: `dami-${raw.id}`,
-                source: 'damitv',
+                id: raw.id,
+                rawId: raw.id,
+                source: 'ppv',
                 title: title,
                 sport: sport,
                 league: (raw.league || raw.category || 'Live Sports').toUpperCase(),
@@ -482,12 +342,15 @@
                 status: isLive ? 'live' : 'upcoming',
                 poster: poster,
                 team1: { name: team1Name, logo: team1Badge },
-                team2: { name: team2Name || 'Opponent', logo: team2Badge },
-                viewers: raw.viewers || 0,
+                team2: { name: team2Name || '', logo: team2Badge },
                 rawCategory: (raw.category || '').toLowerCase(),
                 servers: servers,
                 sources: servers
             };
+        },
+
+        normalizeDamiMatch(raw) {
+            return this.normalizePPVMatch(raw);
         },
 
         sortMatches() {
@@ -510,7 +373,10 @@
         },
 
         getItemById(id) {
-            return this.matches.find(m => m.id === id) || this.channels.find(c => c.id === id) || null;
+            if (!id) return null;
+            return this.matches.find(m => m.id === id || m.rawId === id || ('ppv-' + m.rawId) === id || ('dami-' + m.rawId) === id)
+                || this.channels.find(c => c.id === id)
+                || null;
         },
 
         formatTime(ts) {
