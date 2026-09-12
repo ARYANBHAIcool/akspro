@@ -49,7 +49,6 @@ export async function onRequest(context) {
                 popular: Boolean(item.popular),
                 status: item.status || 'upcoming',
                 category: rawCat,
-                tvChannels: Array.isArray(item.tvChannels) ? item.tvChannels : [],
                 substreams: Array.isArray(item.substreams) ? item.substreams : []
             });
         }

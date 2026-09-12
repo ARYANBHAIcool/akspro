@@ -84,9 +84,11 @@ window.AryanPlayerEngine = {
                 } else {
                     parsed.searchParams.delete('player');
                 }
-                return `/api/embed?url=${encodeURIComponent(parsed.toString())}`;
+                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
+                return `/api/embed?url=${encodeURIComponent(parsed.toString())}${playerParam}`;
             } catch (e) {
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}${playerParam}`;
             }
         }
 
