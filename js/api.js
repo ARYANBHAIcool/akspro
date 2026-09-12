@@ -27,13 +27,20 @@
         'american-football': 'AMERICAN FOOTBALL',
         'nfl': 'AMERICAN FOOTBALL',
         'cfb': 'AMERICAN FOOTBALL',
+        'arm-wrestling': 'ARM WRESTLING',
+        'armwrestling': 'ARM WRESTLING',
+        'afl': 'AUSTRALIAN FOOTBALL',
+        'australian-football': 'AUSTRALIAN FOOTBALL',
         'baseball': 'BASEBALL',
         'mlb': 'BASEBALL',
-        'fights': 'FIGHTING',
-        'fight': 'FIGHTING',
-        'mma': 'FIGHTING',
-        'ufc': 'FIGHTING',
-        'boxing': 'FIGHTING',
+        'fights': 'COMBAT SPORTS',
+        'fight': 'COMBAT SPORTS',
+        'mma': 'COMBAT SPORTS',
+        'ufc': 'COMBAT SPORTS',
+        'boxing': 'COMBAT SPORTS',
+        'combat-sports': 'COMBAT SPORTS',
+        'combatsports': 'COMBAT SPORTS',
+        'fighting': 'COMBAT SPORTS',
         'motorsports': 'MOTORSPORTS',
         'motor-sports': 'MOTORSPORTS',
         'f1': 'MOTORSPORTS',
@@ -210,8 +217,10 @@
                             }
                         });
                         // Prefer high-res badge if present
-                        if (normalized.teams.team1.logo && !existing.teams.team1.logo) existing.teams.team1.logo = normalized.teams.team1.logo;
-                        if (normalized.teams.team2.logo && !existing.teams.team2.logo) existing.teams.team2.logo = normalized.teams.team2.logo;
+                        if (normalized.team1 && normalized.team1.logo && existing.team1 && !existing.team1.logo) existing.team1.logo = normalized.team1.logo;
+                        if (normalized.team2 && normalized.team2.logo && existing.team2 && !existing.team2.logo) existing.team2.logo = normalized.team2.logo;
+                        if (normalized.viewers) existing.viewers = normalized.viewers;
+                        if (normalized.poster && (!existing.poster || existing.poster.includes('unsplash'))) existing.poster = normalized.poster;
                     } else {
                         this.matches.push(normalized);
                     }
@@ -474,6 +483,8 @@
                 poster: poster,
                 team1: { name: team1Name, logo: team1Badge },
                 team2: { name: team2Name || 'Opponent', logo: team2Badge },
+                viewers: raw.viewers || 0,
+                rawCategory: (raw.category || '').toLowerCase(),
                 servers: servers,
                 sources: servers
             };
@@ -586,6 +597,54 @@
                 c.name.toLowerCase().includes(q) ||
                 c.country.toLowerCase().includes(q)
             );
+        },
+
+        getMatchesGroupedByCategory() {
+            const categoryOrder = [
+                'AMERICAN FOOTBALL',
+                'ARM WRESTLING',
+                'AUSTRALIAN FOOTBALL',
+                'BASEBALL',
+                'COMBAT SPORTS',
+                'CRICKET',
+                'FOOTBALL',
+                'MOTORSPORTS',
+                'RUGBY',
+                'TENNIS',
+                'WRESTLING',
+                'BASKETBALL',
+                'HOCKEY',
+                'PARAMOUNT+',
+                'OTHERS'
+            ];
+
+            const grouped = {};
+            this.matches.forEach(m => {
+                const sport = m.sport || 'OTHERS';
+                if (!grouped[sport]) grouped[sport] = [];
+                grouped[sport].push(m);
+            });
+
+            const result = [];
+            categoryOrder.forEach(cat => {
+                if (grouped[cat] && grouped[cat].length > 0) {
+                    result.push({
+                        category: cat,
+                        matches: grouped[cat]
+                    });
+                }
+            });
+
+            Object.keys(grouped).forEach(cat => {
+                if (!categoryOrder.includes(cat) && grouped[cat].length > 0) {
+                    result.push({
+                        category: cat,
+                        matches: grouped[cat]
+                    });
+                }
+            });
+
+            return result;
         }
     };
 
