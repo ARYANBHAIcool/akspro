@@ -30,13 +30,22 @@
         scheduleData: [],
         currentFilter: 'All',
         currentSlideIdx: 0,
-        carouselInterval: null,
+        refreshInterval: null,
         listeners: [],
 
         async init() {
             this.isLoading = true;
             this.emitUpdate();
 
+            await this.refresh();
+
+            this.isLoading = false;
+            this.emitUpdate();
+            this.startHeroTimer();
+            this.startAutoRefresh(60000);
+        },
+
+        async refresh() {
             const worker = getRandomWorker();
             try {
                 if (window.StreamCornerCore && typeof window.StreamCornerCore.t === 'function') {
@@ -50,17 +59,20 @@
                     }
                     if (schedule.status === 'fulfilled' && Array.isArray(schedule.value)) {
                         this.scheduleData = schedule.value;
-                        // Also inject Paramount live matches into AryanGlobalAPI master catalog!
                         this.integrateIntoGlobalCatalog();
                     }
                 }
             } catch (err) {
-                console.warn('Paramount API error:', err);
+                console.warn('Paramount auto-refresh error:', err);
             }
-
-            this.isLoading = false;
             this.emitUpdate();
-            this.startHeroTimer();
+        },
+
+        startAutoRefresh(intervalMs = 60000) {
+            if (this.refreshInterval) clearInterval(this.refreshInterval);
+            this.refreshInterval = setInterval(() => {
+                this.refresh();
+            }, intervalMs);
         },
 
         onUpdate(fn) {
@@ -92,9 +104,13 @@
                 const events = Array.isArray(cat.events) ? cat.events : [];
                 events.forEach(ev => {
                     const normalized = this.normalizeEvent(ev, cat.category);
-                    const exists = window.AryanGlobalAPI.matches.some(m => m.id === normalized.id);
-                    if (!exists) {
+                    const existing = window.AryanGlobalAPI.matches.find(m => m.id === normalized.id);
+                    if (!existing) {
                         window.AryanGlobalAPI.matches.push(normalized);
+                    } else {
+                        existing.isLive = normalized.isLive;
+                        existing.status = normalized.status;
+                        existing.servers = normalized.servers;
                     }
                 });
             });
@@ -246,6 +262,12 @@
         renderPrmtvView() {
             const container = document.getElementById('view-prmtv');
             if (!container) return;
+
+            const existingSchedule = document.getElementById('prmtv-schedule-container');
+            if (existingSchedule && container.children.length > 2) {
+                this.renderSchedule();
+                return;
+            }
 
             const slides = this.heroData?.hero?.slides || [];
             const firstSlide = slides[0] || {

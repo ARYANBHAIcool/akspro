@@ -90,9 +90,13 @@
             this.sortMatches();
             this.emitUpdate();
 
-            // Auto-refresh match statuses every 60 seconds
+            // Auto-refresh match feeds & statuses every 60 seconds
             if (!this.refreshInterval) {
-                this.refreshInterval = setInterval(() => {
+                this.refreshInterval = setInterval(async () => {
+                    await Promise.allSettled([
+                        this.loadFutbolXFeeds(),
+                        this.loadDamiTVFeeds()
+                    ]);
                     this.updateLiveStatuses();
                     this.emitUpdate();
                 }, 60000);
