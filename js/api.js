@@ -76,13 +76,6 @@
         listeners: [],
         refreshInterval: null,
 
-        providers: [
-            { name: "Paramount+", logo: "https://m.media-amazon.com/images/G/01/digital/video/Linear_Clean_Slate/ParamountPlus_White_1920x1080._SL500_FMpng_.png", bg: "bg-blue-600" },
-            { name: "Peacock", logo: "https://m.media-amazon.com/images/G/01/digital/video/Linear_Clean_Slate/Peacock_White_1920x1080._SL500_FMpng_.png", bg: "bg-zinc-800" },
-            { name: "Sky Go", logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/sky-sports-main-event-uk.png", bg: "bg-white" },
-            { name: "Sling TV", logo: "https://m.media-amazon.com/images/G/01/digital/video/Linear_Clean_Slate/Sling_White_1920x1080._SL500_FMpng_.png", bg: "bg-sky-600" }
-        ],
-
         async init() {
             this.isLoading = true;
             this.emitUpdate();
@@ -425,8 +418,39 @@
             return this.matches;
         },
 
+        isExcludedFromLiveNow(m) {
+            if (!m) return true;
+            const t = (m.title || '').toLowerCase();
+            const l = (m.league || '').toLowerCase();
+            const s = (m.sport || '').toLowerCase();
+            const c = (m.rawCategory || '').toLowerCase();
+
+            // Exclude Golf ("gold")
+            if (s === 'golf' || c === 'golf' || t.includes('golf') || l.includes('golf')) {
+                return true;
+            }
+
+            // Exclude 24/7 streams / network loops
+            if (s === '24/7 streams' || c === '24/7-streams' || t.includes('24/7') || l.includes('24/7')) {
+                return true;
+            }
+
+            // Exclude Red Zone / Multi-feed channels
+            if (t.includes('red zone') || t.includes('redzone') || l.includes('red zone') || l.includes('redzone') || t.includes('multi feed') || t.includes('multifeed')) {
+                return true;
+            }
+
+            // Exclude 24/7 linear sports network channels from live match showcase
+            const linearChannels = ['nfl network', 'fox footy', 'fox cricket', 'fox league', 'willow', 'rally tv'];
+            if (linearChannels.some(ch => t === ch || t.startsWith(ch + ' '))) {
+                return true;
+            }
+
+            return false;
+        },
+
         getLiveMatches() {
-            return this.matches.filter(m => m.isLive);
+            return this.matches.filter(m => m.isLive && !this.isExcludedFromLiveNow(m));
         },
 
         getUpcomingMatches() {
