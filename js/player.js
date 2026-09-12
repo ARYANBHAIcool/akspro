@@ -293,8 +293,7 @@ window.AryanPlayerEngine = {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
             const finalIframeUrl = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
-            const sandboxAttr = 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
-            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" ${sandboxAttr} class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
+            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
         }
 
         html += `</div>`;
