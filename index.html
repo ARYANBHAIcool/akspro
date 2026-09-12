@@ -725,6 +725,11 @@
                 previousView = currentView;
             }
             currentWatchItem = item;
+            if (window.history && window.history.pushState) {
+                try {
+                    window.history.pushState({ view: 'watch', id: id }, '', '#watch-' + encodeURIComponent(id));
+                } catch (e) {}
+            }
             switchView('watch');
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -749,8 +754,28 @@
             if (window.AryanPlayerEngine) {
                 window.AryanPlayerEngine.destroy();
             }
+            currentWatchItem = null;
+            if (window.location.hash && window.location.hash.startsWith('#watch-')) {
+                if (window.history && window.history.replaceState) {
+                    try {
+                        window.history.replaceState(null, '', window.location.pathname + window.location.search);
+                    } catch (e) {}
+                }
+            }
+            if (searchQuery) {
+                clearSearch();
+            }
             switchView(previousView || 'home');
+            if ((previousView || 'home') === 'home') {
+                renderMatchesGrid();
+            }
         }
+
+        window.addEventListener('popstate', () => {
+            if (currentView === 'watch') {
+                goBackFromWatch();
+            }
+        });
 
         let isWatchTheater = false;
         function toggleWatchTheater() {

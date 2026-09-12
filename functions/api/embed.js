@@ -22,20 +22,13 @@ export async function onRequest(context) {
     try {
         const parsedTarget = new URL(targetUrl);
 
-        // Sync requested player parameter to upstream target
+        // Sync requested player parameter to upstream target if specified
         const reqEngine = requestUrl.searchParams.get('player');
         if (reqEngine) {
             if (reqEngine === 'bitmovin') {
                 parsedTarget.searchParams.delete('player');
             } else {
                 parsedTarget.searchParams.set('player', reqEngine);
-            }
-        }
-
-        // Forward any extra query parameters
-        for (const [key, value] of requestUrl.searchParams.entries()) {
-            if (key !== 'url' && key !== 'player' && !parsedTarget.searchParams.has(key)) {
-                parsedTarget.searchParams.set(key, value);
             }
         }
 
@@ -64,28 +57,30 @@ export async function onRequest(context) {
             html = html.replace('<head>', `<head>\n    <base href="${parsedTarget.origin}/">`);
         }
 
-        // Inject in-memory storage polyfills, player engine search sync, audio unmuting, and loading overlay dismiss
+        // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
-    var mem = {};
-    var fakeStorage = {
-        getItem: function(k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
-        setItem: function(k, v) { mem[k] = String(v); },
-        removeItem: function(k) { delete mem[k]; },
-        clear: function() { for (var k in mem) delete mem[k]; }
-    };
+    // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
     try {
-        Object.defineProperty(window, 'localStorage', { value: fakeStorage, writable: true, configurable: true });
-        Object.defineProperty(window, 'sessionStorage', { value: fakeStorage, writable: true, configurable: true });
-        Object.defineProperty(document, 'cookie', { get: function() { return ''; }, set: function() {}, configurable: true });
-    } catch (e) {}
+        window.localStorage.getItem('_test');
+    } catch (e) {
+        var mem = {};
+        var fakeStorage = {
+            getItem: function(k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
+            setItem: function(k, v) { mem[k] = String(v); },
+            removeItem: function(k) { delete mem[k]; },
+            clear: function() { for (var k in mem) delete mem[k]; }
+        };
+        try {
+            Object.defineProperty(window, 'localStorage', { value: fakeStorage, writable: true, configurable: true });
+            Object.defineProperty(window, 'sessionStorage', { value: fakeStorage, writable: true, configurable: true });
+        } catch (e2) {}
+    }
 
     try {
         var targetSearch = '${parsedTarget.search || ""}';
         if (targetSearch) {
             window.history.replaceState(null, '', targetSearch);
-        } else if (window.location.search && window.location.search.indexOf('url=') !== -1) {
-            window.history.replaceState(null, '', '');
         }
     } catch (e) {}
 

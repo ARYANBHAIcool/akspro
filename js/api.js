@@ -35,13 +35,7 @@
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            try {
-                const parsed = new URL(rawUrl);
-                const search = parsed.search ? parsed.search.replace(/^\?/, '') + '&' : '';
-                return `/api/embed?${search}url=${encodeURIComponent(rawUrl)}`;
-            } catch (e) {
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
-            }
+            return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
         }
         return rawUrl;
     }
@@ -192,8 +186,25 @@
         _preFetching: false,
 
         async init() {
-            this.isLoading = true;
-            this.emitUpdate();
+            const CACHE_KEY = 'aryan_cached_matches_v2';
+            // 1. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
+            try {
+                const cached = localStorage.getItem(CACHE_KEY);
+                if (cached) {
+                    const parsed = JSON.parse(cached);
+                    if (Array.isArray(parsed) && parsed.length > 0) {
+                        this.matches = parsed;
+                        this.isLoading = false;
+                        this.sortMatches();
+                        this.emitUpdate();
+                    }
+                }
+            } catch (e) {}
+
+            if (this.matches.length === 0) {
+                this.isLoading = true;
+                this.emitUpdate();
+            }
 
             await Promise.allSettled([
                 this.loadPPVFeeds(),
@@ -239,6 +250,7 @@
          * Deduplicates strictly by raw.id to eliminate duplicate matches
          */
         async loadPPVFeeds() {
+            const CACHE_KEY = 'aryan_cached_matches_v2';
             try {
                 const endpoints = [
                     `${DAMITV_API_BASE}/papi/matches/all-today`,
@@ -248,7 +260,7 @@
                 const fetches = endpoints.map(async (url) => {
                     try {
                         const res = await fetch(url, {
-                            signal: AbortSignal.timeout(6000),
+                            signal: AbortSignal.timeout(12000),
                             headers: { 'Accept': 'application/json' }
                         });
                         if (res.ok) return await res.json();
@@ -256,7 +268,7 @@
                         try {
                             const directUrl = url.replace('/api/damitv', 'https://damitv.st');
                             const res2 = await fetch(directUrl, {
-                                signal: AbortSignal.timeout(6000),
+                                signal: AbortSignal.timeout(12000),
                                 headers: { 'Accept': 'application/json' }
                             });
                             if (res2.ok) return await res2.json();
@@ -302,6 +314,9 @@
                 if (newPpvMatches.length > 0) {
                     this.matches = newPpvMatches;
                     this.sortMatches();
+                    try {
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 150)));
+                    } catch (e) {}
                 }
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
@@ -474,25 +489,18 @@
 
                             // 3. Deduplicate against seen URLs
                             if (seenUrls.has(rawUrl)) return;
-                            let pathnameOnly = '';
-                            try {
-                                const u = new URL(rawUrl, 'https://dummy.local');
-                                pathnameOnly = u.origin + u.pathname;
-                                if (seenUrls.has(pathnameOnly)) return;
-                            } catch (e) {}
+                            seenUrls.add(rawUrl);
 
                             const isDirectHls = rawUrl.includes('.m3u8');
                             const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
                             if (seenUrls.has(srvUrl)) return;
-
-                            seenUrls.add(rawUrl);
-                            if (pathnameOnly) seenUrls.add(pathnameOnly);
                             seenUrls.add(srvUrl);
 
                             const srvIndex = match.servers.length + newServers.length + 1;
                             newServers.push({
                                 name: `Server ${srvIndex} [${label}]`,
                                 url: srvUrl,
+                                rawUrl: rawUrl,
                                 type: isDirectHls ? 'video' : 'iframe',
                                 hd: true
                             });
