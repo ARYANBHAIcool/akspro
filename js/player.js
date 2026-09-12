@@ -49,55 +49,47 @@ window.AryanPlayerEngine = {
 
     currentPlayerEngine: 'bitmovin',
 
-    getProxiedUrl(rawUrl) {
+    getProxiedUrl(serverOrUrl, engineOverride) {
+        if (!serverOrUrl) return '';
+
+        const engine = engineOverride || this.currentPlayerEngine || 'bitmovin';
+        let rawUrl = '';
+
+        if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
+            rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';
+        } else {
+            rawUrl = String(serverOrUrl);
+        }
+
         if (!rawUrl) return '';
+        if (rawUrl.includes('.m3u8')) return rawUrl;
 
-        const engine = this.currentPlayerEngine || 'bitmovin';
-
-        // Check if rawUrl is already proxied via /api/embed
-        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) {
+        // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
+        if (rawUrl.includes('/api/embed')) {
             try {
-                const parsed = new URL(rawUrl, window.location.origin);
-                const target = parsed.searchParams.get('url');
+                const u = new URL(rawUrl, window.location.origin);
+                const target = u.searchParams.get('url');
                 if (target) {
-                    const parsedTarget = new URL(target);
-                    if (engine && engine !== 'bitmovin') {
-                        parsedTarget.searchParams.set('player', engine);
-                        parsed.searchParams.set('player', engine);
-                    } else {
-                        parsedTarget.searchParams.delete('player');
-                        parsed.searchParams.delete('player');
-                    }
-                    parsed.searchParams.set('url', parsedTarget.toString());
-                    return parsed.pathname + parsed.search;
-                } else {
-                    if (engine && engine !== 'bitmovin') {
-                        parsed.searchParams.set('player', engine);
-                    } else {
-                        parsed.searchParams.delete('player');
-                    }
-                    return parsed.pathname + parsed.search;
+                    rawUrl = target;
                 }
-            } catch (e) {
-                return rawUrl;
-            }
+            } catch (e) {}
         }
 
         // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
             try {
-                const parsedTarget = new URL(rawUrl);
+                const parsed = new URL(rawUrl);
                 if (engine && engine !== 'bitmovin') {
-                    parsedTarget.searchParams.set('player', engine);
+                    parsed.searchParams.set('player', engine);
                 } else {
-                    parsedTarget.searchParams.delete('player');
+                    parsed.searchParams.delete('player');
                 }
-                const playerParam = (engine && engine !== 'bitmovin') ? `player=${encodeURIComponent(engine)}&` : '';
-                return `/api/embed?${playerParam}url=${encodeURIComponent(parsedTarget.toString())}`;
+                return `/api/embed?url=${encodeURIComponent(parsed.toString())}`;
             } catch (e) {
                 return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
             }
         }
+
         return rawUrl;
     },
 
@@ -138,8 +130,8 @@ window.AryanPlayerEngine = {
         this.currentPlayerEngine = engine || 'bitmovin';
         const servers = this.getServers();
         const currentServer = servers[this.activeServerIdx] || servers[0];
-        if (currentServer && currentServer.url) {
-            currentServer.url = this.getProxiedUrl(currentServer.url);
+        if (currentServer) {
+            currentServer.url = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
         }
         this.reloadPlayer();
 
@@ -300,7 +292,7 @@ window.AryanPlayerEngine = {
         if (isHls) {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
-            const finalIframeUrl = this.getProxiedUrl(currentServer.url);
+            const finalIframeUrl = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
             const sandboxAttr = 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
             html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" ${sandboxAttr} class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
         }
