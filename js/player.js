@@ -49,6 +49,23 @@ window.AryanPlayerEngine = {
 
     currentPlayerEngine: 'bitmovin',
 
+    getProxiedUrl(rawUrl) {
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
+
+        // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            try {
+                const parsed = new URL(rawUrl);
+                const search = parsed.search ? parsed.search.replace(/^\?/, '') + '&' : '';
+                return `/api/embed?${search}url=${encodeURIComponent(rawUrl)}`;
+            } catch (e) {
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+            }
+        }
+        return rawUrl;
+    },
+
     switchServer(idx) {
         const servers = this.getServers();
         if (idx < 0 || idx >= servers.length) return;
@@ -254,7 +271,8 @@ window.AryanPlayerEngine = {
         if (isHls) {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
-            html += `<iframe id="global-iframe-element" src="${currentServer.url}" class="w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="no-referrer"></iframe>`;
+            const finalIframeUrl = this.getProxiedUrl(currentServer.url);
+            html += `<iframe id="global-iframe-element" src="${finalIframeUrl}" class="w-full h-full border-0" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture; fullscreen" referrerpolicy="no-referrer"></iframe>`;
         }
 
         html += `</div>`;
