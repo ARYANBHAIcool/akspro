@@ -425,57 +425,6 @@
             }
         },
 
-        /**
-         * Normalize a standalone StreamCorner Alpha event
-         */
-        normalizeAlphaMatch(alpha) {
-            if (!alpha || !alpha.stream_id) return null;
-            const title = alpha.event_name || 'Live Sports';
-            const catKey = (alpha.category || '').toLowerCase().trim();
-            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[(alpha.league || '').toLowerCase().trim()] || 'OTHERS';
-
-            const startTime = alpha.timestamp ? (alpha.timestamp * 1000) : Date.now();
-            const endTime = startTime + 10800000;
-            const now = Date.now();
-            const isLive = startTime <= now && now <= endTime;
-
-            const homeTeam = alpha.home_team || title.split(/ vs\.? | @ /)[0] || title;
-            const awayTeam = alpha.away_team || title.split(/ vs\.? | @ /)[1] || '';
-
-            const poster = alpha.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
-            const scEmbedUrl = toProxiedEmbedUrl(`https://sportsembed.su.getsugatensho.sbs/stream?id=${alpha.stream_id}`);
-
-            const servers = [
-                {
-                    name: 'Server 1 [StreamCorner HD]',
-                    url: scEmbedUrl,
-                    type: 'iframe',
-                    hd: true
-                }
-            ];
-
-            return {
-                id: `alpha-${alpha.stream_id}`,
-                rawId: alpha.stream_id,
-                alphaStreamId: alpha.stream_id,
-                alphaItem: alpha,
-                _alphaResolved: false,
-                source: 'streamcorner',
-                title: title,
-                sport: sport,
-                league: (alpha.league || alpha.category || 'Live Sports').toUpperCase(),
-                startTime: startTime,
-                endTime: endTime,
-                isLive: isLive,
-                status: isLive ? 'live' : 'upcoming',
-                poster: poster,
-                team1: { name: homeTeam, logo: alpha.home_team_logo || '' },
-                team2: { name: awayTeam, logo: alpha.away_team_logo || '' },
-                rawCategory: catKey,
-                servers: servers,
-                sources: servers
-            };
-        },
 
         /**
          * Resolve extra broadcast channels for a match from StreamCorner Alpha
