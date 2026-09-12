@@ -252,8 +252,9 @@
                 // Priority 1: High-speed Cloudflare proxy /api/ppv (bypasses all ISP blocks)
                 const candidateEndpoints = [
                     '/api/ppv',
+                    '/api/damitv/papi/matches/all-today',
                     'https://api.ppv.st/api/streams',
-                    `${DAMITV_API_BASE}/papi/matches/all-today`
+                    'https://damitv.st/papi/matches/all-today'
                 ];
 
                 for (const endpoint of candidateEndpoints) {
@@ -264,7 +265,7 @@
                         });
                         if (res.ok) {
                             const json = await res.json();
-                            if (json && Array.isArray(json.streams)) {
+                            if (json && json.success !== false && Array.isArray(json.streams)) {
                                 categories = json.streams;
                                 break;
                             } else if (Array.isArray(json) && json.length > 0) {
@@ -626,8 +627,9 @@
             const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
 
             const title = (s.name || s.title || 'Live Event').trim();
-            const catKey = (catName || '').toLowerCase();
-            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
+            const rawCat = (s.category || catName || '').toLowerCase().replace(/[\s_]+/g, '-');
+            const catKey = (catName || '').toLowerCase().replace(/[\s_]+/g, '-');
+            const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
 
             const team1Name = title.split(/ vs\.? | @ /)[0] || title;
             const team2Name = title.split(/ vs\.? | @ /)[1] || '';
@@ -667,7 +669,18 @@
                 });
             }
 
-            // 3. Fallback backup feed
+            // 3. Official broadcast TV Channels from PPV/Dami feed (e.g. Willow Cricket, Sky Sports, Astro, SuperSport)
+            if (Array.isArray(s.tvChannels)) {
+                s.tvChannels.forEach(ch => {
+                    if (!ch || !ch.id) return;
+                    const chName = (ch.name || 'Broadcast Feed').trim();
+                    const chUrl = `https://embedindia.st/embed/${ch.id}`;
+                    const srvIndex = servers.length + 1;
+                    addServer(`Server ${srvIndex} [${chName}]`, chUrl);
+                });
+            }
+
+            // 4. Fallback backup feed
             if (servers.length === 1 && mainEmbed) {
                 const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
                 addServer('Server 2 [Backup HD Feed]', backupUrl);
