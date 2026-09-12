@@ -734,9 +734,9 @@
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // If this match has StreamCorner Alpha sources that haven't been resolved yet, resolve them now
-            if (window.AryanGlobalAPI && item.alphaStreamId && !item._alphaResolved) {
-                window.AryanGlobalAPI.resolveAlphaSourcesForMatch(item).then((resolved) => {
+            // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
+            if (window.AryanGlobalAPI && !item._alphaResolved) {
+                window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
                     if (resolved && currentWatchItem && currentWatchItem.id === item.id) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
@@ -974,7 +974,7 @@
             if (!container) return;
             const servers = (item.servers && item.servers.length) ? item.servers : [item];
 
-            container.innerHTML = servers.map((srv, idx) => {
+            const serversHtml = servers.map((srv, idx) => {
                 const isActive = idx === activeIdx;
                 const srvName = srv.name || `Server ${idx + 1}`;
 
@@ -1022,6 +1022,21 @@
                     </div>
                 `;
             }).join('');
+
+            const showSearching = !item._alphaResolved && item.id && !item.id.startsWith('dlhd-') && !item.id.startsWith('ch-') && !item.id.startsWith('prm-');
+            const searchingHtml = showSearching ? `
+                <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-[#0b1220]/60 border border-dashed border-gray-800/80 text-xs text-gray-400 select-none">
+                    <div class="flex items-center gap-2.5">
+                        <span class="relative flex h-2 w-2">
+                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+                        </span>
+                        <span class="text-[11px] font-medium text-gray-400">Searching additional broadcast feeds...</span>
+                    </div>
+                </div>
+            ` : '';
+
+            container.innerHTML = serversHtml + searchingHtml;
         }
 
         function switchWatchServer(idx) {

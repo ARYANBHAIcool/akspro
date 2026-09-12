@@ -184,6 +184,7 @@
         listeners: [],
         refreshInterval: null,
         _preFetching: false,
+        _alphaLoadingPromise: null,
 
         async init() {
             const CACHE_KEY = 'aryan_cached_matches_v2';
@@ -206,6 +207,9 @@
                 this.emitUpdate();
             }
 
+            // Immediately launch Alpha feed aggregation in parallel with PPV feeds and catalog
+            this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+
             await Promise.allSettled([
                 this.loadPPVFeeds(),
                 this.loadChannelsCatalog()
@@ -216,8 +220,8 @@
             this.sortMatches();
             this.emitUpdate();
 
-            // Enrich fixtures with StreamCorner Alpha sources asynchronously in the background
-            this.loadStreamCornerAlphaFeeds().then(() => {
+            // Enrich fixtures with StreamCorner Alpha sources asynchronously as soon as Alpha finishes
+            this._alphaLoadingPromise.then(() => {
                 this.sortMatches();
                 this.emitUpdate();
             }).catch(e => console.warn('Alpha background sync:', e));
@@ -226,7 +230,8 @@
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
                     await this.loadPPVFeeds();
-                    await this.loadStreamCornerAlphaFeeds();
+                    this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+                    await this._alphaLoadingPromise;
                     this.updateLiveStatuses();
                     this.emitUpdate();
                 }, 60000);
@@ -306,7 +311,15 @@
                         norm.alphaItem = existing.alphaItem;
                         newPpvMatches.push(norm);
                     } else {
-                        newPpvMatches.push(this.normalizePPVMatch(raw));
+                        const norm = this.normalizePPVMatch(raw);
+                        if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
+                            if (matchedAlpha) {
+                                norm.alphaStreamId = matchedAlpha.stream_id;
+                                norm.alphaItem = matchedAlpha;
+                            }
+                        }
+                        newPpvMatches.push(norm);
                     }
                 }
 
@@ -438,6 +451,25 @@
                     }
                 }
 
+                // If user is already in watch view, immediately resolve extra channels and update sources UI!
+                if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
+                    const matchedAlpha = currentWatchItem.alphaStreamId
+                        ? this.alphaCatalog.find(a => a.stream_id === currentWatchItem.alphaStreamId)
+                        : this.alphaCatalog.find(a => isSameMatch(currentWatchItem, a));
+                    if (matchedAlpha) {
+                        currentWatchItem.alphaStreamId = matchedAlpha.stream_id;
+                        currentWatchItem.alphaItem = matchedAlpha;
+                        this.resolveAlphaSourcesForMatch(currentWatchItem).then((resolved) => {
+                            if (resolved && typeof currentWatchItem !== 'undefined' && currentWatchItem) {
+                                const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                                if (typeof renderWatchSources === 'function') {
+                                    renderWatchSources(currentWatchItem, activeIdx);
+                                }
+                            }
+                        });
+                    }
+                }
+
                 // Alpha feeds solely enrich matching PPV fixtures with extra broadcast channels
                 this.preFetchLiveAlphaSources();
             } catch (err) {
@@ -445,6 +477,37 @@
             }
         },
 
+        /**
+         * Ensure extra broadcast channels are paired and resolved for a match
+         * Handles cases where Alpha catalog is still loading or match has not yet paired.
+         */
+        async ensureAlphaSourcesForMatch(match) {
+            if (!match) return false;
+            if (match._alphaResolved) return true;
+
+            // 1. If Alpha feeds are currently loading in background, await completion
+            if (this._alphaLoadingPromise) {
+                try {
+                    await this._alphaLoadingPromise;
+                } catch (e) {}
+            }
+
+            // 2. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
+            if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
+                if (matchedAlpha) {
+                    match.alphaStreamId = matchedAlpha.stream_id;
+                    match.alphaItem = matchedAlpha;
+                }
+            }
+
+            // 3. If alphaStreamId is present, resolve and return
+            if (match.alphaStreamId) {
+                return await this.resolveAlphaSourcesForMatch(match);
+            }
+
+            return false;
+        },
 
         /**
          * Resolve extra broadcast channels for a match from StreamCorner Alpha
@@ -509,6 +572,11 @@
                         if (newServers.length > 0) {
                             match.servers = [...match.servers, ...newServers];
                             match.sources = match.servers;
+                            // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
+                            try {
+                                const CACHE_KEY = 'aryan_cached_matches_v2';
+                                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 150)));
+                            } catch (e) {}
                         }
                     }
 
