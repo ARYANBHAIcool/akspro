@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AryanStreams Global Shaka Player</title>
+    <!-- Shaka Player CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.3.5/shaka-player.compiled.js"></script>
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #000;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-center: center;
+        }
+        video {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        #error-overlay {
+            position: absolute;
+            color: #ef4444;
+            font-family: ui-sans-serif, system-ui, sans-serif;
+            font-weight: bold;
+            font-size: 14px;
+            display: none;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+    <video id="video" autoplay controls playsinline></video>
+    <div id="error-overlay">Stream error loading DASH source.</div>
+
+    <script>
+        async function initPlayer() {
+            shaka.polyfill.installAll();
+            if (!shaka.Player.isBrowserSupported()) {
+                console.error('Browser not supported for Shaka Player');
+                return;
+            }
+
+            const video = document.getElementById('video');
+            const player = new shaka.Player(video);
+
+            const params = new URLSearchParams(window.location.search);
+            const mpd = params.get('mpd');
+            const kid = params.get('kid');
+            const key = params.get('key');
+
+            if (kid && key) {
+                const clearKeys = {};
+                clearKeys[kid] = key;
+                player.configure({
+                    drm: { clearKeys: clearKeys }
+                });
+            }
+
+            try {
+                await player.load(mpd);
+                console.log('Shaka Player loaded MPD successfully!');
+            } catch (e) {
+                console.error('Shaka Player error:', e);
+                document.getElementById('error-overlay').style.display = 'block';
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPlayer);
+    </script>
+</body>
+</html>

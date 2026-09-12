@@ -1,0 +1,9 @@
+{
+  "name": "aryanstreams-global",
+  "version": "1.0.0",
+  "description": "AryanStreams Global - Standalone Live Sports & StreamCorner Multi-Server Streaming Web App",
+  "private": true,
+  "scripts": {
+    "deploy": "wrangler pages deploy . --project-name=aryanstreams-global"
+  }
+}
