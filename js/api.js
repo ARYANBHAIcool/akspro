@@ -197,12 +197,12 @@
                 this.emitUpdate();
             }
 
-            // Immediately launch Alpha feed aggregation and PPV feeds in parallel
+            // 1. Launch Alpha feed aggregation in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
+            // 2. Load PPV feeds and channels in parallel
             await Promise.allSettled([
                 this.loadPPVFeeds(),
-                this._alphaLoadingPromise,
                 this.loadChannelsCatalog()
             ]);
 
@@ -210,8 +210,10 @@
             this.sortMatches();
             this.emitUpdate();
 
-            // Pre-fetch live StreamCorner Alpha sources in background so clicking has 0ms delay
-            this.preFetchLiveAlphaSources();
+            // When Alpha finishes in background, pair fixtures and pre-fetch live Alpha sources
+            this._alphaLoadingPromise.then(() => {
+                this.preFetchLiveAlphaSources();
+            }).catch(() => {});
 
             // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {
@@ -238,43 +240,41 @@
         },
 
         /**
-         * Fetch all matches directly from official PPV.st Streams API
-         * Guarantees 100% genuine authentic posters, zero duplicate stock photos,
-         * and exact alignment with ppv.st categories and matches.
+         * Fetch all matches directly from official PPV.st Streams API via /api/ppv proxy
+         * Bypasses local ISP blocking on mobile and PC, guarantees 100% genuine authentic posters,
+         * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
             const CACHE_KEY = 'aryan_cached_matches_v3';
             try {
                 let categories = null;
 
-                // 1. Direct fetch from official PPV Streams API
-                try {
-                    const res = await fetch('https://api.ppv.st/api/streams', {
-                        signal: AbortSignal.timeout(8000),
-                        headers: { 'Accept': 'application/json' }
-                    });
-                    if (res.ok) {
-                        const json = await res.json();
-                        if (json && Array.isArray(json.streams)) {
-                            categories = json.streams;
-                        }
-                    }
-                } catch (e) {
-                    console.warn('Direct api.ppv.st fetch failed, trying proxy fallback:', e);
-                }
+                // Priority 1: High-speed Cloudflare proxy /api/ppv (bypasses all ISP blocks)
+                const candidateEndpoints = [
+                    '/api/ppv',
+                    'https://api.ppv.st/api/streams',
+                    `${DAMITV_API_BASE}/papi/matches/all-today`
+                ];
 
-                // 2. Fallback to damitv if api.ppv.st is unreachable
-                if (!categories) {
+                for (const endpoint of candidateEndpoints) {
                     try {
-                        const fallbackUrl = `${DAMITV_API_BASE}/papi/matches/all-today`;
-                        const res = await fetch(fallbackUrl, { signal: AbortSignal.timeout(6000) });
+                        const res = await fetch(endpoint, {
+                            signal: AbortSignal.timeout(6000),
+                            headers: { 'Accept': 'application/json' }
+                        });
                         if (res.ok) {
-                            const rawList = await res.json();
-                            if (Array.isArray(rawList)) {
-                                categories = [{ category: 'Live Sports', streams: rawList }];
+                            const json = await res.json();
+                            if (json && Array.isArray(json.streams)) {
+                                categories = json.streams;
+                                break;
+                            } else if (Array.isArray(json) && json.length > 0) {
+                                categories = [{ category: 'Live Sports', streams: json }];
+                                break;
                             }
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        // Try next endpoint
+                    }
                 }
 
                 if (categories && Array.isArray(categories)) {
@@ -287,7 +287,8 @@
                         const streams = Array.isArray(cat.streams) ? cat.streams : [];
 
                         for (const s of streams) {
-                            if (!s || !s.id || !s.name) continue;
+                            const sTitle = (s.name || s.title || '').trim();
+                            if (!s || !s.id || !sTitle) continue;
                             if (seenIds.has(s.id)) continue;
                             seenIds.add(s.id);
 
@@ -316,7 +317,9 @@
 
                     if (newMatches.length > 0) {
                         this.matches = newMatches;
+                        this.isLoading = false;
                         this.sortMatches();
+                        this.emitUpdate();
                         try {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
@@ -615,15 +618,16 @@
          * accurate timestamps, and clean server embeds.
          */
         normalizePPVStreamItem(s, catName, is247Cat) {
-            const startTs = (s.starts_at || 0) * 1000;
-            const endTs = (s.ends_at || 0) * 1000 || (startTs ? startTs + 10800000 : 0);
+            const startTs = (s.starts_at ? s.starts_at * 1000 : (s.date ? (typeof s.date === 'number' ? s.date : (new Date(s.date).getTime() || 0)) : 0));
+            const endTs = (s.ends_at ? s.ends_at * 1000 : 0) || (startTs ? startTs + 10800000 : 0);
             const now = Date.now();
-            const isAlwaysLive = Boolean(s.always_live || is247Cat || s.tag === '24/7 channel' || s.tag === '24/7 streams' || !startTs);
+            const tag = (s.tag || s.league || catName || 'Sports').trim();
+            const isAlwaysLive = Boolean(s.always_live || is247Cat || tag.toLowerCase().includes('24/7') || !startTs);
             const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
 
-            const title = s.name || 'Live Event';
+            const title = (s.name || s.title || 'Live Event').trim();
             const catKey = (catName || '').toLowerCase();
-            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[s.tag ? s.tag.toLowerCase() : ''] || (catName ? catName.toUpperCase() : 'OTHERS');
+            const sport = SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
 
             const team1Name = title.split(/ vs\.? | @ /)[0] || title;
             const team2Name = title.split(/ vs\.? | @ /)[1] || '';
@@ -642,8 +646,9 @@
             };
 
             // 1. Primary Embed from PPV
-            if (s.iframe) {
-                addServer('Server 1 [Main HD 1080p]', s.iframe);
+            const mainEmbed = s.iframe || s.embedUrl || s.url || '';
+            if (mainEmbed) {
+                addServer('Server 1 [Main HD 1080p]', mainEmbed);
             }
 
             // 2. Substreams from official PPV feed
@@ -663,8 +668,8 @@
             }
 
             // 3. Fallback backup feed
-            if (servers.length === 1 && s.iframe) {
-                const backupUrl = s.iframe + (s.iframe.includes('?') ? '&backup=1' : '?backup=1');
+            if (servers.length === 1 && mainEmbed) {
+                const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
                 addServer('Server 2 [Backup HD Feed]', backupUrl);
             } else if (servers.length === 0) {
                 addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
@@ -677,17 +682,17 @@
                 source: 'ppv',
                 title: title,
                 sport: sport,
-                league: (s.tag || catName || 'Sports').toUpperCase(),
-                rawLeague: s.tag || '',
+                league: tag.toUpperCase(),
+                rawLeague: tag,
                 category: catName,
                 startTime: startTs,
                 endTime: endTs,
                 isLive: isLive,
                 always_live: isAlwaysLive ? 1 : 0,
                 isAlwaysLive: isAlwaysLive,
-                tag: s.tag || '',
+                tag: tag,
                 status: isLive ? 'live' : (isAlwaysLive ? 'live_tv' : 'upcoming'),
-                poster: s.poster || '',
+                poster: s.poster || s.image || '',
                 colors: s.colors || [],
                 team1: { name: team1Name, logo: '' },
                 team2: { name: team2Name, logo: '' },

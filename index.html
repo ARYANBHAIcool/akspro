@@ -1095,8 +1095,7 @@
                 const finalUrl = (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.getProxiedUrl === 'function')
                     ? window.AryanPlayerEngine.getProxiedUrl(server.url)
                     : server.url;
-                const sandboxAttr = 'sandbox="allow-scripts allow-forms allow-presentation allow-downloads allow-modals allow-popups allow-same-origin"';
-                viewport.innerHTML = `<iframe src="${finalUrl}" ${sandboxAttr} class="w-full h-full border-0 bg-black" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *"></iframe>`;
+                viewport.innerHTML = `<iframe src="${finalUrl}" class="w-full h-full border-0 bg-black" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *"></iframe>`;
             }
         }
     </script>

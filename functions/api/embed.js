@@ -59,6 +59,7 @@ export async function onRequest(context) {
     var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
     var origFetch = window.fetch;
     window.fetch = function(input, init) {
+        var args = Array.prototype.slice.call(arguments);
         try {
             var urlStr = typeof input === 'string' ? input : (input && input.url ? input.url : '');
             if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
@@ -68,19 +69,22 @@ export async function onRequest(context) {
                 } else if (input && input.url) {
                     input = new Request(proxied, input);
                 }
+                args[0] = input;
             }
         } catch (e) {}
-        return origFetch.apply(this, arguments);
+        return origFetch.apply(this, args);
     };
 
     var origOpen = XMLHttpRequest.prototype.open;
     XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
+        var args = Array.prototype.slice.call(arguments);
         try {
             if (typeof url === 'string' && !url.startsWith(nitroBase) && (url.includes('aiv-cdn.net') || url.includes('cenc.mpd') || url.includes('pv-cdn.net') || (url.includes('.mpd') && !url.includes('akamaized')))) {
                 url = nitroBase + encodeURIComponent(url);
+                args[1] = url;
             }
         } catch (e) {}
-        return origOpen.call(this, method, url, async, user, pass);
+        return origOpen.apply(this, args);
     };
 
     // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
