@@ -31,6 +31,21 @@
         return ALPHA_WORKER_NODES[Math.floor(Math.random() * ALPHA_WORKER_NODES.length)];
     }
 
+    function toProxiedEmbedUrl(rawUrl) {
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            try {
+                const parsed = new URL(rawUrl);
+                const search = parsed.search ? parsed.search.replace(/^\?/, '') + '&' : '';
+                return `/api/embed?${search}url=${encodeURIComponent(rawUrl)}`;
+            } catch (e) {
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+            }
+        }
+        return rawUrl;
+    }
+
     const MATCH_STOP_WORDS = new Set([
         'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
         'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day', 'grand', 'prix',
@@ -443,7 +458,7 @@
             const awayTeam = alpha.away_team || title.split(/ vs\.? | @ /)[1] || '';
 
             const poster = alpha.poster || DEFAULT_POSTERS[sport] || DEFAULT_POSTERS['DEFAULT'];
-            const scEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${alpha.stream_id}`;
+            const scEmbedUrl = toProxiedEmbedUrl(`https://sportsembed.su.getsugatensho.sbs/stream?id=${alpha.stream_id}`);
 
             const servers = [
                 {
@@ -497,23 +512,28 @@
                         const newServers = [];
 
                         detail.streams.forEach((s) => {
-                            const srvUrl = s.embed_url || s.stream_url;
-                            if (srvUrl && !seenUrls.has(srvUrl)) {
+                            const rawUrl = s.embed_url || s.stream_url;
+                            if (rawUrl && !seenUrls.has(rawUrl)) {
+                                seenUrls.add(rawUrl);
+                                const isDirectHls = rawUrl.includes('.m3u8');
+                                const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
                                 seenUrls.add(srvUrl);
                                 let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase();
                                 label = label.replace(/\s*-\s*$/, '');
                                 newServers.push({
                                     name: `Server ${match.servers.length + newServers.length + 1} [${label}]`,
                                     url: srvUrl,
-                                    type: srvUrl.includes('.m3u8') ? 'video' : 'iframe',
+                                    type: isDirectHls ? 'video' : 'iframe',
                                     hd: true
                                 });
                             }
                         });
 
                         // Add StreamCorner HD fallback embed
-                        const scEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${match.alphaStreamId}`;
-                        if (!seenUrls.has(scEmbedUrl)) {
+                        const rawScEmbedUrl = `https://sportsembed.su.getsugatensho.sbs/stream?id=${match.alphaStreamId}`;
+                        const scEmbedUrl = toProxiedEmbedUrl(rawScEmbedUrl);
+                        if (!seenUrls.has(rawScEmbedUrl) && !seenUrls.has(scEmbedUrl)) {
+                            seenUrls.add(rawScEmbedUrl);
                             seenUrls.add(scEmbedUrl);
                             newServers.push({
                                 name: `Server ${match.servers.length + newServers.length + 1} [StreamCorner HD]`,

@@ -110,7 +110,8 @@
             const streamUrl = ev.url || `/live-tv/stream/${contentId}`;
             const isLive = Boolean(ev.live_badge_text || ev.liveBadgeText || ev.is_live || String(categoryName).toLowerCase().includes('live'));
 
-            const embedBase = `https://sportsembed.su.getsugatensho.sbs/para?page=${encodeURI(streamUrl)}`;
+            const rawEmbedBase = `https://sportsembed.su.getsugatensho.sbs/para?page=${encodeURI(streamUrl)}`;
+            const embedBase = `/api/embed?page=${encodeURIComponent(streamUrl)}&url=${encodeURIComponent(rawEmbedBase)}`;
 
             const servers = [
                 {
