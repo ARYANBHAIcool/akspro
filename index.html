@@ -195,12 +195,6 @@
                 </div>
             </div>
 
-            <!-- Supported Providers -->
-            <div class="pt-8 border-t border-gray-800/80 space-y-3">
-                <h3 class="text-xs font-black uppercase tracking-widest text-gray-400">Supported Broadcast Providers</h3>
-                <div id="providers-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
-            </div>
-
         </div>
 
         <!-- VIEW 2: 24/7 CHANNELS VIEW -->
@@ -333,8 +327,6 @@
         let channelSearchQuery = '';
 
         document.addEventListener('DOMContentLoaded', () => {
-            renderProviders();
-
             // Hook into API updates
             window.AryanGlobalAPI.onUpdate(() => {
                 const statusEl = document.getElementById('api-status-text');
@@ -689,16 +681,6 @@
                     <button class="w-full py-1.5 bg-[#1b2434] group-hover:bg-green-500 group-hover:text-black text-gray-200 font-extrabold text-[11px] uppercase tracking-wider rounded-xl transition-all border border-gray-700/60 flex items-center justify-center gap-1">
                         ▶ Watch
                     </button>
-                </div>
-            `).join('');
-        }
-
-        function renderProviders() {
-            const grid = document.getElementById('providers-grid');
-            if (!grid) return;
-            grid.innerHTML = window.AryanGlobalAPI.providers.map(p => `
-                <div class="h-20 rounded-2xl ${p.bg} p-3 flex items-center justify-center shadow-lg hover:opacity-90 transition-opacity cursor-pointer border border-white/10">
-                    <img src="${p.logo}" class="max-h-full max-w-full object-contain" alt="${p.name}">
                 </div>
             `).join('');
         }
