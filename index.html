@@ -327,10 +327,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/paramount-core.js?v=3.1"></script>
-    <script src="js/paramount.js?v=3.1"></script>
-    <script src="js/player.js?v=3.1"></script>
-    <script src="js/api.js?v=3.1"></script>
+    <script src="js/paramount-core.js?v=3.2"></script>
+    <script src="js/paramount.js?v=3.2"></script>
+    <script src="js/player.js?v=3.2"></script>
+    <script src="js/api.js?v=3.2"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -773,6 +773,10 @@
                     if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId)) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
+                        if (window.AryanPlayerEngine) {
+                            window.AryanPlayerEngine.currentStream = item;
+                            window.AryanPlayerEngine.switchServer(0);
+                        }
                     }
                 });
             }
@@ -1094,7 +1098,16 @@
         function renderWatchSources(item, activeIdx = 0) {
             const container = document.getElementById('watch-sources-container');
             if (!container) return;
-            const servers = (item.servers && item.servers.length) ? item.servers : [item];
+            const validServers = (item.servers || []).filter(s => s && (s.url || s.embedUrl));
+            if (validServers.length === 0) {
+                container.innerHTML = `
+                    <div class="p-4 rounded-2xl bg-[#0f1726] border border-gray-800 text-center text-xs text-gray-400 font-bold animate-pulse">
+                        Connecting to broadcast channels...
+                    </div>
+                `;
+                return;
+            }
+            const servers = validServers;
 
             const serversHtml = servers.map((srv, idx) => {
                 const isActive = idx === activeIdx;

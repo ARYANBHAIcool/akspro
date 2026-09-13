@@ -17,14 +17,20 @@
         : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
-        'data.gigav.workers.dev',
-        'data.yedmzoa.workers.dev',
-        'data.ngagzipx.workers.dev',
+        'data.kageyoshi001.workers.dev',
+        'data.kuig2.workers.dev',
+        'data.senbon001-2.workers.dev',
+        'data.l0o1afmju0.workers.dev',
         'data.senbon001.workers.dev',
         'data.senbon002.workers.dev',
-        'data.phamviet444.workers.dev',
-        'data.kanghaerin444.workers.dev',
-        'data.minjikim444.workers.dev'
+        'data.senbon003.workers.dev',
+        'data.silentbyte125.workers.dev',
+        'data.stealthwolf798-69b.workers.dev',
+        'data.redjoy256.workers.dev',
+        'data.anonfox144.workers.dev',
+        'data.cripw4lk000.workers.dev',
+        'data.leehyein444.workers.dev',
+        'data.daniellemarsh444.workers.dev'
     ];
 
     function getRandomAlphaWorker() {
@@ -205,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v12';
+            const CACHE_KEY = 'aryan_cached_matches_v13';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -280,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v12';
+            const CACHE_KEY = 'aryan_cached_matches_v13';
             try {
                 let categories = null;
 
@@ -360,6 +366,21 @@
                     }
 
                     if (newMatches.length > 0) {
+                        // Also preserve any independent Alpha fixtures that were added or are in alphaCatalog
+                        if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            for (const alpha of this.alphaCatalog) {
+                                const isMatched = newMatches.some(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
+                                if (!isMatched) {
+                                    const existingIndependent = this.matches.find(m => m.alphaStreamId === alpha.stream_id);
+                                    if (existingIndependent) {
+                                        newMatches.push(existingIndependent);
+                                    } else {
+                                        newMatches.push(this.normalizeAlphaMatch(alpha));
+                                    }
+                                }
+                            }
+                        }
+
                         this.matches = newMatches;
                         this.isLoading = false;
                         this.sortMatches();
@@ -475,8 +496,17 @@
                 return;
             }
             try {
-                const worker = getRandomAlphaWorker();
-                const alphaList = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                let alphaList = null;
+                const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
+                    const worker = candidateWorkers[i];
+                    try {
+                        alphaList = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                        if (Array.isArray(alphaList) && alphaList.length > 0) break;
+                    } catch (e) {
+                        console.warn(`Worker ${worker} failed for alpha catalog:`, e);
+                    }
+                }
                 if (!Array.isArray(alphaList) || alphaList.length === 0) return;
 
                 this.alphaCatalog = alphaList;
@@ -490,6 +520,24 @@
                         matchedPPV.alphaStreamId = alpha.stream_id;
                         matchedPPV.alphaItem = alpha;
                     }
+                }
+
+                // 2. Introduce independent / exclusive StreamCorner Alpha fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
+                let addedIndependent = false;
+                for (const alpha of alphaList) {
+                    if (!matchedAlphaIds.has(alpha.stream_id)) {
+                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}`);
+                        if (!exists) {
+                            const newMatch = this.normalizeAlphaMatch(alpha);
+                            this.matches.push(newMatch);
+                            addedIndependent = true;
+                        }
+                    }
+                }
+
+                if (addedIndependent) {
+                    this.sortMatches();
+                    this.emitUpdate();
                 }
 
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
@@ -555,8 +603,17 @@
 
             match._alphaPromise = (async () => {
                 try {
-                    const worker = getRandomAlphaWorker();
-                    const detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                    let detail = null;
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                    for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
+                        const worker = candidateWorkers[i];
+                        try {
+                            detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                            if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
+                        } catch (err) {
+                            // Worker fallback
+                        }
+                    }
 
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
                         // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out any stray channels
@@ -635,7 +692,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v12';
+                            const CACHE_KEY = 'aryan_cached_matches_v13';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -690,6 +747,53 @@
         // Backward compatibility alias
         async preFetchLiveAlphaSources() {
             return await this.autoResolveAllAlphaSources();
+        },
+
+        /**
+         * Normalize a fixture item from StreamCorner Alpha feeds
+         * For independent fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
+         */
+        normalizeAlphaMatch(alpha) {
+            const rawTitle = (alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || alpha.away_team) || 'Live Event').trim();
+            const startTs = alpha.timestamp ? (alpha.timestamp * 1000) : (alpha.time_utc ? (new Date(alpha.time_utc + ' UTC').getTime() || 0) : 0);
+            const endTs = startTs ? startTs + 10800000 : 0;
+            const now = Date.now();
+            const isLive = startTs > 0 && now >= (startTs - 900000) && now <= endTs;
+
+            const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
+            const league = (alpha.league || alpha.category || 'Sports').trim();
+            const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[league.toLowerCase()] || (alpha.category ? alpha.category.toUpperCase() : 'OTHERS');
+
+            const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ /i)[0] || rawTitle;
+            const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ /i)[1] || '';
+
+            return {
+                id: `alpha-${alpha.stream_id}`,
+                rawId: alpha.stream_id,
+                source: 'streamcorner',
+                title: rawTitle,
+                sport: sport,
+                league: league.toUpperCase(),
+                rawLeague: league,
+                category: alpha.category || 'Sports',
+                startTime: startTs,
+                endTime: endTs,
+                isLive: isLive,
+                always_live: 0,
+                isAlwaysLive: false,
+                tag: league,
+                status: isLive ? 'live' : 'upcoming',
+                poster: alpha.poster || alpha.category_logo || alpha.home_team_logo || 'assets/img/logo-icon.png',
+                colors: [],
+                team1: { name: team1Name, logo: alpha.home_team_logo || '' },
+                team2: { name: team2Name, logo: alpha.away_team_logo || '' },
+                rawCategory: rawCat,
+                servers: [],
+                sources: [],
+                alphaStreamId: alpha.stream_id,
+                alphaItem: alpha,
+                _alphaResolved: false
+            };
         },
 
         /**
