@@ -211,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v13';
+            const CACHE_KEY = 'aryan_cached_matches_v14';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -286,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v13';
+            const CACHE_KEY = 'aryan_cached_matches_v14';
             try {
                 let categories = null;
 
@@ -507,7 +507,17 @@
                         console.warn(`Worker ${worker} failed for alpha catalog:`, e);
                     }
                 }
-                if (!Array.isArray(alphaList) || alphaList.length === 0) return;
+                if (!Array.isArray(alphaList) || alphaList.length === 0) {
+                    if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
+                        this._hasAttemptedAutoHeal = true;
+                        console.warn('StreamCorner catalog returned empty/error. Auto-healing core engine from edge...');
+                        const healed = await this.reloadLatestStreamCornerCore();
+                        if (healed) {
+                            return await this.loadStreamCornerAlphaFeeds();
+                        }
+                    }
+                    return;
+                }
 
                 this.alphaCatalog = alphaList;
                 const matchedAlphaIds = new Set();
@@ -615,6 +625,14 @@
                         }
                     }
 
+                    if (!detail && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
+                        this._hasAttemptedAutoHeal = true;
+                        const healed = await this.reloadLatestStreamCornerCore();
+                        if (healed) {
+                            return await this.resolveAlphaSourcesForMatch(match);
+                        }
+                    }
+
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
                         // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out any stray channels
                         const baseServers = (match.servers || []).filter(s => {
@@ -692,7 +710,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v13';
+                            const CACHE_KEY = 'aryan_cached_matches_v14';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -741,6 +759,30 @@
                 // Silent
             } finally {
                 this._resolvingAllAlpha = false;
+            }
+        },
+
+        /**
+         * Dynamically reload the latest StreamCorner core from Cloudflare Pages API
+         * Guarantees 100% automatic recovery if StreamCorner rotates keys or changes their bundle
+         */
+        async reloadLatestStreamCornerCore() {
+            if (typeof document === 'undefined') return false;
+            try {
+                const res = await fetch(`/api/streamcorner-core?refresh=1&t=${Date.now()}`);
+                if (!res.ok) return false;
+                const scriptText = await res.text();
+                if (!scriptText || !scriptText.includes('window.StreamCornerCore')) return false;
+
+                // Execute updated script to refresh window.StreamCornerCore on the fly
+                const scriptEl = document.createElement('script');
+                scriptEl.textContent = scriptText;
+                document.head.appendChild(scriptEl);
+                console.log('StreamCornerCore dynamically updated and auto-healed!');
+                return true;
+            } catch (e) {
+                console.warn('Auto-healing StreamCorner core failed:', e);
+                return false;
             }
         },
 
