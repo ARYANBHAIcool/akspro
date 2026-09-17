@@ -4,7 +4,7 @@
  * 
  * Automatically probes https://streamcorner.foo/ for the latest bundle,
  * extracts the active crypto decryption routine, patches window.StreamCornerCore,
- * and caches it on the edge (refreshes on demand).
+ * and caches it on the edge.
  */
 
 let memoryCache = {
@@ -28,8 +28,8 @@ export async function onRequest(context) {
     const forceRefresh = url.searchParams.has('refresh') || url.searchParams.has('bust');
     const now = Date.now();
 
-    // Serve from memory cache if fresh (within 2 hours) and refresh not forced
-    if (!forceRefresh && memoryCache.code && (now - memoryCache.timestamp < 7200000)) {
+    // Serve from memory cache if fresh (within 3 hours) and refresh not forced
+    if (!forceRefresh && memoryCache.code && (now - memoryCache.timestamp < 10800000)) {
         return new Response(memoryCache.code, {
             status: 200,
             headers: {
@@ -41,14 +41,13 @@ export async function onRequest(context) {
     }
 
     try {
-        // 1. Fetch streamcorner.foo HTML
         const htmlRes = await fetch('https://streamcorner.foo/', {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
             }
         });
-        if (!htmlRes.ok) throw new Error('StreamCorner HTML fetch returned ' + htmlRes.status);
+        if (!htmlRes.ok) throw new Error('StreamCorner HTML fetch failed: ' + htmlRes.status);
         const html = await htmlRes.text();
 
         const mainScriptMatch = html.match(/src=["'](\/assets\/[^"']+\.js)["']/i);
@@ -59,41 +58,55 @@ export async function onRequest(context) {
         if (!mainRes.ok) throw new Error('Failed to fetch main script: ' + mainScriptUrl);
         const mainCode = await mainRes.text();
 
-        const cryptoRegex = /export\s*\{\s*([a-zA-Z0-9_$]+)\s+as\s+j\s*,\s*([a-zA-Z0-9_$]+)\s+as\s+m\s*,\s*([a-zA-Z0-9_$]+)\s+as\s+q\s*,\s*([a-zA-Z0-9_$]+)\s+as\s+t\s*,\s*([a-zA-Z0-9_$]+)\s+as\s+x\s*\};?/;
+        const candidateUrls = [];
+        const manifestMatch = mainCode.match(/m\.f\s*=\s*\[([^\]]+)\]/);
 
-        let coreCode = null;
-        let m = mainCode.match(cryptoRegex);
-
-        if (m) {
-            coreCode = mainCode;
-        } else {
-            const manifestMatch = mainCode.match(/m\.f\s*=\s*\[([^\]]+)\]/);
-            if (!manifestMatch) throw new Error('Vite manifest not found in main script');
+        if (manifestMatch) {
             const assetFiles = JSON.parse('[' + manifestMatch[1] + ']');
-
-            // Scan manifest asset files for crypto signature
             for (const file of assetFiles) {
-                if (!file.endsWith('.js')) continue;
-                const fileUrl = 'https://streamcorner.foo/' + (file.startsWith('/') ? file.slice(1) : file);
-                try {
-                    const res = await fetch(fileUrl);
-                    if (!res.ok) continue;
-                    const text = await res.text();
-                    const match = text.match(cryptoRegex);
-                    if (match) {
-                        coreCode = text;
-                        m = match;
-                        break;
-                    }
-                } catch (e) {}
+                if (file.endsWith('.js')) {
+                    candidateUrls.push('https://streamcorner.foo/' + (file.startsWith('/') ? file.slice(1) : file));
+                }
             }
+        } else {
+            candidateUrls.push(mainScriptUrl);
         }
 
-        if (!coreCode || !m) throw new Error('Could not locate crypto core in assets');
+        const cryptoRegex = /export\s*\{([^}]*?\b([a-zA-Z0-9_$]+)\s+as\s+j\b[^}]*)\};?/;
+        let found = null;
 
-        const [fullExport, jName, mName, qName, tName, xName] = m;
-        const patch = `window.StreamCornerCore = { j: ${jName}, m: ${mName}, q: ${qName}, t: ${tName}, x: ${xName} };`;
-        const patchedCode = coreCode.replace(fullExport, patch);
+        // Scan candidate chunks in parallel batches of 6
+        for (let i = 0; i < candidateUrls.length; i += 6) {
+            const batch = candidateUrls.slice(i, i + 6);
+            const results = await Promise.all(batch.map(async chunkUrl => {
+                try {
+                    const res = await fetch(chunkUrl);
+                    if (!res.ok) return null;
+                    const text = await res.text();
+                    // Self-contained core is > 100KB and does NOT start with import statements
+                    if (text.length < 100000) return null;
+                    if (text.startsWith('import') || text.slice(0, 100).includes('import')) return null;
+                    const m = text.match(cryptoRegex);
+                    if (m) {
+                        const jVar = m[2];
+                        const tMatch = m[1].match(/\b([a-zA-Z0-9_$]+)\s+as\s+t\b/);
+                        const tVar = tMatch ? tMatch[1] : jVar;
+                        const mMatch = m[1].match(/\b([a-zA-Z0-9_$]+)\s+as\s+m\b/);
+                        const mVar = mMatch ? mMatch[1] : jVar;
+                        return { url: chunkUrl, code: text, fullExport: m[0], jVar, tVar, mVar };
+                    }
+                } catch (e) {}
+                return null;
+            }));
+
+            found = results.find(Boolean);
+            if (found) break;
+        }
+
+        if (!found) throw new Error('Could not locate crypto core chunk in assets');
+
+        const replacement = `window.StreamCornerCore = { j: ${found.jVar}, t: ${found.tVar}, m: ${found.mVar} };`;
+        const patchedCode = found.code.replace(found.fullExport, replacement);
 
         memoryCache = {
             code: patchedCode,
