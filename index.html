@@ -11,6 +11,9 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
 
+    <!-- Adcash Pop-Under Library -->
+    <script id="aclib" type="text/javascript" src="//acscdn.com/script/aclib.js"></script>
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -327,6 +330,7 @@
     </a>
 
     <!-- SCRIPTS -->
+    <script src="js/ads.js?v=1.0"></script>
     <script src="js/paramount-core.js?v=3.4"></script>
     <script src="js/paramount.js?v=3.4"></script>
     <script src="js/player.js?v=3.4"></script>
@@ -739,6 +743,9 @@
         }
 
         function openWatchView(id) {
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                window.AryanAds.trigger('match_card');
+            }
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
                 item = window.AryanParamountAPI.getEventById(id);
@@ -784,10 +791,16 @@
 
         // Backward-compatible alias so existing clicks automatically open the exact StreamCorner match interface
         function openPlayerModal(id) {
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                window.AryanAds.trigger('channel_card');
+            }
             openWatchView(id);
         }
 
         function goBackFromWatch() {
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                window.AryanAds.trigger('back_button');
+            }
             if (window.AryanPlayerEngine) {
                 window.AryanPlayerEngine.destroy();
             }
@@ -1055,7 +1068,7 @@
                             </div>
 
                             <!-- Control Row 2: Reload Player -->
-                            <div onclick="AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
+                            <div onclick="if (window.AryanAds) window.AryanAds.trigger('reload_player'); AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
                                 <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
                                     <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     <span>Reload Player</span>
@@ -1093,6 +1106,9 @@
             renderWatchSources(item, 0);
             window.AryanPlayerEngine.init('watch-player-container', item);
             updatePlayerDropdownUI(window.AryanPlayerEngine ? window.AryanPlayerEngine.currentPlayerEngine : 'bitmovin');
+            if (window.AryanAds && typeof window.AryanAds.attachPlayerOverlay === 'function') {
+                window.AryanAds.attachPlayerOverlay('watch-player-container');
+            }
         }
 
         function renderWatchSources(item, activeIdx = 0) {
@@ -1176,6 +1192,9 @@
 
         function switchWatchServer(idx) {
             if (!currentWatchItem) return;
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                window.AryanAds.trigger('server_button');
+            }
             window.AryanPlayerEngine.switchServer(idx);
             renderWatchSources(currentWatchItem, idx);
         }
