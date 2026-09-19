@@ -211,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
+            const CACHE_KEY = 'aryan_cached_matches_v21';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -286,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
+            const CACHE_KEY = 'aryan_cached_matches_v21';
             try {
                 let categories = null;
 
@@ -731,6 +731,7 @@
                         });
 
                         const newServers = [];
+                        const seenLabels = new Set();
 
                         allStreams.forEach((s) => {
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
@@ -751,7 +752,12 @@
                                 if (/sky\s*sport.*nz|sky\s*nz|sky\s*sport\s*premier|premier\s*league\s*\(en\)|^premier\s*league$|world\s*feed|main\s*feed/i.test(label)) return;
                             }
 
-                            // 4. Deduplicate against seen URLs
+                            // 4. Strictly deduplicate duplicate broadcast channel labels (e.g. don't add FUBO SPORTS twice from multiple providers)
+                            const normLabel = label.replace(/\s+/g, ' ').trim();
+                            if (seenLabels.has(normLabel)) return;
+                            seenLabels.add(normLabel);
+
+                            // 5. Deduplicate against seen URLs
                             if (seenUrls.has(rawUrl)) return;
                             seenUrls.add(rawUrl);
 
@@ -794,7 +800,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v20';
+                            const CACHE_KEY = 'aryan_cached_matches_v21';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
