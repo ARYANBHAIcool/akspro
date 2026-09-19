@@ -58,76 +58,27 @@ export async function onRequest(context) {
 
         let html = await upstreamResponse.text();
 
+        // 1. Neutralize anti-tamper throw in Script 12
+        html = html.replace('if(!qP9EJg){', 'if(false){');
+
+        // 2. Neutralize tamper check in Script 0 that overwrites DOM with 'Unable to play. Browser not supported.'
+        const s0TamperCheck = 'if(typeof xSciKEB(BkoqTo(vqbjfpK[0x131],vqbjfpK[0xb]))[BkoqTo(0x1637,vqbjfpK[0x27])]===JyzORB7(0x163c,vqbjfpK[0x44])){xSciKEB(JyzORB7(0x164c,vqbjfpK[0xb]))[JyzORB7(0x1656,vqbjfpK[0x27])]()';
+        html = html.replace(s0TamperCheck, 'if(false){');
+
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
-    // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
-    var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
-    var origFetch = window.fetch;
-    window.fetch = function(input, init) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof input === 'string') {
-                urlStr = input;
-            } else if (input && input.url) {
-                urlStr = input.url;
-            } else if (input && input.href) {
-                urlStr = input.href;
-            } else if (input) {
-                urlStr = String(input);
-            }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
-                var proxied = nitroBase + encodeURIComponent(urlStr);
-                if (typeof input === 'string') {
-                    input = proxied;
-                } else if (input && input.url) {
-                    input = new Request(proxied, input);
-                } else {
-                    input = proxied;
-                }
-                args[0] = input;
-            }
-        } catch (e) {}
-        return origFetch.apply(this, args);
-    };
-
-    var origOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof url === 'string') {
-                urlStr = url;
-            } else if (url && url.href) {
-                urlStr = url.href;
-            } else if (url) {
-                urlStr = String(url);
-            }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
-                url = nitroBase + encodeURIComponent(urlStr);
-                args[1] = url;
-            }
-        } catch (e) {}
-        return origOpen.apply(this, args);
-    };
-
-    // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
+    // Suppress any stray attempts to write 'Unable to play' error screens
     try {
-        window.localStorage.getItem('_test');
-    } catch (e) {
-        var mem = {};
-        var fakeStorage = {
-            getItem: function(k) { return Object.prototype.hasOwnProperty.call(mem, k) ? mem[k] : null; },
-            setItem: function(k, v) { mem[k] = String(v); },
-            removeItem: function(k) { delete mem[k]; },
-            clear: function() { for (var k in mem) delete mem[k]; }
-        };
-        try {
-            Object.defineProperty(window, 'localStorage', { value: fakeStorage, writable: true, configurable: true });
-            Object.defineProperty(window, 'sessionStorage', { value: fakeStorage, writable: true, configurable: true });
-        } catch (e2) {}
-    }
+        var origSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+        Object.defineProperty(Element.prototype, 'innerHTML', {
+            set: function(val) {
+                if (typeof val === 'string' && val.indexOf('Unable to play') !== -1) return;
+                return origSet.call(this, val);
+            },
+            configurable: true
+        });
+    } catch(e) {}
 
     try {
         var targetSearch = '${parsedTarget.search || ""}';

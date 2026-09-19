@@ -211,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v19';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -286,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v19';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             try {
                 let categories = null;
 
@@ -744,7 +744,14 @@
                             // 2. Strictly drop duplicate ppv / embedindia / damitv streams (Server 1 & Server 2 already provide them)
                             if (/embedindia|damitv|ppv/i.test(rawUrl) || /embedindia|damitv|ppv/i.test(label)) return;
 
-                            // 3. Deduplicate against seen URLs
+                            // 3. Strictly drop duplicate base broadcasts (Sky NZ, Sky Sport Premier League, Premier League EN, World Feed, Main Feed)
+                            // when base PPV servers exist, because PPV natively provides Sky Sport NZ / English World Feed.
+                            // Only add authentic extra broadcast channels (e.g. FUBO SPORTS, TNT SPORTS, FOX SPORTS, ESPN, etc.)
+                            if (baseServers.length > 0) {
+                                if (/sky\s*sport.*nz|sky\s*nz|sky\s*sport\s*premier|premier\s*league\s*\(en\)|^premier\s*league$|world\s*feed|main\s*feed/i.test(label)) return;
+                            }
+
+                            // 4. Deduplicate against seen URLs
                             if (seenUrls.has(rawUrl)) return;
                             seenUrls.add(rawUrl);
 
@@ -762,8 +769,8 @@
                             });
                         });
 
-                        // Place StreamCorner feeds first (FUBO SPORTS, TNT SPORTS, SKY NZ, etc.), followed by base PPV feeds
-                        const combined = [...newServers, ...baseServers];
+                        // Keep base PPV feeds first (Server 1 [Main HD 1080p] & Server 2 [Backup HD Feed]), followed by authentic extra broadcast feeds (Server 3 [FUBO SPORTS], etc.)
+                        const combined = baseServers.length > 0 ? [...baseServers, ...newServers] : [...newServers];
                         // Re-index all servers cleanly: Server 1, Server 2, Server 3...
                         combined.forEach((s, idx) => {
                             const labelMatch = (s.name || '').match(/\[(.*?)\]/);
@@ -774,14 +781,11 @@
                         match.servers = combined;
                         match.sources = combined;
 
-                        // Real-time update if user is currently viewing this match
+                        // Real-time update if user is currently viewing this match without disruptive force-switching
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
-                            if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === 0 && newServers.length > 0) {
-                                window.AryanPlayerEngine.switchServer(0);
-                            }
                             if (typeof renderWatchSources === 'function') {
                                 const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                                 renderWatchSources(currentWatchItem, activeIdx);
@@ -790,7 +794,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v19';
+                            const CACHE_KEY = 'aryan_cached_matches_v20';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
