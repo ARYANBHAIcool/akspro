@@ -58,61 +58,109 @@ export async function onRequest(context) {
 
         let html = await upstreamResponse.text();
 
-        // 1. Neutralize anti-tamper throw in Script 12
-        html = html.replace('if(!qP9EJg){', 'if(false){');
+        // NOTE: Old static neutralization patterns (qP9EJg, s0TamperCheck) removed — 
+        // upstream uses polymorphic obfuscation with variable names that change on each page load.
+        // All anti-tamper neutralization is now done via runtime script injection below.
 
-        // 2. Neutralize tamper check in Script 0 that overwrites DOM with 'Unable to play. Browser not supported.'
-        const s0TamperCheck = 'if(typeof xSciKEB(BkoqTo(vqbjfpK[0x131],vqbjfpK[0xb]))[BkoqTo(0x1637,vqbjfpK[0x27])]===JyzORB7(0x163c,vqbjfpK[0x44])){xSciKEB(JyzORB7(0x164c,vqbjfpK[0xb]))[JyzORB7(0x1656,vqbjfpK[0x27])]()';
-        html = html.replace(s0TamperCheck, 'if(false){');
-
-        // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
+        // Comprehensive runtime anti-tamper neutralization
         const injectScript = `<script>
 (function() {
-    // Block tamper-check DOM wipes: Script 0 VK4v2H sets document.documentElement.innerHTML = ""
-    // and other checks write 'Unable to play' or 'Browser not supported' error screens
+    // === ANTI-IFRAME DETECTION BYPASS ===
+    // The obfuscated code checks window.top !== window.self to detect iframe embedding.
+    // We make window.top return window.self so the check always passes.
     try {
-        var origSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+        Object.defineProperty(window, 'top', {
+            get: function() { return window.self; },
+            configurable: false
+        });
+    } catch(e) {}
+
+    // Also fake parent to point to self
+    try {
+        Object.defineProperty(window, 'parent', {
+            get: function() { return window.self; },
+            configurable: false
+        });
+    } catch(e) {}
+
+    // Fake frameElement to null (top-level windows have frameElement === null)
+    try {
+        Object.defineProperty(window, 'frameElement', {
+            get: function() { return null; },
+            configurable: false
+        });
+    } catch(e) {}
+
+    // === DOM WIPE PROTECTION ===
+    // Block any destructive innerHTML/outerHTML writes on html/body elements
+    try {
+        var origInnerSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+        var origInnerGet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').get;
         Object.defineProperty(Element.prototype, 'innerHTML', {
             set: function(val) {
                 if (typeof val === 'string') {
-                    // Block empty-string wipe (VK4v2H tamper check)
-                    if (val.trim() === '') {
-                        // Only block on html/body elements (the destructive wipe targets)
-                        var tag = this.tagName;
-                        if (tag === 'HTML' || tag === 'BODY') return;
+                    var tag = this.tagName;
+                    if (tag === 'HTML' || tag === 'BODY') {
+                        // Block destructive wipes: empty string, very short content, or error messages
+                        var trimmed = val.trim();
+                        if (trimmed.length < 200 || 
+                            trimmed.indexOf('Unable to play') !== -1 || 
+                            trimmed.indexOf('Browser not supported') !== -1 ||
+                            trimmed.indexOf('not supported') !== -1) {
+                            return;
+                        }
                     }
-                    // Block 'Unable to play' and 'Browser not supported' error overlays
-                    if (val.indexOf('Unable to play') !== -1) return;
-                    if (val.indexOf('Browser not supported') !== -1) return;
                 }
-                return origSet.call(this, val);
+                return origInnerSet.call(this, val);
             },
+            get: function() { return origInnerGet.call(this); },
             configurable: true
         });
     } catch(e) {}
 
-    // Extra protection: guard document.documentElement.innerHTML specifically
+    // Guard outerHTML on html/body too
     try {
-        var htmlEl = document.documentElement;
-        var htmlOrigSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
-        Object.defineProperty(htmlEl, 'innerHTML', {
+        var origOuterSet = Object.getOwnPropertyDescriptor(Element.prototype, 'outerHTML').set;
+        var origOuterGet = Object.getOwnPropertyDescriptor(Element.prototype, 'outerHTML').get;
+        Object.defineProperty(Element.prototype, 'outerHTML', {
             set: function(val) {
-                if (typeof val === 'string' && val.trim().length < 100) return; // block any destructive wipe
-                return htmlOrigSet.call(this, val);
+                var tag = this.tagName;
+                if ((tag === 'HTML' || tag === 'BODY') && typeof val === 'string' && val.trim().length < 200) return;
+                return origOuterSet.call(this, val);
             },
-            get: function() {
-                return Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').get.call(this);
-            },
+            get: function() { return origOuterGet.call(this); },
             configurable: true
         });
     } catch(e) {}
 
+    // Block document.write from wiping the page after load
+    try {
+        var origWrite = document.write;
+        document.write = function(s) {
+            if (document.readyState === 'complete' || document.readyState === 'interactive') {
+                if (typeof s === 'string' && (s.trim().length < 200 || s.indexOf('not supported') !== -1)) return;
+            }
+            return origWrite.apply(this, arguments);
+        };
+        document.writeln = document.write;
+    } catch(e) {}
+
+    // Block document.open from clearing the page after load
+    try {
+        var origOpen = document.open;
+        document.open = function() {
+            if (document.readyState === 'complete' || document.readyState === 'interactive') return document;
+            return origOpen.apply(this, arguments);
+        };
+    } catch(e) {}
+
+    // === URL SYNC ===
+    // Sync parameters from upstream target URL into window.location
     try {
         var targetSearch = '${parsedTarget.search || ""}';
         var curUrl = new URL(window.location.href);
         var modified = false;
 
-        // 1. Sync all parameters from upstream target URL into window.location
         if (targetSearch) {
             var targetParams = new URLSearchParams(targetSearch);
             targetParams.forEach(function(val, key) {
@@ -123,7 +171,6 @@ export async function onRequest(context) {
             });
         }
 
-        // 2. Explicitly ensure requested player engine is synced to window.location
         var reqEngine = '${reqEngine || ""}';
         if (reqEngine) {
             if (reqEngine === 'bitmovin') {
