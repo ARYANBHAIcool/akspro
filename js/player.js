@@ -31,9 +31,9 @@ window.AryanPlayerEngine = {
         }
         const video = document.getElementById('global-video-element');
         if (video) {
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
+            try { if (typeof video.pause === 'function') video.pause(); } catch (e) {}
+            try { if (typeof video.removeAttribute === 'function') video.removeAttribute('src'); } catch (e) {}
+            try { if (typeof video.load === 'function') video.load(); } catch (e) {}
         }
         const iframe = document.getElementById('global-iframe-element');
         if (iframe) {
@@ -44,7 +44,19 @@ window.AryanPlayerEngine = {
     getServers() {
         if (!this.currentStream) return [];
         const list = this.currentStream.servers || this.currentStream.sources || [];
-        return Array.isArray(list) && list.length > 0 ? list : [this.currentStream];
+        if (Array.isArray(list) && list.length > 0) {
+            const valid = list.filter(s => s && (s.url || s.embedUrl));
+            if (valid.length > 0) return valid;
+        }
+        if (this.currentStream && (this.currentStream.url || this.currentStream.embedUrl)) {
+            return [{
+                name: this.currentStream.name || "Server 1 [Main HD]",
+                url: this.currentStream.url || this.currentStream.embedUrl,
+                type: this.currentStream.type || "iframe",
+                hd: true
+            }];
+        }
+        return [];
     },
 
     currentPlayerEngine: 'bitmovin',
@@ -176,11 +188,12 @@ window.AryanPlayerEngine = {
     copyStreamLink() {
         const servers = this.getServers();
         const currentServer = servers[this.activeServerIdx] || servers[0];
-        if (currentServer && currentServer.url) {
-            navigator.clipboard.writeText(currentServer.url).then(() => {
-                alert('Stream URL copied to clipboard!\n\n' + currentServer.url);
+        const srvUrl = currentServer ? (currentServer.url || currentServer.embedUrl || '') : '';
+        if (srvUrl) {
+            navigator.clipboard.writeText(srvUrl).then(() => {
+                alert('Stream URL copied to clipboard!\n\n' + srvUrl);
             }).catch(() => {
-                prompt('Copy stream URL:', currentServer.url);
+                prompt('Copy stream URL:', srvUrl);
             });
         }
     },
@@ -188,15 +201,28 @@ window.AryanPlayerEngine = {
     openExternal() {
         const servers = this.getServers();
         const currentServer = servers[this.activeServerIdx] || servers[0];
-        if (currentServer && currentServer.url) {
-            window.open(currentServer.url, '_blank');
+        const srvUrl = currentServer ? (currentServer.url || currentServer.embedUrl || '') : '';
+        if (srvUrl) {
+            window.open(srvUrl, '_blank');
         }
     },
 
     render(container) {
         const servers = this.getServers();
+        if (servers.length === 0) {
+            container.innerHTML = `
+                <div id="player-canvas-wrapper" class="relative aspect-video w-full bg-black overflow-hidden flex flex-col items-center justify-center p-6 text-center space-y-3">
+                    <div class="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin mb-1"></div>
+                    <div class="text-xs font-bold text-white tracking-widest uppercase">Connecting to broadcast feeds...</div>
+                    <div class="text-[11px] text-gray-400">Please wait while the stream servers are being resolved</div>
+                </div>
+            `;
+            return;
+        }
+
         const currentServer = servers[this.activeServerIdx] || servers[0] || { name: "Server 1", url: "", type: "iframe" };
-        const isHls = currentServer.type === 'video' || currentServer.url.includes('.m3u8');
+        const srvUrl = currentServer.url || currentServer.embedUrl || '';
+        const isHls = currentServer.type === 'video' || srvUrl.includes('.m3u8');
 
         let html = '';
 
@@ -310,13 +336,13 @@ window.AryanPlayerEngine = {
             const video = document.getElementById('global-video-element');
             if (!video) return;
 
-            if (window.Hls && Hls.isSupported() && currentServer.url.includes('.m3u8')) {
+            if (window.Hls && Hls.isSupported() && srvUrl.includes('.m3u8')) {
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 60
                 });
-                hls.loadSource(currentServer.url);
+                hls.loadSource(srvUrl);
                 hls.attachMedia(video);
                 this.hls = hls;
 
@@ -342,7 +368,7 @@ window.AryanPlayerEngine = {
                     }
                 });
             } else {
-                video.src = currentServer.url;
+                video.src = srvUrl;
                 video.onloadeddata = () => {
                     video.play().catch(() => {});
                     if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
@@ -355,13 +381,15 @@ window.AryanPlayerEngine = {
         } else {
             const iframe = document.getElementById('global-iframe-element');
             if (iframe) {
-                iframe.onload = () => {
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
+                const dismissLoader = () => {
+                    if (loader) {
+                        try { if (loader.style) loader.style.opacity = '0'; } catch (e) {}
+                        setTimeout(() => { try { if (typeof loader.remove === 'function') loader.remove(); } catch (e) {} }, 300);
+                    }
                 };
+                iframe.onload = dismissLoader;
                 // Fallback hide loader after 2.5s for iframe players
-                setTimeout(() => {
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
-                }, 2500);
+                setTimeout(dismissLoader, 2500);
             }
         }
     }

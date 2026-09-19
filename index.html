@@ -333,7 +333,7 @@
     <script src="js/ads.js?v=1.0"></script>
     <script src="js/paramount-core.js?v=3.7"></script>
     <script src="js/paramount.js?v=3.7"></script>
-    <script src="js/player.js?v=3.7"></script>
+    <script src="js/player.js?v=3.8"></script>
     <script src="js/api.js?v=3.9"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
@@ -834,7 +834,11 @@
                         renderWatchSources(item, activeIdx);
                         if (window.AryanPlayerEngine) {
                             window.AryanPlayerEngine.currentStream = item;
-                            window.AryanPlayerEngine.switchServer(0);
+                            const playerIframe = document.getElementById('global-iframe-element');
+                            const playerVideo = document.getElementById('global-video-element');
+                            if (!playerIframe && !playerVideo) {
+                                window.AryanPlayerEngine.switchServer(0);
+                            }
                         }
                     }
                 });
