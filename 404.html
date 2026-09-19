@@ -331,10 +331,10 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.0"></script>
-    <script src="js/paramount-core.js?v=3.5"></script>
-    <script src="js/paramount.js?v=3.5"></script>
-    <script src="js/player.js?v=3.5"></script>
-    <script src="js/api.js?v=3.5"></script>
+    <script src="js/paramount-core.js?v=3.6"></script>
+    <script src="js/paramount.js?v=3.6"></script>
+    <script src="js/player.js?v=3.6"></script>
+    <script src="js/api.js?v=3.6"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -643,49 +643,48 @@
         }
 
         function getMatchThumbnailHtml(m) {
-            const hasHomeLogo = m.home_team_logo || (m.team1 && m.team1.logo);
-            const hasAwayLogo = m.away_team_logo || (m.team2 && m.team2.logo);
-            const isGenericScLogo = (url) => !url || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(url);
+            const hasHomeLogo = (m.home_team_logo && typeof m.home_team_logo === 'string') ? m.home_team_logo : ((m.team1 && typeof m.team1.logo === 'string') ? m.team1.logo : '');
+            const hasAwayLogo = (m.away_team_logo && typeof m.away_team_logo === 'string') ? m.away_team_logo : ((m.team2 && typeof m.team2.logo === 'string') ? m.team2.logo : '');
+            const isGenericScLogo = (url) => !url || typeof url !== 'string' || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(url);
 
             const validHome = !isGenericScLogo(hasHomeLogo) ? hasHomeLogo : '';
             const validAway = !isGenericScLogo(hasAwayLogo) ? hasAwayLogo : '';
-            const hasPoster = m.poster && !isGenericScLogo(m.poster);
+            const validPoster = (m.poster && typeof m.poster === 'string' && !isGenericScLogo(m.poster)) ? m.poster : '';
 
-            // Case 1: Match has dual team logos (e.g. VfB Stuttgart vs Borussia Dortmund, England vs Sri Lanka)
-            // Render exact StreamCorner-style matchup with club/country crests
+            // Case 1: Match has dual team logos (exact StreamCorner crests, e.g. Tottenham vs Aston Villa)
             if (validHome && validAway && validHome !== validAway) {
                 return `
                     <div class="w-full h-full flex items-center justify-center gap-2 sm:gap-2.5 px-2 bg-gradient-to-br from-[#0c1424] via-[#0f192e] to-[#080d1a] relative z-10 select-none">
                         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/40 p-1 flex items-center justify-center border border-gray-800/80 shadow-sm flex-shrink-0">
-                            <img src="${validHome}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team1 ? m.team1.name : 'Home'}" loading="lazy" onerror="this.style.opacity='0'">
+                            <img src="${validHome}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team1 ? m.team1.name : 'Home'}" loading="lazy" onerror="this.onerror=null; this.src='assets/img/logo-icon.png';">
                         </div>
                         <span class="text-[10px] sm:text-xs font-black italic text-gray-500 flex-shrink-0">VS</span>
                         <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/40 p-1 flex items-center justify-center border border-gray-800/80 shadow-sm flex-shrink-0">
-                            <img src="${validAway}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team2 ? m.team2.name : 'Away'}" loading="lazy" onerror="this.style.opacity='0'">
+                            <img src="${validAway}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team2 ? m.team2.name : 'Away'}" loading="lazy" onerror="this.onerror=null; this.src='assets/img/logo-icon.png';">
                         </div>
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
                 `;
             }
 
-            // Case 2: Authentic full poster image available (e.g. PPV matches)
-            if (hasPoster && (!validHome && !validAway)) {
+            // Case 2: Authentic full poster image available (PPV matches)
+            if (validPoster) {
                 return `
-                    <img src="${hasPoster}" 
+                    <img src="${validPoster}" 
                          class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95" 
                          alt="${m.title}" 
                          loading="lazy" 
-                         onerror="this.onerror=null; this.style.opacity='0';">
+                         onerror="this.onerror=null; this.className='h-8 w-8 object-contain opacity-40'; this.src='assets/img/logo-icon.png';">
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
                 `;
             }
 
             // Case 3: Single tournament/event logo (e.g. UFC, F1, MotoGP, CPL, ETPL)
-            const singleLogo = validHome || validAway || hasPoster;
+            const singleLogo = validHome || validAway;
             if (singleLogo) {
                 return `
                     <div class="w-full h-full flex items-center justify-center p-2.5 bg-gradient-to-br from-[#0c1424] via-[#0f192e] to-[#080d1a] relative z-10 select-none">
-                        <img src="${singleLogo}" class="max-h-12 max-w-[85%] object-contain drop-shadow-md group-hover:scale-105 transition-transform" alt="${m.title}" loading="lazy" onerror="this.onerror=null; this.src='assets/img/logo-icon.png'">
+                        <img src="${singleLogo}" class="max-h-12 max-w-[85%] object-contain drop-shadow-md group-hover:scale-105 transition-transform" alt="${m.title}" loading="lazy" onerror="this.onerror=null; this.className='h-8 w-8 object-contain opacity-40'; this.src='assets/img/logo-icon.png';">
                     </div>
                     <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
                 `;
@@ -1034,11 +1033,12 @@
 
             const isLive = item.isLive;
 
-            const hasHomeLogo = item.home_team_logo || (item.team1 && item.team1.logo);
-            const hasAwayLogo = item.away_team_logo || (item.team2 && item.team2.logo);
-            const isGenericScLogo = (u) => !u || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(u);
+            const hasHomeLogo = (item.home_team_logo && typeof item.home_team_logo === 'string') ? item.home_team_logo : ((item.team1 && typeof item.team1.logo === 'string') ? item.team1.logo : '');
+            const hasAwayLogo = (item.away_team_logo && typeof item.away_team_logo === 'string') ? item.away_team_logo : ((item.team2 && typeof item.team2.logo === 'string') ? item.team2.logo : '');
+            const isGenericScLogo = (u) => !u || typeof u !== 'string' || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(u);
             const validHome = !isGenericScLogo(hasHomeLogo) ? hasHomeLogo : '';
             const validAway = !isGenericScLogo(hasAwayLogo) ? hasAwayLogo : '';
+            const validPoster = (item.poster && typeof item.poster === 'string' && !isGenericScLogo(item.poster)) ? item.poster : '';
             const singleLogo = validHome || validAway;
 
             let headerLogoHtml = '';
@@ -1054,6 +1054,12 @@
                 headerLogoHtml = `
                     <div class="bg-[#0c1424] border border-gray-800/80 p-1.5 rounded-2xl flex-shrink-0 shadow-lg">
                         <img src="${singleLogo}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow" alt="Logo" onerror="this.style.display='none'">
+                    </div>
+                `;
+            } else if (validPoster) {
+                headerLogoHtml = `
+                    <div class="bg-[#0c1424] border border-gray-800/80 p-0.5 rounded-2xl flex-shrink-0 shadow-lg overflow-hidden h-10 w-16 flex items-center justify-center">
+                        <img src="${validPoster}" class="w-full h-full object-cover rounded-xl drop-shadow" alt="Poster" onerror="this.style.display='none'">
                     </div>
                 `;
             }
