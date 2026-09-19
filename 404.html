@@ -334,7 +334,7 @@
     <script src="js/paramount-core.js?v=3.7"></script>
     <script src="js/paramount.js?v=3.7"></script>
     <script src="js/player.js?v=3.7"></script>
-    <script src="js/api.js?v=3.7"></script>
+    <script src="js/api.js?v=3.8"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -826,8 +826,8 @@
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
-            if (window.AryanGlobalAPI && !item._alphaResolved) {
+            // Ensure StreamCorner Alpha broadcast channels are resolved immediately on click / direct navigation
+            if (window.AryanGlobalAPI) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
                     if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId)) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;

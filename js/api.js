@@ -211,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v18';
+            const CACHE_KEY = 'aryan_cached_matches_v19';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -286,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v18';
+            const CACHE_KEY = 'aryan_cached_matches_v19';
             try {
                 let categories = null;
 
@@ -628,7 +628,11 @@
          */
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
-            if (match._alphaResolved) return true;
+            const hasExtraBroadcastServers = match.servers && match.servers.some(s => {
+                const n = (s.name || '').toLowerCase();
+                return !n.includes('main hd') && !n.includes('backup hd') && !n.includes('server 1 [hd]') && !n.includes('server 2 [hd]');
+            });
+            if (match._alphaResolved && hasExtraBroadcastServers) return true;
 
             // 1. If StreamCorner feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
@@ -786,7 +790,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v18';
+                            const CACHE_KEY = 'aryan_cached_matches_v19';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -1006,9 +1010,12 @@
                 addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
             }
 
+            const slug = (s.uri_name || title).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             return {
                 id: `ppv-${s.id}`,
                 rawId: s.id,
+                uri_name: s.uri_name || '',
+                slug: slug,
                 source: 'ppv',
                 title: title,
                 sport: sport,
@@ -1042,7 +1049,8 @@
                 ends_at: 0,
                 always_live: raw.always_live || 0,
                 iframe: raw.embedUrl,
-                substreams: raw.substreams
+                substreams: raw.substreams,
+                uri_name: raw.uri_name || raw.slug || raw.url_id || ''
             }, raw.category || 'Sports', Boolean(raw.always_live));
         },
 
@@ -1080,26 +1088,34 @@
             if (!id) return null;
             const decoded = decodeURIComponent(String(id)).trim();
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const stripped = decoded.replace(/^(ppv|dami)-/i, '');
+            const stripped = decoded.replace(/^(ppv|dami|sc|alpha)-/i, '');
 
-            // 1. Direct ID, rawId, or slug match
+            // 1. Direct ID, rawId, uri_name, or slug match
             let found = this.matches.find(m => {
                 if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded) return true;
                 if (m.rawId === stripped || m.id === stripped) return true;
-                if (m.slug && m.slug === slug) return true;
+                if (m.uri_name && (m.uri_name === decoded || m.uri_name === stripped || ('ppv-' + m.uri_name) === decoded)) return true;
+                if (m.slug && (m.slug === slug || (slug.length > 5 && m.slug.includes(slug)) || (m.slug.length > 5 && slug.includes(m.slug)))) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
+                // Check if any server embed URL contains stripped or decoded path
+                if (m.servers && m.servers.some(s => s.url && (s.url.includes(stripped) || s.url.includes(decoded)))) return true;
                 return false;
             });
 
-            // 2. Token overlap match (e.g. "ppv-pl/2026-09-12/liv-ful" -> "Liverpool vs. Fulham")
+            // 2. Query slug, tricode, or token matching (e.g. "ppv-pl/2026-09-19/bha-ars" -> "Brighton & Hove Albion vs. Arsenal")
             if (!found) {
-                const qToks = tokenizeMatchStr(stripped);
-                if (qToks.length >= 2) {
+                const qParts = stripped.toLowerCase().split(/[^a-z0-9]+/).filter(w => w.length >= 2 && !/^\d+$/.test(w) && w !== 'pl' && w !== 'live');
+                if (qParts.length > 0) {
                     found = this.matches.find(m => {
-                        const tToks = tokenizeMatchStr(m.title);
-                        if (tToks.length < 2) return false;
-                        return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
+                        const mWords = (m.title || '').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+                        const initials = mWords.map(w => w[0]).join('');
+                        const matchCount = qParts.filter(q => {
+                            if (mWords.some(w => w.startsWith(q) || q.startsWith(w))) return true;
+                            if (initials.includes(q) || q.includes(initials)) return true;
+                            return false;
+                        }).length;
+                        return matchCount >= Math.min(2, qParts.length);
                     });
                 }
             }
