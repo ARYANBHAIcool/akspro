@@ -68,13 +68,40 @@ export async function onRequest(context) {
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
-    // Suppress any stray attempts to write 'Unable to play' error screens
+    // Block tamper-check DOM wipes: Script 0 VK4v2H sets document.documentElement.innerHTML = ""
+    // and other checks write 'Unable to play' or 'Browser not supported' error screens
     try {
         var origSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
         Object.defineProperty(Element.prototype, 'innerHTML', {
             set: function(val) {
-                if (typeof val === 'string' && val.indexOf('Unable to play') !== -1) return;
+                if (typeof val === 'string') {
+                    // Block empty-string wipe (VK4v2H tamper check)
+                    if (val.trim() === '') {
+                        // Only block on html/body elements (the destructive wipe targets)
+                        var tag = this.tagName;
+                        if (tag === 'HTML' || tag === 'BODY') return;
+                    }
+                    // Block 'Unable to play' and 'Browser not supported' error overlays
+                    if (val.indexOf('Unable to play') !== -1) return;
+                    if (val.indexOf('Browser not supported') !== -1) return;
+                }
                 return origSet.call(this, val);
+            },
+            configurable: true
+        });
+    } catch(e) {}
+
+    // Extra protection: guard document.documentElement.innerHTML specifically
+    try {
+        var htmlEl = document.documentElement;
+        var htmlOrigSet = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').set;
+        Object.defineProperty(htmlEl, 'innerHTML', {
+            set: function(val) {
+                if (typeof val === 'string' && val.trim().length < 100) return; // block any destructive wipe
+                return htmlOrigSet.call(this, val);
+            },
+            get: function() {
+                return Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML').get.call(this);
             },
             configurable: true
         });

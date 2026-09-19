@@ -479,8 +479,8 @@
                         category: "24/7 STREAMS",
                         logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/espn-us.png",
                         servers: [
-                            { name: "Server 1 [ESPN HLS]", url: "https://india.futtv.nx.kg/espn/index.m3u8", type: "video", hd: true },
-                            { name: "Server 2 [ESPN 2]", url: "https://india.futtv.nx.kg/espn2/index.m3u8", type: "video", hd: true }
+                            { name: "Server 1 [ESPN Embed]", url: "https://embedindia.st/embed/channel/espn", type: "iframe", hd: true },
+                            { name: "Server 2 [ESPN 2 Embed]", url: "https://embedindia.st/embed/channel/espn-2", type: "iframe", hd: true }
                         ]
                     },
                     {
