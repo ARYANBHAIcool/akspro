@@ -331,10 +331,10 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.0"></script>
-    <script src="js/paramount-core.js?v=3.4"></script>
-    <script src="js/paramount.js?v=3.4"></script>
-    <script src="js/player.js?v=3.4"></script>
-    <script src="js/api.js?v=3.4"></script>
+    <script src="js/paramount-core.js?v=3.5"></script>
+    <script src="js/paramount.js?v=3.5"></script>
+    <script src="js/player.js?v=3.5"></script>
+    <script src="js/api.js?v=3.5"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -642,24 +642,77 @@
             grid.innerHTML = html;
         }
 
+        function getMatchThumbnailHtml(m) {
+            const hasHomeLogo = m.home_team_logo || (m.team1 && m.team1.logo);
+            const hasAwayLogo = m.away_team_logo || (m.team2 && m.team2.logo);
+            const isGenericScLogo = (url) => !url || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(url);
+
+            const validHome = !isGenericScLogo(hasHomeLogo) ? hasHomeLogo : '';
+            const validAway = !isGenericScLogo(hasAwayLogo) ? hasAwayLogo : '';
+            const hasPoster = m.poster && !isGenericScLogo(m.poster);
+
+            // Case 1: Match has dual team logos (e.g. VfB Stuttgart vs Borussia Dortmund, England vs Sri Lanka)
+            // Render exact StreamCorner-style matchup with club/country crests
+            if (validHome && validAway && validHome !== validAway) {
+                return `
+                    <div class="w-full h-full flex items-center justify-center gap-2 sm:gap-2.5 px-2 bg-gradient-to-br from-[#0c1424] via-[#0f192e] to-[#080d1a] relative z-10 select-none">
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/40 p-1 flex items-center justify-center border border-gray-800/80 shadow-sm flex-shrink-0">
+                            <img src="${validHome}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team1 ? m.team1.name : 'Home'}" loading="lazy" onerror="this.style.opacity='0'">
+                        </div>
+                        <span class="text-[10px] sm:text-xs font-black italic text-gray-500 flex-shrink-0">VS</span>
+                        <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-black/40 p-1 flex items-center justify-center border border-gray-800/80 shadow-sm flex-shrink-0">
+                            <img src="${validAway}" class="max-h-full max-w-full object-contain drop-shadow" alt="${m.team2 ? m.team2.name : 'Away'}" loading="lazy" onerror="this.style.opacity='0'">
+                        </div>
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
+                `;
+            }
+
+            // Case 2: Authentic full poster image available (e.g. PPV matches)
+            if (hasPoster && (!validHome && !validAway)) {
+                return `
+                    <img src="${hasPoster}" 
+                         class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95" 
+                         alt="${m.title}" 
+                         loading="lazy" 
+                         onerror="this.onerror=null; this.style.opacity='0';">
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
+                `;
+            }
+
+            // Case 3: Single tournament/event logo (e.g. UFC, F1, MotoGP, CPL, ETPL)
+            const singleLogo = validHome || validAway || hasPoster;
+            if (singleLogo) {
+                return `
+                    <div class="w-full h-full flex items-center justify-center p-2.5 bg-gradient-to-br from-[#0c1424] via-[#0f192e] to-[#080d1a] relative z-10 select-none">
+                        <img src="${singleLogo}" class="max-h-12 max-w-[85%] object-contain drop-shadow-md group-hover:scale-105 transition-transform" alt="${m.title}" loading="lazy" onerror="this.onerror=null; this.src='assets/img/logo-icon.png'">
+                    </div>
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25 pointer-events-none"></div>
+                `;
+            }
+
+            // Case 4: Default fallback
+            return `
+                <div class="w-full h-full flex items-center justify-center p-2 bg-[#0a0f1d] relative z-10">
+                    <img src="assets/img/logo-icon.png" class="h-8 w-8 object-contain opacity-40" alt="Logo">
+                </div>
+            `;
+        }
+
         function createMatchCard(m) {
             const isLive = m.isLive;
             const countdownText = isLive ? 'LIVE' : window.AryanGlobalAPI.getCountdownText(m.startTime);
             const leagueDisplay = m.league || m.sport || 'Sports';
+            const thumbHtml = getMatchThumbnailHtml(m);
 
             return `
                 <a href="?match=${encodeURIComponent(m.id)}" 
                    onclick="event.preventDefault(); openWatchView('${m.id}')" 
                    class="group cursor-pointer rounded-2xl overflow-hidden bg-[#0c1322] border border-gray-800/80 hover:border-gray-700 hover:bg-[#10192c] transition-all flex flex-row items-stretch h-[96px] sm:h-[102px] shadow-lg no-underline block">
                     
-                    <!-- Left Thumbnail (~38-40% width, exact PPV dual-logo/gradient showcase) -->
+                    <!-- Left Thumbnail (~38-40% width, exact PPV & StreamCorner team logo showcase) -->
                     <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
-                        <img src="${m.poster}" 
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95" 
-                             alt="${m.title}" 
-                             loading="lazy" 
-                             onerror="this.onerror=null; this.style.opacity='0';">
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25"></div>
+                        ${thumbHtml}
                     </div>
 
                     <!-- Right Content Info (~60% width) -->
@@ -981,6 +1034,30 @@
 
             const isLive = item.isLive;
 
+            const hasHomeLogo = item.home_team_logo || (item.team1 && item.team1.logo);
+            const hasAwayLogo = item.away_team_logo || (item.team2 && item.team2.logo);
+            const isGenericScLogo = (u) => !u || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(u);
+            const validHome = !isGenericScLogo(hasHomeLogo) ? hasHomeLogo : '';
+            const validAway = !isGenericScLogo(hasAwayLogo) ? hasAwayLogo : '';
+            const singleLogo = validHome || validAway;
+
+            let headerLogoHtml = '';
+            if (validHome && validAway && validHome !== validAway) {
+                headerLogoHtml = `
+                    <div class="flex items-center gap-2 bg-[#0c1424] border border-gray-800/80 p-1.5 rounded-2xl flex-shrink-0 shadow-lg">
+                        <img src="${validHome}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow" alt="Home" onerror="this.style.display='none'">
+                        <span class="text-[11px] font-black italic text-gray-500">VS</span>
+                        <img src="${validAway}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow" alt="Away" onerror="this.style.display='none'">
+                    </div>
+                `;
+            } else if (singleLogo) {
+                headerLogoHtml = `
+                    <div class="bg-[#0c1424] border border-gray-800/80 p-1.5 rounded-2xl flex-shrink-0 shadow-lg">
+                        <img src="${singleLogo}" class="w-8 h-8 sm:w-9 sm:h-9 object-contain drop-shadow" alt="Logo" onerror="this.style.display='none'">
+                    </div>
+                `;
+            }
+
             container.innerHTML = `
                 <div class="max-w-5xl mx-auto space-y-4" id="watch-wrapper">
                     
@@ -1009,9 +1086,12 @@
 
                     <!-- Match Title & StreamCorner Green Accent Underline (Exact Image 1 Header) -->
                     <div class="pt-1">
-                        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
-                            ${item.title || item.name}
-                        </h1>
+                        <div class="flex items-center gap-3 sm:gap-4 flex-wrap sm:flex-nowrap">
+                            ${headerLogoHtml}
+                            <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
+                                ${item.title || item.name}
+                            </h1>
+                        </div>
                         <div class="h-1.5 w-24 bg-green-500 rounded-full mt-2.5 mb-5 shadow-lg shadow-green-500/50"></div>
                     </div>
 

@@ -211,10 +211,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v15';
+            const CACHE_KEY = 'aryan_cached_matches_v16';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -286,7 +286,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v15';
+            const CACHE_KEY = 'aryan_cached_matches_v16';
             try {
                 let categories = null;
 
@@ -529,6 +529,10 @@
                         matchedAlphaIds.add(alpha.stream_id);
                         matchedPPV.alphaStreamId = alpha.stream_id;
                         matchedPPV.alphaItem = alpha;
+                        if (!matchedPPV.home_team_logo && alpha.home_team_logo) matchedPPV.home_team_logo = alpha.home_team_logo;
+                        if (!matchedPPV.away_team_logo && alpha.away_team_logo) matchedPPV.away_team_logo = alpha.away_team_logo;
+                        if (matchedPPV.team1 && !matchedPPV.team1.logo && alpha.home_team_logo) matchedPPV.team1.logo = alpha.home_team_logo;
+                        if (matchedPPV.team2 && !matchedPPV.team2.logo && alpha.away_team_logo) matchedPPV.team2.logo = alpha.away_team_logo;
                     }
                 }
 
@@ -710,7 +714,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v15';
+                            const CACHE_KEY = 'aryan_cached_matches_v16';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -809,6 +813,31 @@
             const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ /i)[0] || rawTitle;
             const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ /i)[1] || '';
 
+            const homeLogo = alpha.home_team_logo || alpha.home_logo || '';
+            const awayLogo = alpha.away_team_logo || alpha.away_logo || '';
+
+            // Strictly filter out generic StreamCorner brand logos or generic soccer ball svgs
+            const isGenericScLogo = (u) => !u || /android-chrome|streamcorner|thesportsdb.*\/svg/i.test(u);
+
+            let posterUrl = '';
+            if (alpha.poster && !isGenericScLogo(alpha.poster)) {
+                posterUrl = alpha.poster;
+            } else if (homeLogo && awayLogo && homeLogo === awayLogo) {
+                // Event or tournament logo (e.g. CPL, UFC, F1, MotoGP, ETPL)
+                posterUrl = homeLogo;
+            } else if (homeLogo && !isGenericScLogo(homeLogo) && (!awayLogo || isGenericScLogo(awayLogo))) {
+                posterUrl = homeLogo;
+            } else if (awayLogo && !isGenericScLogo(awayLogo) && (!homeLogo || isGenericScLogo(homeLogo))) {
+                posterUrl = awayLogo;
+            } else if (alpha.league_logo && !isGenericScLogo(alpha.league_logo)) {
+                posterUrl = alpha.league_logo;
+            } else if (alpha.category_logo && !isGenericScLogo(alpha.category_logo)) {
+                posterUrl = alpha.category_logo;
+            }
+
+            const cleanHomeLogo = !isGenericScLogo(homeLogo) ? homeLogo : '';
+            const cleanAwayLogo = !isGenericScLogo(awayLogo) ? awayLogo : '';
+
             return {
                 id: `alpha-${alpha.stream_id}`,
                 rawId: alpha.stream_id,
@@ -825,10 +854,12 @@
                 isAlwaysLive: false,
                 tag: league,
                 status: isLive ? 'live' : 'upcoming',
-                poster: alpha.poster || alpha.category_logo || alpha.home_team_logo || 'assets/img/logo-icon.png',
+                poster: posterUrl,
                 colors: [],
-                team1: { name: team1Name, logo: alpha.home_team_logo || '' },
-                team2: { name: team2Name, logo: alpha.away_team_logo || '' },
+                team1: { name: team1Name, logo: cleanHomeLogo },
+                team2: { name: team2Name, logo: cleanAwayLogo },
+                home_team_logo: cleanHomeLogo,
+                away_team_logo: cleanAwayLogo,
                 rawCategory: rawCat,
                 servers: [],
                 sources: [],
