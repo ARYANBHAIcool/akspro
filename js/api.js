@@ -38,7 +38,13 @@
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+            try {
+                const parsed = new URL(rawUrl);
+                if (!parsed.searchParams.has('player')) parsed.searchParams.set('player', 'bitmovin');
+                return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=bitmovin`;
+            } catch (e) {
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=bitmovin`;
+            }
         }
         return rawUrl;
     }
@@ -47,7 +53,9 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url) return '';
-        if (url.includes('streamed.pk')) {
+        if (url.startsWith('assets/') || url.startsWith('data:')) return url;
+        if (url.includes('wsrv.nl/?url=')) return url;
+        if (url.startsWith('http://') || url.startsWith('https://')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
         }
         return url;
@@ -413,6 +421,21 @@
          */
         async loadPPVFeeds() {
             const CACHE_KEY = 'aryan_cached_matches_v20';
+            // Instant load from cache if available to prevent any blank state
+            if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
+                try {
+                    const cached = localStorage.getItem(CACHE_KEY);
+                    if (cached) {
+                        const parsed = JSON.parse(cached);
+                        if (Array.isArray(parsed) && parsed.length > 0) {
+                            this.matches = parsed;
+                            this.isLoading = false;
+                            this.emitUpdate();
+                        }
+                    }
+                } catch (e) {}
+            }
+
             try {
                 let categories = null;
 
@@ -512,9 +535,34 @@
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
+                } else if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
+                    try {
+                        const cached = localStorage.getItem(CACHE_KEY);
+                        if (cached) {
+                            const parsed = JSON.parse(cached);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                this.matches = parsed;
+                                this.isLoading = false;
+                                this.emitUpdate();
+                            }
+                        }
+                    } catch (e) {}
                 }
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
+                if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
+                    try {
+                        const cached = localStorage.getItem(CACHE_KEY);
+                        if (cached) {
+                            const parsed = JSON.parse(cached);
+                            if (Array.isArray(parsed) && parsed.length > 0) {
+                                this.matches = parsed;
+                                this.isLoading = false;
+                                this.emitUpdate();
+                            }
+                        }
+                    } catch (e) {}
+                }
             }
         },
 
@@ -942,9 +990,13 @@
                         }
                     }
 
+                    if (match._adminId) {
+                        addServer('STREAMCORNER (MULTI)', `https://streamcorner.fun/stream/admin/${match._adminId}`);
+                    }
+
                     if (newServers.length > 0 || upgradedExisting) {
-                        // Place StreamCorner broadcast feeds first, followed by base PPV feeds
-                        const combined = [...newServers, ...baseServers];
+                        // Place authentic, reliable base PPV feeds first, followed by extra StreamCorner broadcast channels
+                        const combined = [...baseServers, ...newServers];
                         // Re-index all servers cleanly: Server 1, Server 2, Server 3...
                         combined.forEach((s, idx) => {
                             const labelMatch = (s.name || '').match(/\[(.*?)\]/);
