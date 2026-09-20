@@ -266,10 +266,13 @@
         isLoading: true,
         matches: [],
         channels: [],
+        adminCatalog: [],
         alphaCatalog: [],
         p001Catalog: [],
+        skygoCatalog: [],
         peacockCatalog: [],
         slingCatalog: [],
+        paramountCatalog: [],
         extra003Catalog: [],
         listeners: [],
         refreshInterval: null,
@@ -279,6 +282,10 @@
         linkMatchProviders(match) {
             if (!match) return false;
             let newlyLinked = false;
+            if (!match._adminId && Array.isArray(this.adminCatalog) && this.adminCatalog.length > 0) {
+                const m = this.adminCatalog.find(a => isSameMatch(match, a));
+                if (m) { match._adminId = m.stream_id || m.id; newlyLinked = true; }
+            }
             if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const m = this.alphaCatalog.find(a => isSameMatch(match, a));
                 if (m) { match.alphaStreamId = m.stream_id; match.alphaItem = m; newlyLinked = true; }
@@ -286,6 +293,10 @@
             if (!match._p001Id && Array.isArray(this.p001Catalog) && this.p001Catalog.length > 0) {
                 const m = this.p001Catalog.find(p => isSameMatch(match, p));
                 if (m) { match._p001Id = m.stream_id; newlyLinked = true; }
+            }
+            if (!match._skygoId && Array.isArray(this.skygoCatalog) && this.skygoCatalog.length > 0) {
+                const m = this.skygoCatalog.find(s => isSameMatch(match, s));
+                if (m) { match._skygoId = m.stream_id; newlyLinked = true; }
             }
             if (!match._peacockId && Array.isArray(this.peacockCatalog) && this.peacockCatalog.length > 0) {
                 const m = this.peacockCatalog.find(p => isSameMatch(match, p));
@@ -295,12 +306,16 @@
                 const m = this.slingCatalog.find(s => isSameMatch(match, s));
                 if (m) { match._slingId = m.stream_id || m.id; newlyLinked = true; }
             }
+            if (!match._paramountId && Array.isArray(this.paramountCatalog) && this.paramountCatalog.length > 0) {
+                const m = this.paramountCatalog.find(p => isSameMatch(match, p));
+                if (m) { match._paramountId = m.stream_id || m.tile_id || m.id; newlyLinked = true; }
+            }
             if (!match._extra003Id && Array.isArray(this.extra003Catalog) && this.extra003Catalog.length > 0) {
                 const m = this.extra003Catalog.find(e => isSameMatch(match, e));
                 if (m) { match._extra003Id = m.stream_id; newlyLinked = true; }
             }
             if (newlyLinked && match._alphaResolved) {
-                // A new provider feed (e.g. Peacock or Sling) became available closer to kickoff
+                // A new provider feed (e.g. Admin, Peacock, Sling) became available closer to kickoff
                 match._alphaResolved = false;
             }
             return newlyLinked;
@@ -442,10 +457,13 @@
                             if (!norm) continue;
 
                             if (existing && existing._alphaResolved) {
+                                norm._adminId = existing._adminId;
                                 norm.alphaStreamId = existing.alphaStreamId;
                                 norm._p001Id = existing._p001Id;
+                                norm._skygoId = existing._skygoId;
                                 norm._peacockId = existing._peacockId;
                                 norm._slingId = existing._slingId;
+                                norm._paramountId = existing._paramountId;
                                 norm._extra003Id = existing._extra003Id;
                                 norm.alphaItem = existing.alphaItem;
                                 norm._alphaResolved = existing._alphaResolved;
@@ -617,16 +635,21 @@
                 return;
             }
             try {
-                const [alphaRes, p001Res, peacockRes, slingRes, extra003Res] = await Promise.allSettled([
+                const [adminRes, alphaRes, p001Res, skygoRes, peacockRes, slingRes, paramountRes, extra003Res] = await Promise.allSettled([
+                    this.fetchStreamCornerProvider('admin', 'admin catalog'),
                     this.fetchStreamCornerProvider('alpha', 'alpha catalog'),
                     this.fetchStreamCornerProvider('001', '001 catalog'),
+                    this.fetchStreamCornerProvider('skygo', 'skygo catalog'),
                     this.fetchStreamCornerProvider('peacock_schedule', 'peacock catalog'),
                     this.fetchStreamCornerProvider('slingtv_sports', 'sling catalog'),
+                    this.fetchStreamCornerProvider('paramount_schedule', 'paramount catalog'),
                     this.fetchStreamCornerProvider('extra003', 'extra003 catalog')
                 ]);
 
+                let adminList = Array.isArray(adminRes.value) ? adminRes.value : [];
                 let alphaList = Array.isArray(alphaRes.value) ? alphaRes.value : [];
                 let p001List = Array.isArray(p001Res.value) ? p001Res.value : [];
+                let skygoList = Array.isArray(skygoRes.value) ? skygoRes.value : [];
                 let peacockList = [];
                 if (Array.isArray(peacockRes.value)) {
                     for (const rail of peacockRes.value) {
@@ -639,9 +662,15 @@
                         if (Array.isArray(tab.tiles)) slingList.push(...tab.tiles);
                     }
                 }
+                let paramountList = [];
+                if (Array.isArray(paramountRes.value)) {
+                    for (const cat of paramountRes.value) {
+                        if (Array.isArray(cat.events)) paramountList.push(...cat.events);
+                    }
+                }
                 let extra003List = Array.isArray(extra003Res.value) ? extra003Res.value : [];
 
-                if (alphaList.length === 0 && p001List.length === 0 && peacockList.length === 0) {
+                if (adminList.length === 0 && alphaList.length === 0 && p001List.length === 0 && peacockList.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
                         this._hasAttemptedAutoHeal = true;
                         console.warn('StreamCorner catalog returned empty/error. Auto-healing core engine from edge...');
@@ -653,10 +682,13 @@
                     return;
                 }
 
+                this.adminCatalog = adminList;
                 this.alphaCatalog = alphaList;
                 this.p001Catalog = p001List;
+                this.skygoCatalog = skygoList;
                 this.peacockCatalog = peacockList;
                 this.slingCatalog = slingList;
+                this.paramountCatalog = paramountList;
                 this.extra003Catalog = extra003List;
 
                 const matchedAlphaIds = new Set();
@@ -664,23 +696,39 @@
                 // 1. Link matching PPV matches with all StreamCorner counterparts
                 for (const m of this.matches) {
                     const newlyLinked = this.linkMatchProviders(m);
+                    if (m._adminId) matchedAlphaIds.add(m._adminId);
                     if (m.alphaStreamId) matchedAlphaIds.add(m.alphaStreamId);
                     if (newlyLinked) {
                         this.resolveAlphaSourcesForMatch(m);
                     }
                 }
 
-                // 2. Introduce independent / exclusive StreamCorner Alpha fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
+                // 2. Introduce independent / exclusive StreamCorner fixtures (from admin, alpha, skygo)
                 let addedIndependent = false;
-                for (const alpha of alphaList) {
-                    if (!matchedAlphaIds.has(alpha.stream_id)) {
-                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}`);
-                        if (!exists) {
-                            const newMatch = this.normalizeAlphaMatch(alpha);
-                            if (newMatch) {
-                                this.linkMatchProviders(newMatch);
-                                this.matches.push(newMatch);
-                                addedIndependent = true;
+                const primaryFeeds = [
+                    { list: adminList, prefix: 'admin' },
+                    { list: alphaList, prefix: 'alpha' },
+                    { list: skygoList, prefix: 'skygo' }
+                ];
+                for (const feed of primaryFeeds) {
+                    for (const item of feed.list) {
+                        if (!item || !item.stream_id) continue;
+                        if (!matchedAlphaIds.has(item.stream_id)) {
+                            const exists = this.matches.some(m =>
+                                m._adminId === item.stream_id ||
+                                m.alphaStreamId === item.stream_id ||
+                                m._skygoId === item.stream_id ||
+                                m.id === `${feed.prefix}-${item.stream_id}` ||
+                                isSameMatch(m, item)
+                            );
+                            if (!exists) {
+                                const newMatch = this.normalizeAlphaMatch(item);
+                                if (newMatch) {
+                                    newMatch.id = `${feed.prefix}-${item.stream_id}`;
+                                    this.linkMatchProviders(newMatch);
+                                    this.matches.push(newMatch);
+                                    addedIndependent = true;
+                                }
                             }
                         }
                     }
@@ -694,7 +742,7 @@
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
                 if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
                     this.linkMatchProviders(currentWatchItem);
-                    if (currentWatchItem.alphaStreamId || currentWatchItem._p001Id || currentWatchItem._peacockId || currentWatchItem._slingId || currentWatchItem._extra003Id) {
+                    if (currentWatchItem._adminId || currentWatchItem.alphaStreamId || currentWatchItem._p001Id || currentWatchItem._skygoId || currentWatchItem._peacockId || currentWatchItem._slingId || currentWatchItem._paramountId || currentWatchItem._extra003Id) {
                         this.resolveAlphaSourcesForMatch(currentWatchItem);
                     }
                 }
@@ -725,7 +773,7 @@
             this.linkMatchProviders(match);
 
             // 3. If any provider ID is present, resolve and return
-            if (match.alphaStreamId || match._p001Id || match._peacockId || match._slingId || match._extra003Id) {
+            if (match._adminId || match.alphaStreamId || match._p001Id || match._skygoId || match._peacockId || match._slingId || match._paramountId || match._extra003Id) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
 
@@ -734,11 +782,11 @@
 
         /**
          * Resolve extra broadcast channels for a match across all StreamCorner providers:
-         * Fubo Sports, Peacock (NBC), Sky Sports Main Event, USA Network, TNT Sports, Bein, etc.
+         * Admin, Fubo Sports, Peacock (NBC), Sky Sports Main Event, Sky Go, USA Network, Paramount+, etc.
          */
         async resolveAlphaSourcesForMatch(match) {
             if (!match) return false;
-            if (!match.alphaStreamId && !match._p001Id && !match._peacockId && !match._slingId && !match._extra003Id) return false;
+            if (!match._adminId && !match.alphaStreamId && !match._p001Id && !match._skygoId && !match._peacockId && !match._slingId && !match._paramountId && !match._extra003Id) return false;
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
@@ -747,6 +795,13 @@
                 try {
                     const fetchTasks = [];
 
+                    if (match._adminId) {
+                        fetchTasks.push(
+                            this.fetchStreamCornerProvider(`admin&id=${match._adminId}`, match.title || 'admin detail')
+                                .then(d => ({ provider: 'admin', data: d }))
+                                .catch(() => null)
+                        );
+                    }
                     if (match.alphaStreamId) {
                         fetchTasks.push(
                             this.fetchStreamCornerProvider(`alpha&id=${match.alphaStreamId}`, match.title || 'alpha detail')
@@ -761,6 +816,13 @@
                                 .catch(() => null)
                         );
                     }
+                    if (match._skygoId) {
+                        fetchTasks.push(
+                            this.fetchStreamCornerProvider(`skygo&id=${match._skygoId}`, match.title || 'skygo detail')
+                                .then(d => ({ provider: 'skygo', data: d }))
+                                .catch(() => null)
+                        );
+                    }
                     if (match._peacockId) {
                         fetchTasks.push(
                             this.fetchStreamCornerProvider(`peacock_schedule&id=${match._peacockId}`, match.title || 'peacock detail')
@@ -772,6 +834,13 @@
                         fetchTasks.push(
                             this.fetchStreamCornerProvider(`slingtv_sports&id=${match._slingId}`, match.title || 'sling detail')
                                 .then(d => ({ provider: 'sling', data: d }))
+                                .catch(() => null)
+                        );
+                    }
+                    if (match._paramountId) {
+                        fetchTasks.push(
+                            this.fetchStreamCornerProvider(`paramount_schedule&id=${match._paramountId}`, match.title || 'paramount detail')
+                                .then(d => ({ provider: 'paramount', data: d }))
                                 .catch(() => null)
                         );
                     }
@@ -827,16 +896,23 @@
                         if (res.status !== 'fulfilled' || !res.value || !res.value.data) continue;
                         const { provider, data } = res.value;
 
-                        if (provider === 'alpha' && Array.isArray(data.streams)) {
+                        if (provider === 'admin' && Array.isArray(data.streams)) {
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url));
+                        } else if (provider === 'alpha' && Array.isArray(data.streams)) {
                             data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url));
                         } else if (provider === '001' && Array.isArray(data.streams)) {
                             data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Sports', s.embed_url || s.stream_url));
+                        } else if (provider === 'skygo' && Array.isArray(data.streams)) {
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Go', s.embed_url || s.stream_url));
                         } else if (provider === 'peacock') {
                             const u = data.embed_url || data.embedUrl;
                             if (u) addServer('PEACOCK (NBC)', u);
                         } else if (provider === 'sling') {
                             const u = data.embed_url || data.embedUrl;
                             if (u) addServer(data.channel_name ? `${data.channel_name} (SLING)` : 'USA NETWORK (SLING)', u);
+                        } else if (provider === 'paramount') {
+                            const u = data.embed_url || data.embedUrl;
+                            if (u) addServer('PARAMOUNT+ (CBS)', u);
                         } else if (provider === 'extra003' && Array.isArray(data.streams)) {
                             data.streams.forEach(s => addServer(s.source_name || 'HD FEED', s.embed_url || s.stream_url));
                         }
@@ -857,7 +933,9 @@
 
                         // Real-time update if user is currently viewing this match
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && 
-                            (currentWatchItem.id === match.id || (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === match.alphaStreamId))) {
+                            (currentWatchItem.id === match.id || 
+                             (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === match._adminId) ||
+                             (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === match.alphaStreamId))) {
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
@@ -895,7 +973,7 @@
             this._resolvingAllAlpha = true;
 
             try {
-                const targets = this.matches.filter(m => (m.alphaStreamId || m._p001Id || m._peacockId || m._slingId || m._extra003Id) && !m._alphaResolved);
+                const targets = this.matches.filter(m => (m._adminId || m.alphaStreamId || m._p001Id || m._skygoId || m._peacockId || m._slingId || m._paramountId || m._extra003Id) && !m._alphaResolved);
                 if (targets.length === 0) {
                     this._resolvingAllAlpha = false;
                     return;
@@ -1158,13 +1236,14 @@
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             const stripped = decoded.replace(/^(ppv|dami)-/i, '');
 
-            // 1. Direct ID, rawId, or slug match
+            // 1. Direct ID, rawId, slug, provider ID, or server URL match
             let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded) return true;
+                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded || m._adminId === decoded || m._skygoId === decoded) return true;
                 if (m.rawId === stripped || m.id === stripped) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
+                if (Array.isArray(m.servers) && m.servers.some(s => s && (s.url || '').includes(stripped))) return true;
                 return false;
             });
 
