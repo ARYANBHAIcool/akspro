@@ -12,7 +12,8 @@ export async function onRequest(context) {
     // If 'url' parameter is missing, but 'p' parameter exists (e.g. on player engine reload or refresh),
     // automatically reconstruct the full pandecocogaming target URL
     if (!targetUrl && requestUrl.searchParams.has('p')) {
-        targetUrl = `https://amazon.com.pandecocogaming.sbs/${requestUrl.search}`;
+        const path = requestUrl.pathname.includes('/admin') ? 'admin' : '';
+        targetUrl = `https://amazon.com.pandecocogaming.sbs/${path}${requestUrl.search}`;
     }
 
     if (!targetUrl) {
@@ -42,8 +43,8 @@ export async function onRequest(context) {
             method: context.request.method,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://streamcorner.foo/',
-                'Origin': 'https://streamcorner.foo',
+                'Referer': 'https://streamcorner.fun/',
+                'Origin': 'https://streamcorner.fun',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9'
             }
