@@ -14,18 +14,27 @@
     const hostname = isBrowser ? (window.location.hostname || '') : '';
 
     const ALPHA_WORKER_NODES = [
-        'data.kageyoshi001.workers.dev',
-        'data.kuig2.workers.dev',
-        'data.senbon001-2.workers.dev',
+        'data.gigav.workers.dev',
+        'data.yedmzoa.workers.dev',
+        'data.ngagzipx.workers.dev',
+        'data.miopks.workers.dev',
+        'data.jccldjshj8sw.workers.dev',
         'data.l0o1afmju0.workers.dev',
+        'data.nibflolsi9.workers.dev',
+        'data.5j181.workers.dev',
+        'data.rim1043.workers.dev',
+        'data.kuig2.workers.dev',
         'data.senbon001.workers.dev',
-        'data.senbon002.workers.dev',
-        'data.senbon003.workers.dev',
+        'data.senbon001-2.workers.dev',
+        'data.kageyoshi001.workers.dev',
         'data.silentbyte125.workers.dev',
         'data.stealthwolf798-69b.workers.dev',
         'data.redjoy256.workers.dev',
         'data.anonfox144.workers.dev',
         'data.cripw4lk000.workers.dev',
+        'data.phamviet444.workers.dev',
+        'data.kanghaerin444.workers.dev',
+        'data.minjikim444.workers.dev',
         'data.leehyein444.workers.dev',
         'data.daniellemarsh444.workers.dev'
     ];
@@ -992,6 +1001,12 @@
 
                     if (match._adminId) {
                         addServer('STREAMCORNER (MULTI)', `https://streamcorner.fun/stream/admin/${match._adminId}`);
+                    } else if (match.alphaStreamId) {
+                        addServer('STREAMCORNER (ALPHA)', `https://streamcorner.fun/stream/alpha/${match.alphaStreamId}`);
+                    } else if (match._skygoId) {
+                        addServer('STREAMCORNER (SKYGO)', `https://streamcorner.fun/stream/skygo/${match._skygoId}`);
+                    } else if (match._p001Id) {
+                        addServer('STREAMCORNER (001)', `https://streamcorner.fun/stream/001/${match._p001Id}`);
                     }
 
                     if (newServers.length > 0 || upgradedExisting) {
