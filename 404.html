@@ -338,11 +338,11 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=2.0"></script>
-    <script src="js/paramount-core.js?v=5.2"></script>
-    <script src="js/paramount.js?v=5.2"></script>
-    <script src="js/player.js?v=5.2"></script>
-    <script src="js/api.js?v=5.2"></script>
+    <script src="js/ads.js?v=6.0"></script>
+    <script src="js/paramount-core.js?v=6.0"></script>
+    <script src="js/paramount.js?v=6.0"></script>
+    <script src="js/player.js?v=6.0"></script>
+    <script src="js/api.js?v=6.0"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -758,9 +758,6 @@
         }
 
         function openWatchView(id) {
-            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
-                window.AryanAds.trigger('match_card');
-            }
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
                 item = window.AryanParamountAPI.getEventById(id);
@@ -785,11 +782,12 @@
             }
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
+            // Instant zero-lag UI render: switch view and start match immediately
             switchView('watch');
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
+            // Ensure StreamCorner broadcast channels are resolved in background without interrupting playback
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
                     if (resolved && currentWatchItem && 
@@ -804,12 +802,15 @@
                          (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === item._paramountId))) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
-                        if (window.AryanPlayerEngine) {
-                            window.AryanPlayerEngine.currentStream = item;
-                            window.AryanPlayerEngine.switchServer(0);
-                        }
                     }
                 });
+            }
+
+            // Non-blocking ad trigger in background
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                setTimeout(() => {
+                    window.AryanAds.trigger('match_card');
+                }, 150);
             }
         }
 

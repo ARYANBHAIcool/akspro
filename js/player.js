@@ -18,20 +18,6 @@ window.AryanPlayerEngine = {
         const container = document.getElementById(containerId);
         if (!container) return;
 
-        // Check if /api/embed edge worker proxy is responsive
-        if (!this._proxyTested) {
-            this._proxyTested = true;
-            try {
-                fetch('/api/embed?url=ping', { method: 'HEAD' })
-                    .then(r => {
-                        if (r.status === 200 || r.status === 400 || r.status === 502) {
-                            window.AryanPlayerEngine.hasWorkerProxy = true;
-                        }
-                    })
-                    .catch(() => {});
-            } catch (e) {}
-        }
-
         this.destroy();
         this.currentStream = streamItem;
         this.activeServerIdx = 0;
@@ -67,49 +53,12 @@ window.AryanPlayerEngine = {
 
     getProxiedUrl(serverOrUrl, engineOverride) {
         if (!serverOrUrl) return '';
-
-        const engine = engineOverride || this.currentPlayerEngine || 'bitmovin';
         let rawUrl = '';
-        let fallbackUrl = '';
-
         if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
-            rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';
-            fallbackUrl = serverOrUrl.fallbackUrl || '';
+            rawUrl = serverOrUrl.url || serverOrUrl.rawUrl || '';
         } else {
             rawUrl = String(serverOrUrl);
         }
-
-        if (!rawUrl) return '';
-        if (rawUrl.includes('.m3u8')) return rawUrl;
-
-        // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
-        if (rawUrl.includes('/api/embed')) {
-            try {
-                const u = new URL(rawUrl, window.location.origin);
-                const target = u.searchParams.get('url');
-                if (target) {
-                    rawUrl = target;
-                }
-            } catch (e) {}
-        }
-
-        // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
-        // or through direct verified stream provider route when proxy is offline
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            if (this.hasWorkerProxy) {
-                const activeEngine = engine || this.currentPlayerEngine || 'bitmovin';
-                try {
-                    const parsed = new URL(rawUrl);
-                    parsed.searchParams.set('player', activeEngine);
-                    return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=${encodeURIComponent(activeEngine)}`;
-                } catch (e) {
-                    return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=${encodeURIComponent(activeEngine)}`;
-                }
-            } else if (fallbackUrl) {
-                return fallbackUrl;
-            }
-        }
-
         return rawUrl;
     },
 
@@ -374,43 +323,17 @@ window.AryanPlayerEngine = {
             const iframe = document.getElementById('global-iframe-element');
             if (iframe) {
                 iframe.onload = () => {
-                    try {
-                        // Check if the iframe loaded a local page / 404.html / self-site
-                        const doc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
-                        if (doc) {
-                            const title = (doc.title || '').trim();
-                            const path = (iframe.contentWindow && iframe.contentWindow.location ? iframe.contentWindow.location.pathname : '') || '';
-                            const hasPlayerElement = Boolean(doc.getElementById('player') || doc.querySelector('video') || doc.querySelector('.bmpui-ui-player') || doc.querySelector('#bitmovinplayer-video-player'));
-                            const isErrorPage = !hasPlayerElement && (
-                                title.includes('AryanStreams') ||
-                                title.includes('404') ||
-                                path.includes('404.html') ||
-                                (doc.body && (doc.body.innerText.includes('Stream Channel Offline') || doc.body.innerText.includes('Page Not Found') || doc.body.innerText.includes('Cannot GET')))
-                            );
-                            if (isErrorPage) {
-                                console.warn('Iframe detected 404 error page. Attempting direct player fallback...');
-                                if (currentServer && currentServer.fallbackUrl && iframe.src !== currentServer.fallbackUrl) {
-                                    iframe.src = currentServer.fallbackUrl;
-                                    return;
-                                }
-                                if (this.activeServerIdx !== 0 && servers.length > 0) {
-                                    this.switchServer(0);
-                                    return;
-                                } else {
-                                    iframe.src = 'about:blank';
-                                    if (errorOverlay) errorOverlay.classList.remove('hidden');
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        // Cross-origin access blocked by browser: this is expected for genuine stream embeds!
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.remove(), 250);
                     }
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
                 };
-                // Fallback hide loader after 2.5s for iframe players
                 setTimeout(() => {
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
-                }, 2500);
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.remove(), 250);
+                    }
+                }, 2000);
             }
         }
     }

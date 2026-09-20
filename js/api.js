@@ -44,18 +44,7 @@
     }
 
     function toProxiedEmbedUrl(rawUrl) {
-        if (!rawUrl) return '';
-        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            try {
-                const parsed = new URL(rawUrl);
-                if (!parsed.searchParams.has('player')) parsed.searchParams.set('player', 'bitmovin');
-                return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=bitmovin`;
-            } catch (e) {
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=bitmovin`;
-            }
-        }
-        return rawUrl;
+        return rawUrl || '';
     }
 
     function sanitizePosterUrl(url) {
@@ -937,10 +926,10 @@
                             .replace(/[^A-Z0-9]/g, '');
                     };
 
-                    const addServer = (label, rawUrl, defaultType = 'iframe', fallbackUrl = '') => {
+                    const addServer = (label, rawUrl, defaultType = 'iframe') => {
                         rawUrl = (rawUrl || '').trim();
                         if (!rawUrl) return;
-                        if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
+                        if (/streamcorner/i.test(label)) return;
                         if (/embedindia\.st\/embed\/\d+$/i.test(rawUrl) && !rawUrl.includes('backup=')) return;
 
                         let cleanLabel = (label || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
@@ -948,7 +937,7 @@
                         if (normKey && seenLabels.has(normKey)) return;
 
                         const isDirectHls = rawUrl.includes('.m3u8');
-                        const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
+                        const srvUrl = rawUrl;
 
                         // If this stream already exists in baseServers, upgrade its label from generic to authentic broadcast network (e.g. FOX (EN), CBS (EN))
                         const existingBase = urlToBaseServer.get(rawUrl) || urlToBaseServer.get(srvUrl);
@@ -957,7 +946,6 @@
                                 existingBase.name = `Server [${cleanLabel}]`;
                                 upgradedExisting = true;
                             }
-                            if (fallbackUrl && !existingBase.fallbackUrl) existingBase.fallbackUrl = fallbackUrl;
                             if (normKey) seenLabels.add(normKey);
                             return;
                         }
@@ -971,10 +959,42 @@
                             name: `Server [${cleanLabel}]`,
                             url: srvUrl,
                             rawUrl: rawUrl,
-                            fallbackUrl: fallbackUrl,
                             type: isDirectHls ? 'video' : defaultType,
                             hd: true
                         });
+                    };
+
+                    const addStreamItem = (label, streamObj) => {
+                        if (!streamObj) return;
+                        const streamUrl = (streamObj.stream_url || streamObj.streamUrl || '').trim();
+                        const streamKeys = (streamObj.stream_keys || streamObj.streamKeys || '').trim();
+                        const embedUrl = (streamObj.embed_url || streamObj.embedUrl || '').trim();
+
+                        // 1. Direct DASH stream with ClearKey DRM (e.g. Prime Video, ESPN, DAZN, BeIN, TNT Sports, CBS Golazo, Sky)
+                        if (streamUrl && streamUrl.includes('.mpd') && streamKeys) {
+                            const shakaUrl = `shaka_player.html?mpd=${encodeURIComponent(streamUrl)}&keys=${encodeURIComponent(streamKeys)}`;
+                            addServer(label, shakaUrl, 'iframe');
+                            return;
+                        }
+
+                        // 2. Direct HLS feed (.m3u8)
+                        if (streamUrl && streamUrl.includes('.m3u8')) {
+                            addServer(label, streamUrl, 'video');
+                            return;
+                        }
+
+                        // 3. Direct DASH stream (.mpd) without explicit keys
+                        if (streamUrl && streamUrl.includes('.mpd')) {
+                            const shakaUrl = `shaka_player.html?mpd=${encodeURIComponent(streamUrl)}`;
+                            addServer(label, shakaUrl, 'iframe');
+                            return;
+                        }
+
+                        // 4. Permissive embed URL that does not block iframing (e.g. embedindia.st, futtv, etc.)
+                        if (embedUrl && !embedUrl.includes('pandecocogaming') && !embedUrl.includes('streamcorner.fun') && !embedUrl.includes('getsugatensho')) {
+                            addServer(label, embedUrl, 'iframe');
+                            return;
+                        }
                     };
 
                     for (const res of taskResults) {
@@ -982,26 +1002,19 @@
                         const { provider, data } = res.value;
 
                         if (provider === 'admin' && Array.isArray(data.streams)) {
-                            const scUrl = match._adminId ? `https://streamcorner.fun/stream/admin/${match._adminId}` : '';
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url, 'iframe', scUrl));
+                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'HD Channel', s));
                         } else if (provider === 'alpha' && Array.isArray(data.streams)) {
-                            const scUrl = match.alphaStreamId ? `https://streamcorner.fun/stream/alpha/${match.alphaStreamId}` : '';
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url, 'iframe', scUrl));
+                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'HD Channel', s));
                         } else if (provider === '001' && Array.isArray(data.streams)) {
-                            const scUrl = match._p001Id ? `https://streamcorner.fun/stream/001/${match._p001Id}` : '';
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Sports', s.embed_url || s.stream_url, 'iframe', scUrl));
+                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'Sky Sports', s));
                         } else if (provider === 'skygo' && Array.isArray(data.streams)) {
-                            const scUrl = match._skygoId ? `https://streamcorner.fun/stream/skygo/${match._skygoId}` : '';
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Go', s.embed_url || s.stream_url, 'iframe', scUrl));
+                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'Sky Go', s));
                         } else if (provider === 'peacock') {
-                            const u = data.embed_url || data.embedUrl;
-                            if (u) addServer('PEACOCK (NBC)', u);
+                            addStreamItem('PEACOCK (NBC)', data);
                         } else if (provider === 'sling') {
-                            const u = data.embed_url || data.embedUrl;
-                            if (u) addServer(data.channel_name ? `${data.channel_name} (SLING)` : 'USA NETWORK (SLING)', u);
+                            addStreamItem(data.channel_name ? `${data.channel_name} (SLING)` : 'USA NETWORK (SLING)', data);
                         } else if (provider === 'paramount') {
-                            const u = data.embed_url || data.embedUrl;
-                            if (u) addServer('PARAMOUNT+ (CBS)', u);
+                            addStreamItem('PARAMOUNT+ (CBS)', data);
                         }
                     }
 
