@@ -12,9 +12,25 @@ window.AryanPlayerEngine = {
     hls: null,
     isTheater: false,
 
+    hasWorkerProxy: false,
+
     init(containerId, streamItem) {
         const container = document.getElementById(containerId);
         if (!container) return;
+
+        // Check if /api/embed edge worker proxy is responsive
+        if (!this._proxyTested) {
+            this._proxyTested = true;
+            try {
+                fetch('/api/embed?url=ping', { method: 'HEAD' })
+                    .then(r => {
+                        if (r.status === 200 || r.status === 400 || r.status === 502) {
+                            window.AryanPlayerEngine.hasWorkerProxy = true;
+                        }
+                    })
+                    .catch(() => {});
+            } catch (e) {}
+        }
 
         this.destroy();
         this.currentStream = streamItem;
@@ -54,9 +70,11 @@ window.AryanPlayerEngine = {
 
         const engine = engineOverride || this.currentPlayerEngine || 'bitmovin';
         let rawUrl = '';
+        let fallbackUrl = '';
 
         if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
             rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';
+            fallbackUrl = serverOrUrl.fallbackUrl || '';
         } else {
             rawUrl = String(serverOrUrl);
         }
@@ -76,14 +94,19 @@ window.AryanPlayerEngine = {
         }
 
         // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
+        // or through direct verified stream provider route when proxy is offline
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            const activeEngine = engine || this.currentPlayerEngine || 'bitmovin';
-            try {
-                const parsed = new URL(rawUrl);
-                parsed.searchParams.set('player', activeEngine);
-                return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=${encodeURIComponent(activeEngine)}`;
-            } catch (e) {
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=${encodeURIComponent(activeEngine)}`;
+            if (this.hasWorkerProxy) {
+                const activeEngine = engine || this.currentPlayerEngine || 'bitmovin';
+                try {
+                    const parsed = new URL(rawUrl);
+                    parsed.searchParams.set('player', activeEngine);
+                    return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=${encodeURIComponent(activeEngine)}`;
+                } catch (e) {
+                    return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=${encodeURIComponent(activeEngine)}`;
+                }
+            } else if (fallbackUrl) {
+                return fallbackUrl;
             }
         }
 
@@ -365,7 +388,11 @@ window.AryanPlayerEngine = {
                                 (doc.body && (doc.body.innerText.includes('Stream Channel Offline') || doc.body.innerText.includes('Page Not Found') || doc.body.innerText.includes('Cannot GET')))
                             );
                             if (isErrorPage) {
-                                console.warn('Iframe detected 404 error page. Switching to primary server...');
+                                console.warn('Iframe detected 404 error page. Attempting direct player fallback...');
+                                if (currentServer && currentServer.fallbackUrl && iframe.src !== currentServer.fallbackUrl) {
+                                    iframe.src = currentServer.fallbackUrl;
+                                    return;
+                                }
                                 if (this.activeServerIdx !== 0 && servers.length > 0) {
                                     this.switchServer(0);
                                     return;
