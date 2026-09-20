@@ -99,6 +99,21 @@
         'national', 'association', 'conference', 'federation'
     ]);
 
+    const TEAM_ACRONYMS = {
+        'atm': 'atletico', 'rma': 'real', 'mci': 'manchester', 'mun': 'manchester',
+        'fcb': 'barcelona', 'bar': 'barcelona', 'liv': 'liverpool', 'ars': 'arsenal',
+        'che': 'chelsea', 'tot': 'tottenham', 'bvb': 'dortmund', 'bay': 'bayern',
+        'psg': 'paris', 'juv': 'juventus', 'int': 'inter', 'mil': 'milan',
+        'new': 'newcastle', 'avl': 'aston', 'ast': 'aston', 'whu': 'west',
+        'wol': 'wolverhampton', 'eve': 'everton', 'car': 'carolina', 'atl': 'atlanta',
+        'min': 'minnesota', 'chi': 'chicago', 'phi': 'philadelphia', 'ten': 'tennessee',
+        'pit': 'pittsburgh', 'gb': 'green', 'nyj': 'jets', 'cle': 'cleveland',
+        'tb': 'tampa', 'no': 'orleans', 'bal': 'baltimore', 'cin': 'cincinnati',
+        'hou': 'houston', 'jax': 'jacksonville', 'den': 'denver', 'lv': 'las',
+        'lac': 'chargers', 'wsh': 'washington', 'dal': 'dallas', 'sea': 'seattle',
+        'ari': 'arizona', 'mia': 'miami', 'sf': 'francisco'
+    };
+
     function tokenizeMatchStr(str) {
         if (!str) return [];
         if (typeof str === 'object') {
@@ -106,8 +121,10 @@
         }
         if (typeof str !== 'string') return [];
         return str.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]/g, ' ')
             .split(/\s+/)
+            .map(w => TEAM_ACRONYMS[w] || w)
             .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
     }
 
@@ -123,7 +140,7 @@
 
     function splitTeams(title) {
         if (!title) return ['', ''];
-        const parts = String(title).split(/\s+(?:vs\.?|@|v|x|-)\s+/i);
+        const parts = String(title).split(/\s+(?:vs\.?|@|at|v|x|-)\s+/i);
         if (parts.length >= 2) {
             return [parts[0].trim(), parts[1].trim()];
         }
@@ -322,10 +339,10 @@
         },
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v18';
+            const CACHE_KEY = 'aryan_cached_matches_v19';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -359,20 +376,19 @@
             // 1. Launch Alpha feed aggregation in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
-            // 2. Load PPV feeds and channels in parallel
+            // 2. Load PPV feeds, channels, and StreamCorner catalogs in parallel
             await Promise.allSettled([
                 this.loadPPVFeeds(),
-                this.loadChannelsCatalog()
+                this.loadChannelsCatalog(),
+                this._alphaLoadingPromise
             ]);
 
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
 
-            // When Alpha finishes in background, pair fixtures and pre-fetch live Alpha sources
-            this._alphaLoadingPromise.then(() => {
-                this.preFetchLiveAlphaSources();
-            }).catch(() => {});
+            // Pre-fetch all matched broadcast channels in background
+            this.autoResolveAllAlphaSources();
 
             // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {
@@ -404,7 +420,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v18';
+            const CACHE_KEY = 'aryan_cached_matches_v19';
             try {
                 let categories = null;
 
@@ -708,7 +724,8 @@
                 const primaryFeeds = [
                     { list: adminList, prefix: 'admin' },
                     { list: alphaList, prefix: 'alpha' },
-                    { list: skygoList, prefix: 'skygo' }
+                    { list: skygoList, prefix: 'skygo' },
+                    { list: extra003List, prefix: 'extra' }
                 ];
                 for (const feed of primaryFeeds) {
                     for (const item of feed.list) {
@@ -718,6 +735,7 @@
                                 m._adminId === item.stream_id ||
                                 m.alphaStreamId === item.stream_id ||
                                 m._skygoId === item.stream_id ||
+                                m._extra003Id === item.stream_id ||
                                 m.id === `${feed.prefix}-${item.stream_id}` ||
                                 isSameMatch(m, item)
                             );
@@ -862,27 +880,39 @@
                     });
 
                     const seenUrls = new Set();
+                    const urlToBaseServer = new Map();
                     baseServers.forEach(s => {
-                        if (s.url) seenUrls.add(s.url);
-                        if (s.rawUrl) seenUrls.add(s.rawUrl);
+                        if (s.url) { seenUrls.add(s.url); urlToBaseServer.set(s.url, s); }
+                        if (s.rawUrl) { seenUrls.add(s.rawUrl); urlToBaseServer.set(s.rawUrl, s); }
                     });
 
                     const newServers = [];
+                    let upgradedExisting = false;
 
                     const addServer = (label, rawUrl, defaultType = 'iframe') => {
                         rawUrl = (rawUrl || '').trim();
                         if (!rawUrl) return;
                         if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
                         if (/embedindia\.st\/embed\/\d+$/i.test(rawUrl) && !rawUrl.includes('backup=')) return;
-                        if (seenUrls.has(rawUrl)) return;
-                        seenUrls.add(rawUrl);
-
-                        const isDirectHls = rawUrl.includes('.m3u8');
-                        const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
-                        if (seenUrls.has(srvUrl)) return;
-                        seenUrls.add(srvUrl);
 
                         let cleanLabel = (label || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
+                        const isDirectHls = rawUrl.includes('.m3u8');
+                        const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
+
+                        // If this stream already exists in baseServers, upgrade its label from generic to authentic broadcast network (e.g. FOX (EN), CBS (EN))
+                        const existingBase = urlToBaseServer.get(rawUrl) || urlToBaseServer.get(srvUrl);
+                        if (existingBase) {
+                            if (cleanLabel && !cleanLabel.includes('HD CHANNEL') && !cleanLabel.includes('MAIN HD') && !cleanLabel.includes('BACKUP')) {
+                                existingBase.name = `Server [${cleanLabel}]`;
+                                upgradedExisting = true;
+                            }
+                            return;
+                        }
+
+                        if (seenUrls.has(rawUrl) || seenUrls.has(srvUrl)) return;
+                        seenUrls.add(rawUrl);
+                        seenUrls.add(srvUrl);
+
                         newServers.push({
                             name: `Server [${cleanLabel}]`,
                             url: srvUrl,
@@ -918,7 +948,7 @@
                         }
                     }
 
-                    if (newServers.length > 0) {
+                    if (newServers.length > 0 || upgradedExisting) {
                         // Place StreamCorner broadcast feeds first, followed by base PPV feeds
                         const combined = [...newServers, ...baseServers];
                         // Re-index all servers cleanly: Server 1, Server 2, Server 3...
@@ -934,8 +964,15 @@
                         // Real-time update if user is currently viewing this match
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && 
                             (currentWatchItem.id === match.id || 
+                             currentWatchItem.rawId === match.rawId ||
                              (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === match._adminId) ||
-                             (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === match.alphaStreamId))) {
+                             (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === match.alphaStreamId) ||
+                             (Boolean(currentWatchItem._p001Id) && currentWatchItem._p001Id === match._p001Id) ||
+                             (Boolean(currentWatchItem._skygoId) && currentWatchItem._skygoId === match._skygoId) ||
+                             (Boolean(currentWatchItem._peacockId) && currentWatchItem._peacockId === match._peacockId) ||
+                             (Boolean(currentWatchItem._slingId) && currentWatchItem._slingId === match._slingId) ||
+                             (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === match._paramountId) ||
+                             (Boolean(currentWatchItem._extra003Id) && currentWatchItem._extra003Id === match._extra003Id))) {
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
@@ -947,7 +984,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v18';
+                            const CACHE_KEY = 'aryan_cached_matches_v19';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -1238,7 +1275,9 @@
 
             // 1. Direct ID, rawId, slug, provider ID, or server URL match
             let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded || m._adminId === decoded || m._skygoId === decoded) return true;
+                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || 
+                    m._adminId === decoded || m.alphaStreamId === decoded || m._p001Id === decoded || m._skygoId === decoded || 
+                    m._peacockId === decoded || m._slingId === decoded || m._paramountId === decoded || m._extra003Id === decoded) return true;
                 if (m.rawId === stripped || m.id === stripped) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -1247,14 +1286,14 @@
                 return false;
             });
 
-            // 2. Token overlap match (e.g. "ppv-pl/2026-09-12/liv-ful" -> "Liverpool vs. Fulham")
+            // 2. Token overlap match (e.g. "ppv-nfl/2026-09-20/car-atl" or "ppv-laliga/2026-09-20/atm-rma")
             if (!found) {
                 const qToks = tokenizeMatchStr(stripped);
                 if (qToks.length >= 2) {
                     found = this.matches.find(m => {
                         const tToks = tokenizeMatchStr(m.title);
                         if (tToks.length < 2) return false;
-                        return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
+                        return qToks.every(q => tToks.some(t => t.startsWith(q) || q.startsWith(t) || t.includes(q) || q.includes(t)));
                     });
                 }
             }
