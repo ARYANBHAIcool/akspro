@@ -334,7 +334,7 @@
     <script src="js/paramount-core.js?v=3.5"></script>
     <script src="js/paramount.js?v=3.4"></script>
     <script src="js/player.js?v=3.4"></script>
-    <script src="js/api.js?v=3.8"></script>
+    <script src="js/api.js?v=3.9"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -784,7 +784,17 @@
             // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
-                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === item._adminId) || (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === item.alphaStreamId))) {
+                    if (resolved && currentWatchItem && 
+                        (currentWatchItem.id === item.id || 
+                         currentWatchItem.rawId === item.rawId ||
+                         (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === item._adminId) ||
+                         (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === item.alphaStreamId) ||
+                         (Boolean(currentWatchItem._p001Id) && currentWatchItem._p001Id === item._p001Id) ||
+                         (Boolean(currentWatchItem._skygoId) && currentWatchItem._skygoId === item._skygoId) ||
+                         (Boolean(currentWatchItem._peacockId) && currentWatchItem._peacockId === item._peacockId) ||
+                         (Boolean(currentWatchItem._slingId) && currentWatchItem._slingId === item._slingId) ||
+                         (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === item._paramountId) ||
+                         (Boolean(currentWatchItem._extra003Id) && currentWatchItem._extra003Id === item._extra003Id))) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
                         if (window.AryanPlayerEngine) {
