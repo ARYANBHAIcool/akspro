@@ -38,6 +38,11 @@ export async function onRequest(context) {
             const startSec = item.date ? (typeof item.date === 'number' ? Math.floor(item.date / 1000) : Math.floor(new Date(item.date).getTime() / 1000)) : 0;
             const endSec = startSec ? startSec + 10800 : 0;
 
+            const rawPoster = item.poster || item.image || '';
+            const cleanPoster = (rawPoster && rawPoster.includes('streamed.pk'))
+                ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}`
+                : rawPoster;
+
             catMap.get(catName).push({
                 id: item.id,
                 name: item.title,
@@ -45,7 +50,7 @@ export async function onRequest(context) {
                 starts_at: startSec,
                 ends_at: endSec,
                 iframe: item.embedUrl || (item.id ? `https://embedindia.st/embed/${item.id}` : ''),
-                poster: item.poster || '',
+                poster: cleanPoster,
                 popular: Boolean(item.popular),
                 status: item.status || 'upcoming',
                 category: rawCat,

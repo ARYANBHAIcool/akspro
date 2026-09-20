@@ -334,7 +334,7 @@
     <script src="js/paramount-core.js?v=3.4"></script>
     <script src="js/paramount.js?v=3.4"></script>
     <script src="js/player.js?v=3.4"></script>
-    <script src="js/api.js?v=3.4"></script>
+    <script src="js/api.js?v=3.5"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -647,6 +647,13 @@
             const countdownText = isLive ? 'LIVE' : window.AryanGlobalAPI.getCountdownText(m.startTime);
             const leagueDisplay = m.league || m.sport || 'Sports';
 
+            let rawPoster = (m.poster || '').trim();
+            if (rawPoster.includes('streamed.pk')) {
+                rawPoster = `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}`;
+            }
+            const hasRealPoster = Boolean(rawPoster && rawPoster !== 'assets/img/logo-icon.png');
+            const posterSrc = hasRealPoster ? rawPoster : 'assets/img/logo-icon.png';
+
             return `
                 <a href="?match=${encodeURIComponent(m.id)}" 
                    onclick="event.preventDefault(); openWatchView('${m.id}')" 
@@ -654,11 +661,11 @@
                     
                     <!-- Left Thumbnail (~38-40% width, exact PPV dual-logo/gradient showcase) -->
                     <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
-                        <img src="${m.poster}" 
-                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95" 
+                        <img src="${posterSrc}" 
+                             class="w-full h-full ${hasRealPoster ? 'object-cover group-hover:scale-105 transition-transform duration-300 brightness-95' : 'object-contain p-4 opacity-50'}" 
                              alt="${m.title}" 
                              loading="lazy" 
-                             onerror="this.onerror=null; this.style.opacity='0';">
+                             onerror="this.onerror=null; this.src='assets/img/logo-icon.png'; this.className='w-full h-full object-contain p-4 opacity-50';">
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25"></div>
                     </div>
 
