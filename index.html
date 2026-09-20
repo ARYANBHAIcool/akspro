@@ -7,14 +7,6 @@
     <meta name="description" content="AryanStreams Global - Watch Live Sports, Football, Basketball, UFC, NFL, F1, Tennis, and 800+ 24/7 Live TV Channels with Multi-Server options.">
     <link rel="icon" type="image/png" href="assets/img/logo-icon.png">
 
-    <script>
-        // Anti-recursion: If loaded inside an iframe (e.g. on 404 route), halt immediately
-        if (window.self !== window.top) {
-            document.documentElement.innerHTML = '<head><meta charset="UTF-8"><style>body{margin:0;background:#080c14;color:#94a3b8;font-family:system-ui,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}.card{background:#0f172a;border:1px solid #1e293b;border-radius:12px;padding:24px 30px;max-width:380px;box-shadow:0 10px 25px rgba(0,0,0,0.5)}h3{color:#f87171;margin:0 0 8px;font-size:15px}p{margin:0 0 16px;font-size:12px;color:#94a3b8;line-height:1.4}button{background:#22c55e;color:#000;font-weight:700;border:none;border-radius:8px;padding:8px 16px;cursor:pointer;font-size:12px}</style></head><body><div class="card"><h3>Stream Channel Offline</h3><p>This stream feed is temporarily unavailable. Please switch to another server from the options above.</p><button onclick="if(window.parent&&window.parent.AryanPlayerEngine){window.parent.AryanPlayerEngine.switchServer(0);}">Switch to Main Server</button></div></body>';
-            if (window.stop) window.stop();
-        }
-    </script>
-
     <!-- Tailwind CSS & HLS.js -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
@@ -338,11 +330,11 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=6.0"></script>
-    <script src="js/paramount-core.js?v=6.0"></script>
-    <script src="js/paramount.js?v=6.0"></script>
-    <script src="js/player.js?v=6.0"></script>
-    <script src="js/api.js?v=6.0"></script>
+    <script src="js/ads.js?v=1.0"></script>
+    <script src="js/paramount-core.js?v=3.4"></script>
+    <script src="js/paramount.js?v=3.4"></script>
+    <script src="js/player.js?v=3.4"></script>
+    <script src="js/api.js?v=3.6"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -656,7 +648,7 @@
             const leagueDisplay = m.league || m.sport || 'Sports';
 
             let rawPoster = (m.poster || '').trim();
-            if (rawPoster && !rawPoster.startsWith('assets/') && !rawPoster.startsWith('data:') && !rawPoster.includes('wsrv.nl')) {
+            if (rawPoster.includes('streamed.pk')) {
                 rawPoster = `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}`;
             }
             const hasRealPoster = Boolean(rawPoster && rawPoster !== 'assets/img/logo-icon.png');
@@ -758,6 +750,9 @@
         }
 
         function openWatchView(id) {
+            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
+                window.AryanAds.trigger('match_card');
+            }
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item && window.AryanParamountAPI && typeof window.AryanParamountAPI.getEventById === 'function') {
                 item = window.AryanParamountAPI.getEventById(id);
@@ -782,35 +777,22 @@
             }
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
-            // Instant zero-lag UI render: switch view and start match immediately
             switchView('watch');
             renderWatchView(item);
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
-            // Ensure StreamCorner broadcast channels are resolved in background without interrupting playback
+            // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
-                    if (resolved && currentWatchItem && 
-                        (currentWatchItem.id === item.id || 
-                         currentWatchItem.rawId === item.rawId ||
-                         (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === item._adminId) ||
-                         (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === item.alphaStreamId) ||
-                         (Boolean(currentWatchItem._p001Id) && currentWatchItem._p001Id === item._p001Id) ||
-                         (Boolean(currentWatchItem._skygoId) && currentWatchItem._skygoId === item._skygoId) ||
-                         (Boolean(currentWatchItem._peacockId) && currentWatchItem._peacockId === item._peacockId) ||
-                         (Boolean(currentWatchItem._slingId) && currentWatchItem._slingId === item._slingId) ||
-                         (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === item._paramountId))) {
+                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId)) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
+                        if (window.AryanPlayerEngine) {
+                            window.AryanPlayerEngine.currentStream = item;
+                            window.AryanPlayerEngine.switchServer(0);
+                        }
                     }
                 });
-            }
-
-            // Non-blocking ad trigger in background
-            if (window.AryanAds && typeof window.AryanAds.trigger === 'function') {
-                setTimeout(() => {
-                    window.AryanAds.trigger('match_card');
-                }, 150);
             }
         }
 

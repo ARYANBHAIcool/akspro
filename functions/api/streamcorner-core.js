@@ -41,7 +41,7 @@ export async function onRequest(context) {
     }
 
     try {
-        const htmlRes = await fetch('https://streamcorner.fun/', {
+        const htmlRes = await fetch('https://streamcorner.foo/', {
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
@@ -52,7 +52,7 @@ export async function onRequest(context) {
 
         const mainScriptMatch = html.match(/src=["'](\/assets\/[^"']+\.js)["']/i);
         if (!mainScriptMatch) throw new Error('Main script not found in HTML');
-        const mainScriptUrl = 'https://streamcorner.fun' + mainScriptMatch[1];
+        const mainScriptUrl = 'https://streamcorner.foo' + mainScriptMatch[1];
 
         const mainRes = await fetch(mainScriptUrl);
         if (!mainRes.ok) throw new Error('Failed to fetch main script: ' + mainScriptUrl);
@@ -65,7 +65,7 @@ export async function onRequest(context) {
             const assetFiles = JSON.parse('[' + manifestMatch[1] + ']');
             for (const file of assetFiles) {
                 if (file.endsWith('.js')) {
-                    candidateUrls.push('https://streamcorner.fun/' + (file.startsWith('/') ? file.slice(1) : file));
+                    candidateUrls.push('https://streamcorner.foo/' + (file.startsWith('/') ? file.slice(1) : file));
                 }
             }
         } else {
