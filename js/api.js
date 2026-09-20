@@ -937,7 +937,7 @@
                             .replace(/[^A-Z0-9]/g, '');
                     };
 
-                    const addServer = (label, rawUrl, defaultType = 'iframe') => {
+                    const addServer = (label, rawUrl, defaultType = 'iframe', fallbackUrl = '') => {
                         rawUrl = (rawUrl || '').trim();
                         if (!rawUrl) return;
                         if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
@@ -957,6 +957,7 @@
                                 existingBase.name = `Server [${cleanLabel}]`;
                                 upgradedExisting = true;
                             }
+                            if (fallbackUrl && !existingBase.fallbackUrl) existingBase.fallbackUrl = fallbackUrl;
                             if (normKey) seenLabels.add(normKey);
                             return;
                         }
@@ -970,6 +971,7 @@
                             name: `Server [${cleanLabel}]`,
                             url: srvUrl,
                             rawUrl: rawUrl,
+                            fallbackUrl: fallbackUrl,
                             type: isDirectHls ? 'video' : defaultType,
                             hd: true
                         });
@@ -980,13 +982,17 @@
                         const { provider, data } = res.value;
 
                         if (provider === 'admin' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url));
+                            const scUrl = match._adminId ? `https://streamcorner.fun/stream/admin/${match._adminId}` : '';
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url, 'iframe', scUrl));
                         } else if (provider === 'alpha' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url));
+                            const scUrl = match.alphaStreamId ? `https://streamcorner.fun/stream/alpha/${match.alphaStreamId}` : '';
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'HD Channel', s.embed_url || s.stream_url, 'iframe', scUrl));
                         } else if (provider === '001' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Sports', s.embed_url || s.stream_url));
+                            const scUrl = match._p001Id ? `https://streamcorner.fun/stream/001/${match._p001Id}` : '';
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Sports', s.embed_url || s.stream_url, 'iframe', scUrl));
                         } else if (provider === 'skygo' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Go', s.embed_url || s.stream_url));
+                            const scUrl = match._skygoId ? `https://streamcorner.fun/stream/skygo/${match._skygoId}` : '';
+                            data.streams.forEach(s => addServer(s.source_name || s.name || 'Sky Go', s.embed_url || s.stream_url, 'iframe', scUrl));
                         } else if (provider === 'peacock') {
                             const u = data.embed_url || data.embedUrl;
                             if (u) addServer('PEACOCK (NBC)', u);
@@ -997,16 +1003,6 @@
                             const u = data.embed_url || data.embedUrl;
                             if (u) addServer('PARAMOUNT+ (CBS)', u);
                         }
-                    }
-
-                    if (match._adminId) {
-                        addServer('STREAMCORNER (MULTI)', `https://streamcorner.fun/stream/admin/${match._adminId}`);
-                    } else if (match.alphaStreamId) {
-                        addServer('STREAMCORNER (ALPHA)', `https://streamcorner.fun/stream/alpha/${match.alphaStreamId}`);
-                    } else if (match._skygoId) {
-                        addServer('STREAMCORNER (SKYGO)', `https://streamcorner.fun/stream/skygo/${match._skygoId}`);
-                    } else if (match._p001Id) {
-                        addServer('STREAMCORNER (001)', `https://streamcorner.fun/stream/001/${match._p001Id}`);
                     }
 
                     if (newServers.length > 0 || upgradedExisting) {
