@@ -351,6 +351,26 @@ window.AryanPlayerEngine = {
             const iframe = document.getElementById('global-iframe-element');
             if (iframe) {
                 iframe.onload = () => {
+                    try {
+                        // Check if the iframe loaded a local page / 404.html / self-site
+                        const doc = iframe.contentDocument || (iframe.contentWindow ? iframe.contentWindow.document : null);
+                        if (doc) {
+                            const title = (doc.title || '').trim();
+                            const path = (iframe.contentWindow && iframe.contentWindow.location ? iframe.contentWindow.location.pathname : '') || '';
+                            if (title.includes('AryanStreams') || path.startsWith('/api/embed') || path.includes('404.html')) {
+                                console.warn('Iframe detected self-site / 404 loop. Switching to primary server...');
+                                if (this.activeServerIdx !== 0 && servers.length > 0) {
+                                    this.switchServer(0);
+                                    return;
+                                } else {
+                                    iframe.src = 'about:blank';
+                                    if (errorOverlay) errorOverlay.classList.remove('hidden');
+                                }
+                            }
+                        }
+                    } catch (e) {
+                        // Cross-origin access blocked by browser: this is expected for genuine stream embeds!
+                    }
                     if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
                 };
                 // Fallback hide loader after 2.5s for iframe players

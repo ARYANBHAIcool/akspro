@@ -4,6 +4,7 @@
   "description": "AryanStreams Global - Standalone Live Sports & StreamCorner Multi-Server Streaming Web App",
   "private": true,
   "scripts": {
-    "deploy": "wrangler pages deploy . --project-name=aryanstreams-global"
+    "build": "echo 'Pages Functions Ready'",
+    "deploy": "wrangler pages deploy . --project-name=asppv"
   }
 }
