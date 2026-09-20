@@ -1,2 +1,3 @@
-/match/* /index.html 200
-/watch/* /index.html 200
+/match/* / 200
+/watch/* / 200
+

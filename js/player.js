@@ -357,8 +357,15 @@ window.AryanPlayerEngine = {
                         if (doc) {
                             const title = (doc.title || '').trim();
                             const path = (iframe.contentWindow && iframe.contentWindow.location ? iframe.contentWindow.location.pathname : '') || '';
-                            if (title.includes('AryanStreams') || path.startsWith('/api/embed') || path.includes('404.html')) {
-                                console.warn('Iframe detected self-site / 404 loop. Switching to primary server...');
+                            const hasPlayerElement = Boolean(doc.getElementById('player') || doc.querySelector('video') || doc.querySelector('.bmpui-ui-player') || doc.querySelector('#bitmovinplayer-video-player'));
+                            const isErrorPage = !hasPlayerElement && (
+                                title.includes('AryanStreams') ||
+                                title.includes('404') ||
+                                path.includes('404.html') ||
+                                (doc.body && (doc.body.innerText.includes('Stream Channel Offline') || doc.body.innerText.includes('Page Not Found') || doc.body.innerText.includes('Cannot GET')))
+                            );
+                            if (isErrorPage) {
+                                console.warn('Iframe detected 404 error page. Switching to primary server...');
                                 if (this.activeServerIdx !== 0 && servers.length > 0) {
                                     this.switchServer(0);
                                     return;
