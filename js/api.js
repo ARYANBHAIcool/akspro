@@ -46,8 +46,22 @@
         return rawUrl;
     }
 
+    function sanitizePosterUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        url = url.trim();
+        if (!url) return '';
+        if (url.includes('streamed.pk')) {
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+        }
+        return url;
+    }
+
     function sanitizeMatchServers(match) {
-        if (!match || !Array.isArray(match.servers)) return match;
+        if (!match) return match;
+        if (match.poster) {
+            match.poster = sanitizePosterUrl(match.poster);
+        }
+        if (!Array.isArray(match.servers)) return match;
         const clean = [];
         const seen = new Set();
         for (const s of match.servers) {
@@ -211,10 +225,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v15';
+            const CACHE_KEY = 'aryan_cached_matches_v16';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -225,7 +239,10 @@
                 if (cached) {
                     const parsed = JSON.parse(cached);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        this.matches = parsed.map(m => sanitizeMatchServers(m));
+                        this.matches = parsed.map(m => {
+                            if (m.poster) m.poster = sanitizePosterUrl(m.poster);
+                            return sanitizeMatchServers(m);
+                        });
                         this.isLoading = false;
                         this.sortMatches();
                         this.emitUpdate();
@@ -286,7 +303,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v15';
+            const CACHE_KEY = 'aryan_cached_matches_v16';
             try {
                 let categories = null;
 
@@ -710,7 +727,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v15';
+                            const CACHE_KEY = 'aryan_cached_matches_v16';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -919,7 +936,7 @@
                 isAlwaysLive: isAlwaysLive,
                 tag: tag,
                 status: isLive ? 'live' : (isAlwaysLive ? 'live_tv' : 'upcoming'),
-                poster: s.poster || s.image || '',
+                poster: sanitizePosterUrl(s.poster || s.image || ''),
                 colors: s.colors || [],
                 team1: { name: team1Name, logo: '' },
                 team2: { name: team2Name, logo: '' },
@@ -934,7 +951,7 @@
                 id: raw.id,
                 name: raw.title,
                 tag: raw.league,
-                poster: raw.poster,
+                poster: sanitizePosterUrl(raw.poster || ''),
                 starts_at: typeof raw.date === 'number' ? Math.floor(raw.date / 1000) : (Math.floor(new Date(raw.date).getTime() / 1000) || 0),
                 ends_at: 0,
                 always_live: raw.always_live || 0,
