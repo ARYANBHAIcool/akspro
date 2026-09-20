@@ -331,10 +331,10 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.0"></script>
-    <script src="js/paramount-core.js?v=3.4"></script>
+    <script src="js/paramount-core.js?v=3.5"></script>
     <script src="js/paramount.js?v=3.4"></script>
     <script src="js/player.js?v=3.4"></script>
-    <script src="js/api.js?v=3.6"></script>
+    <script src="js/api.js?v=3.7"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -784,7 +784,7 @@
             // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
-                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId)) {
+                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === item.alphaStreamId))) {
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         renderWatchSources(item, activeIdx);
                         if (window.AryanPlayerEngine) {
