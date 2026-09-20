@@ -29,15 +29,9 @@ export async function onRequest(context) {
     try {
         const parsedTarget = new URL(targetUrl);
 
-        // Sync requested player parameter to upstream target if specified
-        const reqEngine = requestUrl.searchParams.get('player') || parsedTarget.searchParams.get('player');
-        if (reqEngine) {
-            if (reqEngine === 'bitmovin') {
-                parsedTarget.searchParams.delete('player');
-            } else {
-                parsedTarget.searchParams.set('player', reqEngine);
-            }
-        }
+        // Ensure requested player engine is preserved (defaulting to bitmovin) on upstream target
+        const reqEngine = requestUrl.searchParams.get('player') || parsedTarget.searchParams.get('player') || 'bitmovin';
+        parsedTarget.searchParams.set('player', reqEngine);
 
         const upstreamResponse = await fetch(parsedTarget.toString(), {
             method: context.request.method,
@@ -78,7 +72,7 @@ export async function onRequest(context) {
             } else if (input) {
                 urlStr = String(input);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
                 var proxied = nitroBase + encodeURIComponent(urlStr);
                 if (typeof input === 'string') {
                     input = proxied;
@@ -105,7 +99,7 @@ export async function onRequest(context) {
             } else if (url) {
                 urlStr = String(url);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
                 url = nitroBase + encodeURIComponent(urlStr);
                 args[1] = url;
             }
@@ -146,19 +140,12 @@ export async function onRequest(context) {
             });
         }
 
-        // 2. Explicitly ensure requested player engine is synced to window.location
-        var reqEngine = '${reqEngine || ""}';
+        // 2. Explicitly ensure requested player engine is synced to window.location (defaulting to bitmovin)
+        var reqEngine = '${reqEngine || "bitmovin"}';
         if (reqEngine) {
-            if (reqEngine === 'bitmovin') {
-                if (curUrl.searchParams.has('player')) {
-                    curUrl.searchParams.delete('player');
-                    modified = true;
-                }
-            } else {
-                if (curUrl.searchParams.get('player') !== reqEngine) {
-                    curUrl.searchParams.set('player', reqEngine);
-                    modified = true;
-                }
+            if (curUrl.searchParams.get('player') !== reqEngine) {
+                curUrl.searchParams.set('player', reqEngine);
+                modified = true;
             }
         }
 

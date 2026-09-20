@@ -2,7 +2,7 @@
  * AryanStreams Global - Automated Live Sports & Stream Aggregation Engine
  * Real-time integration with:
  * 1. Futbol-X Public API (https://www.futbol-x.xyz/api)
- * 2. DamiTV & PPV Services (https://damitv.st/papi & https://ppv.st)
+ * 2. PPV.st Official Streams API & StreamCorner Core (https://api.ppv.st & streamcorner.fun)
  * 3. 24/7 Live TV Channels Catalog (DaddyHD & TimStreams)
  */
 
@@ -12,9 +12,6 @@
     const FUTBOLX_API_BASE = 'https://www.futbol-x.xyz/api';
     const isBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined';
     const hostname = isBrowser ? (window.location.hostname || '') : '';
-    const DAMITV_API_BASE = hostname.includes('pages.dev') || hostname === 'localhost' || hostname === '127.0.0.1'
-        ? '/api/damitv'
-        : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
         'data.kageyoshi001.workers.dev',
@@ -290,7 +287,6 @@
         peacockCatalog: [],
         slingCatalog: [],
         paramountCatalog: [],
-        extra003Catalog: [],
         listeners: [],
         refreshInterval: null,
         _preFetching: false,
@@ -327,10 +323,6 @@
                 const m = this.paramountCatalog.find(p => isSameMatch(match, p));
                 if (m) { match._paramountId = m.stream_id || m.tile_id || m.id; newlyLinked = true; }
             }
-            if (!match._extra003Id && Array.isArray(this.extra003Catalog) && this.extra003Catalog.length > 0) {
-                const m = this.extra003Catalog.find(e => isSameMatch(match, e));
-                if (m) { match._extra003Id = m.stream_id; newlyLinked = true; }
-            }
             if (newlyLinked && match._alphaResolved) {
                 // A new provider feed (e.g. Admin, Peacock, Sling) became available closer to kickoff
                 match._alphaResolved = false;
@@ -339,10 +331,10 @@
         },
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v19';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -420,16 +412,14 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v19';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             try {
                 let categories = null;
 
                 // Priority 1: High-speed Cloudflare proxy /api/ppv (bypasses all ISP blocks)
                 const candidateEndpoints = [
                     '/api/ppv',
-                    '/api/damitv/papi/matches/all-today',
-                    'https://api.ppv.st/api/streams',
-                    'https://damitv.st/papi/matches/all-today'
+                    'https://api.ppv.st/api/streams'
                 ];
 
                 for (const endpoint of candidateEndpoints) {
@@ -480,7 +470,6 @@
                                 norm._peacockId = existing._peacockId;
                                 norm._slingId = existing._slingId;
                                 norm._paramountId = existing._paramountId;
-                                norm._extra003Id = existing._extra003Id;
                                 norm.alphaItem = existing.alphaItem;
                                 norm._alphaResolved = existing._alphaResolved;
                                 if (Array.isArray(existing.servers) && existing.servers.length > 0) {
@@ -534,10 +523,17 @@
          */
         async loadChannelsCatalog() {
             try {
-                const url = `${DAMITV_API_BASE}/data/dlhd-channels.json`;
-                const res = await fetch(url, { signal: AbortSignal.timeout(5000) }).catch(() => null);
-                if (res && res.ok) {
-                    const data = await res.json();
+                let data = null;
+                const endpoints = ['/api/channels', 'https://ppv.st/data/dlhd-channels.json'];
+                for (const ep of endpoints) {
+                    try {
+                        const res = await fetch(ep, { signal: AbortSignal.timeout(5000) });
+                        if (res.ok) {
+                            data = await res.json();
+                            if (data && Array.isArray(data.channels) && data.channels.length > 0) break;
+                        }
+                    } catch (e) {}
+                }
                     if (data && Array.isArray(data.channels)) {
                         this.channels = data.channels.map(ch => ({
                             id: `dlhd-${ch.id}`,
@@ -562,7 +558,6 @@
                             ]
                         }));
                     }
-                }
             } catch (err) {
                 console.warn('Channels catalog load failed:', err);
             }
@@ -644,22 +639,21 @@
          * 2. 001 (Sky Sports Main Event, TNT UK, Premier)
          * 3. Peacock (Authentic Peacock / NBC Premier League feeds)
          * 4. Sling TV (USA Network, NBC Sports, Sling feeds)
-         * 5. Extra003 (International HD feeds)
+         * 5. Paramount+ & Sky Go
          */
         async loadStreamCornerAlphaFeeds() {
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
                 return;
             }
             try {
-                const [adminRes, alphaRes, p001Res, skygoRes, peacockRes, slingRes, paramountRes, extra003Res] = await Promise.allSettled([
+                const [adminRes, alphaRes, p001Res, skygoRes, peacockRes, slingRes, paramountRes] = await Promise.allSettled([
                     this.fetchStreamCornerProvider('admin', 'admin catalog'),
                     this.fetchStreamCornerProvider('alpha', 'alpha catalog'),
                     this.fetchStreamCornerProvider('001', '001 catalog'),
                     this.fetchStreamCornerProvider('skygo', 'skygo catalog'),
                     this.fetchStreamCornerProvider('peacock_schedule', 'peacock catalog'),
                     this.fetchStreamCornerProvider('slingtv_sports', 'sling catalog'),
-                    this.fetchStreamCornerProvider('paramount_schedule', 'paramount catalog'),
-                    this.fetchStreamCornerProvider('extra003', 'extra003 catalog')
+                    this.fetchStreamCornerProvider('paramount_schedule', 'paramount catalog')
                 ]);
 
                 let adminList = Array.isArray(adminRes.value) ? adminRes.value : [];
@@ -684,7 +678,6 @@
                         if (Array.isArray(cat.events)) paramountList.push(...cat.events);
                     }
                 }
-                let extra003List = Array.isArray(extra003Res.value) ? extra003Res.value : [];
 
                 if (adminList.length === 0 && alphaList.length === 0 && p001List.length === 0 && peacockList.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
@@ -705,7 +698,6 @@
                 this.peacockCatalog = peacockList;
                 this.slingCatalog = slingList;
                 this.paramountCatalog = paramountList;
-                this.extra003Catalog = extra003List;
 
                 const matchedAlphaIds = new Set();
 
@@ -724,8 +716,7 @@
                 const primaryFeeds = [
                     { list: adminList, prefix: 'admin' },
                     { list: alphaList, prefix: 'alpha' },
-                    { list: skygoList, prefix: 'skygo' },
-                    { list: extra003List, prefix: 'extra' }
+                    { list: skygoList, prefix: 'skygo' }
                 ];
                 for (const feed of primaryFeeds) {
                     for (const item of feed.list) {
@@ -735,7 +726,6 @@
                                 m._adminId === item.stream_id ||
                                 m.alphaStreamId === item.stream_id ||
                                 m._skygoId === item.stream_id ||
-                                m._extra003Id === item.stream_id ||
                                 m.id === `${feed.prefix}-${item.stream_id}` ||
                                 isSameMatch(m, item)
                             );
@@ -760,7 +750,7 @@
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
                 if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
                     this.linkMatchProviders(currentWatchItem);
-                    if (currentWatchItem._adminId || currentWatchItem.alphaStreamId || currentWatchItem._p001Id || currentWatchItem._skygoId || currentWatchItem._peacockId || currentWatchItem._slingId || currentWatchItem._paramountId || currentWatchItem._extra003Id) {
+                    if (currentWatchItem._adminId || currentWatchItem.alphaStreamId || currentWatchItem._p001Id || currentWatchItem._skygoId || currentWatchItem._peacockId || currentWatchItem._slingId || currentWatchItem._paramountId) {
                         this.resolveAlphaSourcesForMatch(currentWatchItem);
                     }
                 }
@@ -791,7 +781,7 @@
             this.linkMatchProviders(match);
 
             // 3. If any provider ID is present, resolve and return
-            if (match._adminId || match.alphaStreamId || match._p001Id || match._skygoId || match._peacockId || match._slingId || match._paramountId || match._extra003Id) {
+            if (match._adminId || match.alphaStreamId || match._p001Id || match._skygoId || match._peacockId || match._slingId || match._paramountId) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
 
@@ -804,7 +794,7 @@
          */
         async resolveAlphaSourcesForMatch(match) {
             if (!match) return false;
-            if (!match._adminId && !match.alphaStreamId && !match._p001Id && !match._skygoId && !match._peacockId && !match._slingId && !match._paramountId && !match._extra003Id) return false;
+            if (!match._adminId && !match.alphaStreamId && !match._p001Id && !match._skygoId && !match._peacockId && !match._slingId && !match._paramountId) return false;
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
@@ -862,13 +852,6 @@
                                 .catch(() => null)
                         );
                     }
-                    if (match._extra003Id) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`extra003&id=${match._extra003Id}`, match.title || 'extra003 detail')
-                                .then(d => ({ provider: 'extra003', data: d }))
-                                .catch(() => null)
-                        );
-                    }
 
                     const taskResults = await Promise.allSettled(fetchTasks);
 
@@ -880,6 +863,7 @@
                     });
 
                     const seenUrls = new Set();
+                    const seenLabels = new Set();
                     const urlToBaseServer = new Map();
                     baseServers.forEach(s => {
                         if (s.url) { seenUrls.add(s.url); urlToBaseServer.set(s.url, s); }
@@ -889,6 +873,13 @@
                     const newServers = [];
                     let upgradedExisting = false;
 
+                    const normalizeLabel = (l) => {
+                        return (l || '').toUpperCase()
+                            .replace(/\(.*?\)/g, '')
+                            .replace(/\[.*?\]/g, '')
+                            .replace(/[^A-Z0-9]/g, '');
+                    };
+
                     const addServer = (label, rawUrl, defaultType = 'iframe') => {
                         rawUrl = (rawUrl || '').trim();
                         if (!rawUrl) return;
@@ -896,6 +887,9 @@
                         if (/embedindia\.st\/embed\/\d+$/i.test(rawUrl) && !rawUrl.includes('backup=')) return;
 
                         let cleanLabel = (label || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
+                        const normKey = normalizeLabel(cleanLabel);
+                        if (normKey && seenLabels.has(normKey)) return;
+
                         const isDirectHls = rawUrl.includes('.m3u8');
                         const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
 
@@ -906,12 +900,14 @@
                                 existingBase.name = `Server [${cleanLabel}]`;
                                 upgradedExisting = true;
                             }
+                            if (normKey) seenLabels.add(normKey);
                             return;
                         }
 
                         if (seenUrls.has(rawUrl) || seenUrls.has(srvUrl)) return;
                         seenUrls.add(rawUrl);
                         seenUrls.add(srvUrl);
+                        if (normKey) seenLabels.add(normKey);
 
                         newServers.push({
                             name: `Server [${cleanLabel}]`,
@@ -943,8 +939,6 @@
                         } else if (provider === 'paramount') {
                             const u = data.embed_url || data.embedUrl;
                             if (u) addServer('PARAMOUNT+ (CBS)', u);
-                        } else if (provider === 'extra003' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addServer(s.source_name || 'HD FEED', s.embed_url || s.stream_url));
                         }
                     }
 
@@ -971,8 +965,7 @@
                              (Boolean(currentWatchItem._skygoId) && currentWatchItem._skygoId === match._skygoId) ||
                              (Boolean(currentWatchItem._peacockId) && currentWatchItem._peacockId === match._peacockId) ||
                              (Boolean(currentWatchItem._slingId) && currentWatchItem._slingId === match._slingId) ||
-                             (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === match._paramountId) ||
-                             (Boolean(currentWatchItem._extra003Id) && currentWatchItem._extra003Id === match._extra003Id))) {
+                             (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === match._paramountId))) {
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
@@ -984,7 +977,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v19';
+                            const CACHE_KEY = 'aryan_cached_matches_v20';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -1010,7 +1003,7 @@
             this._resolvingAllAlpha = true;
 
             try {
-                const targets = this.matches.filter(m => (m._adminId || m.alphaStreamId || m._p001Id || m._skygoId || m._peacockId || m._slingId || m._paramountId || m._extra003Id) && !m._alphaResolved);
+                const targets = this.matches.filter(m => (m._adminId || m.alphaStreamId || m._p001Id || m._skygoId || m._peacockId || m._slingId || m._paramountId) && !m._alphaResolved);
                 if (targets.length === 0) {
                     this._resolvingAllAlpha = false;
                     return;
@@ -1271,13 +1264,13 @@
             if (!id) return null;
             const decoded = decodeURIComponent(String(id)).trim();
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const stripped = decoded.replace(/^(ppv|dami)-/i, '');
+            const stripped = decoded.replace(/^ppv-/i, '');
 
             // 1. Direct ID, rawId, slug, provider ID, or server URL match
             let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || 
+                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || 
                     m._adminId === decoded || m.alphaStreamId === decoded || m._p001Id === decoded || m._skygoId === decoded || 
-                    m._peacockId === decoded || m._slingId === decoded || m._paramountId === decoded || m._extra003Id === decoded) return true;
+                    m._peacockId === decoded || m._slingId === decoded || m._paramountId === decoded) return true;
                 if (m.rawId === stripped || m.id === stripped) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');

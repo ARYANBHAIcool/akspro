@@ -77,18 +77,13 @@ window.AryanPlayerEngine = {
 
         // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            const activeEngine = engine || this.currentPlayerEngine || 'bitmovin';
             try {
                 const parsed = new URL(rawUrl);
-                if (engine && engine !== 'bitmovin') {
-                    parsed.searchParams.set('player', engine);
-                } else {
-                    parsed.searchParams.delete('player');
-                }
-                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
-                return `/api/embed?url=${encodeURIComponent(parsed.toString())}${playerParam}`;
+                parsed.searchParams.set('player', activeEngine);
+                return `/api/embed?url=${encodeURIComponent(parsed.toString())}&player=${encodeURIComponent(activeEngine)}`;
             } catch (e) {
-                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}${playerParam}`;
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}&player=${encodeURIComponent(activeEngine)}`;
             }
         }
 
