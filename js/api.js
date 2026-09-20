@@ -2,7 +2,7 @@
  * AryanStreams Global - Automated Live Sports & Stream Aggregation Engine
  * Real-time integration with:
  * 1. Futbol-X Public API (https://www.futbol-x.xyz/api)
- * 2. PPV.st Official Streams API & StreamCorner Core (https://api.ppv.st & streamcorner.fun)
+ * 2. DamiTV & PPV Services (https://damitv.st/papi & https://ppv.st)
  * 3. 24/7 Live TV Channels Catalog (DaddyHD & TimStreams)
  */
 
@@ -12,29 +12,23 @@
     const FUTBOLX_API_BASE = 'https://www.futbol-x.xyz/api';
     const isBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined';
     const hostname = isBrowser ? (window.location.hostname || '') : '';
+    const DAMITV_API_BASE = hostname.includes('pages.dev') || hostname === 'localhost' || hostname === '127.0.0.1'
+        ? '/api/damitv'
+        : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
-        'data.gigav.workers.dev',
-        'data.yedmzoa.workers.dev',
-        'data.ngagzipx.workers.dev',
-        'data.miopks.workers.dev',
-        'data.jccldjshj8sw.workers.dev',
-        'data.l0o1afmju0.workers.dev',
-        'data.nibflolsi9.workers.dev',
-        'data.5j181.workers.dev',
-        'data.rim1043.workers.dev',
-        'data.kuig2.workers.dev',
-        'data.senbon001.workers.dev',
-        'data.senbon001-2.workers.dev',
         'data.kageyoshi001.workers.dev',
+        'data.kuig2.workers.dev',
+        'data.senbon001-2.workers.dev',
+        'data.l0o1afmju0.workers.dev',
+        'data.senbon001.workers.dev',
+        'data.senbon002.workers.dev',
+        'data.senbon003.workers.dev',
         'data.silentbyte125.workers.dev',
         'data.stealthwolf798-69b.workers.dev',
         'data.redjoy256.workers.dev',
         'data.anonfox144.workers.dev',
         'data.cripw4lk000.workers.dev',
-        'data.phamviet444.workers.dev',
-        'data.kanghaerin444.workers.dev',
-        'data.minjikim444.workers.dev',
         'data.leehyein444.workers.dev',
         'data.daniellemarsh444.workers.dev'
     ];
@@ -44,16 +38,19 @@
     }
 
     function toProxiedEmbedUrl(rawUrl) {
-        return rawUrl || '';
+        if (!rawUrl) return '';
+        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+        }
+        return rawUrl;
     }
 
     function sanitizePosterUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url) return '';
-        if (url.startsWith('assets/') || url.startsWith('data:')) return url;
-        if (url.includes('wsrv.nl/?url=')) return url;
-        if (url.startsWith('http://') || url.startsWith('https://')) {
+        if (url.includes('streamed.pk')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
         }
         return url;
@@ -92,47 +89,20 @@
     }
 
     const MATCH_STOP_WORDS = new Set([
-        'vs', 'v', 'versus', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
+        'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
         'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day', 'grand', 'prix',
-        'afc', '1', '2', '07', '04', 'sv', 'rb', 'cd', 'ud', 'sk', 'san', 'south', 'north', 'east', 'west',
-        'premier', 'league', 'champions', 'copa', 'cup', 'serie', 'division', 'liga', 'tournament',
-        'matchday', 'round', 'broadcast', 'soccer', 'football', 'sports', 'tv', 'in', 'u19', 'u20',
-        'u21', 'u23', 'youth', 'friendly', 'international', 'qualifier', 'playoff', 'playoffs',
-        'derby', 'english', 'spanish', 'italian', 'french', 'german', 'brazilian', 'major', 'pro',
-        'national', 'association', 'conference', 'federation'
+        'afc', '1', '2', '07', '04', 'sv', 'rb', 'cd', 'ud', 'sk', 'san', 'south', 'north', 'east', 'west'
     ]);
-
-    const TEAM_ACRONYMS = {
-        'atm': 'atletico', 'rma': 'real', 'mci': 'manchester', 'mun': 'manchester',
-        'fcb': 'barcelona', 'bar': 'barcelona', 'liv': 'liverpool', 'ars': 'arsenal',
-        'che': 'chelsea', 'tot': 'tottenham', 'bvb': 'dortmund', 'bay': 'bayern',
-        'psg': 'paris', 'juv': 'juventus', 'int': 'inter', 'mil': 'milan',
-        'new': 'newcastle', 'avl': 'aston', 'ast': 'aston', 'whu': 'west',
-        'wol': 'wolverhampton', 'eve': 'everton', 'car': 'carolina', 'atl': 'atlanta',
-        'min': 'minnesota', 'chi': 'chicago', 'phi': 'philadelphia', 'ten': 'tennessee',
-        'pit': 'pittsburgh', 'gb': 'green', 'nyj': 'jets', 'cle': 'cleveland',
-        'tb': 'tampa', 'no': 'orleans', 'bal': 'baltimore', 'cin': 'cincinnati',
-        'hou': 'houston', 'jax': 'jacksonville', 'den': 'denver', 'lv': 'las',
-        'lac': 'chargers', 'wsh': 'washington', 'dal': 'dallas', 'sea': 'seattle',
-        'ari': 'arizona', 'mia': 'miami', 'sf': 'francisco'
-    };
 
     function tokenizeMatchStr(str) {
         if (!str) return [];
-        if (typeof str === 'object') {
-            str = str.name || str.title || str.team_name || '';
-        }
-        if (typeof str !== 'string') return [];
         return str.toLowerCase()
-            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
             .replace(/[^a-z0-9]/g, ' ')
             .split(/\s+/)
-            .map(w => TEAM_ACRONYMS[w] || w)
             .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
     }
 
     function hasTokenOverlap(arr1, arr2) {
-        if (!arr1 || !arr2 || arr1.length === 0 || arr2.length === 0) return false;
         for (const t1 of arr1) {
             if (arr2.some(t2 => t1 === t2 || (t1.length > 4 && t2.length > 4 && (t1.includes(t2) || t2.includes(t1))))) {
                 return true;
@@ -141,82 +111,44 @@
         return false;
     }
 
-    function splitTeams(title) {
-        if (!title) return ['', ''];
-        const parts = String(title).split(/\s+(?:vs\.?|@|at|v|x|-)\s+/i);
-        if (parts.length >= 2) {
-            return [parts[0].trim(), parts[1].trim()];
-        }
-        return [String(title).trim(), ''];
-    }
-
-    function parseMatchTimestamp(item) {
-        if (!item) return 0;
-        if (typeof item.startTime === 'number' && item.startTime > 0) return item.startTime;
-        if (typeof item.start_time === 'number' && item.start_time > 0) {
-            return item.start_time < 10000000000 ? item.start_time * 1000 : item.start_time;
-        }
-        if (typeof item.timestamp === 'number' && item.timestamp > 0) {
-            return item.timestamp < 10000000000 ? item.timestamp * 1000 : item.timestamp;
-        }
-        if (typeof item.starts_at === 'number' && item.starts_at > 0) {
-            return item.starts_at < 10000000000 ? item.starts_at * 1000 : item.starts_at;
-        }
-        if (item.display_start_time) return Number(item.display_start_time);
-        if (item.date) {
-            const parsed = typeof item.date === 'number' ? item.date : new Date(item.date).getTime();
-            if (!isNaN(parsed) && parsed > 0) return parsed < 10000000000 ? parsed * 1000 : parsed;
-        }
-        return 0;
-    }
-
-    function isSameMatch(m1, m2) {
-        if (!m1 || !m2) return false;
-
-        const t1 = parseMatchTimestamp(m1);
-        const t2 = parseMatchTimestamp(m2);
-        if (t1 && t2) {
-            const diffHours = Math.abs(t1 - t2) / (1000 * 60 * 60);
-            if (diffHours > 3.5) return false;
+    function isSameMatch(ppv, alpha) {
+        if (!ppv || !alpha) return false;
+        const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
+        const alphaTime = (alpha.timestamp || 0) * 1000;
+        if (ppvTime && alphaTime) {
+            const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+            if (diffHours > 16) return false;
         }
 
-        const title1 = m1.title || m1.name || m1.event_name || '';
-        const title2 = m2.title || m2.name || m2.event_name || '';
+        const pTitle = ppv.title || ppv.name || '';
+        const aTitle = alpha.event_name || alpha.title || '';
 
-        const [splitHome1, splitAway1] = splitTeams(title1);
-        const [splitHome2, splitAway2] = splitTeams(title2);
+        const pHomeName = (ppv.teams && ppv.teams.home && ppv.teams.home.name) || pTitle.split(/ vs\.? | @ /)[0] || '';
+        const pAwayName = (ppv.teams && ppv.teams.away && ppv.teams.away.name) || pTitle.split(/ vs\.? | @ /)[1] || '';
 
-        const home1 = (m1.teams && m1.teams.home && m1.teams.home.name) || m1.home_team || splitHome1;
-        const away1 = (m1.teams && m1.teams.away && m1.teams.away.name) || m1.away_team || splitAway1;
+        const aHomeName = alpha.home_team || aTitle.split(/ vs\.? | @ /)[0] || '';
+        const aAwayName = alpha.away_team || aTitle.split(/ vs\.? | @ /)[1] || '';
 
-        const home2 = (m2.teams && m2.teams.home && m2.teams.home.name) || m2.home_team || splitHome2;
-        const away2 = (m2.teams && m2.teams.away && m2.teams.away.name) || m2.away_team || splitAway2;
+        const pHomeToks = tokenizeMatchStr(pHomeName);
+        const pAwayToks = tokenizeMatchStr(pAwayName);
+        const aHomeToks = tokenizeMatchStr(aHomeName);
+        const aAwayToks = tokenizeMatchStr(aAwayName);
 
-        const h1Toks = tokenizeMatchStr(home1);
-        const a1Toks = tokenizeMatchStr(away1);
-        const h2Toks = tokenizeMatchStr(home2);
-        const a2Toks = tokenizeMatchStr(away2);
+        const homeMatchesHome = hasTokenOverlap(pHomeToks, aHomeToks);
+        const awayMatchesAway = hasTokenOverlap(pAwayToks, aAwayToks);
+        const homeMatchesAway = hasTokenOverlap(pHomeToks, aAwayToks);
+        const awayMatchesHome = hasTokenOverlap(pAwayToks, aHomeToks);
 
-        // 1. Strict two-team match check (both teams must match, or cross-match)
-        if (h1Toks.length > 0 && a1Toks.length > 0 && h2Toks.length > 0 && a2Toks.length > 0) {
-            const direct = hasTokenOverlap(h1Toks, h2Toks) && hasTokenOverlap(a1Toks, a2Toks);
-            const inverted = hasTokenOverlap(h1Toks, a2Toks) && hasTokenOverlap(a1Toks, h2Toks);
-            return direct || inverted;
+        if ((homeMatchesHome && awayMatchesAway) || (homeMatchesAway && awayMatchesHome)) {
+            return true;
         }
 
-        // 2. Partial team match check (at least one team exists and matches, plus additional distinctive tokens)
-        if ((h1Toks.length > 0 || a1Toks.length > 0) && (h2Toks.length > 0 || a2Toks.length > 0)) {
-            const t1All = [...h1Toks, ...a1Toks];
-            const t2All = [...h2Toks, ...a2Toks];
-            const common = t1All.filter(t => t2All.includes(t));
-            if (common.length >= 2) return true;
-        }
+        const pAll = tokenizeMatchStr(pTitle);
+        const aAll = tokenizeMatchStr(aTitle);
+        const common = aAll.filter(t => pAll.includes(t));
+        if (common.length >= 2) return true;
 
-        // 3. Fallback for non-team fixtures (UFC, F1, boxing, special events)
-        const all1 = tokenizeMatchStr(title1);
-        const all2 = tokenizeMatchStr(title2);
-        const common = all1.filter(t => all2.includes(t));
-        return common.length >= 2;
+        return false;
     }
 
     const SPORT_MAPPINGS = {
@@ -286,61 +218,17 @@
         isLoading: true,
         matches: [],
         channels: [],
-        adminCatalog: [],
         alphaCatalog: [],
-        p001Catalog: [],
-        skygoCatalog: [],
-        peacockCatalog: [],
-        slingCatalog: [],
-        paramountCatalog: [],
         listeners: [],
         refreshInterval: null,
         _preFetching: false,
         _alphaLoadingPromise: null,
 
-        linkMatchProviders(match) {
-            if (!match) return false;
-            let newlyLinked = false;
-            if (!match._adminId && Array.isArray(this.adminCatalog) && this.adminCatalog.length > 0) {
-                const m = this.adminCatalog.find(a => isSameMatch(match, a));
-                if (m) { match._adminId = m.stream_id || m.id; newlyLinked = true; }
-            }
-            if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                const m = this.alphaCatalog.find(a => isSameMatch(match, a));
-                if (m) { match.alphaStreamId = m.stream_id; match.alphaItem = m; newlyLinked = true; }
-            }
-            if (!match._p001Id && Array.isArray(this.p001Catalog) && this.p001Catalog.length > 0) {
-                const m = this.p001Catalog.find(p => isSameMatch(match, p));
-                if (m) { match._p001Id = m.stream_id; newlyLinked = true; }
-            }
-            if (!match._skygoId && Array.isArray(this.skygoCatalog) && this.skygoCatalog.length > 0) {
-                const m = this.skygoCatalog.find(s => isSameMatch(match, s));
-                if (m) { match._skygoId = m.stream_id; newlyLinked = true; }
-            }
-            if (!match._peacockId && Array.isArray(this.peacockCatalog) && this.peacockCatalog.length > 0) {
-                const m = this.peacockCatalog.find(p => isSameMatch(match, p));
-                if (m) { match._peacockId = m.stream_id || m.tile_id; newlyLinked = true; }
-            }
-            if (!match._slingId && Array.isArray(this.slingCatalog) && this.slingCatalog.length > 0) {
-                const m = this.slingCatalog.find(s => isSameMatch(match, s));
-                if (m) { match._slingId = m.stream_id || m.id; newlyLinked = true; }
-            }
-            if (!match._paramountId && Array.isArray(this.paramountCatalog) && this.paramountCatalog.length > 0) {
-                const m = this.paramountCatalog.find(p => isSameMatch(match, p));
-                if (m) { match._paramountId = m.stream_id || m.tile_id || m.id; newlyLinked = true; }
-            }
-            if (newlyLinked && match._alphaResolved) {
-                // A new provider feed (e.g. Admin, Peacock, Sling) became available closer to kickoff
-                match._alphaResolved = false;
-            }
-            return newlyLinked;
-        },
-
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
+            const CACHE_KEY = 'aryan_cached_matches_v17';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -374,19 +262,20 @@
             // 1. Launch Alpha feed aggregation in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
-            // 2. Load PPV feeds, channels, and StreamCorner catalogs in parallel
+            // 2. Load PPV feeds and channels in parallel
             await Promise.allSettled([
                 this.loadPPVFeeds(),
-                this.loadChannelsCatalog(),
-                this._alphaLoadingPromise
+                this.loadChannelsCatalog()
             ]);
 
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
 
-            // Pre-fetch all matched broadcast channels in background
-            this.autoResolveAllAlphaSources();
+            // When Alpha finishes in background, pair fixtures and pre-fetch live Alpha sources
+            this._alphaLoadingPromise.then(() => {
+                this.preFetchLiveAlphaSources();
+            }).catch(() => {});
 
             // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
             if (!this.refreshInterval) {
@@ -418,29 +307,16 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
-            // Instant load from cache if available to prevent any blank state
-            if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
-                try {
-                    const cached = localStorage.getItem(CACHE_KEY);
-                    if (cached) {
-                        const parsed = JSON.parse(cached);
-                        if (Array.isArray(parsed) && parsed.length > 0) {
-                            this.matches = parsed;
-                            this.isLoading = false;
-                            this.emitUpdate();
-                        }
-                    }
-                } catch (e) {}
-            }
-
+            const CACHE_KEY = 'aryan_cached_matches_v17';
             try {
                 let categories = null;
 
                 // Priority 1: High-speed Cloudflare proxy /api/ppv (bypasses all ISP blocks)
                 const candidateEndpoints = [
                     '/api/ppv',
-                    'https://api.ppv.st/api/streams'
+                    '/api/damitv/papi/matches/all-today',
+                    'https://api.ppv.st/api/streams',
+                    'https://damitv.st/papi/matches/all-today'
                 ];
 
                 for (const endpoint of candidateEndpoints) {
@@ -484,22 +360,28 @@
                             if (!norm) continue;
 
                             if (existing && existing._alphaResolved) {
-                                norm._adminId = existing._adminId;
                                 norm.alphaStreamId = existing.alphaStreamId;
-                                norm._p001Id = existing._p001Id;
-                                norm._skygoId = existing._skygoId;
-                                norm._peacockId = existing._peacockId;
-                                norm._slingId = existing._slingId;
-                                norm._paramountId = existing._paramountId;
                                 norm.alphaItem = existing.alphaItem;
                                 norm._alphaResolved = existing._alphaResolved;
-                                if (Array.isArray(existing.servers) && existing.servers.length > 0) {
-                                    norm.servers = existing.servers;
-                                    norm.sources = existing.servers;
+                                // Strictly preserve only genuine StreamCorner Alpha broadcast channels
+                                const alphaFeeds = (existing.servers || []).filter(srv => {
+                                    const u = srv.url || '';
+                                    return (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho') || u.includes('.m3u8'))
+                                        && !/embedindia\.st\/embed\/\d+$/i.test(u);
+                                });
+                                if (alphaFeeds.length > 0) {
+                                    norm.servers = sanitizeMatchServers({ servers: [...alphaFeeds, ...norm.servers] }).servers;
+                                    norm.sources = norm.servers;
                                 }
-                                this.linkMatchProviders(norm);
-                            } else {
-                                this.linkMatchProviders(norm);
+                            } else if (existing && existing.alphaStreamId) {
+                                norm.alphaStreamId = existing.alphaStreamId;
+                                norm.alphaItem = existing.alphaItem;
+                            } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
+                                if (matchedAlpha) {
+                                    norm.alphaStreamId = matchedAlpha.stream_id;
+                                    norm.alphaItem = matchedAlpha;
+                                }
                             }
                             newMatches.push(norm);
                         }
@@ -533,34 +415,9 @@
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
-                } else if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
-                    try {
-                        const cached = localStorage.getItem(CACHE_KEY);
-                        if (cached) {
-                            const parsed = JSON.parse(cached);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                this.matches = parsed;
-                                this.isLoading = false;
-                                this.emitUpdate();
-                            }
-                        }
-                    } catch (e) {}
                 }
             } catch (err) {
                 console.warn('PPV feeds load failed:', err);
-                if (this.matches.length === 0 && typeof localStorage !== 'undefined') {
-                    try {
-                        const cached = localStorage.getItem(CACHE_KEY);
-                        if (cached) {
-                            const parsed = JSON.parse(cached);
-                            if (Array.isArray(parsed) && parsed.length > 0) {
-                                this.matches = parsed;
-                                this.isLoading = false;
-                                this.emitUpdate();
-                            }
-                        }
-                    } catch (e) {}
-                }
             }
         },
 
@@ -569,17 +426,10 @@
          */
         async loadChannelsCatalog() {
             try {
-                let data = null;
-                const endpoints = ['/api/channels', 'https://ppv.st/data/dlhd-channels.json'];
-                for (const ep of endpoints) {
-                    try {
-                        const res = await fetch(ep, { signal: AbortSignal.timeout(5000) });
-                        if (res.ok) {
-                            data = await res.json();
-                            if (data && Array.isArray(data.channels) && data.channels.length > 0) break;
-                        }
-                    } catch (e) {}
-                }
+                const url = `${DAMITV_API_BASE}/data/dlhd-channels.json`;
+                const res = await fetch(url, { signal: AbortSignal.timeout(5000) }).catch(() => null);
+                if (res && res.ok) {
+                    const data = await res.json();
                     if (data && Array.isArray(data.channels)) {
                         this.channels = data.channels.map(ch => ({
                             id: `dlhd-${ch.id}`,
@@ -604,6 +454,7 @@
                             ]
                         }));
                     }
+                }
             } catch (err) {
                 console.warn('Channels catalog load failed:', err);
             }
@@ -660,72 +511,26 @@
         },
 
         /**
-         * Fetch data from StreamCorner workers with automatic multi-node failover
-         */
-        async fetchStreamCornerProvider(endpoint, label) {
-            if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
-                return null;
-            }
-            const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-            for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
-                const worker = candidateWorkers[i];
-                try {
-                    const res = await window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, label);
-                    if (res) return res;
-                } catch (e) {
-                    // Try next worker
-                }
-            }
-            return null;
-        },
-
-        /**
-         * Load StreamCorner broadcast channels across all live providers:
-         * 1. Alpha (Fubo, TNT, CBS, Bein, Sport1)
-         * 2. 001 (Sky Sports Main Event, TNT UK, Premier)
-         * 3. Peacock (Authentic Peacock / NBC Premier League feeds)
-         * 4. Sling TV (USA Network, NBC Sports, Sling feeds)
-         * 5. Paramount+ & Sky Go
+         * Load StreamCorner Alpha live & sports fixtures
+         * Pairs with PPV fixtures and introduces independent Alpha matches
          */
         async loadStreamCornerAlphaFeeds() {
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
                 return;
             }
             try {
-                const [adminRes, alphaRes, p001Res, skygoRes, peacockRes, slingRes, paramountRes] = await Promise.allSettled([
-                    this.fetchStreamCornerProvider('admin', 'admin catalog'),
-                    this.fetchStreamCornerProvider('alpha', 'alpha catalog'),
-                    this.fetchStreamCornerProvider('001', '001 catalog'),
-                    this.fetchStreamCornerProvider('skygo', 'skygo catalog'),
-                    this.fetchStreamCornerProvider('peacock_schedule', 'peacock catalog'),
-                    this.fetchStreamCornerProvider('slingtv_sports', 'sling catalog'),
-                    this.fetchStreamCornerProvider('paramount_schedule', 'paramount catalog')
-                ]);
-
-                let adminList = Array.isArray(adminRes.value) ? adminRes.value : [];
-                let alphaList = Array.isArray(alphaRes.value) ? alphaRes.value : [];
-                let p001List = Array.isArray(p001Res.value) ? p001Res.value : [];
-                let skygoList = Array.isArray(skygoRes.value) ? skygoRes.value : [];
-                let peacockList = [];
-                if (Array.isArray(peacockRes.value)) {
-                    for (const rail of peacockRes.value) {
-                        if (Array.isArray(rail.events)) peacockList.push(...rail.events);
+                let alphaList = null;
+                const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
+                    const worker = candidateWorkers[i];
+                    try {
+                        alphaList = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                        if (Array.isArray(alphaList) && alphaList.length > 0) break;
+                    } catch (e) {
+                        console.warn(`Worker ${worker} failed for alpha catalog:`, e);
                     }
                 }
-                let slingList = [];
-                if (slingRes.value && slingRes.value.sports && Array.isArray(slingRes.value.sports.tabs)) {
-                    for (const tab of slingRes.value.sports.tabs) {
-                        if (Array.isArray(tab.tiles)) slingList.push(...tab.tiles);
-                    }
-                }
-                let paramountList = [];
-                if (Array.isArray(paramountRes.value)) {
-                    for (const cat of paramountRes.value) {
-                        if (Array.isArray(cat.events)) paramountList.push(...cat.events);
-                    }
-                }
-
-                if (adminList.length === 0 && alphaList.length === 0 && p001List.length === 0 && peacockList.length === 0) {
+                if (!Array.isArray(alphaList) || alphaList.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
                         this._hasAttemptedAutoHeal = true;
                         console.warn('StreamCorner catalog returned empty/error. Auto-healing core engine from edge...');
@@ -737,52 +542,29 @@
                     return;
                 }
 
-                this.adminCatalog = adminList;
                 this.alphaCatalog = alphaList;
-                this.p001Catalog = p001List;
-                this.skygoCatalog = skygoList;
-                this.peacockCatalog = peacockList;
-                this.slingCatalog = slingList;
-                this.paramountCatalog = paramountList;
-
                 const matchedAlphaIds = new Set();
 
-                // 1. Link matching PPV matches with all StreamCorner counterparts
-                for (const m of this.matches) {
-                    const newlyLinked = this.linkMatchProviders(m);
-                    if (m._adminId) matchedAlphaIds.add(m._adminId);
-                    if (m.alphaStreamId) matchedAlphaIds.add(m.alphaStreamId);
-                    if (newlyLinked) {
-                        this.resolveAlphaSourcesForMatch(m);
+                // 1. Link matching PPV matches with their Alpha counterparts
+                for (const alpha of alphaList) {
+                    const matchedPPV = this.matches.find(m => isSameMatch(m, alpha));
+                    if (matchedPPV) {
+                        matchedAlphaIds.add(alpha.stream_id);
+                        matchedPPV.alphaStreamId = alpha.stream_id;
+                        matchedPPV.alphaItem = alpha;
                     }
                 }
 
-                // 2. Introduce independent / exclusive StreamCorner fixtures (from admin, alpha, skygo)
+                // 2. Introduce independent / exclusive StreamCorner Alpha fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
                 let addedIndependent = false;
-                const primaryFeeds = [
-                    { list: adminList, prefix: 'admin' },
-                    { list: alphaList, prefix: 'alpha' },
-                    { list: skygoList, prefix: 'skygo' }
-                ];
-                for (const feed of primaryFeeds) {
-                    for (const item of feed.list) {
-                        if (!item || !item.stream_id) continue;
-                        if (!matchedAlphaIds.has(item.stream_id)) {
-                            const exists = this.matches.some(m =>
-                                m._adminId === item.stream_id ||
-                                m.alphaStreamId === item.stream_id ||
-                                m._skygoId === item.stream_id ||
-                                m.id === `${feed.prefix}-${item.stream_id}` ||
-                                isSameMatch(m, item)
-                            );
-                            if (!exists) {
-                                const newMatch = this.normalizeAlphaMatch(item);
-                                if (newMatch) {
-                                    newMatch.id = `${feed.prefix}-${item.stream_id}`;
-                                    this.linkMatchProviders(newMatch);
-                                    this.matches.push(newMatch);
-                                    addedIndependent = true;
-                                }
+                for (const alpha of alphaList) {
+                    if (!matchedAlphaIds.has(alpha.stream_id)) {
+                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}`);
+                        if (!exists) {
+                            const newMatch = this.normalizeAlphaMatch(alpha);
+                            if (newMatch) {
+                                this.matches.push(newMatch);
+                                addedIndependent = true;
                             }
                         }
                     }
@@ -795,8 +577,12 @@
 
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
                 if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
-                    this.linkMatchProviders(currentWatchItem);
-                    if (currentWatchItem._adminId || currentWatchItem.alphaStreamId || currentWatchItem._p001Id || currentWatchItem._skygoId || currentWatchItem._peacockId || currentWatchItem._slingId || currentWatchItem._paramountId) {
+                    const matchedAlpha = currentWatchItem.alphaStreamId
+                        ? this.alphaCatalog.find(a => a.stream_id === currentWatchItem.alphaStreamId)
+                        : this.alphaCatalog.find(a => isSameMatch(currentWatchItem, a));
+                    if (matchedAlpha) {
+                        currentWatchItem.alphaStreamId = matchedAlpha.stream_id;
+                        currentWatchItem.alphaItem = matchedAlpha;
                         this.resolveAlphaSourcesForMatch(currentWatchItem);
                     }
                 }
@@ -804,30 +590,36 @@
                 // Automatically resolve and attach all StreamCorner broadcast channels across all matches
                 this.autoResolveAllAlphaSources();
             } catch (err) {
-                console.warn('StreamCorner feeds load failed:', err);
+                console.warn('StreamCorner Alpha feeds load failed:', err);
             }
         },
 
         /**
          * Ensure extra broadcast channels are paired and resolved for a match
-         * Handles cases where StreamCorner catalogs are still loading or match has not yet paired.
+         * Handles cases where Alpha catalog is still loading or match has not yet paired.
          */
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
             if (match._alphaResolved) return true;
 
-            // 1. If StreamCorner feeds are currently loading in background, await completion
+            // 1. If Alpha feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
                 try {
                     await this._alphaLoadingPromise;
                 } catch (e) {}
             }
 
-            // 2. Pair with catalogs
-            this.linkMatchProviders(match);
+            // 2. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
+            if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
+                if (matchedAlpha) {
+                    match.alphaStreamId = matchedAlpha.stream_id;
+                    match.alphaItem = matchedAlpha;
+                }
+            }
 
-            // 3. If any provider ID is present, resolve and return
-            if (match._adminId || match.alphaStreamId || match._p001Id || match._skygoId || match._peacockId || match._slingId || match._paramountId) {
+            // 3. If alphaStreamId is present, resolve and return
+            if (match.alphaStreamId) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
 
@@ -835,192 +627,88 @@
         },
 
         /**
-         * Resolve extra broadcast channels for a match across all StreamCorner providers:
-         * Admin, Fubo Sports, Peacock (NBC), Sky Sports Main Event, Sky Go, USA Network, Paramount+, etc.
+         * Resolve extra broadcast channels for a match from StreamCorner Alpha
+         * e.g. Fox Sports, TNT Sports, Sky Sports, Fancode, Apple TV, Willow, etc.
          */
         async resolveAlphaSourcesForMatch(match) {
-            if (!match) return false;
-            if (!match._adminId && !match.alphaStreamId && !match._p001Id && !match._skygoId && !match._peacockId && !match._slingId && !match._paramountId) return false;
+            if (!match || !match.alphaStreamId) return false;
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
 
             match._alphaPromise = (async () => {
                 try {
-                    const fetchTasks = [];
-
-                    if (match._adminId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`admin&id=${match._adminId}`, match.title || 'admin detail')
-                                .then(d => ({ provider: 'admin', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match.alphaStreamId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`alpha&id=${match.alphaStreamId}`, match.title || 'alpha detail')
-                                .then(d => ({ provider: 'alpha', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match._p001Id) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`001&id=${match._p001Id}`, match.title || '001 detail')
-                                .then(d => ({ provider: '001', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match._skygoId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`skygo&id=${match._skygoId}`, match.title || 'skygo detail')
-                                .then(d => ({ provider: 'skygo', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match._peacockId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`peacock_schedule&id=${match._peacockId}`, match.title || 'peacock detail')
-                                .then(d => ({ provider: 'peacock', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match._slingId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`slingtv_sports&id=${match._slingId}`, match.title || 'sling detail')
-                                .then(d => ({ provider: 'sling', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-                    if (match._paramountId) {
-                        fetchTasks.push(
-                            this.fetchStreamCornerProvider(`paramount_schedule&id=${match._paramountId}`, match.title || 'paramount detail')
-                                .then(d => ({ provider: 'paramount', data: d }))
-                                .catch(() => null)
-                        );
-                    }
-
-                    const taskResults = await Promise.allSettled(fetchTasks);
-
-                    // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out previous dynamic provider feeds
-                    const baseServers = (match.servers || []).filter(s => {
-                        const u = s.url || '';
-                        if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho') || u.includes('sportsembed') || u.includes('sportsonliine')) return false;
-                        return true;
-                    });
-
-                    const seenUrls = new Set();
-                    const seenLabels = new Set();
-                    const urlToBaseServer = new Map();
-                    baseServers.forEach(s => {
-                        if (s.url) { seenUrls.add(s.url); urlToBaseServer.set(s.url, s); }
-                        if (s.rawUrl) { seenUrls.add(s.rawUrl); urlToBaseServer.set(s.rawUrl, s); }
-                    });
-
-                    const newServers = [];
-                    let upgradedExisting = false;
-
-                    const normalizeLabel = (l) => {
-                        return (l || '').toUpperCase()
-                            .replace(/\(.*?\)/g, '')
-                            .replace(/\[.*?\]/g, '')
-                            .replace(/[^A-Z0-9]/g, '');
-                    };
-
-                    const addServer = (label, rawUrl, defaultType = 'iframe') => {
-                        rawUrl = (rawUrl || '').trim();
-                        if (!rawUrl) return;
-                        if (/streamcorner/i.test(label)) return;
-                        if (/embedindia\.st\/embed\/\d+$/i.test(rawUrl) && !rawUrl.includes('backup=')) return;
-
-                        let cleanLabel = (label || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
-                        const normKey = normalizeLabel(cleanLabel);
-                        if (normKey && seenLabels.has(normKey)) return;
-
-                        const isDirectHls = rawUrl.includes('.m3u8');
-                        const srvUrl = rawUrl;
-
-                        // If this stream already exists in baseServers, upgrade its label from generic to authentic broadcast network (e.g. FOX (EN), CBS (EN))
-                        const existingBase = urlToBaseServer.get(rawUrl) || urlToBaseServer.get(srvUrl);
-                        if (existingBase) {
-                            if (cleanLabel && !cleanLabel.includes('HD CHANNEL') && !cleanLabel.includes('MAIN HD') && !cleanLabel.includes('BACKUP')) {
-                                existingBase.name = `Server [${cleanLabel}]`;
-                                upgradedExisting = true;
-                            }
-                            if (normKey) seenLabels.add(normKey);
-                            return;
+                    let detail = null;
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                    for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
+                        const worker = candidateWorkers[i];
+                        try {
+                            detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                            if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
+                        } catch (err) {
+                            // Worker fallback
                         }
+                    }
 
-                        if (seenUrls.has(rawUrl) || seenUrls.has(srvUrl)) return;
-                        seenUrls.add(rawUrl);
-                        seenUrls.add(srvUrl);
-                        if (normKey) seenLabels.add(normKey);
+                    if (!detail && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
+                        this._hasAttemptedAutoHeal = true;
+                        const healed = await this.reloadLatestStreamCornerCore();
+                        if (healed) {
+                            return await this.resolveAlphaSourcesForMatch(match);
+                        }
+                    }
 
-                        newServers.push({
-                            name: `Server [${cleanLabel}]`,
-                            url: srvUrl,
-                            rawUrl: rawUrl,
-                            type: isDirectHls ? 'video' : defaultType,
-                            hd: true
+                    if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
+                        // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out any stray channels
+                        const baseServers = (match.servers || []).filter(s => {
+                            const u = s.url || '';
+                            // Drop unwanted broadcast channels (embedindia.st/embed/<numeric_id>)
+                            if (/embedindia\.st\/embed\/\d+$/i.test(u) && !u.includes('backup=')) return false;
+                            // Drop previous alpha feeds so they are cleanly refreshed without accumulating duplicates
+                            if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho')) return false;
+                            return true;
                         });
-                    };
 
-                    const addStreamItem = (label, streamObj) => {
-                        if (!streamObj) return;
-                        const streamUrl = (streamObj.stream_url || streamObj.streamUrl || '').trim();
-                        const streamKeys = (streamObj.stream_keys || streamObj.streamKeys || '').trim();
-                        const embedUrl = (streamObj.embed_url || streamObj.embedUrl || '').trim();
+                        const seenUrls = new Set();
+                        baseServers.forEach(s => {
+                            if (s.url) seenUrls.add(s.url);
+                            if (s.rawUrl) seenUrls.add(s.rawUrl);
+                        });
 
-                        // 1. Direct DASH stream with ClearKey DRM (e.g. Prime Video, ESPN, DAZN, BeIN, TNT Sports, CBS Golazo, Sky)
-                        if (streamUrl && streamUrl.includes('.mpd') && streamKeys) {
-                            const shakaUrl = `shaka_player.html?mpd=${encodeURIComponent(streamUrl)}&keys=${encodeURIComponent(streamKeys)}`;
-                            addServer(label, shakaUrl, 'iframe');
-                            return;
-                        }
+                        const newServers = [];
 
-                        // 2. Direct HLS feed (.m3u8)
-                        if (streamUrl && streamUrl.includes('.m3u8')) {
-                            addServer(label, streamUrl, 'video');
-                            return;
-                        }
+                        detail.streams.forEach((s) => {
+                            const rawUrl = (s.embed_url || s.stream_url || '').trim();
+                            if (!rawUrl) return;
 
-                        // 3. Direct DASH stream (.mpd) without explicit keys
-                        if (streamUrl && streamUrl.includes('.mpd')) {
-                            const shakaUrl = `shaka_player.html?mpd=${encodeURIComponent(streamUrl)}`;
-                            addServer(label, shakaUrl, 'iframe');
-                            return;
-                        }
+                            let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
 
-                        // 4. Permissive embed URL that does not block iframing (e.g. embedindia.st, futtv, etc.)
-                        if (embedUrl && !embedUrl.includes('pandecocogaming') && !embedUrl.includes('streamcorner.fun') && !embedUrl.includes('getsugatensho')) {
-                            addServer(label, embedUrl, 'iframe');
-                            return;
-                        }
-                    };
+                            // 1. Strictly drop any unwanted streamcorner-branded fallback links
+                            if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
 
-                    for (const res of taskResults) {
-                        if (res.status !== 'fulfilled' || !res.value || !res.value.data) continue;
-                        const { provider, data } = res.value;
+                            // 2. Strictly drop duplicate ppv / embedindia / damitv streams (Server 1 & Server 2 already provide them)
+                            if (/embedindia|damitv|ppv/i.test(rawUrl) || /embedindia|damitv|ppv/i.test(label)) return;
 
-                        if (provider === 'admin' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'HD Channel', s));
-                        } else if (provider === 'alpha' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'HD Channel', s));
-                        } else if (provider === '001' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'Sky Sports', s));
-                        } else if (provider === 'skygo' && Array.isArray(data.streams)) {
-                            data.streams.forEach(s => addStreamItem(s.source_name || s.name || 'Sky Go', s));
-                        } else if (provider === 'peacock') {
-                            addStreamItem('PEACOCK (NBC)', data);
-                        } else if (provider === 'sling') {
-                            addStreamItem(data.channel_name ? `${data.channel_name} (SLING)` : 'USA NETWORK (SLING)', data);
-                        } else if (provider === 'paramount') {
-                            addStreamItem('PARAMOUNT+ (CBS)', data);
-                        }
-                    }
+                            // 3. Deduplicate against seen URLs
+                            if (seenUrls.has(rawUrl)) return;
+                            seenUrls.add(rawUrl);
 
-                    if (newServers.length > 0 || upgradedExisting) {
-                        // Place authentic, reliable base PPV feeds first, followed by extra StreamCorner broadcast channels
-                        const combined = [...baseServers, ...newServers];
+                            const isDirectHls = rawUrl.includes('.m3u8');
+                            const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
+                            if (seenUrls.has(srvUrl)) return;
+                            seenUrls.add(srvUrl);
+
+                            newServers.push({
+                                name: `Server [${label}]`,
+                                url: srvUrl,
+                                rawUrl: rawUrl,
+                                type: isDirectHls ? 'video' : 'iframe',
+                                hd: true
+                            });
+                        });
+
+                        // Place StreamCorner feeds first, followed by base PPV feeds
+                        const combined = [...newServers, ...baseServers];
                         // Re-index all servers cleanly: Server 1, Server 2, Server 3...
                         combined.forEach((s, idx) => {
                             const labelMatch = (s.name || '').match(/\[(.*?)\]/);
@@ -1032,19 +720,13 @@
                         match.sources = combined;
 
                         // Real-time update if user is currently viewing this match
-                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && 
-                            (currentWatchItem.id === match.id || 
-                             currentWatchItem.rawId === match.rawId ||
-                             (Boolean(currentWatchItem._adminId) && currentWatchItem._adminId === match._adminId) ||
-                             (Boolean(currentWatchItem.alphaStreamId) && currentWatchItem.alphaStreamId === match.alphaStreamId) ||
-                             (Boolean(currentWatchItem._p001Id) && currentWatchItem._p001Id === match._p001Id) ||
-                             (Boolean(currentWatchItem._skygoId) && currentWatchItem._skygoId === match._skygoId) ||
-                             (Boolean(currentWatchItem._peacockId) && currentWatchItem._peacockId === match._peacockId) ||
-                             (Boolean(currentWatchItem._slingId) && currentWatchItem._slingId === match._slingId) ||
-                             (Boolean(currentWatchItem._paramountId) && currentWatchItem._paramountId === match._paramountId))) {
+                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
+                            if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === 0 && newServers.length > 0) {
+                                window.AryanPlayerEngine.switchServer(0);
+                            }
                             if (typeof renderWatchSources === 'function') {
                                 const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                                 renderWatchSources(currentWatchItem, activeIdx);
@@ -1053,7 +735,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v20';
+                            const CACHE_KEY = 'aryan_cached_matches_v17';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -1061,7 +743,7 @@
                     match._alphaResolved = true;
                     return true;
                 } catch (err) {
-                    console.warn('Resolve StreamCorner sources failed:', match.title, err);
+                    console.warn('Resolve Alpha sources failed:', match.title, err);
                     return false;
                 } finally {
                     match._alphaPromise = null;
@@ -1079,7 +761,7 @@
             this._resolvingAllAlpha = true;
 
             try {
-                const targets = this.matches.filter(m => (m._adminId || m.alphaStreamId || m._p001Id || m._skygoId || m._peacockId || m._slingId || m._paramountId) && !m._alphaResolved);
+                const targets = this.matches.filter(m => m.alphaStreamId && !m._alphaResolved);
                 if (targets.length === 0) {
                     this._resolvingAllAlpha = false;
                     return;
@@ -1092,8 +774,8 @@
                     return (a.startTime || 0) - (b.startTime || 0);
                 });
 
-                // Concurrently resolve in batches of 6
-                const BATCH_SIZE = 6;
+                // Concurrently resolve in batches of 4
+                const BATCH_SIZE = 4;
                 for (let i = 0; i < targets.length; i += BATCH_SIZE) {
                     const batch = targets.slice(i, i + BATCH_SIZE);
                     await Promise.allSettled(batch.map(m => this.resolveAlphaSourcesForMatch(m)));
@@ -1340,29 +1022,26 @@
             if (!id) return null;
             const decoded = decodeURIComponent(String(id)).trim();
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const stripped = decoded.replace(/^ppv-/i, '');
+            const stripped = decoded.replace(/^(ppv|dami)-/i, '');
 
-            // 1. Direct ID, rawId, slug, provider ID, or server URL match
+            // 1. Direct ID, rawId, or slug match
             let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || 
-                    m._adminId === decoded || m.alphaStreamId === decoded || m._p001Id === decoded || m._skygoId === decoded || 
-                    m._peacockId === decoded || m._slingId === decoded || m._paramountId === decoded) return true;
+                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded) return true;
                 if (m.rawId === stripped || m.id === stripped) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
-                if (Array.isArray(m.servers) && m.servers.some(s => s && (s.url || '').includes(stripped))) return true;
                 return false;
             });
 
-            // 2. Token overlap match (e.g. "ppv-nfl/2026-09-20/car-atl" or "ppv-laliga/2026-09-20/atm-rma")
+            // 2. Token overlap match (e.g. "ppv-pl/2026-09-12/liv-ful" -> "Liverpool vs. Fulham")
             if (!found) {
                 const qToks = tokenizeMatchStr(stripped);
                 if (qToks.length >= 2) {
                     found = this.matches.find(m => {
                         const tToks = tokenizeMatchStr(m.title);
                         if (tToks.length < 2) return false;
-                        return qToks.every(q => tToks.some(t => t.startsWith(q) || q.startsWith(t) || t.includes(q) || q.includes(t)));
+                        return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
                     });
                 }
             }

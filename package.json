@@ -3,9 +3,7 @@
   "version": "1.0.0",
   "description": "AryanStreams Global - Standalone Live Sports & StreamCorner Multi-Server Streaming Web App",
   "private": true,
-  "type": "module",
   "scripts": {
-    "build": "echo 'Pages Functions Ready'",
-    "deploy": "wrangler pages deploy . --project-name=asppv"
+    "deploy": "wrangler pages deploy . --project-name=aryanstreams-global"
   }
 }

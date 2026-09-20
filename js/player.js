@@ -12,8 +12,6 @@ window.AryanPlayerEngine = {
     hls: null,
     isTheater: false,
 
-    hasWorkerProxy: false,
-
     init(containerId, streamItem) {
         const container = document.getElementById(containerId);
         if (!container) return;
@@ -53,12 +51,47 @@ window.AryanPlayerEngine = {
 
     getProxiedUrl(serverOrUrl, engineOverride) {
         if (!serverOrUrl) return '';
+
+        const engine = engineOverride || this.currentPlayerEngine || 'bitmovin';
         let rawUrl = '';
+
         if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
-            rawUrl = serverOrUrl.url || serverOrUrl.rawUrl || '';
+            rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';
         } else {
             rawUrl = String(serverOrUrl);
         }
+
+        if (!rawUrl) return '';
+        if (rawUrl.includes('.m3u8')) return rawUrl;
+
+        // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
+        if (rawUrl.includes('/api/embed')) {
+            try {
+                const u = new URL(rawUrl, window.location.origin);
+                const target = u.searchParams.get('url');
+                if (target) {
+                    rawUrl = target;
+                }
+            } catch (e) {}
+        }
+
+        // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            try {
+                const parsed = new URL(rawUrl);
+                if (engine && engine !== 'bitmovin') {
+                    parsed.searchParams.set('player', engine);
+                } else {
+                    parsed.searchParams.delete('player');
+                }
+                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
+                return `/api/embed?url=${encodeURIComponent(parsed.toString())}${playerParam}`;
+            } catch (e) {
+                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}${playerParam}`;
+            }
+        }
+
         return rawUrl;
     },
 
@@ -323,17 +356,12 @@ window.AryanPlayerEngine = {
             const iframe = document.getElementById('global-iframe-element');
             if (iframe) {
                 iframe.onload = () => {
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 250);
-                    }
+                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
                 };
+                // Fallback hide loader after 2.5s for iframe players
                 setTimeout(() => {
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 250);
-                    }
-                }, 2000);
+                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
+                }, 2500);
             }
         }
     }

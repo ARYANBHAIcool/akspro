@@ -12,8 +12,7 @@ export async function onRequest(context) {
     // If 'url' parameter is missing, but 'p' parameter exists (e.g. on player engine reload or refresh),
     // automatically reconstruct the full pandecocogaming target URL
     if (!targetUrl && requestUrl.searchParams.has('p')) {
-        const path = requestUrl.pathname.includes('/admin') ? 'admin' : '';
-        targetUrl = `https://amazon.com.pandecocogaming.sbs/${path}${requestUrl.search}`;
+        targetUrl = `https://amazon.com.pandecocogaming.sbs/${requestUrl.search}`;
     }
 
     if (!targetUrl) {
@@ -29,16 +28,22 @@ export async function onRequest(context) {
     try {
         const parsedTarget = new URL(targetUrl);
 
-        // Ensure requested player engine is preserved (defaulting to bitmovin) on upstream target
-        const reqEngine = requestUrl.searchParams.get('player') || parsedTarget.searchParams.get('player') || 'bitmovin';
-        parsedTarget.searchParams.set('player', reqEngine);
+        // Sync requested player parameter to upstream target if specified
+        const reqEngine = requestUrl.searchParams.get('player') || parsedTarget.searchParams.get('player');
+        if (reqEngine) {
+            if (reqEngine === 'bitmovin') {
+                parsedTarget.searchParams.delete('player');
+            } else {
+                parsedTarget.searchParams.set('player', reqEngine);
+            }
+        }
 
         const upstreamResponse = await fetch(parsedTarget.toString(), {
             method: context.request.method,
             headers: {
                 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://streamcorner.fun/',
-                'Origin': 'https://streamcorner.fun',
+                'Referer': 'https://streamcorner.foo/',
+                'Origin': 'https://streamcorner.foo',
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
                 'Accept-Language': 'en-US,en;q=0.9'
             }
@@ -72,7 +77,7 @@ export async function onRequest(context) {
             } else if (input) {
                 urlStr = String(input);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
                 var proxied = nitroBase + encodeURIComponent(urlStr);
                 if (typeof input === 'string') {
                     input = proxied;
@@ -99,7 +104,7 @@ export async function onRequest(context) {
             } else if (url) {
                 urlStr = String(url);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
                 url = nitroBase + encodeURIComponent(urlStr);
                 args[1] = url;
             }
@@ -140,12 +145,19 @@ export async function onRequest(context) {
             });
         }
 
-        // 2. Explicitly ensure requested player engine is synced to window.location (defaulting to bitmovin)
-        var reqEngine = '${reqEngine || "bitmovin"}';
+        // 2. Explicitly ensure requested player engine is synced to window.location
+        var reqEngine = '${reqEngine || ""}';
         if (reqEngine) {
-            if (curUrl.searchParams.get('player') !== reqEngine) {
-                curUrl.searchParams.set('player', reqEngine);
-                modified = true;
+            if (reqEngine === 'bitmovin') {
+                if (curUrl.searchParams.has('player')) {
+                    curUrl.searchParams.delete('player');
+                    modified = true;
+                }
+            } else {
+                if (curUrl.searchParams.get('player') !== reqEngine) {
+                    curUrl.searchParams.set('player', reqEngine);
+                    modified = true;
+                }
             }
         }
 

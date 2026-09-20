@@ -23,9 +23,9 @@
         DIRECT_LINK: 'https://buzzonclick.com/jump/next.php?r=12179846',
         POPUNDER_ZONE_ID: '12179858',
         
-        // Cooldown between direct link triggers in milliseconds (e.g. 45 seconds)
-        // Protects against multi-popup browser lockups and prevents mobile UI lag
-        cooldownMs: 45000,
+        // Cooldown between direct link triggers in milliseconds (e.g. 20 seconds)
+        // Set to 0 to trigger on every qualified button click
+        cooldownMs: 20000,
 
         // Feature toggles
         enabled: true,
@@ -92,11 +92,12 @@
 
         /**
          * Trigger Direct Link Ad
-         * Must be invoked inside a genuine user click handler.
+         * Must be invoked synchronously inside a genuine user click handler
+         * so modern browser popup blockers allow the new tab.
          * 
-         * @param {string} source - Origin of the click
-         * @param {boolean} force - If true, ignores cooldown
-         * @returns {boolean}
+         * @param {string} source - Origin of the click (e.g., 'match_card', 'server_button', 'back_button', 'player_overlay')
+         * @param {boolean} force - If true, ignores the cooldown window
+         * @returns {boolean} - True if ad opened, false otherwise
          */
         trigger(source = 'button', force = false) {
             if (!this.enabled || !this.enableDirectLinks) return false;
@@ -110,9 +111,12 @@
             this.clickCount++;
 
             try {
-                // Open direct link in a new tab smoothly without window blur/focus locks
+                // Open direct link in a new tab
                 const adWin = window.open(this.DIRECT_LINK, '_blank');
                 if (adWin) {
+                    // Retain main tab focus so stream or page action continues smoothly
+                    try { adWin.blur(); } catch (e) {}
+                    try { window.focus(); } catch (e) {}
                     console.log(`[AryanAds] Direct link triggered (${source}). Total clicks: ${this.clickCount}`);
                     return true;
                 }

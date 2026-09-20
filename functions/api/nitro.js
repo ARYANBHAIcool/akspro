@@ -38,8 +38,8 @@ export async function onRequest(context) {
 
         // Fetch from upstream CDN with whitelisted streamcorner origin
         const reqHeaders = {
-            'Origin': 'https://streamcorner.fun',
-            'Referer': 'https://streamcorner.fun/',
+            'Origin': 'https://streamcorner.foo',
+            'Referer': 'https://streamcorner.foo/',
             'User-Agent': context.request.headers.get('User-Agent') || 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
             'Accept': context.request.headers.get('Accept') || '*/*'
         };
