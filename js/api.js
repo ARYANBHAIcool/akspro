@@ -277,27 +277,33 @@
         _alphaLoadingPromise: null,
 
         linkMatchProviders(match) {
-            if (!match) return;
+            if (!match) return false;
+            let newlyLinked = false;
             if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const m = this.alphaCatalog.find(a => isSameMatch(match, a));
-                if (m) { match.alphaStreamId = m.stream_id; match.alphaItem = m; }
+                if (m) { match.alphaStreamId = m.stream_id; match.alphaItem = m; newlyLinked = true; }
             }
             if (!match._p001Id && Array.isArray(this.p001Catalog) && this.p001Catalog.length > 0) {
                 const m = this.p001Catalog.find(p => isSameMatch(match, p));
-                if (m) { match._p001Id = m.stream_id; }
+                if (m) { match._p001Id = m.stream_id; newlyLinked = true; }
             }
             if (!match._peacockId && Array.isArray(this.peacockCatalog) && this.peacockCatalog.length > 0) {
                 const m = this.peacockCatalog.find(p => isSameMatch(match, p));
-                if (m) { match._peacockId = m.stream_id || m.tile_id; }
+                if (m) { match._peacockId = m.stream_id || m.tile_id; newlyLinked = true; }
             }
             if (!match._slingId && Array.isArray(this.slingCatalog) && this.slingCatalog.length > 0) {
                 const m = this.slingCatalog.find(s => isSameMatch(match, s));
-                if (m) { match._slingId = m.stream_id || m.id; }
+                if (m) { match._slingId = m.stream_id || m.id; newlyLinked = true; }
             }
             if (!match._extra003Id && Array.isArray(this.extra003Catalog) && this.extra003Catalog.length > 0) {
                 const m = this.extra003Catalog.find(e => isSameMatch(match, e));
-                if (m) { match._extra003Id = m.stream_id; }
+                if (m) { match._extra003Id = m.stream_id; newlyLinked = true; }
             }
+            if (newlyLinked && match._alphaResolved) {
+                // A new provider feed (e.g. Peacock or Sling) became available closer to kickoff
+                match._alphaResolved = false;
+            }
+            return newlyLinked;
         },
 
         async init() {
@@ -447,6 +453,7 @@
                                     norm.servers = existing.servers;
                                     norm.sources = existing.servers;
                                 }
+                                this.linkMatchProviders(norm);
                             } else {
                                 this.linkMatchProviders(norm);
                             }
@@ -656,8 +663,11 @@
 
                 // 1. Link matching PPV matches with all StreamCorner counterparts
                 for (const m of this.matches) {
-                    this.linkMatchProviders(m);
+                    const newlyLinked = this.linkMatchProviders(m);
                     if (m.alphaStreamId) matchedAlphaIds.add(m.alphaStreamId);
+                    if (newlyLinked) {
+                        this.resolveAlphaSourcesForMatch(m);
+                    }
                 }
 
                 // 2. Introduce independent / exclusive StreamCorner Alpha fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
