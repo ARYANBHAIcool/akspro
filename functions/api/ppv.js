@@ -35,8 +35,17 @@ export async function onRequest(context) {
                 catMap.set(catName, []);
             }
 
+            const nowSec = Math.floor(Date.now() / 1000);
             const startSec = item.date ? (typeof item.date === 'number' ? Math.floor(item.date / 1000) : Math.floor(new Date(item.date).getTime() / 1000)) : 0;
             const endSec = startSec ? startSec + 10800 : 0;
+
+            // Filter out matches that have already finished / ended
+            if (item.status === 'ended' || item.status === 'finished') {
+                continue;
+            }
+            if (endSec > 0 && nowSec > (endSec + 900) && !item.always_live) {
+                continue;
+            }
 
             const rawPoster = item.poster || item.image || '';
             const cleanPoster = (rawPoster && rawPoster.includes('streamed.pk'))
@@ -109,7 +118,19 @@ export async function onRequest(context) {
         if (ppvResp.ok) {
             const json = await ppvResp.json();
             if (json && json.success !== false && Array.isArray(json.streams)) {
-                return new Response(JSON.stringify(json), {
+                const nowSec = Math.floor(Date.now() / 1000);
+                const activeStreams = json.streams.map(cat => ({
+                    ...cat,
+                    streams: (cat.streams || []).filter(s => {
+                        const start = s.starts_at || 0;
+                        const end = s.ends_at || (start ? start + 10800 : 0);
+                        if (s.status === 'ended' || s.status === 'finished') return false;
+                        if (end > 0 && nowSec > (end + 900) && !s.always_live) return false;
+                        return true;
+                    })
+                })).filter(cat => cat.streams.length > 0);
+
+                return new Response(JSON.stringify({ success: true, streams: activeStreams }), {
                     status: 200,
                     headers: {
                         'Content-Type': 'application/json; charset=utf-8',

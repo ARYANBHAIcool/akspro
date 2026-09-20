@@ -225,10 +225,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v16';
+            const CACHE_KEY = 'aryan_cached_matches_v17';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -239,7 +239,11 @@
                 if (cached) {
                     const parsed = JSON.parse(cached);
                     if (Array.isArray(parsed) && parsed.length > 0) {
-                        this.matches = parsed.map(m => {
+                        const now = Date.now();
+                        this.matches = parsed.filter(m => {
+                            if (m.isAlwaysLive || m.always_live === 1 || !m.endTime) return true;
+                            return now <= (m.endTime + 900000);
+                        }).map(m => {
                             if (m.poster) m.poster = sanitizePosterUrl(m.poster);
                             return sanitizeMatchServers(m);
                         });
@@ -303,7 +307,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v16';
+            const CACHE_KEY = 'aryan_cached_matches_v17';
             try {
                 let categories = null;
 
@@ -353,6 +357,7 @@
 
                             const existing = this.matches.find(m => m.id === `ppv-${s.id}` || m.rawId === s.id);
                             const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
+                            if (!norm) continue;
 
                             if (existing && existing._alphaResolved) {
                                 norm.alphaStreamId = existing.alphaStreamId;
@@ -392,7 +397,8 @@
                                     if (existingIndependent) {
                                         newMatches.push(existingIndependent);
                                     } else {
-                                        newMatches.push(this.normalizeAlphaMatch(alpha));
+                                        const normAlpha = this.normalizeAlphaMatch(alpha);
+                                        if (normAlpha) newMatches.push(normAlpha);
                                     }
                                 }
                             }
@@ -556,8 +562,10 @@
                         const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}`);
                         if (!exists) {
                             const newMatch = this.normalizeAlphaMatch(alpha);
-                            this.matches.push(newMatch);
-                            addedIndependent = true;
+                            if (newMatch) {
+                                this.matches.push(newMatch);
+                                addedIndependent = true;
+                            }
                         }
                     }
                 }
@@ -727,7 +735,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v16';
+                            const CACHE_KEY = 'aryan_cached_matches_v17';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -817,6 +825,12 @@
             const startTs = alpha.timestamp ? (alpha.timestamp * 1000) : (alpha.time_utc ? (new Date(alpha.time_utc + ' UTC').getTime() || 0) : 0);
             const endTs = startTs ? startTs + 10800000 : 0;
             const now = Date.now();
+
+            // Discard Alpha matches that have already ended (ended more than 15 minutes ago)
+            if (endTs > 0 && now > (endTs + 900000)) {
+                return null;
+            }
+
             const isLive = startTs > 0 && now >= (startTs - 900000) && now <= endTs;
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
@@ -866,6 +880,15 @@
             const now = Date.now();
             const tag = (s.tag || s.league || catName || 'Sports').trim();
             const isAlwaysLive = Boolean(s.always_live || is247Cat || tag.toLowerCase().includes('24/7') || !startTs);
+
+            // Filter out finished / ended matches (ended more than 15 minutes ago)
+            if (!isAlwaysLive && endTs > 0 && now > (endTs + 900000)) {
+                return null;
+            }
+            if (s.status === 'ended' || s.status === 'finished') {
+                return null;
+            }
+
             const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
 
             const title = (s.name || s.title || 'Live Event').trim();
@@ -978,6 +1001,11 @@
 
         updateLiveStatuses() {
             const now = Date.now();
+            // Strictly remove matches that ended more than 15 minutes ago
+            this.matches = this.matches.filter(m => {
+                if (m.isAlwaysLive || m.always_live === 1 || !m.endTime) return true;
+                return now <= (m.endTime + 900000);
+            });
             this.matches.forEach(m => {
                 if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams' || !m.startTime) {
                     m.isLive = false;
@@ -1066,7 +1094,8 @@
         },
 
         getAllMatches() {
-            return this.matches;
+            const now = Date.now();
+            return this.matches.filter(m => m.isAlwaysLive || !m.endTime || now <= (m.endTime + 900000));
         },
 
         isExcludedFromLiveNow(m) {
@@ -1105,11 +1134,13 @@
         },
 
         getLiveMatches() {
-            return this.matches.filter(m => m.isLive && !this.isExcludedFromLiveNow(m));
+            const now = Date.now();
+            return this.matches.filter(m => m.isLive && !this.isExcludedFromLiveNow(m) && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         getUpcomingMatches() {
-            return this.matches.filter(m => !m.isLive);
+            const now = Date.now();
+            return this.matches.filter(m => !m.isLive && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         getMatchesByCategory(cat) {
@@ -1118,20 +1149,25 @@
             if (cat === 'TODAY') {
                 const todayMidnight = new Date().setHours(0, 0, 0, 0);
                 const tonightMidnight = todayMidnight + 86400000;
-                return this.matches.filter(m => m.startTime >= todayMidnight && m.startTime < tonightMidnight);
+                const now = Date.now();
+                return this.matches.filter(m => m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
             }
-            return this.matches.filter(m => m.sport === cat || m.league.includes(cat));
+            const now = Date.now();
+            return this.matches.filter(m => (m.sport === cat || m.league.includes(cat)) && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         searchMatches(query) {
             if (!query || !query.trim()) return this.getAllMatches();
             const q = query.toLowerCase().trim();
+            const now = Date.now();
             return this.matches.filter(m =>
-                m.title.toLowerCase().includes(q) ||
-                m.league.toLowerCase().includes(q) ||
-                m.sport.toLowerCase().includes(q) ||
-                (m.team1 && m.team1.name && m.team1.name.toLowerCase().includes(q)) ||
-                (m.team2 && m.team2.name && m.team2.name.toLowerCase().includes(q))
+                (!m.endTime || now <= (m.endTime + 900000)) && (
+                    m.title.toLowerCase().includes(q) ||
+                    m.league.toLowerCase().includes(q) ||
+                    m.sport.toLowerCase().includes(q) ||
+                    (m.team1 && m.team1.name && m.team1.name.toLowerCase().includes(q)) ||
+                    (m.team2 && m.team2.name && m.team2.name.toLowerCase().includes(q))
+                )
             );
         },
 
@@ -1165,9 +1201,12 @@
             ];
 
             const grouped = {};
+            const now = Date.now();
             this.matches.forEach(m => {
                 // Strictly exclude 24/7 linear channels from scheduled sport match categories
                 if (m.isAlwaysLive || m.tag === '24/7 channel' || m.tag === '24/7 streams') return;
+                // Strictly exclude matches that have already ended
+                if (m.endTime && now > (m.endTime + 900000)) return;
 
                 const sport = m.sport || 'OTHERS';
                 if (!grouped[sport]) grouped[sport] = [];
