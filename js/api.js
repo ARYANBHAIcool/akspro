@@ -243,10 +243,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
+            const CACHE_KEY = 'aryan_cached_matches_v22';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -326,7 +326,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v20';
+            const CACHE_KEY = 'aryan_cached_matches_v22';
             try {
                 let categories = null;
 
@@ -596,7 +596,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v20';
+                        const CACHE_KEY = 'aryan_cached_matches_v22';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -627,6 +627,10 @@
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
             if (match._alphaResolved) return true;
+            if (match.servers && match.servers.length >= 3) {
+                match._alphaResolved = true;
+                return true;
+            }
 
             // 1. If Alpha feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
@@ -764,7 +768,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v20';
+                            const CACHE_KEY = 'aryan_cached_matches_v22';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -945,9 +949,9 @@
                     const subUrl = sub.url || sub.iframe || sub.embedUrl;
                     if (subUrl) {
                         const srvIndex = servers.length + 1;
-                        let label = sub.source || sub.name || '';
+                        let label = sub.source_tag || sub.source || sub.name || '';
                         if (sub.locale && !label.toLowerCase().includes(sub.locale.toLowerCase())) {
-                            label += ` [${sub.locale.toUpperCase()}]`;
+                            label += ` (${sub.locale.toUpperCase()})`;
                         }
                         const finalName = label ? `Server ${srvIndex} [${label}]` : `Server ${srvIndex} [HD]`;
                         addServer(finalName, subUrl);
@@ -963,6 +967,72 @@
                 addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
                 addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
             }
+
+            // 4. Attach authentic StreamCorner Alpha broadcast channels (Prime, ESPN, Canal+, TNT, Sky, CBS, etc.)
+            const streamCornerServers = [];
+            const addScServer = (label, streamKey) => {
+                const scUrl = `https://amazon.com.pandecocogaming.sbs/?stream=${streamKey}&player=bitmovin`;
+                if (seenUrls.has(scUrl)) return;
+                seenUrls.add(scUrl);
+                streamCornerServers.push({
+                    name: `Server [${label}]`,
+                    url: scUrl,
+                    rawUrl: scUrl,
+                    type: 'iframe',
+                    hd: true
+                });
+            };
+
+            const srcTag = (s.source_tag || '').toUpperCase();
+            if (srcTag.includes('CBS')) addScServer('CBS Sports HD', 'cbs');
+            if (srcTag.includes('FOX')) addScServer('FOX Sports HD', 'fox');
+            if (srcTag.includes('NBC')) addScServer('NBC Sports HD', 'nbc');
+            if (srcTag.includes('ESPN')) addScServer('ESPN HD', 'espn');
+            if (srcTag.includes('TNT')) addScServer('TNT Sports HD', 'tnt');
+            if (srcTag.includes('PRIME')) addScServer('Prime Video HD', 'prime');
+            if (srcTag.includes('PEACOCK')) addScServer('Peacock HD', 'peacock');
+
+            if (sport === 'FOOTBALL') {
+                addScServer('Prime Video HD', 'prime');
+                addScServer('ESPN HD', 'espn');
+                addScServer('Canal+ HD', 'canal');
+                addScServer('TNT Sports HD', 'tnt');
+                addScServer('Sky Sports HD', 'skymain');
+                addScServer('DAZN HD', 'dazn1');
+                addScServer('BeIN Sports HD', 'bein');
+            } else if (sport === 'AMERICAN-FOOTBALL') {
+                addScServer('CBS Sports HD', 'cbs');
+                addScServer('FOX Sports HD', 'fox');
+                addScServer('NBC Sports HD', 'nbc');
+                addScServer('ESPN HD', 'espn');
+                addScServer('Prime Video HD', 'prime');
+            } else if (sport === 'BASKETBALL') {
+                addScServer('ESPN HD', 'espn');
+                addScServer('TNT Sports HD', 'tnt');
+                addScServer('NBC Sports HD', 'nbc');
+            } else if (sport === 'BASEBALL') {
+                addScServer('FOX Sports HD', 'fox');
+                addScServer('ESPN HD', 'espn');
+                addScServer('Prime Video HD', 'prime');
+            } else if (sport === 'COMBAT-SPORTS') {
+                addScServer('ESPN+ HD', 'espnplus');
+                addScServer('TNT Sports HD', 'tnt');
+                addScServer('DAZN HD', 'dazn1');
+            } else if (sport === 'MOTORSPORTS') {
+                addScServer('Sky Sports F1 HD', 'skyf1');
+                addScServer('ESPN HD', 'espn');
+            } else if (sport === 'CRICKET') {
+                addScServer('Sky Sports Cricket HD', 'skymain');
+            }
+
+            servers.push(...streamCornerServers);
+
+            // Re-index all servers cleanly: Server 1 [Main HD 1080p], Server 2 [Backup HD Feed], Server 3 [Prime Video HD]...
+            servers.forEach((srv, idx) => {
+                const labelMatch = (srv.name || '').match(/\[(.*)\]/);
+                const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+                srv.name = `Server ${idx + 1} [${label}]`;
+            });
 
             return {
                 id: `ppv-${s.id}`,

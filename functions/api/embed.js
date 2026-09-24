@@ -196,7 +196,8 @@ export async function onRequest(context) {
     pointer-events: none !important;
 }
 </style>`;
-        html = html.replace('<head>', `<head>\n    ${injectScript}`);
+        const baseHref = parsedTarget.origin ? `${parsedTarget.origin}/` : 'https://amazon.com.pandecocogaming.sbs/';
+        html = html.replace('<head>', `<head>\n    <base href="${baseHref}">\n    ${injectScript}`);
 
         // Neutralize annoying popup scripts
         html = html.replace(/aclib\.runPop\([^)]*\)/g, '/* ad popup removed */');

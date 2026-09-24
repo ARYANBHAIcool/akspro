@@ -1,9 +1,7 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// _worker.js
-var __defProp2 = Object.defineProperty;
-var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
+// api/damitv/[[path]].js
 async function onRequest(context) {
   const url = new URL(context.request.url);
   const targetPath = url.pathname.replace(/^\/api\/damitv\//, "");
@@ -39,7 +37,8 @@ async function onRequest(context) {
   }
 }
 __name(onRequest, "onRequest");
-__name2(onRequest, "onRequest");
+
+// api/embed.js
 async function onRequest2(context) {
   const requestUrl = new URL(context.request.url);
   let targetUrl = requestUrl.searchParams.get("url");
@@ -84,56 +83,7 @@ async function onRequest2(context) {
     let html = await upstreamResponse.text();
     const injectScript = `<script>
 (function() {
-    // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
-    var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
-    var origFetch = window.fetch;
-    window.fetch = function(input, init) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof input === 'string') {
-                urlStr = input;
-            } else if (input && input.url) {
-                urlStr = input.url;
-            } else if (input && input.href) {
-                urlStr = input.href;
-            } else if (input) {
-                urlStr = String(input);
-            }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
-                var proxied = nitroBase + encodeURIComponent(urlStr);
-                if (typeof input === 'string') {
-                    input = proxied;
-                } else if (input && input.url) {
-                    input = new Request(proxied, input);
-                } else {
-                    input = proxied;
-                }
-                args[0] = input;
-            }
-        } catch (e) {}
-        return origFetch.apply(this, args);
-    };
 
-    var origOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof url === 'string') {
-                urlStr = url;
-            } else if (url && url.href) {
-                urlStr = url.href;
-            } else if (url) {
-                urlStr = String(url);
-            }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
-                url = nitroBase + encodeURIComponent(urlStr);
-                args[1] = url;
-            }
-        } catch (e) {}
-        return origOpen.apply(this, args);
-    };
 
     // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
     try {
@@ -268,7 +218,9 @@ async function onRequest2(context) {
     pointer-events: none !important;
 }
 </style>`;
+    const baseHref = parsedTarget.origin ? `${parsedTarget.origin}/` : "https://amazon.com.pandecocogaming.sbs/";
     html = html.replace("<head>", `<head>
+    <base href="${baseHref}">
     ${injectScript}`);
     html = html.replace(/aclib\.runPop\([^)]*\)/g, "/* ad popup removed */");
     const responseHeaders = new Headers();
@@ -290,8 +242,9 @@ async function onRequest2(context) {
     });
   }
 }
-__name(onRequest2, "onRequest2");
-__name2(onRequest2, "onRequest");
+__name(onRequest2, "onRequest");
+
+// api/nitro.js
 async function onRequest3(context) {
   const url = new URL(context.request.url);
   const targetUrl = url.searchParams.get("url");
@@ -371,8 +324,9 @@ async function onRequest3(context) {
     });
   }
 }
-__name(onRequest3, "onRequest3");
-__name2(onRequest3, "onRequest");
+__name(onRequest3, "onRequest");
+
+// api/ppv.js
 async function onRequest4(context) {
   if (context.request.method === "OPTIONS") {
     return new Response(null, {
@@ -430,32 +384,6 @@ async function onRequest4(context) {
     return streams;
   }
   __name(transformDamiListToCategories, "transformDamiListToCategories");
-  __name2(transformDamiListToCategories, "transformDamiListToCategories");
-  try {
-    const damitvResp = await fetch("https://damitv.st/papi/matches/all-today", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        "Referer": "https://damitv.st/",
-        "Accept": "application/json"
-      }
-    });
-    if (damitvResp.ok) {
-      const rawList = await damitvResp.json();
-      if (Array.isArray(rawList) && rawList.length > 0) {
-        const categories = transformDamiListToCategories(rawList);
-        return new Response(JSON.stringify({ success: true, streams: categories }), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=60"
-          }
-        });
-      }
-    }
-  } catch (err) {
-    console.warn("damitv fetch failed in /api/ppv proxy:", err.message);
-  }
   try {
     const ppvResp = await fetch("https://api.ppv.st/api/streams", {
       headers: {
@@ -483,13 +411,38 @@ async function onRequest4(context) {
           headers: {
             "Content-Type": "application/json; charset=utf-8",
             "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=60"
+            "Cache-Control": "public, max-age=300, s-maxage=300"
           }
         });
       }
     }
-  } catch (e2) {
-    console.warn("api.ppv.st fetch failed in /api/ppv proxy:", e2.message);
+  } catch (e1) {
+    console.warn("api.ppv.st fetch failed in /api/ppv proxy:", e1.message);
+  }
+  try {
+    const damitvResp = await fetch("https://damitv.st/papi/matches/all-today", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Referer": "https://damitv.st/",
+        "Accept": "application/json"
+      }
+    });
+    if (damitvResp.ok) {
+      const rawList = await damitvResp.json();
+      if (Array.isArray(rawList) && rawList.length > 0) {
+        const categories = transformDamiListToCategories(rawList);
+        return new Response(JSON.stringify({ success: true, streams: categories }), {
+          status: 200,
+          headers: {
+            "Content-Type": "application/json; charset=utf-8",
+            "Access-Control-Allow-Origin": "*",
+            "Cache-Control": "public, max-age=300, s-maxage=300"
+          }
+        });
+      }
+    }
+  } catch (err) {
+    console.warn("damitv fetch failed in /api/ppv proxy:", err.message);
   }
   return new Response(JSON.stringify({ success: false, error: "Could not retrieve feeds from upstream" }), {
     status: 502,
@@ -499,8 +452,9 @@ async function onRequest4(context) {
     }
   });
 }
-__name(onRequest4, "onRequest4");
-__name2(onRequest4, "onRequest");
+__name(onRequest4, "onRequest");
+
+// api/streamcorner-core.js
 var memoryCache = {
   code: null,
   timestamp: 0
@@ -618,8 +572,9 @@ async function onRequest5(context) {
     });
   }
 }
-__name(onRequest5, "onRequest5");
-__name2(onRequest5, "onRequest");
+__name(onRequest5, "onRequest");
+
+// ../.wrangler/tmp/pages-avV8T3/functionsRoutes-0.9077699474188662.mjs
 var routes = [
   {
     routePath: "/api/damitv/:path*",
@@ -657,6 +612,8 @@ var routes = [
     modules: [onRequest5]
   }
 ];
+
+// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/path-to-regexp/dist.es2015/index.js
 function lexer(str) {
   var tokens = [];
   var i = 0;
@@ -741,7 +698,6 @@ function lexer(str) {
   return tokens;
 }
 __name(lexer, "lexer");
-__name2(lexer, "lexer");
 function parse(str, options) {
   if (options === void 0) {
     options = {};
@@ -752,18 +708,18 @@ function parse(str, options) {
   var key = 0;
   var i = 0;
   var path = "";
-  var tryConsume = /* @__PURE__ */ __name2(function(type) {
+  var tryConsume = /* @__PURE__ */ __name(function(type) {
     if (i < tokens.length && tokens[i].type === type)
       return tokens[i++].value;
   }, "tryConsume");
-  var mustConsume = /* @__PURE__ */ __name2(function(type) {
+  var mustConsume = /* @__PURE__ */ __name(function(type) {
     var value2 = tryConsume(type);
     if (value2 !== void 0)
       return value2;
     var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
     throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
   }, "mustConsume");
-  var consumeText = /* @__PURE__ */ __name2(function() {
+  var consumeText = /* @__PURE__ */ __name(function() {
     var result2 = "";
     var value2;
     while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
@@ -771,7 +727,7 @@ function parse(str, options) {
     }
     return result2;
   }, "consumeText");
-  var isSafe = /* @__PURE__ */ __name2(function(value2) {
+  var isSafe = /* @__PURE__ */ __name(function(value2) {
     for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
       var char2 = delimiter_1[_i];
       if (value2.indexOf(char2) > -1)
@@ -779,7 +735,7 @@ function parse(str, options) {
     }
     return false;
   }, "isSafe");
-  var safePattern = /* @__PURE__ */ __name2(function(prefix2) {
+  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
     var prev = result[result.length - 1];
     var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
     if (prev && !prevText) {
@@ -842,14 +798,12 @@ function parse(str, options) {
   return result;
 }
 __name(parse, "parse");
-__name2(parse, "parse");
 function match(str, options) {
   var keys = [];
   var re = pathToRegexp(str, keys, options);
   return regexpToFunction(re, keys, options);
 }
 __name(match, "match");
-__name2(match, "match");
 function regexpToFunction(re, keys, options) {
   if (options === void 0) {
     options = {};
@@ -863,7 +817,7 @@ function regexpToFunction(re, keys, options) {
       return false;
     var path = m[0], index = m.index;
     var params = /* @__PURE__ */ Object.create(null);
-    var _loop_1 = /* @__PURE__ */ __name2(function(i2) {
+    var _loop_1 = /* @__PURE__ */ __name(function(i2) {
       if (m[i2] === void 0)
         return "continue";
       var key = keys[i2 - 1];
@@ -882,17 +836,14 @@ function regexpToFunction(re, keys, options) {
   };
 }
 __name(regexpToFunction, "regexpToFunction");
-__name2(regexpToFunction, "regexpToFunction");
 function escapeString(str) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 __name(escapeString, "escapeString");
-__name2(escapeString, "escapeString");
 function flags(options) {
   return options && options.sensitive ? "" : "i";
 }
 __name(flags, "flags");
-__name2(flags, "flags");
 function regexpToRegexp(path, keys) {
   if (!keys)
     return path;
@@ -913,7 +864,6 @@ function regexpToRegexp(path, keys) {
   return path;
 }
 __name(regexpToRegexp, "regexpToRegexp");
-__name2(regexpToRegexp, "regexpToRegexp");
 function arrayToRegexp(paths, keys, options) {
   var parts = paths.map(function(path) {
     return pathToRegexp(path, keys, options).source;
@@ -921,12 +871,10 @@ function arrayToRegexp(paths, keys, options) {
   return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
 }
 __name(arrayToRegexp, "arrayToRegexp");
-__name2(arrayToRegexp, "arrayToRegexp");
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 __name(stringToRegexp, "stringToRegexp");
-__name2(stringToRegexp, "stringToRegexp");
 function tokensToRegexp(tokens, keys, options) {
   if (options === void 0) {
     options = {};
@@ -982,7 +930,6 @@ function tokensToRegexp(tokens, keys, options) {
   return new RegExp(route, flags(options));
 }
 __name(tokensToRegexp, "tokensToRegexp");
-__name2(tokensToRegexp, "tokensToRegexp");
 function pathToRegexp(path, keys, options) {
   if (path instanceof RegExp)
     return regexpToRegexp(path, keys);
@@ -991,7 +938,8 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp(path, keys, options);
 }
 __name(pathToRegexp, "pathToRegexp");
-__name2(pathToRegexp, "pathToRegexp");
+
+// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
 var escapeRegex = /[.+?^${}()|[\]\\]/g;
 function* executeRequest(request) {
   const requestPath = new URL(request.url).pathname;
@@ -1042,14 +990,13 @@ function* executeRequest(request) {
   }
 }
 __name(executeRequest, "executeRequest");
-__name2(executeRequest, "executeRequest");
 var pages_template_worker_default = {
   async fetch(originalRequest, env, workerContext) {
     let request = originalRequest;
     const handlerIterator = executeRequest(request);
     let data = {};
     let isFailOpen = false;
-    const next = /* @__PURE__ */ __name2(async (input, init) => {
+    const next = /* @__PURE__ */ __name(async (input, init) => {
       if (input !== void 0) {
         let url = input;
         if (typeof input === "string") {
@@ -1076,7 +1023,7 @@ var pages_template_worker_default = {
           },
           env,
           waitUntil: workerContext.waitUntil.bind(workerContext),
-          passThroughOnException: /* @__PURE__ */ __name2(() => {
+          passThroughOnException: /* @__PURE__ */ __name(() => {
             isFailOpen = true;
           }, "passThroughOnException")
         };
@@ -1104,7 +1051,7 @@ var pages_template_worker_default = {
     }
   }
 };
-var cloneResponse = /* @__PURE__ */ __name2((response) => (
+var cloneResponse = /* @__PURE__ */ __name((response) => (
   // https://fetch.spec.whatwg.org/#null-body-status
   new Response(
     [101, 204, 205, 304].includes(response.status) ? null : response.body,
