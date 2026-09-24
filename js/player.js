@@ -294,9 +294,7 @@ window.AryanPlayerEngine = {
         if (isHls) {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
-            const rawUrl = currentServer.rawUrl || currentServer.url || '';
-            const isDirectDoc = rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs');
-            const initialSrc = isDirectDoc ? 'about:blank' : this.getProxiedUrl(currentServer, this.currentPlayerEngine);
+            const initialSrc = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
             html += `<iframe id="global-iframe-element" src="${initialSrc}" class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
         }
 
@@ -357,33 +355,6 @@ window.AryanPlayerEngine = {
         } else {
             const iframe = document.getElementById('global-iframe-element');
             if (iframe) {
-                const rawUrl = currentServer.rawUrl || currentServer.url || '';
-                if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs')) {
-                    // Direct client-side fetch: consumes ZERO Cloudflare requests!
-                    fetch(rawUrl)
-                        .then(r => {
-                            if (!r.ok) throw new Error('HTTP ' + r.status);
-                            return r.text();
-                        })
-                        .then(docHtml => {
-                            let baseHtml = docHtml;
-                            if (!baseHtml.includes('<base')) {
-                                baseHtml = baseHtml.replace('<head>', '<head><base href="https://amazon.com.pandecocogaming.sbs/">');
-                            }
-                            iframe.removeAttribute('src');
-                            iframe.srcdoc = baseHtml;
-                            if (loader) {
-                                loader.style.opacity = '0';
-                                setTimeout(() => loader.remove(), 300);
-                            }
-                        })
-                        .catch(() => {
-                            // If client-side fetch is blocked, fallback seamlessly to Pages /api/embed proxy
-                            const fallbackUrl = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
-                            if (iframe.src !== fallbackUrl) iframe.src = fallbackUrl;
-                        });
-                }
-
                 iframe.onload = () => {
                     if (loader) {
                         loader.style.opacity = '0';
