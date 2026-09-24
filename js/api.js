@@ -243,10 +243,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v22';
+            const CACHE_KEY = 'aryan_cached_matches_v24';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -326,7 +326,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v22';
+            const CACHE_KEY = 'aryan_cached_matches_v24';
             try {
                 let categories = null;
 
@@ -596,7 +596,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v22';
+                        const CACHE_KEY = 'aryan_cached_matches_v24';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -627,7 +627,7 @@
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
             if (match._alphaResolved) return true;
-            if (match.servers && match.servers.length >= 3) {
+            if (match.servers && match.servers.length >= 2) {
                 match._alphaResolved = true;
                 return true;
             }
@@ -768,7 +768,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v22';
+                            const CACHE_KEY = 'aryan_cached_matches_v24';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -939,11 +939,17 @@
 
             // 1. Primary Embed from PPV
             const mainEmbed = s.iframe || s.embedUrl || s.url || '';
+            const mainLabel = (s.source_tag || '').trim() ? `${s.source_tag.trim()} HD` : 'Main HD 1080p';
             if (mainEmbed) {
-                addServer('Server 1 [Main HD 1080p]', mainEmbed);
+                addServer(`Server 1 [${mainLabel}]`, mainEmbed);
+                const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
+                addServer('Server 2 [Backup HD Feed]', backupUrl);
+            } else {
+                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
+                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
             }
 
-            // 2. Substreams from official PPV feed
+            // 2. Substreams from official PPV feed (authentic broadcaster channels)
             if (Array.isArray(s.substreams)) {
                 s.substreams.forEach(sub => {
                     const subUrl = sub.url || sub.iframe || sub.embedUrl;
@@ -959,75 +965,7 @@
                 });
             }
 
-            // 3. Fallback backup feed (guarantees authentic Server 1 [Main HD] and Server 2 [Backup HD])
-            if (servers.length === 1 && mainEmbed) {
-                const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
-                addServer('Server 2 [Backup HD Feed]', backupUrl);
-            } else if (servers.length === 0) {
-                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
-                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
-            }
-
-            // 4. Attach authentic StreamCorner Alpha broadcast channels (Prime, ESPN, Canal+, TNT, Sky, CBS, etc.)
-            const streamCornerServers = [];
-            const addScServer = (label, streamKey) => {
-                const scUrl = `https://amazon.com.pandecocogaming.sbs/?stream=${streamKey}&player=bitmovin`;
-                if (seenUrls.has(scUrl)) return;
-                seenUrls.add(scUrl);
-                streamCornerServers.push({
-                    name: `Server [${label}]`,
-                    url: scUrl,
-                    rawUrl: scUrl,
-                    type: 'iframe',
-                    hd: true
-                });
-            };
-
-            const srcTag = (s.source_tag || '').toUpperCase();
-            if (srcTag.includes('CBS')) addScServer('CBS Sports HD', 'cbs');
-            if (srcTag.includes('FOX')) addScServer('FOX Sports HD', 'fox');
-            if (srcTag.includes('NBC')) addScServer('NBC Sports HD', 'nbc');
-            if (srcTag.includes('ESPN')) addScServer('ESPN HD', 'espn');
-            if (srcTag.includes('TNT')) addScServer('TNT Sports HD', 'tnt');
-            if (srcTag.includes('PRIME')) addScServer('Prime Video HD', 'prime');
-            if (srcTag.includes('PEACOCK')) addScServer('Peacock HD', 'peacock');
-
-            if (sport === 'FOOTBALL') {
-                addScServer('Prime Video HD', 'prime');
-                addScServer('ESPN HD', 'espn');
-                addScServer('Canal+ HD', 'canal');
-                addScServer('TNT Sports HD', 'tnt');
-                addScServer('Sky Sports HD', 'skymain');
-                addScServer('DAZN HD', 'dazn1');
-                addScServer('BeIN Sports HD', 'bein');
-            } else if (sport === 'AMERICAN-FOOTBALL') {
-                addScServer('CBS Sports HD', 'cbs');
-                addScServer('FOX Sports HD', 'fox');
-                addScServer('NBC Sports HD', 'nbc');
-                addScServer('ESPN HD', 'espn');
-                addScServer('Prime Video HD', 'prime');
-            } else if (sport === 'BASKETBALL') {
-                addScServer('ESPN HD', 'espn');
-                addScServer('TNT Sports HD', 'tnt');
-                addScServer('NBC Sports HD', 'nbc');
-            } else if (sport === 'BASEBALL') {
-                addScServer('FOX Sports HD', 'fox');
-                addScServer('ESPN HD', 'espn');
-                addScServer('Prime Video HD', 'prime');
-            } else if (sport === 'COMBAT-SPORTS') {
-                addScServer('ESPN+ HD', 'espnplus');
-                addScServer('TNT Sports HD', 'tnt');
-                addScServer('DAZN HD', 'dazn1');
-            } else if (sport === 'MOTORSPORTS') {
-                addScServer('Sky Sports F1 HD', 'skyf1');
-                addScServer('ESPN HD', 'espn');
-            } else if (sport === 'CRICKET') {
-                addScServer('Sky Sports Cricket HD', 'skymain');
-            }
-
-            servers.push(...streamCornerServers);
-
-            // Re-index all servers cleanly: Server 1 [Main HD 1080p], Server 2 [Backup HD Feed], Server 3 [Prime Video HD]...
+            // Re-index all servers cleanly: Server 1, Server 2, Server 3...
             servers.forEach((srv, idx) => {
                 const labelMatch = (srv.name || '').match(/\[(.*)\]/);
                 const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
@@ -1051,12 +989,14 @@
                 tag: tag,
                 status: isLive ? 'live' : (isAlwaysLive ? 'live_tv' : 'upcoming'),
                 poster: sanitizePosterUrl(s.poster || s.image || ''),
+                categoryLogo: sanitizeLogoUrl(s.category_logo || ''),
                 colors: s.colors || [],
                 team1: { name: team1Name, logo: '' },
                 team2: { name: team2Name, logo: '' },
                 rawCategory: catKey,
                 servers: servers,
-                sources: servers
+                sources: servers,
+                _alphaResolved: true
             };
         },
 
