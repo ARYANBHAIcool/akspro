@@ -331,10 +331,10 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.0"></script>
-    <script src="js/paramount-core.js?v=3.4"></script>
-    <script src="js/paramount.js?v=3.4"></script>
-    <script src="js/player.js?v=3.4"></script>
-    <script src="js/api.js?v=3.6"></script>
+    <script src="js/paramount-core.js?v=4.0"></script>
+    <script src="js/paramount.js?v=4.0"></script>
+    <script src="js/player.js?v=4.0"></script>
+    <script src="js/api.js?v=4.0"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -642,32 +642,78 @@
             grid.innerHTML = html;
         }
 
+        function renderCardThumbnail(m) {
+            // Case 1: Dual-team logos (StreamCorner matches with team1 and team2 logos)
+            if (m.team1 && m.team1.logo && m.team2 && m.team2.logo) {
+                return `
+                    <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center px-1.5 py-1">
+                        <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-red-500/10"></div>
+                        <div class="relative z-10 flex items-center justify-around w-full gap-1">
+                            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#111a2e] border border-gray-700/60 p-1 flex items-center justify-center shadow-md flex-shrink-0">
+                                <img src="${m.team1.logo}" class="max-w-full max-h-full object-contain" alt="${m.team1.name || ''}" loading="lazy" onerror="this.src='assets/img/logo-icon.png'">
+                            </div>
+                            <span class="text-[10px] font-black text-gray-400 bg-black/60 px-1 py-0.5 rounded border border-gray-800 flex-shrink-0">VS</span>
+                            <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#111a2e] border border-gray-700/60 p-1 flex items-center justify-center shadow-md flex-shrink-0">
+                                <img src="${m.team2.logo}" class="max-w-full max-h-full object-contain" alt="${m.team2.name || ''}" loading="lazy" onerror="this.src='assets/img/logo-icon.png'">
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }
+
+            // Case 2: Authentic 16:9 banner poster (PPV match poster)
+            let rawPoster = (m.poster || '').trim();
+            if (rawPoster && rawPoster !== 'assets/img/logo-icon.png') {
+                const posterSrc = rawPoster.includes('wsrv.nl') ? rawPoster : (
+                    (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk') || rawPoster.includes('damitv.st'))
+                        ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=400`
+                        : rawPoster
+                );
+                return `
+                    <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
+                        <img src="${posterSrc}" 
+                             class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 brightness-95" 
+                             alt="${m.title}" 
+                             loading="lazy" 
+                             onerror="this.onerror=null; this.src='assets/img/logo-icon.png'; this.className='w-full h-full object-contain p-4 opacity-40';">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25"></div>
+                    </div>
+                `;
+            }
+
+            // Case 3: Single team/category logo or 24/7 channel icon
+            const singleLogo = (m.categoryLogo || (m.team1 && m.team1.logo) || (m.team2 && m.team2.logo) || '').trim();
+            if (singleLogo && singleLogo !== 'assets/img/logo-icon.png') {
+                return `
+                    <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#070c16] flex items-center justify-center p-3">
+                        <img src="${singleLogo}" 
+                             class="max-w-full max-h-full object-contain drop-shadow group-hover:scale-105 transition-transform duration-300" 
+                             alt="${m.title}" 
+                             loading="lazy" 
+                             onerror="this.onerror=null; this.src='assets/img/logo-icon.png'; this.className='w-full h-full object-contain p-4 opacity-40';">
+                    </div>
+                `;
+            }
+
+            // Case 4: Default fallback icon
+            return `
+                <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center p-4">
+                    <img src="assets/img/logo-icon.png" class="w-full h-full object-contain opacity-40" alt="${m.title}" loading="lazy">
+                </div>
+            `;
+        }
+
         function createMatchCard(m) {
             const isLive = m.isLive;
             const countdownText = isLive ? 'LIVE' : window.AryanGlobalAPI.getCountdownText(m.startTime);
             const leagueDisplay = m.league || m.sport || 'Sports';
-
-            let rawPoster = (m.poster || '').trim();
-            if (rawPoster.includes('streamed.pk')) {
-                rawPoster = `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}`;
-            }
-            const hasRealPoster = Boolean(rawPoster && rawPoster !== 'assets/img/logo-icon.png');
-            const posterSrc = hasRealPoster ? rawPoster : 'assets/img/logo-icon.png';
 
             return `
                 <a href="?match=${encodeURIComponent(m.id)}" 
                    onclick="event.preventDefault(); openWatchView('${m.id}')" 
                    class="group cursor-pointer rounded-2xl overflow-hidden bg-[#0c1322] border border-gray-800/80 hover:border-gray-700 hover:bg-[#10192c] transition-all flex flex-row items-stretch h-[96px] sm:h-[102px] shadow-lg no-underline block">
                     
-                    <!-- Left Thumbnail (~38-40% width, exact PPV dual-logo/gradient showcase) -->
-                    <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
-                        <img src="${posterSrc}" 
-                             class="w-full h-full ${hasRealPoster ? 'object-cover group-hover:scale-105 transition-transform duration-300 brightness-95' : 'object-contain p-4 opacity-50'}" 
-                             alt="${m.title}" 
-                             loading="lazy" 
-                             onerror="this.onerror=null; this.src='assets/img/logo-icon.png'; this.className='w-full h-full object-contain p-4 opacity-50';">
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/25"></div>
-                    </div>
+                    ${renderCardThumbnail(m)}
 
                     <!-- Right Content Info (~60% width) -->
                     <div class="flex-1 p-3 sm:p-3.5 flex flex-col justify-between overflow-hidden">
@@ -1015,7 +1061,20 @@
                     </div>
 
                     <!-- Match Title & StreamCorner Green Accent Underline (Exact Image 1 Header) -->
-                    <div class="pt-1">
+                    <div class="pt-1 space-y-2">
+                        ${item.team1 && item.team1.logo && item.team2 && item.team2.logo ? `
+                        <div class="flex items-center gap-2.5 py-1 flex-wrap">
+                            <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
+                                <img src="${item.team1.logo}" class="w-5 h-5 object-contain" alt="${item.team1.name || ''}" onerror="this.style.display='none'">
+                                <span class="text-xs sm:text-sm font-bold text-white">${item.team1.name || ''}</span>
+                            </div>
+                            <span class="text-xs font-black text-gray-500 uppercase px-1">VS</span>
+                            <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
+                                <img src="${item.team2.logo}" class="w-5 h-5 object-contain" alt="${item.team2.name || ''}" onerror="this.style.display='none'">
+                                <span class="text-xs sm:text-sm font-bold text-white">${item.team2.name || ''}</span>
+                            </div>
+                        </div>
+                        ` : ''}
                         <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
                             ${item.title || item.name}
                         </h1>

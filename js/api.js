@@ -17,18 +17,28 @@
         : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
-        'data.kageyoshi001.workers.dev',
+        'data.gigav.workers.dev',
+        'data.yedmzoa.workers.dev',
+        'data.ngagzipx.workers.dev',
+        'data.miopks.workers.dev',
+        'data.jccldjshj8sw.workers.dev',
+        'data.nibflolsi9.workers.dev',
+        'data.5j181.workers.dev',
+        'data.rim1043.workers.dev',
         'data.kuig2.workers.dev',
-        'data.senbon001-2.workers.dev',
-        'data.l0o1afmju0.workers.dev',
         'data.senbon001.workers.dev',
+        'data.senbon001-2.workers.dev',
         'data.senbon002.workers.dev',
         'data.senbon003.workers.dev',
+        'data.kageyoshi001.workers.dev',
         'data.silentbyte125.workers.dev',
         'data.stealthwolf798-69b.workers.dev',
         'data.redjoy256.workers.dev',
         'data.anonfox144.workers.dev',
         'data.cripw4lk000.workers.dev',
+        'data.phamviet444.workers.dev',
+        'data.kanghaerin444.workers.dev',
+        'data.minjikim444.workers.dev',
         'data.leehyein444.workers.dev',
         'data.daniellemarsh444.workers.dev'
     ];
@@ -39,10 +49,6 @@
 
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
-        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
-            return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
-        }
         return rawUrl;
     }
 
@@ -50,8 +56,20 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url) return '';
-        if (url.includes('streamed.pk')) {
-            return `https://wsrv.nl/?url=${encodeURIComponent(url)}`;
+        if (url.includes('wsrv.nl/?url=')) return url;
+        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=400`;
+        }
+        return url;
+    }
+
+    function sanitizeLogoUrl(url) {
+        if (!url || typeof url !== 'string') return '';
+        url = url.trim();
+        if (!url) return '';
+        if (url.includes('wsrv.nl/?url=')) return url;
+        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=120`;
         }
         return url;
     }
@@ -225,10 +243,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v17';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -262,9 +280,10 @@
             // 1. Launch Alpha feed aggregation in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
-            // 2. Load PPV feeds and channels in parallel
+            // 2. Load PPV feeds, Alpha feeds, and channels in parallel
             await Promise.allSettled([
                 this.loadPPVFeeds(),
+                this._alphaLoadingPromise,
                 this.loadChannelsCatalog()
             ]);
 
@@ -277,7 +296,7 @@
                 this.preFetchLiveAlphaSources();
             }).catch(() => {});
 
-            // Auto-refresh match feeds, Alpha channels & statuses every 60 seconds
+            // Auto-refresh match feeds, Alpha channels & statuses every 90 seconds
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
                     await this.loadPPVFeeds();
@@ -285,7 +304,7 @@
                     await this._alphaLoadingPromise;
                     this.updateLiveStatuses();
                     this.emitUpdate();
-                }, 60000);
+                }, 90000);
             }
         },
 
@@ -307,16 +326,15 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v17';
+            const CACHE_KEY = 'aryan_cached_matches_v20';
             try {
                 let categories = null;
 
-                // Priority 1: High-speed Cloudflare proxy /api/ppv (bypasses all ISP blocks)
+                // Priority 1: Direct public CORS-enabled API (consumes ZERO Cloudflare worker requests!)
+                // Priority 2: Cloudflare /api/ppv proxy fallback for ISP DNS blocked regions
                 const candidateEndpoints = [
-                    '/api/ppv',
-                    '/api/damitv/papi/matches/all-today',
                     'https://api.ppv.st/api/streams',
-                    'https://damitv.st/papi/matches/all-today'
+                    '/api/ppv'
                 ];
 
                 for (const endpoint of candidateEndpoints) {
@@ -521,10 +539,13 @@
             try {
                 let alphaList = null;
                 const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
+                for (let i = 0; i < Math.min(candidateWorkers.length, 4); i++) {
                     const worker = candidateWorkers[i];
                     try {
-                        alphaList = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                        const fetchP = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
+                        let timer;
+                        const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 4000); });
+                        alphaList = await Promise.race([fetchP, timeoutP]).finally(() => clearTimeout(timer));
                         if (Array.isArray(alphaList) && alphaList.length > 0) break;
                     } catch (e) {
                         console.warn(`Worker ${worker} failed for alpha catalog:`, e);
@@ -570,9 +591,14 @@
                     }
                 }
 
-                if (addedIndependent) {
+                if (addedIndependent || this.matches.length > 0) {
+                    this.isLoading = false;
                     this.sortMatches();
                     this.emitUpdate();
+                    try {
+                        const CACHE_KEY = 'aryan_cached_matches_v20';
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                    } catch (e) {}
                 }
 
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
@@ -643,7 +669,10 @@
                     for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
                         const worker = candidateWorkers[i];
                         try {
-                            detail = await window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                            const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                            let timer;
+                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 3500); });
+                            detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
                             if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
                         } catch (err) {
                             // Worker fallback
@@ -735,7 +764,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v17';
+                            const CACHE_KEY = 'aryan_cached_matches_v20';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -754,31 +783,22 @@
         },
 
         /**
-         * Automatically resolve StreamCorner broadcast feeds for all matched fixtures across all categories
+         * Automatically resolve StreamCorner broadcast feeds for live fixtures smoothly
          */
         async autoResolveAllAlphaSources() {
             if (this._resolvingAllAlpha) return;
             this._resolvingAllAlpha = true;
 
             try {
-                const targets = this.matches.filter(m => m.alphaStreamId && !m._alphaResolved);
+                // Only pre-resolve top 3 live matches so site is 100% fluid with zero freeze
+                const targets = this.matches.filter(m => m.isLive && m.alphaStreamId && !m._alphaResolved).slice(0, 3);
                 if (targets.length === 0) {
                     this._resolvingAllAlpha = false;
                     return;
                 }
 
-                // Sort: Live fixtures first, then upcoming starting soonest
-                targets.sort((a, b) => {
-                    if (a.isLive && !b.isLive) return -1;
-                    if (!a.isLive && b.isLive) return 1;
-                    return (a.startTime || 0) - (b.startTime || 0);
-                });
-
-                // Concurrently resolve in batches of 4
-                const BATCH_SIZE = 4;
-                for (let i = 0; i < targets.length; i += BATCH_SIZE) {
-                    const batch = targets.slice(i, i + BATCH_SIZE);
-                    await Promise.allSettled(batch.map(m => this.resolveAlphaSourcesForMatch(m)));
+                for (const m of targets) {
+                    await this.resolveAlphaSourcesForMatch(m);
                 }
             } catch (e) {
                 // Silent
@@ -856,10 +876,11 @@
                 isAlwaysLive: false,
                 tag: league,
                 status: isLive ? 'live' : 'upcoming',
-                poster: alpha.poster || alpha.category_logo || alpha.home_team_logo || 'assets/img/logo-icon.png',
+                poster: sanitizePosterUrl(alpha.poster || ''),
+                categoryLogo: sanitizeLogoUrl(alpha.category_logo || ''),
                 colors: [],
-                team1: { name: team1Name, logo: alpha.home_team_logo || '' },
-                team2: { name: team2Name, logo: alpha.away_team_logo || '' },
+                team1: { name: team1Name, logo: sanitizeLogoUrl(alpha.home_team_logo || '') },
+                team2: { name: team2Name, logo: sanitizeLogoUrl(alpha.away_team_logo || '') },
                 rawCategory: rawCat,
                 servers: [],
                 sources: [],

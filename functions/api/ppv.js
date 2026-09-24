@@ -77,35 +77,7 @@ export async function onRequest(context) {
         return streams;
     }
 
-    try {
-        // Priority 1: Fetch authentic matches from damitv.st (works 100% on Cloudflare without datacenter IP blocks)
-        const damitvResp = await fetch('https://damitv.st/papi/matches/all-today', {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://damitv.st/',
-                'Accept': 'application/json'
-            }
-        });
-
-        if (damitvResp.ok) {
-            const rawList = await damitvResp.json();
-            if (Array.isArray(rawList) && rawList.length > 0) {
-                const categories = transformDamiListToCategories(rawList);
-                return new Response(JSON.stringify({ success: true, streams: categories }), {
-                    status: 200,
-                    headers: {
-                        'Content-Type': 'application/json; charset=utf-8',
-                        'Access-Control-Allow-Origin': '*',
-                        'Cache-Control': 'public, max-age=60'
-                    }
-                });
-            }
-        }
-    } catch (err) {
-        console.warn('damitv fetch failed in /api/ppv proxy:', err.message);
-    }
-
-    // Priority 2: Fallback to api.ppv.st
+    // Priority 1: Fetch authentic live matches directly from official api.ppv.st
     try {
         const ppvResp = await fetch('https://api.ppv.st/api/streams', {
             headers: {
@@ -135,13 +107,41 @@ export async function onRequest(context) {
                     headers: {
                         'Content-Type': 'application/json; charset=utf-8',
                         'Access-Control-Allow-Origin': '*',
-                        'Cache-Control': 'public, max-age=60'
+                        'Cache-Control': 'public, max-age=300, s-maxage=300'
                     }
                 });
             }
         }
-    } catch (e2) {
-        console.warn('api.ppv.st fetch failed in /api/ppv proxy:', e2.message);
+    } catch (e1) {
+        console.warn('api.ppv.st fetch failed in /api/ppv proxy:', e1.message);
+    }
+
+    // Priority 2: Fallback to damitv.st if available
+    try {
+        const damitvResp = await fetch('https://damitv.st/papi/matches/all-today', {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'Referer': 'https://damitv.st/',
+                'Accept': 'application/json'
+            }
+        });
+
+        if (damitvResp.ok) {
+            const rawList = await damitvResp.json();
+            if (Array.isArray(rawList) && rawList.length > 0) {
+                const categories = transformDamiListToCategories(rawList);
+                return new Response(JSON.stringify({ success: true, streams: categories }), {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'Access-Control-Allow-Origin': '*',
+                        'Cache-Control': 'public, max-age=300, s-maxage=300'
+                    }
+                });
+            }
+        }
+    } catch (err) {
+        console.warn('damitv fetch failed in /api/ppv proxy:', err.message);
     }
 
     return new Response(JSON.stringify({ success: false, error: 'Could not retrieve feeds from upstream' }), {
