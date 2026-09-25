@@ -138,39 +138,19 @@ export async function onRequest(context) {
     }
 
     try {
-        var targetSearch = '${parsedTarget.search || ""}';
-        var curUrl = new URL(window.location.href);
-        var modified = false;
-
-        // 1. Sync all parameters from upstream target URL into window.location
-        if (targetSearch) {
-            var targetParams = new URLSearchParams(targetSearch);
-            targetParams.forEach(function(val, key) {
-                if (curUrl.searchParams.get(key) !== val) {
-                    curUrl.searchParams.set(key, val);
-                    modified = true;
-                }
-            });
-        }
-
-        // 2. Explicitly ensure requested player engine is synced to window.location
-        var reqEngine = '${reqEngine || ""}';
-        if (reqEngine) {
-            if (reqEngine === 'bitmovin') {
-                if (curUrl.searchParams.has('player')) {
-                    curUrl.searchParams.delete('player');
-                    modified = true;
-                }
-            } else {
-                if (curUrl.searchParams.get('player') !== reqEngine) {
-                    curUrl.searchParams.set('player', reqEngine);
-                    modified = true;
-                }
+        var pVal = "${parsedTarget.searchParams.get('p') || requestUrl.searchParams.get('p') || ''}";
+        var reqEngine = "${reqEngine || ''}";
+        var curPath = window.location.pathname;
+        if (pVal) {
+            var finalParams = new URLSearchParams();
+            finalParams.set('p', pVal);
+            if (reqEngine && reqEngine !== 'bitmovin') {
+                finalParams.set('player', reqEngine);
             }
-        }
-
-        if (modified) {
-            window.history.replaceState(null, '', curUrl.pathname + curUrl.search);
+            var targetQuery = '?' + finalParams.toString();
+            if (window.location.search !== targetQuery) {
+                window.history.replaceState(null, '', curPath + targetQuery);
+            }
         }
     } catch (e) {}
 

@@ -51,6 +51,13 @@
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            try {
+                const u = new URL(rawUrl);
+                const p = u.searchParams.get('p');
+                if (p) {
+                    return `/api/embed?p=${encodeURIComponent(p)}&url=${encodeURIComponent(rawUrl)}`;
+                }
+            } catch (e) {}
             return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
         }
         return rawUrl;
@@ -1128,12 +1135,12 @@
             if (!id) return null;
             const decoded = decodeURIComponent(String(id)).trim();
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-            const stripped = decoded.replace(/^(ppv|dami)-/i, '');
+            const stripped = decoded.replace(/^(ppv|dami|alpha)-/i, '');
 
             // 1. Direct ID, rawId, or slug match
             let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || ('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || m.alphaStreamId === decoded) return true;
-                if (m.rawId === stripped || m.id === stripped) return true;
+                if (m.id === decoded || m.rawId === decoded || m.rawId === stripped || m.alphaStreamId === decoded || m.alphaStreamId === stripped) return true;
+                if (('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || ('alpha-' + m.rawId) === decoded || ('alpha-' + m.alphaStreamId) === decoded) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
@@ -1149,6 +1156,17 @@
                         if (tToks.length < 2) return false;
                         return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
                     });
+                }
+            }
+
+            // 3. Search alphaCatalog directly for independent alpha stream links
+            if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                const alpha = this.alphaCatalog.find(a => a.stream_id === stripped || a.stream_id === decoded);
+                if (alpha) {
+                    found = this.normalizeAlphaMatch(alpha);
+                    if (found) {
+                        this.matches.push(found);
+                    }
                 }
             }
 
