@@ -280,6 +280,7 @@
         'nrl': 'RUGBY',
         'golf': 'GOLF',
         '24/7-streams': '24/7 STREAMS',
+        'other': 'OTHERS',
         'others': 'OTHERS'
     };
 
@@ -294,10 +295,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v28';
+            const CACHE_KEY = 'aryan_cached_matches_v30';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27', 'aryan_cached_matches_v28', 'aryan_cached_matches_v29'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -372,88 +373,114 @@
         },
 
         /**
-         * Fetch all matches directly from official PPV.st Streams API via /api/ppv proxy
-         * Bypasses local ISP blocking on mobile and PC, guarantees 100% genuine authentic posters,
-         * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
+         * Fetch all matches directly from official PPV.st and Streamed schedule APIs
+         * Combines live streams and upcoming fixtures across all sports (F1, MotoGP, Football, Cricket, NFL, etc.)
+         * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v28';
+            const CACHE_KEY = 'aryan_cached_matches_v30';
             try {
-                let categories = null;
+                const rawItems = [];
+                const seenRawIds = new Set();
 
-                // Priority 1: Direct public CORS-enabled API (consumes ZERO Cloudflare worker requests!)
-                // Priority 2: Cloudflare /api/ppv proxy fallback for ISP DNS blocked regions
-                const candidateEndpoints = [
+                // 1. Fetch official PPV Live Streams
+                const ppvEndpoints = [
                     'https://api.ppv.st/api/streams',
                     '/api/ppv'
                 ];
-
-                for (const endpoint of candidateEndpoints) {
+                for (const ep of ppvEndpoints) {
                     try {
-                        const res = await fetch(endpoint, {
-                            signal: AbortSignal.timeout(6000),
+                        const res = await fetch(ep, {
+                            signal: AbortSignal.timeout(5000),
                             headers: { 'Accept': 'application/json' }
                         });
                         if (res.ok) {
                             const json = await res.json();
                             if (json && json.success !== false && Array.isArray(json.streams)) {
-                                categories = json.streams;
-                                break;
-                            } else if (Array.isArray(json) && json.length > 0) {
-                                categories = [{ category: 'Live Sports', streams: json }];
+                                json.streams.forEach(cat => {
+                                    const cName = (cat.category || 'Sports').trim();
+                                    const is247 = cat.always_live || cName.toLowerCase().includes('24/7');
+                                    (cat.streams || []).forEach(s => {
+                                        if (s && s.id && !seenRawIds.has(s.id)) {
+                                            seenRawIds.add(s.id);
+                                            rawItems.push({ stream: s, category: cName, is247: is247 });
+                                        }
+                                    });
+                                });
                                 break;
                             }
                         }
-                    } catch (e) {
-                        // Try next endpoint
-                    }
+                    } catch (e) {}
                 }
 
-                if (categories && Array.isArray(categories)) {
-                    const seenIds = new Set();
+                // 2. Fetch Complete Fixtures Schedule (Includes all upcoming F1, MotoGP, Cricket, NFL, etc.)
+                const scheduleEndpoints = [
+                    'https://streamed.pk/api/matches/all',
+                    '/api/nitro?url=https://streamed.pk/api/matches/all',
+                    '/api/ppv?endpoint=all'
+                ];
+                for (const ep of scheduleEndpoints) {
+                    try {
+                        const res = await fetch(ep, {
+                            signal: AbortSignal.timeout(6000),
+                            headers: { 'Accept': 'application/json' }
+                        });
+                        if (res.ok) {
+                            const json = await res.json();
+                            if (Array.isArray(json) && json.length > 0) {
+                                json.forEach(s => {
+                                    if (s && s.id && !seenRawIds.has(s.id)) {
+                                        seenRawIds.add(s.id);
+                                        const cName = (s.category || 'Sports').trim();
+                                        const is247 = s.always_live || cName.toLowerCase().includes('24/7');
+                                        rawItems.push({ stream: s, category: cName, is247: is247 });
+                                    }
+                                });
+                                break;
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                if (rawItems.length > 0) {
                     const newMatches = [];
 
-                    for (const cat of categories) {
-                        const catName = (cat.category || 'Sports').trim();
-                        const is247Cat = cat.always_live || catName.toLowerCase().includes('24/7');
-                        const streams = Array.isArray(cat.streams) ? cat.streams : [];
+                    for (const item of rawItems) {
+                        const s = item.stream;
+                        const catName = item.category;
+                        const is247Cat = item.is247;
+                        const sTitle = (s.name || s.title || '').trim();
+                        if (!s || !s.id || !sTitle) continue;
 
-                        for (const s of streams) {
-                            const sTitle = (s.name || s.title || '').trim();
-                            if (!s || !s.id || !sTitle) continue;
-                            if (seenIds.has(s.id)) continue;
-                            seenIds.add(s.id);
+                        const existing = this.matches.find(m => m.id === `ppv-${s.id}` || m.rawId === s.id);
+                        const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
+                        if (!norm) continue;
 
-                            const existing = this.matches.find(m => m.id === `ppv-${s.id}` || m.rawId === s.id);
-                            const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
-                            if (!norm) continue;
-
-                            if (existing && existing._alphaResolved) {
-                                norm.alphaStreamId = existing.alphaStreamId;
-                                norm.alphaItem = existing.alphaItem;
-                                norm._alphaResolved = existing._alphaResolved;
-                                // Strictly preserve only genuine StreamCorner Alpha broadcast channels
-                                const alphaFeeds = (existing.servers || []).filter(srv => {
-                                    const u = srv.url || '';
-                                    return (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho') || u.includes('.m3u8'))
-                                        && !/embedindia\.st\/embed\/\d+$/i.test(u);
-                                });
-                                if (alphaFeeds.length > 0) {
-                                    norm.servers = sanitizeMatchServers({ servers: [...alphaFeeds, ...norm.servers] }).servers;
-                                    norm.sources = norm.servers;
-                                }
-                            } else if (existing && existing.alphaStreamId) {
-                                norm.alphaStreamId = existing.alphaStreamId;
-                                norm.alphaItem = existing.alphaItem;
-                            } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
-                                if (matchedAlpha) {
-                                    norm.alphaStreamId = matchedAlpha.stream_id;
-                                    norm.alphaItem = matchedAlpha;
-                                }
+                        if (existing && existing._alphaResolved) {
+                            norm.alphaStreamId = existing.alphaStreamId;
+                            norm.alphaItem = existing.alphaItem;
+                            norm._alphaResolved = existing._alphaResolved;
+                            // Strictly preserve only genuine StreamCorner Alpha broadcast channels
+                            const alphaFeeds = (existing.servers || []).filter(srv => {
+                                const u = srv.url || '';
+                                return (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho') || u.includes('.m3u8'))
+                                    && !/embedindia\.st\/embed\/\d+$/i.test(u);
+                            });
+                            if (alphaFeeds.length > 0) {
+                                norm.servers = sanitizeMatchServers({ servers: [...alphaFeeds, ...norm.servers] }).servers;
+                                norm.sources = norm.servers;
                             }
-                            newMatches.push(norm);
+                        } else if (existing && existing.alphaStreamId) {
+                            norm.alphaStreamId = existing.alphaStreamId;
+                            norm.alphaItem = existing.alphaItem;
+                        } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
+                            if (matchedAlpha) {
+                                norm.alphaStreamId = matchedAlpha.stream_id;
+                                norm.alphaItem = matchedAlpha;
+                            }
                         }
+                        newMatches.push(norm);
                     }
 
                     if (newMatches.length > 0) {
@@ -481,7 +508,7 @@
                             this.autoResolveAllAlphaSources();
                         }
                         try {
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 250)));
                         } catch (e) {}
                     }
                 }
@@ -1231,8 +1258,53 @@
                 const now = Date.now();
                 return this.matches.filter(m => m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
             }
+            const cleanCat = cat.toUpperCase().trim();
             const now = Date.now();
-            return this.matches.filter(m => ((m.sport || '').includes(cat) || (m.league || '').includes(cat)) && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => {
+                if (m.endTime && now > (m.endTime + 900000)) return false;
+                const sport = (m.sport || '').toUpperCase();
+                const league = (m.league || '').toUpperCase();
+                const rawCat = (m.rawCategory || '').toUpperCase();
+                const title = (m.title || '').toUpperCase();
+
+                if (cleanCat === 'MOTORSPORTS' || cleanCat === 'F1' || cleanCat.includes('MOTOR') || cleanCat.includes('F1')) {
+                    return sport === 'MOTORSPORTS' || league.includes('F1') || league.includes('FORMULA') || league.includes('MOTOGP') || title.includes('F1') || title.includes('FORMULA 1') || title.includes('GRAND PRIX') || title.includes('PRIX') || rawCat.includes('MOTOR');
+                }
+                if (cleanCat === 'COMBAT SPORTS' || cleanCat === 'UFC' || cleanCat.includes('COMBAT') || cleanCat.includes('FIGHT')) {
+                    return sport === 'COMBAT SPORTS' || league.includes('UFC') || league.includes('MMA') || league.includes('BOXING') || rawCat.includes('FIGHT');
+                }
+                if (cleanCat === 'AMERICAN FOOTBALL' || cleanCat === 'NFL') {
+                    return sport === 'AMERICAN FOOTBALL' || league.includes('NFL') || league.includes('CFB') || league.includes('CFL');
+                }
+                if (cleanCat === 'FOOTBALL' || cleanCat === 'SOCCER') {
+                    return sport === 'FOOTBALL';
+                }
+                if (cleanCat === 'CRICKET') {
+                    return sport === 'CRICKET';
+                }
+                if (cleanCat === 'HOCKEY') {
+                    return sport === 'HOCKEY';
+                }
+                if (cleanCat === 'BASKETBALL') {
+                    return sport === 'BASKETBALL';
+                }
+                if (cleanCat === 'BASEBALL') {
+                    return sport === 'BASEBALL';
+                }
+                if (cleanCat === 'TENNIS') {
+                    return sport === 'TENNIS';
+                }
+                if (cleanCat === 'RUGBY') {
+                    return sport === 'RUGBY';
+                }
+                if (cleanCat === 'WRESTLING') {
+                    return sport === 'WRESTLING';
+                }
+                if (cleanCat === 'AUSTRALIAN FOOTBALL') {
+                    return sport === 'AUSTRALIAN FOOTBALL';
+                }
+                return sport.includes(cleanCat) || league.includes(cleanCat) || rawCat.includes(cleanCat);
+            });
         },
 
         searchMatches(query) {

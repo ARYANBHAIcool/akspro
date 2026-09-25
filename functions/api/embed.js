@@ -60,9 +60,17 @@ export async function onRequest(context) {
 
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
-(function() {
     // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
     var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
+    function shouldProxyUrl(u) {
+        if (!u || typeof u !== 'string') return false;
+        if (u.startsWith(nitroBase) || u.startsWith('data:') || u.startsWith('blob:')) return false;
+        return u.includes('.mpd') || u.includes('.m4s') || u.includes('.m4v') || u.includes('.m4a') ||
+               u.includes('cenc') || u.includes('dash') || u.includes('aiv-cdn.net') || u.includes('pv-cdn.net') ||
+               u.includes('cloudfront.net') || u.includes('amazonvideo.com') || u.includes('pandecocogaming') ||
+               u.includes('getsugatensho') || u.includes('sportsembed');
+    }
+
     var origFetch = window.fetch;
     window.fetch = function(input, init) {
         var args = Array.prototype.slice.call(arguments);
@@ -77,7 +85,7 @@ export async function onRequest(context) {
             } else if (input) {
                 urlStr = String(input);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (shouldProxyUrl(urlStr)) {
                 var proxied = nitroBase + encodeURIComponent(urlStr);
                 if (typeof input === 'string') {
                     input = proxied;
@@ -104,7 +112,7 @@ export async function onRequest(context) {
             } else if (url) {
                 urlStr = String(url);
             }
-            if (urlStr && !urlStr.startsWith(nitroBase) && (urlStr.includes('aiv-cdn.net') || urlStr.includes('cenc.mpd') || urlStr.includes('pv-cdn.net') || urlStr.includes('cloudfront.net') || (urlStr.includes('.mpd') && !urlStr.includes('akamaized')))) {
+            if (shouldProxyUrl(urlStr)) {
                 url = nitroBase + encodeURIComponent(urlStr);
                 args[1] = url;
             }

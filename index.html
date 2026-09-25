@@ -170,6 +170,24 @@
         <!-- VIEW 1: HOME (CLEAN PROFESSIONAL FORMAT) -->
         <div id="view-home" class="space-y-6">
 
+            <!-- Horizontal Category Filter Pills Bar -->
+            <div id="category-filter-bar" class="flex items-center gap-2 overflow-x-auto custom-scrollbar pb-1 pt-1">
+                <button onclick="filterCategory('ALL')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-green-500 text-black shadow-md shadow-green-500/20" data-cat="ALL">All Sports</button>
+                <button onclick="filterCategory('LIVE NOW')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800 flex items-center gap-1.5" data-cat="LIVE NOW"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>Live Now</button>
+                <button onclick="filterCategory('MOTORSPORTS')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="MOTORSPORTS">🏎️ Motorsports / F1</button>
+                <button onclick="filterCategory('FOOTBALL')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="FOOTBALL">⚽ Football</button>
+                <button onclick="filterCategory('CRICKET')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="CRICKET">🏏 Cricket</button>
+                <button onclick="filterCategory('AMERICAN FOOTBALL')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="AMERICAN FOOTBALL">🏈 American Football</button>
+                <button onclick="filterCategory('COMBAT SPORTS')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="COMBAT SPORTS">🥊 Combat Sports / UFC</button>
+                <button onclick="filterCategory('BASEBALL')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="BASEBALL">⚾ Baseball</button>
+                <button onclick="filterCategory('BASKETBALL')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="BASKETBALL">🏀 Basketball</button>
+                <button onclick="filterCategory('HOCKEY')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="HOCKEY">🏒 Hockey</button>
+                <button onclick="filterCategory('RUGBY')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="RUGBY">🏉 Rugby</button>
+                <button onclick="filterCategory('TENNIS')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="TENNIS">🎾 Tennis</button>
+                <button onclick="filterCategory('WRESTLING')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="WRESTLING">🤼 Wrestling</button>
+                <button onclick="switchView('channels')" class="cat-pill px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex-shrink-0 bg-[#0c1322] hover:bg-[#131d33] text-gray-300 hover:text-white border border-gray-800" data-cat="24/7 STREAMS">📺 24/7 Channels</button>
+            </div>
+
             <!-- Jump to category Section (Exact Image 2 Format) -->
             <div class="space-y-3 pt-1">
                 <h2 class="text-2xl font-bold text-white tracking-tight">Jump to category</h2>
