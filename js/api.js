@@ -112,7 +112,7 @@
 
     const MATCH_STOP_WORDS = new Set([
         'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
-        'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day', 'grand', 'prix',
+        'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day',
         'afc', '1', '2', '07', '04', 'sv', 'rb', 'cd', 'ud', 'sk', 'san', 'south', 'north', 'east', 'west'
     ]);
 
@@ -124,51 +124,80 @@
             .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
     }
 
-    function hasTokenOverlap(arr1, arr2) {
-        for (const t1 of arr1) {
-            if (arr2.some(t2 => t1 === t2 || (t1.length > 4 && t2.length > 4 && (t1.includes(t2) || t2.includes(t1))))) {
-                return true;
-            }
-        }
-        return false;
+    function matchTeams(teamA, teamB) {
+        const toksA = tokenizeMatchStr(teamA);
+        const toksB = tokenizeMatchStr(teamB);
+        if (toksA.length === 0 || toksB.length === 0) return false;
+        return toksA.some(a => toksB.some(b => a === b || (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a)))));
     }
 
     function isSameMatch(ppv, alpha) {
         if (!ppv || !alpha) return false;
+
+        // 1. Sport & Category compatibility check
+        const pSport = (ppv.sport || ppv.category || ppv.catName || '').toUpperCase();
+        const aCat = (alpha.category || alpha.league || '').toUpperCase();
+
+        const sportGroups = {
+            'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'LIGA'],
+            'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB'],
+            'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST'],
+            'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING'],
+            'MOTORSPORTS': ['MOTORSPORTS', 'F1', 'MOTOGP', 'FORMULA', 'NASCAR', 'RALLY'],
+            'BASEBALL': ['BASEBALL', 'MLB'],
+            'BASKETBALL': ['BASKETBALL', 'NBA', 'NBL', 'EUROLEAGUE'],
+            'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL'],
+            'RUGBY': ['RUGBY', 'NRL', 'AFL']
+        };
+
+        if (pSport && aCat) {
+            let compatible = false;
+            for (const [group, members] of Object.entries(sportGroups)) {
+                const pInGroup = pSport.includes(group) || members.some(m => pSport.includes(m));
+                const aInGroup = aCat.includes(group) || members.some(m => aCat.includes(m));
+                if (pInGroup && aInGroup) {
+                    compatible = true;
+                    break;
+                }
+            }
+            if (!compatible && pSport !== 'OTHERS' && aCat !== 'OTHERS' && pSport !== aCat) {
+                return false;
+            }
+        }
+
+        // 2. Start time proximity check (within 10 hours)
         const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
         const alphaTime = (alpha.timestamp || 0) * 1000;
         if (ppvTime && alphaTime) {
             const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
-            if (diffHours > 16) return false;
+            if (diffHours > 10) return false;
         }
 
         const pTitle = ppv.title || ppv.name || '';
         const aTitle = alpha.event_name || alpha.title || '';
 
-        const pHomeName = (ppv.teams && ppv.teams.home && ppv.teams.home.name) || pTitle.split(/ vs\.? | @ /)[0] || '';
-        const pAwayName = (ppv.teams && ppv.teams.away && ppv.teams.away.name) || pTitle.split(/ vs\.? | @ /)[1] || '';
+        const pParts = pTitle.split(/ vs\.? | @ | - /i);
+        const aParts = aTitle.split(/ vs\.? | @ | - /i);
 
-        const aHomeName = alpha.home_team || aTitle.split(/ vs\.? | @ /)[0] || '';
-        const aAwayName = alpha.away_team || aTitle.split(/ vs\.? | @ /)[1] || '';
+        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || pParts[0] || '';
+        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || pParts[1] || '';
 
-        const pHomeToks = tokenizeMatchStr(pHomeName);
-        const pAwayToks = tokenizeMatchStr(pAwayName);
-        const aHomeToks = tokenizeMatchStr(aHomeName);
-        const aAwayToks = tokenizeMatchStr(aAwayName);
+        const aHome = alpha.home_team || aParts[0] || '';
+        const aAway = alpha.away_team || aParts[1] || '';
 
-        const homeMatchesHome = hasTokenOverlap(pHomeToks, aHomeToks);
-        const awayMatchesAway = hasTokenOverlap(pAwayToks, aAwayToks);
-        const homeMatchesAway = hasTokenOverlap(pHomeToks, aAwayToks);
-        const awayMatchesHome = hasTokenOverlap(pAwayToks, aHomeToks);
-
-        if ((homeMatchesHome && awayMatchesAway) || (homeMatchesAway && awayMatchesHome)) {
-            return true;
+        if (pHome && pAway && aHome && aAway) {
+            const homeHome = matchTeams(pHome, aHome);
+            const awayAway = matchTeams(pAway, aAway);
+            const homeAway = matchTeams(pHome, aAway);
+            const awayHome = matchTeams(pAway, aHome);
+            if ((homeHome && awayAway) || (homeAway && awayHome)) return true;
         }
 
-        const pAll = tokenizeMatchStr(pTitle);
-        const aAll = tokenizeMatchStr(aTitle);
-        const common = aAll.filter(t => pAll.includes(t));
+        const pToks = tokenizeMatchStr(pTitle);
+        const aToks = tokenizeMatchStr(aTitle);
+        const common = aToks.filter(t => pToks.includes(t));
         if (common.length >= 2) return true;
+        if (common.length >= 1 && (pTitle.toLowerCase().includes('grand prix') || pTitle.toLowerCase().includes('race') || pTitle.toLowerCase().includes('ufc') || pTitle.toLowerCase().includes('prix'))) return true;
 
         return false;
     }
@@ -176,6 +205,14 @@
     const SPORT_MAPPINGS = {
         'football': 'FOOTBALL',
         'soccer': 'FOOTBALL',
+        'uefa': 'FOOTBALL',
+        'uefa nations': 'FOOTBALL',
+        'uefa-nations': 'FOOTBALL',
+        'fifa': 'FOOTBALL',
+        'fifa friendlies': 'FOOTBALL',
+        'fifa-friendlies': 'FOOTBALL',
+        'fifa asean cup': 'FOOTBALL',
+        'fifa-asean-cup': 'FOOTBALL',
         'laliga': 'FOOTBALL',
         'laliga 2': 'FOOTBALL',
         'laliga-2': 'FOOTBALL',
@@ -195,6 +232,7 @@
         'liga-portugal': 'FOOTBALL',
         'basketball': 'BASKETBALL',
         'nba': 'BASKETBALL',
+        'nbl': 'BASKETBALL',
         'americanfootball': 'AMERICAN FOOTBALL',
         'american-football': 'AMERICAN FOOTBALL',
         'nfl': 'AMERICAN FOOTBALL',
@@ -217,16 +255,25 @@
         'motorsports': 'MOTORSPORTS',
         'motor-sports': 'MOTORSPORTS',
         'f1': 'MOTORSPORTS',
+        'formula 1': 'MOTORSPORTS',
+        'formula-1': 'MOTORSPORTS',
         'motogp': 'MOTORSPORTS',
         'tennis': 'TENNIS',
         'cricket': 'CRICKET',
         'etpl': 'CRICKET',
         'caribbean premier league': 'CRICKET',
+        'cpl': 'CRICKET',
+        'ipl': 'CRICKET',
         'asia cup': 'CRICKET',
+        'asian games': 'CRICKET',
+        'asian-games': 'CRICKET',
         'darts': 'DARTS',
         'wrestling': 'WRESTLING',
+        'wwe': 'WRESTLING',
+        'aew': 'WRESTLING',
         'nhl': 'HOCKEY',
         'icehockey': 'HOCKEY',
+        'ice-hockey': 'HOCKEY',
         'hockey': 'HOCKEY',
         'rugby': 'RUGBY',
         'nrl rugby': 'RUGBY',
@@ -997,7 +1044,7 @@
                 rawCategory: catKey,
                 servers: servers,
                 sources: servers,
-                _alphaResolved: true
+                _alphaResolved: false
             };
         },
 
@@ -1228,7 +1275,6 @@
                 'ARM WRESTLING',
                 'WRESTLING',
                 'HOCKEY',
-                'PARAMOUNT+',
                 'OTHERS'
             ];
 
