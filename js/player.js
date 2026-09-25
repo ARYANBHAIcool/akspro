@@ -84,13 +84,15 @@ window.AryanPlayerEngine = {
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
             try {
                 const parsed = new URL(rawUrl);
+                const p = parsed.searchParams.get('p') || '';
                 if (engine && engine !== 'bitmovin') {
                     parsed.searchParams.set('player', engine);
                 } else {
                     parsed.searchParams.delete('player');
                 }
                 const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
-                return `/api/embed?url=${encodeURIComponent(parsed.toString())}${playerParam}`;
+                const pParam = p ? `p=${encodeURIComponent(p)}&` : '';
+                return `/api/embed?${pParam}url=${encodeURIComponent(parsed.toString())}${playerParam}`;
             } catch (e) {
                 const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
                 return `/api/embed?url=${encodeURIComponent(rawUrl)}${playerParam}`;
