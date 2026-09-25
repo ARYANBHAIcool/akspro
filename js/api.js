@@ -243,7 +243,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v26';
+            const CACHE_KEY = 'aryan_cached_matches_v27';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
                 ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23'].forEach(k => {
@@ -326,7 +326,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v26';
+            const CACHE_KEY = 'aryan_cached_matches_v27';
             try {
                 let categories = null;
 
@@ -596,7 +596,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v26';
+                        const CACHE_KEY = 'aryan_cached_matches_v27';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -671,7 +671,7 @@
                         try {
                             const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
                             let timer;
-                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 3500); });
+                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
                             detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
                             if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
                         } catch (err) {
@@ -764,7 +764,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v26';
+                            const CACHE_KEY = 'aryan_cached_matches_v27';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -875,6 +875,8 @@
                 always_live: 0,
                 isAlwaysLive: false,
                 tag: league,
+                league: league,
+                sport: sport,
                 status: isLive ? 'live' : 'upcoming',
                 poster: sanitizePosterUrl(alpha.poster || ''),
                 categoryLogo: sanitizeLogoUrl(alpha.category_logo || ''),
@@ -1180,7 +1182,7 @@
                 return this.matches.filter(m => m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
             }
             const now = Date.now();
-            return this.matches.filter(m => (m.sport === cat || m.league.includes(cat)) && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => ((m.sport || '').includes(cat) || (m.league || '').includes(cat)) && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         searchMatches(query) {
@@ -1189,9 +1191,9 @@
             const now = Date.now();
             return this.matches.filter(m =>
                 (!m.endTime || now <= (m.endTime + 900000)) && (
-                    m.title.toLowerCase().includes(q) ||
-                    m.league.toLowerCase().includes(q) ||
-                    m.sport.toLowerCase().includes(q) ||
+                    (m.title || '').toLowerCase().includes(q) ||
+                    (m.league || '').toLowerCase().includes(q) ||
+                    (m.sport || '').toLowerCase().includes(q) ||
                     (m.team1 && m.team1.name && m.team1.name.toLowerCase().includes(q)) ||
                     (m.team2 && m.team2.name && m.team2.name.toLowerCase().includes(q))
                 )
