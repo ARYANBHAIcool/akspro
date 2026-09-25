@@ -724,7 +724,6 @@
 
                             const isDirectHls = rawUrl.includes('.m3u8');
                             const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
-                            if (seenUrls.has(srvUrl)) return;
                             seenUrls.add(srvUrl);
 
                             newServers.push({
