@@ -1,7 +1,11 @@
 var __defProp = Object.defineProperty;
 var __name = (target, value) => __defProp(target, "name", { value, configurable: true });
 
-// api/damitv/[[path]].js
+// _worker.js
+var __defProp2 = Object.defineProperty;
+var __name2 = /* @__PURE__ */ __name((target, value) => __defProp2(target, "name", { value, configurable: true }), "__name");
+var __defProp22 = Object.defineProperty;
+var __name22 = /* @__PURE__ */ __name2((target, value) => __defProp22(target, "name", { value, configurable: true }), "__name");
 async function onRequest(context) {
   const url = new URL(context.request.url);
   const targetPath = url.pathname.replace(/^\/api\/damitv\//, "");
@@ -37,8 +41,8 @@ async function onRequest(context) {
   }
 }
 __name(onRequest, "onRequest");
-
-// api/embed.js
+__name2(onRequest, "onRequest");
+__name22(onRequest, "onRequest");
 async function onRequest2(context) {
   const requestUrl = new URL(context.request.url);
   let targetUrl = requestUrl.searchParams.get("url");
@@ -292,9 +296,9 @@ async function onRequest2(context) {
     });
   }
 }
-__name(onRequest2, "onRequest");
-
-// api/nitro.js
+__name(onRequest2, "onRequest2");
+__name2(onRequest2, "onRequest2");
+__name22(onRequest2, "onRequest");
 async function onRequest3(context) {
   const url = new URL(context.request.url);
   const targetUrl = url.searchParams.get("url");
@@ -374,9 +378,9 @@ async function onRequest3(context) {
     });
   }
 }
-__name(onRequest3, "onRequest");
-
-// api/ppv.js
+__name(onRequest3, "onRequest3");
+__name2(onRequest3, "onRequest3");
+__name22(onRequest3, "onRequest");
 async function onRequest4(context) {
   if (context.request.method === "OPTIONS") {
     return new Response(null, {
@@ -434,6 +438,8 @@ async function onRequest4(context) {
     return streams;
   }
   __name(transformDamiListToCategories, "transformDamiListToCategories");
+  __name2(transformDamiListToCategories, "transformDamiListToCategories");
+  __name22(transformDamiListToCategories, "transformDamiListToCategories");
   try {
     const ppvResp = await fetch("https://api.ppv.st/api/streams", {
       headers: {
@@ -502,9 +508,9 @@ async function onRequest4(context) {
     }
   });
 }
-__name(onRequest4, "onRequest");
-
-// api/streamcorner-core.js
+__name(onRequest4, "onRequest4");
+__name2(onRequest4, "onRequest4");
+__name22(onRequest4, "onRequest");
 var memoryCache = {
   code: null,
   timestamp: 0
@@ -622,9 +628,9 @@ async function onRequest5(context) {
     });
   }
 }
-__name(onRequest5, "onRequest");
-
-// ../.wrangler/tmp/pages-EthxWe/functionsRoutes-0.1568982797943943.mjs
+__name(onRequest5, "onRequest5");
+__name2(onRequest5, "onRequest5");
+__name22(onRequest5, "onRequest");
 var routes = [
   {
     routePath: "/api/damitv/:path*",
@@ -662,8 +668,6 @@ var routes = [
     modules: [onRequest5]
   }
 ];
-
-// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/path-to-regexp/dist.es2015/index.js
 function lexer(str) {
   var tokens = [];
   var i = 0;
@@ -748,6 +752,8 @@ function lexer(str) {
   return tokens;
 }
 __name(lexer, "lexer");
+__name2(lexer, "lexer");
+__name22(lexer, "lexer");
 function parse(str, options) {
   if (options === void 0) {
     options = {};
@@ -758,18 +764,18 @@ function parse(str, options) {
   var key = 0;
   var i = 0;
   var path = "";
-  var tryConsume = /* @__PURE__ */ __name(function(type) {
+  var tryConsume = /* @__PURE__ */ __name22(function(type) {
     if (i < tokens.length && tokens[i].type === type)
       return tokens[i++].value;
   }, "tryConsume");
-  var mustConsume = /* @__PURE__ */ __name(function(type) {
+  var mustConsume = /* @__PURE__ */ __name22(function(type) {
     var value2 = tryConsume(type);
     if (value2 !== void 0)
       return value2;
     var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
     throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
   }, "mustConsume");
-  var consumeText = /* @__PURE__ */ __name(function() {
+  var consumeText = /* @__PURE__ */ __name22(function() {
     var result2 = "";
     var value2;
     while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
@@ -777,7 +783,7 @@ function parse(str, options) {
     }
     return result2;
   }, "consumeText");
-  var isSafe = /* @__PURE__ */ __name(function(value2) {
+  var isSafe = /* @__PURE__ */ __name22(function(value2) {
     for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
       var char2 = delimiter_1[_i];
       if (value2.indexOf(char2) > -1)
@@ -785,7 +791,7 @@ function parse(str, options) {
     }
     return false;
   }, "isSafe");
-  var safePattern = /* @__PURE__ */ __name(function(prefix2) {
+  var safePattern = /* @__PURE__ */ __name22(function(prefix2) {
     var prev = result[result.length - 1];
     var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
     if (prev && !prevText) {
@@ -848,12 +854,16 @@ function parse(str, options) {
   return result;
 }
 __name(parse, "parse");
+__name2(parse, "parse");
+__name22(parse, "parse");
 function match(str, options) {
   var keys = [];
   var re = pathToRegexp(str, keys, options);
   return regexpToFunction(re, keys, options);
 }
 __name(match, "match");
+__name2(match, "match");
+__name22(match, "match");
 function regexpToFunction(re, keys, options) {
   if (options === void 0) {
     options = {};
@@ -867,7 +877,7 @@ function regexpToFunction(re, keys, options) {
       return false;
     var path = m[0], index = m.index;
     var params = /* @__PURE__ */ Object.create(null);
-    var _loop_1 = /* @__PURE__ */ __name(function(i2) {
+    var _loop_1 = /* @__PURE__ */ __name22(function(i2) {
       if (m[i2] === void 0)
         return "continue";
       var key = keys[i2 - 1];
@@ -886,14 +896,20 @@ function regexpToFunction(re, keys, options) {
   };
 }
 __name(regexpToFunction, "regexpToFunction");
+__name2(regexpToFunction, "regexpToFunction");
+__name22(regexpToFunction, "regexpToFunction");
 function escapeString(str) {
   return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
 }
 __name(escapeString, "escapeString");
+__name2(escapeString, "escapeString");
+__name22(escapeString, "escapeString");
 function flags(options) {
   return options && options.sensitive ? "" : "i";
 }
 __name(flags, "flags");
+__name2(flags, "flags");
+__name22(flags, "flags");
 function regexpToRegexp(path, keys) {
   if (!keys)
     return path;
@@ -914,6 +930,8 @@ function regexpToRegexp(path, keys) {
   return path;
 }
 __name(regexpToRegexp, "regexpToRegexp");
+__name2(regexpToRegexp, "regexpToRegexp");
+__name22(regexpToRegexp, "regexpToRegexp");
 function arrayToRegexp(paths, keys, options) {
   var parts = paths.map(function(path) {
     return pathToRegexp(path, keys, options).source;
@@ -921,10 +939,14 @@ function arrayToRegexp(paths, keys, options) {
   return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
 }
 __name(arrayToRegexp, "arrayToRegexp");
+__name2(arrayToRegexp, "arrayToRegexp");
+__name22(arrayToRegexp, "arrayToRegexp");
 function stringToRegexp(path, keys, options) {
   return tokensToRegexp(parse(path, options), keys, options);
 }
 __name(stringToRegexp, "stringToRegexp");
+__name2(stringToRegexp, "stringToRegexp");
+__name22(stringToRegexp, "stringToRegexp");
 function tokensToRegexp(tokens, keys, options) {
   if (options === void 0) {
     options = {};
@@ -980,6 +1002,8 @@ function tokensToRegexp(tokens, keys, options) {
   return new RegExp(route, flags(options));
 }
 __name(tokensToRegexp, "tokensToRegexp");
+__name2(tokensToRegexp, "tokensToRegexp");
+__name22(tokensToRegexp, "tokensToRegexp");
 function pathToRegexp(path, keys, options) {
   if (path instanceof RegExp)
     return regexpToRegexp(path, keys);
@@ -988,8 +1012,8 @@ function pathToRegexp(path, keys, options) {
   return stringToRegexp(path, keys, options);
 }
 __name(pathToRegexp, "pathToRegexp");
-
-// ../../../AppData/Local/npm-cache/_npx/32026684e21afda6/node_modules/wrangler/templates/pages-template-worker.ts
+__name2(pathToRegexp, "pathToRegexp");
+__name22(pathToRegexp, "pathToRegexp");
 var escapeRegex = /[.+?^${}()|[\]\\]/g;
 function* executeRequest(request) {
   const requestPath = new URL(request.url).pathname;
@@ -1040,13 +1064,15 @@ function* executeRequest(request) {
   }
 }
 __name(executeRequest, "executeRequest");
+__name2(executeRequest, "executeRequest");
+__name22(executeRequest, "executeRequest");
 var pages_template_worker_default = {
   async fetch(originalRequest, env, workerContext) {
     let request = originalRequest;
     const handlerIterator = executeRequest(request);
     let data = {};
     let isFailOpen = false;
-    const next = /* @__PURE__ */ __name(async (input, init) => {
+    const next = /* @__PURE__ */ __name22(async (input, init) => {
       if (input !== void 0) {
         let url = input;
         if (typeof input === "string") {
@@ -1073,7 +1099,7 @@ var pages_template_worker_default = {
           },
           env,
           waitUntil: workerContext.waitUntil.bind(workerContext),
-          passThroughOnException: /* @__PURE__ */ __name(() => {
+          passThroughOnException: /* @__PURE__ */ __name22(() => {
             isFailOpen = true;
           }, "passThroughOnException")
         };
@@ -1101,7 +1127,7 @@ var pages_template_worker_default = {
     }
   }
 };
-var cloneResponse = /* @__PURE__ */ __name((response) => (
+var cloneResponse = /* @__PURE__ */ __name22((response) => (
   // https://fetch.spec.whatwg.org/#null-body-status
   new Response(
     [101, 204, 205, 304].includes(response.status) ? null : response.body,
