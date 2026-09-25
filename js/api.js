@@ -49,6 +49,10 @@
 
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
+        if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+            return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
+        }
         return rawUrl;
     }
 
@@ -243,10 +247,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v27';
+            const CACHE_KEY = 'aryan_cached_matches_v28';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -326,7 +330,7 @@
          * zero duplicate stock photos, and exact alignment with ppv.st categories and matches.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v27';
+            const CACHE_KEY = 'aryan_cached_matches_v28';
             try {
                 let categories = null;
 
@@ -596,7 +600,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v27';
+                        const CACHE_KEY = 'aryan_cached_matches_v28';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -763,7 +767,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v27';
+                            const CACHE_KEY = 'aryan_cached_matches_v28';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
