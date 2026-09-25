@@ -44,7 +44,12 @@ window.AryanPlayerEngine = {
     getServers() {
         if (!this.currentStream) return [];
         const list = this.currentStream.servers || this.currentStream.sources || [];
-        return Array.isArray(list) && list.length > 0 ? list : [this.currentStream];
+        const validList = Array.isArray(list) ? list.filter(s => s && (s.url || s.embedUrl || s.rawUrl)) : [];
+        if (validList.length > 0) return validList;
+        if (this.currentStream.url || this.currentStream.embedUrl || this.currentStream.rawUrl) {
+            return [this.currentStream];
+        }
+        return [];
     },
 
     currentPlayerEngine: 'bitmovin',
@@ -195,8 +200,21 @@ window.AryanPlayerEngine = {
 
     render(container) {
         const servers = this.getServers();
-        const currentServer = servers[this.activeServerIdx] || servers[0] || { name: "Server 1", url: "", type: "iframe" };
-        const isHls = currentServer.type === 'video' || currentServer.url.includes('.m3u8');
+        const currentServer = servers[this.activeServerIdx] || servers[0] || null;
+
+        if (!currentServer || (!currentServer.url && !currentServer.embedUrl && !currentServer.rawUrl)) {
+            container.innerHTML = `
+                <div id="player-canvas-wrapper" class="relative aspect-video w-full bg-black overflow-hidden flex flex-col items-center justify-center p-6 text-center space-y-3">
+                    <div class="w-10 h-10 border-4 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                    <div class="text-xs font-bold text-white tracking-widest uppercase">Connecting to broadcast channels...</div>
+                    <div class="text-[11px] text-gray-400">Fetching live streams from satellite feed</div>
+                </div>
+            `;
+            return;
+        }
+
+        const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
+        const isHls = currentServer.type === 'video' || serverUrl.includes('.m3u8');
 
         let html = '';
 
@@ -310,13 +328,13 @@ window.AryanPlayerEngine = {
             const video = document.getElementById('global-video-element');
             if (!video) return;
 
-            if (window.Hls && Hls.isSupported() && currentServer.url.includes('.m3u8')) {
+            if (window.Hls && Hls.isSupported() && serverUrl.includes('.m3u8')) {
                 const hls = new Hls({
                     enableWorker: true,
                     lowLatencyMode: true,
                     backBufferLength: 60
                 });
-                hls.loadSource(currentServer.url);
+                hls.loadSource(serverUrl);
                 hls.attachMedia(video);
                 this.hls = hls;
 
@@ -341,8 +359,8 @@ window.AryanPlayerEngine = {
                         }
                     }
                 });
-            } else {
-                video.src = currentServer.url;
+            } else if (serverUrl) {
+                video.src = serverUrl;
                 video.onloadeddata = () => {
                     video.play().catch(() => {});
                     if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);

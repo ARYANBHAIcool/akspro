@@ -333,8 +333,8 @@
     <script src="js/ads.js?v=1.0"></script>
     <script src="js/paramount-core.js?v=4.5"></script>
     <script src="js/paramount.js?v=4.0"></script>
-    <script src="js/player.js?v=4.4"></script>
-    <script src="js/api.js?v=4.6"></script>
+    <script src="js/player.js?v=4.5"></script>
+    <script src="js/api.js?v=4.7"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -824,7 +824,11 @@
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
             switchView('watch');
-            renderWatchView(item);
+            try {
+                renderWatchView(item);
+            } catch (e) {
+                console.warn('renderWatchView error:', e);
+            }
             window.scrollTo({ top: 0, behavior: 'smooth' });
 
             // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
@@ -838,7 +842,7 @@
                             window.AryanPlayerEngine.switchServer(0);
                         }
                     }
-                });
+                }).catch(err => console.warn('ensureAlphaSources error:', err));
             }
         }
 
@@ -1170,7 +1174,13 @@
             `;
 
             renderWatchSources(item, 0);
-            window.AryanPlayerEngine.init('watch-player-container', item);
+            try {
+                if (window.AryanPlayerEngine) {
+                    window.AryanPlayerEngine.init('watch-player-container', item);
+                }
+            } catch (err) {
+                console.warn('PlayerEngine init error:', err);
+            }
             updatePlayerDropdownUI(window.AryanPlayerEngine ? window.AryanPlayerEngine.currentPlayerEngine : 'bitmovin');
             if (window.AryanAds && typeof window.AryanAds.attachPlayerOverlay === 'function') {
                 window.AryanAds.attachPlayerOverlay('watch-player-container');
