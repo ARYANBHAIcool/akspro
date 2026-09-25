@@ -2,12 +2,13 @@
  * AryanStreams Global - Advanced Monetization & Ad Experience Engine
  * Path: js/ads.js
  * 
- * Integrated Networks:
- * 1. Adcash Pop-Under (Zone ID: 12179858)
- * 2. BuzzOnClick Direct Link (ID: 12179846)
+ * Integrated Adsterra Units:
+ * 1. Adsterra Popunder (pl31503790)
+ * 2. Adsterra Social Bar (pl31503799)
+ * 3. Adsterra Smartlink (https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8)
  * 
  * Monetization Flow:
- * - User clicks a match card, server button, channel card, or player -> triggers direct ad in background tab
+ * - User clicks a match card, server button, channel card, or player -> triggers Adsterra Smartlink in background tab
  * - User closes ad tab -> original site is already playing the match
  * - Back-button navigation trigger: smoothly returns to match list while monetizing exit/return
  * - Built-in cooldown prevents tab spamming and protects user engagement
@@ -20,8 +21,7 @@
         // ==========================================
         // ⚙️ EASY-TO-MANAGE AD CONFIGURATION
         // ==========================================
-        DIRECT_LINK: 'https://buzzonclick.com/jump/next.php?r=12179846',
-        POPUNDER_ZONE_ID: '12179858',
+        DIRECT_LINK: 'https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8',
         
         // Cooldown between direct link triggers in milliseconds (e.g. 20 seconds)
         // Set to 0 to trigger on every qualified button click
@@ -29,7 +29,6 @@
 
         // Feature toggles
         enabled: true,
-        enablePopUnder: true,
         enableDirectLinks: true,
         enablePlayerOverlay: true,
         enableBackAd: true,
@@ -45,49 +44,12 @@
         init() {
             if (!this.enabled) return;
 
-            // 1. Initialize Adcash Pop-under
-            if (this.enablePopUnder) {
-                this.initPopUnder();
-            }
-
-            // 2. Setup Back-button / Popstate handler ("work on back types")
+            // Setup Back-button / Popstate handler ("work on back types")
             if (this.enableBackAd) {
                 this.setupBackHandler();
             }
 
-            console.log('[AryanAds] Ad monetization engine ready.');
-        },
-
-        /**
-         * Initialize Adcash Pop-under via aclib
-         */
-        initPopUnder() {
-            let attempts = 0;
-            const maxAttempts = 10;
-
-            const checkAndRun = () => {
-                attempts++;
-                if (typeof window.aclib !== 'undefined' && typeof window.aclib.runPop === 'function') {
-                    try {
-                        window.aclib.runPop({
-                            zoneId: this.POPUNDER_ZONE_ID
-                        });
-                        console.log('[AryanAds] Adcash Pop-under initialized for zone:', this.POPUNDER_ZONE_ID);
-                        return;
-                    } catch (e) {
-                        console.warn('[AryanAds] Adcash runPop error:', e);
-                    }
-                }
-                if (attempts < maxAttempts) {
-                    setTimeout(checkAndRun, 500);
-                }
-            };
-
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', checkAndRun);
-            } else {
-                checkAndRun();
-            }
+            console.log('[AryanAds] Adsterra monetization engine ready.');
         },
 
         /**
