@@ -627,10 +627,6 @@
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
             if (match._alphaResolved) return true;
-            if (match.servers && match.servers.length >= 2) {
-                match._alphaResolved = true;
-                return true;
-            }
 
             // 1. If Alpha feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
