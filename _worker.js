@@ -422,8 +422,11 @@ async function onRequest4(context) {
       if (endSec > 0 && nowSec > endSec + 900 && !item.always_live) {
         continue;
       }
-      const rawPoster = item.poster || item.image || "";
-      const cleanPoster = rawPoster && rawPoster.includes("streamed.pk") ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}` : rawPoster;
+      let rawPoster = item.poster || item.image || "";
+      if (rawPoster.startsWith("/api/images") || rawPoster.startsWith("/images") || rawPoster.startsWith("api/images")) {
+        rawPoster = "https://streamed.pk/" + rawPoster.replace(/^\/+/, "");
+      }
+      const cleanPoster = rawPoster && (rawPoster.includes("streamed.pk") || rawPoster.includes("static.ppvservices.st")) ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp` : rawPoster;
       catMap.get(catName).push({
         id: item.id,
         name: item.title,

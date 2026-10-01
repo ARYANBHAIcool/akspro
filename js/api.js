@@ -67,9 +67,12 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url) return '';
+        if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
+            url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
+        }
         if (url.includes('wsrv.nl/?url=')) return url;
         if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
-            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=400`;
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&output=webp`;
         }
         return url;
     }
@@ -78,9 +81,17 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url) return '';
+        if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//') && !url.startsWith('assets/')) {
+            if (url.startsWith('/api/images') || url.startsWith('/images')) {
+                url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
+            } else if (/^[a-zA-Z0-9_\-=+]{20,}$/.test(url)) {
+                // Streamed.pk base64 badge key
+                url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
+            }
+        }
         if (url.includes('wsrv.nl/?url=')) return url;
         if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
-            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=120`;
+            return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&output=webp`;
         }
         return url;
     }
@@ -302,10 +313,10 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v30';
+            const CACHE_KEY = 'aryan_cached_matches_v31';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27', 'aryan_cached_matches_v28', 'aryan_cached_matches_v29'].forEach(k => {
+                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27', 'aryan_cached_matches_v28', 'aryan_cached_matches_v29', 'aryan_cached_matches_v30'].forEach(k => {
                     localStorage.removeItem(k);
                 });
             } catch (e) {}
@@ -385,7 +396,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v30';
+            const CACHE_KEY = 'aryan_cached_matches_v31';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -459,9 +470,54 @@
                         const sTitle = (s.name || s.title || '').trim();
                         if (!s || !s.id || !sTitle) continue;
 
-                        const existing = this.matches.find(m => m.id === `ppv-${s.id}` || m.rawId === s.id);
                         const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
                         if (!norm) continue;
+
+                        // 1. Check if this fixture already exists in newMatches (deduplicate PPV & Streamed.pk)
+                        const existingInNew = newMatches.find(m => m.id === norm.id || m.rawId === norm.rawId || isSameMatch(m, norm));
+                        if (existingInNew) {
+                            // Merge authentic poster
+                            if ((!existingInNew.poster || existingInNew.poster.includes('logo-icon.png')) && norm.poster && !norm.poster.includes('logo-icon.png')) {
+                                existingInNew.poster = norm.poster;
+                            }
+                            // Merge team logos
+                            if ((!existingInNew.team1 || !existingInNew.team1.logo) && (norm.team1 && norm.team1.logo)) {
+                                existingInNew.team1 = norm.team1;
+                            }
+                            if ((!existingInNew.team2 || !existingInNew.team2.logo) && (norm.team2 && norm.team2.logo)) {
+                                existingInNew.team2 = norm.team2;
+                            }
+                            // Merge category logo
+                            if (!existingInNew.categoryLogo && norm.categoryLogo) {
+                                existingInNew.categoryLogo = norm.categoryLogo;
+                            }
+                            // Merge unique servers cleanly
+                            const seenUrls = new Set(existingInNew.servers.map(srv => srv.rawUrl || srv.url));
+                            for (const srv of norm.servers) {
+                                const u = srv.rawUrl || srv.url;
+                                if (u && !seenUrls.has(u)) {
+                                    seenUrls.add(u);
+                                    existingInNew.servers.push(srv);
+                                }
+                            }
+                            // Re-index servers
+                            existingInNew.servers.forEach((srv, idx) => {
+                                const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
+                                const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+                                srv.name = `Server ${idx + 1} [${label}]`;
+                            });
+                            existingInNew.sources = existingInNew.servers;
+
+                            // Inherit Alpha stream ID if present
+                            if (!existingInNew.alphaStreamId && norm.alphaStreamId) {
+                                existingInNew.alphaStreamId = norm.alphaStreamId;
+                                existingInNew.alphaItem = norm.alphaItem;
+                            }
+                            continue;
+                        }
+
+                        // 2. Check against previous matches state to preserve resolved alpha feeds
+                        const existing = this.matches.find(m => m.id === norm.id || m.rawId === norm.rawId || isSameMatch(m, norm));
 
                         if (existing && existing._alphaResolved) {
                             norm.alphaStreamId = existing.alphaStreamId;
@@ -487,6 +543,20 @@
                                 norm.alphaItem = matchedAlpha;
                             }
                         }
+
+                        // Preserve previous poster/logos if existing had them
+                        if (existing) {
+                            if ((!norm.poster || norm.poster.includes('logo-icon.png')) && existing.poster && !existing.poster.includes('logo-icon.png')) {
+                                norm.poster = existing.poster;
+                            }
+                            if ((!norm.team1 || !norm.team1.logo) && (existing.team1 && existing.team1.logo)) {
+                                norm.team1 = existing.team1;
+                            }
+                            if ((!norm.team2 || !norm.team2.logo) && (existing.team2 && existing.team2.logo)) {
+                                norm.team2 = existing.team2;
+                            }
+                        }
+
                         newMatches.push(norm);
                     }
 
@@ -496,7 +566,7 @@
                             for (const alpha of this.alphaCatalog) {
                                 const isMatched = newMatches.some(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
                                 if (!isMatched) {
-                                    const existingIndependent = this.matches.find(m => m.alphaStreamId === alpha.stream_id);
+                                    const existingIndependent = this.matches.find(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
                                     if (existingIndependent) {
                                         newMatches.push(existingIndependent);
                                     } else {
@@ -681,7 +751,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v28';
+                        const CACHE_KEY = 'aryan_cached_matches_v31';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -834,21 +904,34 @@
 
                         // Real-time update if user is currently viewing this match
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
+                            // Find the URL of the server currently being played by the player
+                            const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                            const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[activeIdx];
+                            const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
+
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
-                            if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === 0 && newServers.length > 0) {
-                                window.AryanPlayerEngine.switchServer(0);
+
+                            if (window.AryanPlayerEngine) {
+                                window.AryanPlayerEngine.currentStream = currentWatchItem;
+                                if (currentPlayingUrl) {
+                                    const newIdx = match.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
+                                    if (newIdx !== -1) {
+                                        window.AryanPlayerEngine.activeServerIdx = newIdx;
+                                    }
+                                }
                             }
+
                             if (typeof renderWatchSources === 'function') {
-                                const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                                renderWatchSources(currentWatchItem, activeIdx);
+                                const newActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                                renderWatchSources(currentWatchItem, newActiveIdx);
                             }
                         }
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v28';
+                            const CACHE_KEY = 'aryan_cached_matches_v31';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }
@@ -1003,8 +1086,14 @@
             const catKey = (catName || '').toLowerCase().replace(/[\s_]+/g, '-');
             const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
 
-            const team1Name = title.split(/ vs\.? | @ /)[0] || title;
-            const team2Name = title.split(/ vs\.? | @ /)[1] || '';
+            const homeObj = s.teams && s.teams.home ? s.teams.home : null;
+            const awayObj = s.teams && s.teams.away ? s.teams.away : null;
+
+            const team1Name = (homeObj && homeObj.name ? homeObj.name : (title.split(/ vs\.? | @ /)[0] || title)).trim();
+            const team2Name = (awayObj && awayObj.name ? awayObj.name : (title.split(/ vs\.? | @ /)[1] || '')).trim();
+
+            const team1Logo = homeObj && homeObj.badge ? sanitizeLogoUrl(homeObj.badge) : (s.team1 && s.team1.logo ? sanitizeLogoUrl(s.team1.logo) : '');
+            const team2Logo = awayObj && awayObj.badge ? sanitizeLogoUrl(awayObj.badge) : (s.team2 && s.team2.logo ? sanitizeLogoUrl(s.team2.logo) : '');
 
             const servers = [];
             const seenUrls = new Set();
@@ -1073,8 +1162,8 @@
                 poster: sanitizePosterUrl(s.poster || s.image || ''),
                 categoryLogo: sanitizeLogoUrl(s.category_logo || ''),
                 colors: s.colors || [],
-                team1: { name: team1Name, logo: '' },
-                team2: { name: team2Name, logo: '' },
+                team1: { name: team1Name, logo: team1Logo },
+                team2: { name: team2Name, logo: team2Logo },
                 rawCategory: catKey,
                 servers: servers,
                 sources: servers,
