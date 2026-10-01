@@ -63,14 +63,25 @@
         return rawUrl;
     }
 
+    function cleanMatchStr(str) {
+        if (!str || typeof str !== 'string') return '';
+        return str.normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .replace(/[øØ]/g, 'o')
+            .replace(/[æÆ]/g, 'ae')
+            .replace(/[ß]/g, 'ss')
+            .toLowerCase()
+            .trim();
+    }
+
     function sanitizePosterUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
-        if (!url) return '';
+        if (!url || url.includes('logo-icon.png')) return '';
+        if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
         if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
             url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
         }
-        if (url.includes('wsrv.nl/?url=')) return url;
         if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&output=webp`;
         }
@@ -80,7 +91,11 @@
     function sanitizeLogoUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
-        if (!url) return '';
+        if (!url || url.includes('logo-icon.png')) return '';
+        if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
+        if (url.includes('sofascore.com')) {
+            return `https://serveproxy.com/?url=${encodeURIComponent(url)}`;
+        }
         if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//') && !url.startsWith('assets/')) {
             if (url.startsWith('/api/images') || url.startsWith('/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
@@ -89,7 +104,6 @@
                 url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
             }
         }
-        if (url.includes('wsrv.nl/?url=')) return url;
         if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&output=webp`;
         }
@@ -136,28 +150,36 @@
 
     function tokenizeMatchStr(str) {
         if (!str) return [];
-        return str.toLowerCase()
+        return cleanMatchStr(str)
             .replace(/[^a-z0-9]/g, ' ')
             .split(/\s+/)
-            .filter(w => w.length > 2 && !MATCH_STOP_WORDS.has(w));
+            .filter(w => w.length >= 2 && !MATCH_STOP_WORDS.has(w));
     }
 
     function matchTeams(teamA, teamB) {
         const toksA = tokenizeMatchStr(teamA);
         const toksB = tokenizeMatchStr(teamB);
         if (toksA.length === 0 || toksB.length === 0) return false;
-        return toksA.some(a => toksB.some(b => a === b || (a.length >= 4 && b.length >= 4 && (a.includes(b) || b.includes(a)))));
+        return toksA.some(a => toksB.some(b => a === b || (a.length >= 3 && b.length >= 3 && (a.includes(b) || b.includes(a)))));
     }
 
     function isSameMatch(ppv, alpha) {
         if (!ppv || !alpha) return false;
+
+        const pTitle = ppv.title || ppv.name || '';
+        const aTitle = alpha.event_name || alpha.title || '';
+
+        // Immediate direct clean string match
+        const cP = cleanMatchStr(pTitle).replace(/[^a-z0-9]/g, '');
+        const cA = cleanMatchStr(aTitle).replace(/[^a-z0-9]/g, '');
+        if (cP && cA && cP === cA) return true;
 
         // 1. Sport & Category compatibility check
         const pSport = (ppv.sport || ppv.category || ppv.catName || '').toUpperCase();
         const aCat = (alpha.category || alpha.league || '').toUpperCase();
 
         const sportGroups = {
-            'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'LIGA'],
+            'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN'],
             'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB'],
             'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST'],
             'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING'],
@@ -191,9 +213,6 @@
             if (diffHours > 10) return false;
         }
 
-        const pTitle = ppv.title || ppv.name || '';
-        const aTitle = alpha.event_name || alpha.title || '';
-
         const pParts = pTitle.split(/ vs\.? | @ | - /i);
         const aParts = aTitle.split(/ vs\.? | @ | - /i);
 
@@ -226,6 +245,17 @@
         'uefa': 'FOOTBALL',
         'uefa nations': 'FOOTBALL',
         'uefa-nations': 'FOOTBALL',
+        'ucl womens': 'FOOTBALL',
+        'ucl-womens': 'FOOTBALL',
+        'uefa-womens-champions-league': 'FOOTBALL',
+        'uefa womens champions league': 'FOOTBALL',
+        'champions league': 'FOOTBALL',
+        'champions-league': 'FOOTBALL',
+        'europa league': 'FOOTBALL',
+        'europa-league': 'FOOTBALL',
+        'conference league': 'FOOTBALL',
+        'conference-league': 'FOOTBALL',
+        'afcon': 'FOOTBALL',
         'fifa': 'FOOTBALL',
         'fifa friendlies': 'FOOTBALL',
         'fifa-friendlies': 'FOOTBALL',
@@ -313,7 +343,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v31';
+            const CACHE_KEY = 'aryan_cached_matches_v32';
             // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
             try {
                 ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27', 'aryan_cached_matches_v28', 'aryan_cached_matches_v29', 'aryan_cached_matches_v30'].forEach(k => {
@@ -396,7 +426,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v31';
+            const CACHE_KEY = 'aryan_cached_matches_v32';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -541,6 +571,15 @@
                             if (matchedAlpha) {
                                 norm.alphaStreamId = matchedAlpha.stream_id;
                                 norm.alphaItem = matchedAlpha;
+                                if (matchedAlpha.home_team_logo && (!norm.team1 || !norm.team1.logo || norm.team1.logo.includes('logo-icon.png'))) {
+                                    norm.team1 = { name: matchedAlpha.home_team || (norm.team1 && norm.team1.name) || '', logo: sanitizeLogoUrl(matchedAlpha.home_team_logo) };
+                                }
+                                if (matchedAlpha.away_team_logo && (!norm.team2 || !norm.team2.logo || norm.team2.logo.includes('logo-icon.png'))) {
+                                    norm.team2 = { name: matchedAlpha.away_team || (norm.team2 && norm.team2.name) || '', logo: sanitizeLogoUrl(matchedAlpha.away_team_logo) };
+                                }
+                                if (matchedAlpha.poster && (!norm.poster || norm.poster.includes('logo-icon.png'))) {
+                                    norm.poster = sanitizePosterUrl(matchedAlpha.poster);
+                                }
                             }
                         }
 
@@ -728,6 +767,15 @@
                         matchedAlphaIds.add(alpha.stream_id);
                         matchedPPV.alphaStreamId = alpha.stream_id;
                         matchedPPV.alphaItem = alpha;
+                        if (alpha.home_team_logo && (!matchedPPV.team1 || !matchedPPV.team1.logo || matchedPPV.team1.logo.includes('logo-icon.png'))) {
+                            matchedPPV.team1 = { name: alpha.home_team || (matchedPPV.team1 && matchedPPV.team1.name) || '', logo: sanitizeLogoUrl(alpha.home_team_logo) };
+                        }
+                        if (alpha.away_team_logo && (!matchedPPV.team2 || !matchedPPV.team2.logo || matchedPPV.team2.logo.includes('logo-icon.png'))) {
+                            matchedPPV.team2 = { name: alpha.away_team || (matchedPPV.team2 && matchedPPV.team2.name) || '', logo: sanitizeLogoUrl(alpha.away_team_logo) };
+                        }
+                        if (alpha.poster && (!matchedPPV.poster || matchedPPV.poster.includes('logo-icon.png'))) {
+                            matchedPPV.poster = sanitizePosterUrl(alpha.poster);
+                        }
                     }
                 }
 
@@ -735,7 +783,7 @@
                 let addedIndependent = false;
                 for (const alpha of alphaList) {
                     if (!matchedAlphaIds.has(alpha.stream_id)) {
-                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}`);
+                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}` || isSameMatch(m, alpha));
                         if (!exists) {
                             const newMatch = this.normalizeAlphaMatch(alpha);
                             if (newMatch) {
@@ -751,7 +799,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v31';
+                        const CACHE_KEY = 'aryan_cached_matches_v32';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                     } catch (e) {}
                 }
@@ -931,7 +979,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v31';
+                            const CACHE_KEY = 'aryan_cached_matches_v32';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
                         } catch (e) {}
                     }

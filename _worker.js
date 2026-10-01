@@ -438,7 +438,8 @@ async function onRequest4(context) {
         popular: Boolean(item.popular),
         status: item.status || "upcoming",
         category: rawCat,
-        substreams: Array.isArray(item.substreams) ? item.substreams : []
+        substreams: Array.isArray(item.substreams) ? item.substreams : [],
+        teams: item.teams || (item.team1 && item.team2 ? { home: item.team1, away: item.team2 } : null)
       });
     }
     const streams = [];
