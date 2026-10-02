@@ -2,14 +2,14 @@
  * AryanStreams Global - Advanced Monetization & Ad Experience Engine
  * Path: js/ads.js
  * 
- * Integrated Adsterra Units:
- * 1. Adsterra Popunder (pl31503790)
- * 2. Adsterra Social Bar (pl31503799)
- * 3. Adsterra Smartlink (https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8)
+ * Integrated Units:
+ * 1. Popunder (pl31503790)
+ * 2. Social Bar (pl31503799)
+ * 3. Smartlink (https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8)
  * 
  * Monetization Flow:
  * - Shared links and match cards open directly to the match page with ZERO ads on load or navigation.
- * - When the user clicks the Player ("Click to Play Stream"), the Adsterra Smartlink is triggered ONCE.
+ * - When the user clicks the Player ("Click to Play Stream"), the Smartlink is triggered ONCE.
  * - The overlay disappears and video playback starts seamlessly.
  * - Switching servers or navigating back does NOT re-trigger ads or trap the user.
  */
@@ -41,7 +41,7 @@
          */
         init() {
             if (!this.enabled) return;
-            console.log('[AryanAds] Adsterra monetization engine ready (Play-to-Redirect mode).');
+            console.log('[AryanAds] Monetization engine ready (Play-to-Redirect mode).');
         },
 
         /**
@@ -70,7 +70,7 @@
                 if (adWin) {
                     try { adWin.blur(); } catch (e) {}
                     try { window.focus(); } catch (e) {}
-                    console.log(`[AryanAds] Adsterra Smartlink opened (${source}). Total clicks: ${this.clickCount}`);
+                    console.log(`[AryanAds] Smartlink opened (${source}). Total clicks: ${this.clickCount}`);
                     return true;
                 } else {
                     // Fallback for strict mobile popup blockers: programmatically dispatch anchor click
