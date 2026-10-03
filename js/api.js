@@ -130,7 +130,7 @@
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st') || rawUrl.includes('embed.st') || rawUrl.includes('.mpd') || rawUrl.includes('cenc') || rawUrl.includes('aiv-cdn.net') || rawUrl.includes('pv-cdn.net') || rawUrl.includes('amazonvideo.com')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('.mpd') || rawUrl.includes('cenc') || rawUrl.includes('aiv-cdn.net') || rawUrl.includes('pv-cdn.net') || rawUrl.includes('amazonvideo.com')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -1376,11 +1376,23 @@
                         addServer(finalLabel, subUrl);
                     }
                 });
-            } else if (mainEmbed) {
-                const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
-                addServer(finalLabel, mainEmbed);
-            } else if (s.id) {
-                addServer('Main Server', `https://embedindia.st/embed/${s.id}`);
+            }
+            if (Array.isArray(s.sources) && s.sources.length > 0) {
+                s.sources.forEach((srcItem, sIdx) => {
+                    if (srcItem && srcItem.source && srcItem.id) {
+                        const embedUrl = `https://embed.st/embed/${srcItem.source}/${srcItem.id}/1`;
+                        const label = (srcItem.source || 'Server').toUpperCase();
+                        addServer(`Server ${servers.length + 1} [${label}]`, embedUrl);
+                    }
+                });
+            }
+            if (servers.length === 0) {
+                if (mainEmbed) {
+                    const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
+                    addServer(finalLabel, mainEmbed);
+                } else if (s.id) {
+                    addServer('Main Server', `https://embedindia.st/embed/${s.id}`);
+                }
             }
 
             // Clean, deduplicate against canonical keys, and re-index server names

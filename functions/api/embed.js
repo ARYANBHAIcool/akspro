@@ -84,6 +84,7 @@ export async function onRequest(context) {
 
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
+(function() {
     // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
     var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
     function shouldProxyUrl(u) {
@@ -272,10 +273,10 @@ export async function onRequest(context) {
 
         // Rewrite dynamic script location in embedindia so bundle loads through /api/embed with valid SSL
         if (html.includes('location.protocol+"//"+location.host')) {
-            html = html.replace('var a=location.protocol+"//"+location.host', `var a="/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
+            html = html.replace('var a=location.protocol+"//"+location.host', `var a=(window.location.origin||"") + "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
         }
         html = html.replace(/e\.setAttribute\(["']src["'],\s*a\s*\+\s*\(["']clappr["']\s*===\s*t\s*\?\s*["']\/js\/bundle\.js["']\s*:\s*["']\/js\/bundle-jw\.js["']\)\)/g,
-            `e.setAttribute("src", "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
+            `e.setAttribute("src", (window.location.origin||"") + "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
 
         // Build clean response headers removing all framing restrictions
         const responseHeaders = new Headers();

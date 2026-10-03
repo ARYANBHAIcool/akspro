@@ -309,10 +309,10 @@ async function onRequest2(context) {
     html = html.replace(/aclib\.runPop\([^)]*\)/g, "/* ad popup removed */");
     html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, "<!-- devtool disabled -->");
     if (html.includes('location.protocol+"//"+location.host')) {
-      html = html.replace('var a=location.protocol+"//"+location.host', `var a="/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
+      html = html.replace('var a=location.protocol+"//"+location.host', `var a=(window.location.origin||"") + "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
     }
     html = html.replace(/e\.setAttribute\(["']src["'],\s*a\s*\+\s*\(["']clappr["']\s*===\s*t\s*\?\s*["']\/js\/bundle\.js["']\s*:\s*["']\/js\/bundle-jw\.js["']\)\)/g,
-      `e.setAttribute("src", "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
+      `e.setAttribute("src", (window.location.origin||"") + "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
     const responseHeaders = new Headers();
     responseHeaders.set("Content-Type", "text/html; charset=utf-8");
     responseHeaders.set("Access-Control-Allow-Origin", "*");
