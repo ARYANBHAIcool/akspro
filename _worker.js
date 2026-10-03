@@ -297,9 +297,15 @@ async function onRequest2(context) {
 }
 </style>`;
     const baseHref = parsedTarget.origin ? `${parsedTarget.origin}/` : "https://amazon.com.pandecocogaming.sbs/";
-    html = html.replace("<head>", `<head>
+    if (html.includes("<head>")) {
+      html = html.replace("<head>", `<head>
     <base href="${baseHref}">
     ${injectScript}`);
+    } else if (html.includes("<html")) {
+      html = html.replace(/<html[^>]*>/i, `$&<head><base href="${baseHref}">${injectScript}</head>`);
+    } else {
+      html = `<base href="${baseHref}">${injectScript}` + html;
+    }
     html = html.replace(/aclib\.runPop\([^)]*\)/g, "/* ad popup removed */");
     html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, "<!-- devtool disabled -->");
     if (html.includes('location.protocol+"//"+location.host')) {
@@ -357,8 +363,8 @@ async function onRequest3(context) {
   try {
     const parsedTarget = new URL(targetUrl);
     const reqHeaders = {
-      "Origin": "https://streamcorner.fun",
-      "Referer": "https://streamcorner.fun/",
+      "Origin": "https://streamcorner.foo",
+      "Referer": "https://streamcorner.foo/",
       "User-Agent": context.request.headers.get("User-Agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       "Accept": context.request.headers.get("Accept") || "*/*"
     };
@@ -720,7 +726,75 @@ async function onRequestBundleClappr(context) {
 }
 __name(onRequestBundleClappr, "onRequestBundleClappr");
 
+async function onRequestFetch(context) {
+  if (context.request.method === "OPTIONS") {
+    return new Response(null, {
+      status: 204,
+      headers: {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "*",
+        "Access-Control-Max-Age": "86400"
+      }
+    });
+  }
+  try {
+    const body = await context.request.arrayBuffer();
+    const clientHeaders = context.request.headers;
+    const forwardHeaders = {
+      "User-Agent": clientHeaders.get("User-Agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      "Referer": "https://embed.st/",
+      "Origin": "https://embed.st",
+      "Content-Type": clientHeaders.get("Content-Type") || "application/octet-stream",
+      "Accept": "*/*"
+    };
+    let upstream = await fetch("https://embed.st/fetch", {
+      method: "POST",
+      headers: forwardHeaders,
+      body: body
+    });
+    if (!upstream.ok) {
+      forwardHeaders["Referer"] = "https://embedindia.st/";
+      forwardHeaders["Origin"] = "https://embedindia.st";
+      upstream = await fetch("https://embedindia.st/fetch", {
+        method: "POST",
+        headers: forwardHeaders,
+        body: body
+      });
+    }
+    const resHeaders = new Headers(upstream.headers);
+    resHeaders.set("Access-Control-Allow-Origin", "*");
+    resHeaders.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    resHeaders.set("Access-Control-Allow-Headers", "*");
+    resHeaders.set("Access-Control-Expose-Headers", "*");
+    resHeaders.delete("Content-Security-Policy");
+    resHeaders.delete("X-Frame-Options");
+    return new Response(upstream.body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
+      headers: resHeaders
+    });
+  } catch (e) {
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 502,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
+  }
+}
+__name(onRequestFetch, "onRequestFetch");
+
 var routes = [
+  {
+    routePath: "/fetch",
+    mountPath: "/",
+    method: "",
+    middlewares: [],
+    modules: [onRequestFetch]
+  },
   {
     routePath: "/js/bundle-jw.js",
     mountPath: "/js",

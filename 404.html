@@ -570,9 +570,18 @@
             // 3. Signature PPV.st Front Page Layout (Live Now + Grouped Category Sections)
             const grouped = window.AryanGlobalAPI.getMatchesGroupedByCategory();
             let html = '';
+            const renderedMatchIds = new Set();
+            const getDedupKey = (m) => (m.title || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]/g, '');
 
             // Section 1: Live Now
             if (liveMatches.length > 0) {
+                liveMatches.forEach(m => {
+                    renderedMatchIds.add(m.id);
+                    if (m.rawId) renderedMatchIds.add(m.rawId);
+                    if (m.alphaStreamId) renderedMatchIds.add(m.alphaStreamId);
+                    const k = getDedupKey(m);
+                    if (k) renderedMatchIds.add(k);
+                });
                 html += `
                     <div id="section-live-now" class="space-y-3 pt-2">
                         <div class="flex items-center gap-2.5">
@@ -589,8 +598,22 @@
             // Section 2: Grouped Category Sections (American Football, Combat Sports, Cricket, etc.)
             grouped.forEach(group => {
                 if (group.category === '24/7 STREAMS') return;
-                const matches = group.matches || [];
+                // Exclude matches already rendered in Live now or preceding category
+                const matches = (group.matches || []).filter(m => {
+                    const k = getDedupKey(m);
+                    if (renderedMatchIds.has(m.id) || (m.rawId && renderedMatchIds.has(m.rawId)) || (m.alphaStreamId && renderedMatchIds.has(m.alphaStreamId)) || (k && renderedMatchIds.has(k))) {
+                        return false;
+                    }
+                    return true;
+                });
                 if (matches.length === 0) return;
+                matches.forEach(m => {
+                    renderedMatchIds.add(m.id);
+                    if (m.rawId) renderedMatchIds.add(m.rawId);
+                    if (m.alphaStreamId) renderedMatchIds.add(m.alphaStreamId);
+                    const k = getDedupKey(m);
+                    if (k) renderedMatchIds.add(k);
+                });
 
                 const slug = group.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const prettyTitle = group.category.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
@@ -655,25 +678,42 @@
             const logo1 = resolveCardLogo(m.team1 && m.team1.logo);
             const logo2 = resolveCardLogo(m.team2 && m.team2.logo);
 
-            // Case 1: Dual-team logos
-            if (logo1 && logo2) {
-                const t1Name = (m.team1 && m.team1.name) || '';
-                const t2Name = (m.team2 && m.team2.name) || '';
+            // Extract team names from teams object or title
+            let t1Name = (m.team1 && m.team1.name) || '';
+            let t2Name = (m.team2 && m.team2.name) || '';
+            if (!t1Name && !t2Name && m.title) {
+                const parts = m.title.split(/\s+(?:vs\.?|@|-)\s+/i);
+                if (parts.length >= 2) {
+                    t1Name = parts[0].trim();
+                    t2Name = parts[1].trim();
+                }
+            }
+
+            // Case 1: Dual-team matchup (if we have logos OR team names)
+            if ((logo1 && logo2) || (t1Name && t2Name)) {
                 const t1Init = (t1Name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'T1').toUpperCase();
                 const t2Init = (t2Name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'T2').toUpperCase();
+
+                const t1Badge = logo1
+                    ? `<img src="${logo1}" class="max-w-full max-h-full object-contain" alt="${t1Name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                       <span class="hidden w-full h-full text-[11px] font-black text-blue-400 items-center justify-center uppercase tracking-wider">${t1Init}</span>`
+                    : `<span class="w-full h-full text-[11px] font-black text-blue-400 flex items-center justify-center uppercase tracking-wider">${t1Init}</span>`;
+
+                const t2Badge = logo2
+                    ? `<img src="${logo2}" class="max-w-full max-h-full object-contain" alt="${t2Name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                       <span class="hidden w-full h-full text-[11px] font-black text-red-400 items-center justify-center uppercase tracking-wider">${t2Init}</span>`
+                    : `<span class="w-full h-full text-[11px] font-black text-red-400 flex items-center justify-center uppercase tracking-wider">${t2Init}</span>`;
 
                 return `
                     <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center px-1.5 py-1">
                         <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-red-500/10"></div>
                         <div class="relative z-10 flex items-center justify-around w-full gap-1">
                             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#111a2e] border border-gray-700/60 p-1 flex items-center justify-center shadow-md flex-shrink-0 relative overflow-hidden">
-                                <img src="${logo1}" class="max-w-full max-h-full object-contain" alt="${t1Name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <span class="hidden w-full h-full text-[11px] font-black text-blue-400 items-center justify-center uppercase tracking-wider">${t1Init}</span>
+                                ${t1Badge}
                             </div>
                             <span class="text-[10px] font-black text-gray-400 bg-black/60 px-1 py-0.5 rounded border border-gray-800 flex-shrink-0">VS</span>
                             <div class="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-[#111a2e] border border-gray-700/60 p-1 flex items-center justify-center shadow-md flex-shrink-0 relative overflow-hidden">
-                                <img src="${logo2}" class="max-w-full max-h-full object-contain" alt="${t2Name}" loading="lazy" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-                                <span class="hidden w-full h-full text-[11px] font-black text-red-400 items-center justify-center uppercase tracking-wider">${t2Init}</span>
+                                ${t2Badge}
                             </div>
                         </div>
                     </div>
@@ -717,14 +757,40 @@
                 `;
             }
 
-            // Case 4: Default styled sport badge
-            const sportCode = (m.sport || m.league || 'LIVE').replace(/[^a-zA-Z]/g, '').slice(0, 4).toUpperCase();
+            // Case 4: Sport-Themed Graphic Card (Combat, Motorsports, Cricket, Basketball, Football, etc.)
+            const sport = (m.sport || m.league || 'SPORTS').toUpperCase();
+            let sportIcon = '🏆';
+            let sportColor = 'from-green-600/20 to-emerald-950/40 border-green-500/30 text-green-400';
+            if (sport.includes('FOOTBALL') || sport.includes('SOCCER')) {
+                sportIcon = '⚽';
+                sportColor = 'from-blue-600/20 to-indigo-950/40 border-blue-500/30 text-blue-400';
+            } else if (sport.includes('CRICKET')) {
+                sportIcon = '🏏';
+                sportColor = 'from-amber-600/20 to-orange-950/40 border-amber-500/30 text-amber-400';
+            } else if (sport.includes('BASKETBALL')) {
+                sportIcon = '🏀';
+                sportColor = 'from-orange-600/20 to-amber-950/40 border-orange-500/30 text-orange-400';
+            } else if (sport.includes('MOTOR') || sport.includes('F1') || sport.includes('RACING')) {
+                sportIcon = '🏎️';
+                sportColor = 'from-red-600/20 to-rose-950/40 border-red-500/30 text-red-400';
+            } else if (sport.includes('COMBAT') || sport.includes('UFC') || sport.includes('BOXING') || sport.includes('MMA')) {
+                sportIcon = '🥊';
+                sportColor = 'from-red-700/20 to-zinc-950/40 border-red-600/30 text-red-400';
+            } else if (sport.includes('BASEBALL')) {
+                sportIcon = '⚾';
+                sportColor = 'from-sky-600/20 to-blue-950/40 border-sky-500/30 text-sky-400';
+            } else if (sport.includes('TENNIS')) {
+                sportIcon = '🎾';
+                sportColor = 'from-lime-600/20 to-emerald-950/40 border-lime-500/30 text-lime-400';
+            } else if (sport.includes('HOCKEY')) {
+                sportIcon = '🏒';
+                sportColor = 'from-cyan-600/20 to-slate-950/40 border-cyan-500/30 text-cyan-400';
+            }
+
             return `
-                <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] to-[#070b14] flex flex-col items-center justify-center p-2 border-r border-gray-800/40">
-                    <div class="w-10 h-10 rounded-xl bg-green-500/10 border border-green-500/20 flex items-center justify-center text-green-400 font-black text-xs uppercase mb-1 shadow-inner">
-                        ${sportCode || 'AS'}
-                    </div>
-                    <span class="text-[9px] font-bold text-gray-500 uppercase tracking-wider truncate max-w-[90%]">${m.league || m.sport || 'Sports'}</span>
+                <div class="w-[40%] sm:w-[38%] max-w-[170px] h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br ${sportColor} flex flex-col items-center justify-center p-2 border-r border-gray-800/40">
+                    <span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">${sportIcon}</span>
+                    <span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] opacity-90">${m.league || m.sport || 'Sports'}</span>
                 </div>
             `;
         }
@@ -910,6 +976,7 @@
         });
 
         let hasHandledInitialUrlMatch = false;
+        let checkUrlAttempts = 0;
         function checkUrlForMatch() {
             if (hasHandledInitialUrlMatch) return;
 
@@ -941,6 +1008,9 @@
             if (item) {
                 hasHandledInitialUrlMatch = true;
                 openWatchView(item.id || targetId);
+            } else if (checkUrlAttempts < 15) {
+                checkUrlAttempts++;
+                setTimeout(checkUrlForMatch, 350);
             }
         }
 

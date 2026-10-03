@@ -89,10 +89,10 @@ export async function onRequest(context) {
     function shouldProxyUrl(u) {
         if (!u || typeof u !== 'string') return false;
         if (u.startsWith(nitroBase) || u.startsWith('data:') || u.startsWith('blob:')) return false;
+        // Only proxy genuine video manifests and segment chunks
         return u.includes('.mpd') || u.includes('.m4s') || u.includes('.m4v') || u.includes('.m4a') ||
                u.includes('cenc') || u.includes('dash') || u.includes('aiv-cdn.net') || u.includes('pv-cdn.net') ||
-               u.includes('cloudfront.net') || u.includes('amazonvideo.com') || u.includes('pandecocogaming') ||
-               u.includes('getsugatensho') || u.includes('sportsembed');
+               u.includes('cloudfront.net') || u.includes('amazonvideo.com');
     }
 
     var origFetch = window.fetch;
@@ -258,7 +258,13 @@ export async function onRequest(context) {
 }
 </style>`;
         const baseHref = parsedTarget.origin ? `${parsedTarget.origin}/` : 'https://amazon.com.pandecocogaming.sbs/';
-        html = html.replace('<head>', `<head>\n    <base href="${baseHref}">\n    ${injectScript}`);
+        if (html.includes('<head>')) {
+            html = html.replace('<head>', `<head>\n    <base href="${baseHref}">\n    ${injectScript}`);
+        } else if (html.includes('<html')) {
+            html = html.replace(/<html[^>]*>/i, `$&<head><base href="${baseHref}">${injectScript}</head>`);
+        } else {
+            html = `<base href="${baseHref}">${injectScript}` + html;
+        }
 
         // Neutralize annoying popup and anti-devtool scripts
         html = html.replace(/aclib\.runPop\([^)]*\)/g, '/* ad popup removed */');

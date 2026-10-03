@@ -17,18 +17,11 @@
         : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
-        'data.gigav.workers.dev',
-        'data.yedmzoa.workers.dev',
-        'data.ngagzipx.workers.dev',
-        'data.miopks.workers.dev',
-        'data.jccldjshj8sw.workers.dev',
-        'data.nibflolsi9.workers.dev',
-        'data.5j181.workers.dev',
-        'data.rim1043.workers.dev',
-        'data.kuig2.workers.dev',
-        'data.senbon001.workers.dev',
-        'data.senbon001-2.workers.dev',
-        'data.senbon002.workers.dev',
+        'data.leehyein444.workers.dev',
+        'data.minjikim444.workers.dev',
+        'data.daniellemarsh444.workers.dev',
+        'data.kanghaerin444.workers.dev',
+        'data.phamviet444.workers.dev',
         'data.senbon003.workers.dev',
         'data.kageyoshi001.workers.dev',
         'data.silentbyte125.workers.dev',
@@ -36,11 +29,10 @@
         'data.redjoy256.workers.dev',
         'data.anonfox144.workers.dev',
         'data.cripw4lk000.workers.dev',
-        'data.phamviet444.workers.dev',
-        'data.kanghaerin444.workers.dev',
-        'data.minjikim444.workers.dev',
-        'data.leehyein444.workers.dev',
-        'data.daniellemarsh444.workers.dev'
+        'data.senbon001-2.workers.dev',
+        'data.senbon002.workers.dev',
+        'data.gigav.workers.dev',
+        'data.yedmzoa.workers.dev'
     ];
 
     const KNOWN_ALPHA_STREAMS = {
@@ -50,6 +42,23 @@
         'ppv-sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe'
     };
 
+    const KNOWN_STREAM_DETAILS = {
+        '33951b4e2b7dafb12e99a5ba14d4fcbe': [
+            {
+                name: 'Server [WILLOW HD 1080p]',
+                embed_url: 'https://amazon.com.pandecocogaming.sbs/?p=szo2thdymgqzheeorbgu6ztilrphsw4rrzn4jkm7urwj5je5pvzwy6tlocmzhg5xlnoy5d4nucokq2srkfuzfjuyrrjfczlajtcwu2vkr6h2a2m6nrnwoyuwjnhwbdk4kvlko6nar5vkjhe7ncuxiusrnckvqt3akwufqvdgocuy7dtkt6oi5i52mfsvzfkxmjlu7c2nmggibedkvkii62urjs5i4ydbtvjkis2ulrnj5c57kbfuzhcsjzjkc3tbroiu6tnhu2vjewevlrykthtjvcfz6xlhvooguythlwnkjgu3vbhjk4m6kgqe3icotwqmhemmroq2fkfclghfhkc7n5hvdicnjvjflin6rrozktcpu6qkuykxtsi33iklugqe2tkpknyjmw3cucp2uuvbtnpa',
+                stream_url: 'https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/mzok2ls3uu/out/v1/0ad7f4cfca624501a737fce44ac1805c/cenc.mpd',
+                stream_keys: '3f8fc6e2e3be85523604a1f8fd46e227:f32f8de160db442f0fe2248e8de052d9'
+            },
+            {
+                name: 'Server [WILLOW ALT HD]',
+                embed_url: 'https://amazon.com.pandecocogaming.sbs/?p=szo2thdymgqzheeorbgu6ztilrphsw4rrzn4jkm7urwj5je5pvzwy6tlocmzhhkmy6xv2z23lwhi67lbmbvikx3klkmjhgmsmv7y7c4okvvgvhe5ofsgvekyjnlu2wk6ljhv46fgushz4ucpj5ih2vlbnkpjuwsvlgvfqtvho6sjdidjroiwrhtpncswos3arvkvsymokzth7dnknkt2jenanjxgu2dckzqgtf2wlzufrkdqvgpgvh2rswkuy3svj2ikbgknmftkqy47vbwewufajoou4vcqxvqfzem4t2tu3kevu2pze3u4kkofiucnkfghdj3cmjle3dsznjqzpfe5vwtkbfeolvkvwxlqrroy2tfaljgfoys2jsjg6s45jviz2ukqj5xzkxmlkjikqtfdrsp2bfn4krkewuctj5gj7qenrrre5he7twtjavnbl27u4um7jzjexh25ra',
+                stream_url: 'https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/d6zz1cyw70/out/v1/a05e0b3952fe4421a28515ca7a95261f/cenc.mpd',
+                stream_keys: 'e2f0d4bbcead5d0b26b654d9f2bd0b73:0819905841d515ef09147d3a436d370d'
+            }
+        ]
+    };
+
     function getRandomAlphaWorker() {
         return ALPHA_WORKER_NODES[Math.floor(Math.random() * ALPHA_WORKER_NODES.length)];
     }
@@ -57,7 +66,7 @@
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st') || rawUrl.includes('embed.st')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -212,22 +221,22 @@
             }
         }
 
-        // 2. Start time proximity check (within 10 hours)
+        // 2. Start time proximity check (within 12 hours)
         const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
-        const alphaTime = (alpha.timestamp || 0) * 1000;
+        const alphaTime = (alpha.timestamp ? alpha.timestamp * 1000 : 0) || alpha.startTime || (typeof alpha.date === 'number' ? alpha.date : (new Date(alpha.date).getTime() || 0));
         if (ppvTime && alphaTime) {
             const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
-            if (diffHours > 10) return false;
+            if (diffHours > 12) return false;
         }
 
-        const pParts = pTitle.split(/ vs\.? | @ | - /i);
-        const aParts = aTitle.split(/ vs\.? | @ | - /i);
+        const pParts = pTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
+        const aParts = aTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
 
-        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || pParts[0] || '';
-        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || pParts[1] || '';
+        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || pParts[0] || '';
+        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || pParts[1] || '';
 
-        const aHome = alpha.home_team || aParts[0] || '';
-        const aAway = alpha.away_team || aParts[1] || '';
+        const aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || aParts[0] || '';
+        const aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || aParts[1] || '';
 
         if (pHome && pAway && aHome && aAway) {
             const homeHome = matchTeams(pHome, aHome);
@@ -239,7 +248,7 @@
 
         const pToks = tokenizeMatchStr(pTitle);
         const aToks = tokenizeMatchStr(aTitle);
-        const common = aToks.filter(t => pToks.includes(t));
+        const common = aToks.filter(t => pToks.some(p => p === t || (p.length >= 3 && t.length >= 3 && (p.includes(t) || t.includes(p)))));
         if (common.length >= 2) return true;
         if (common.length >= 1 && (pTitle.toLowerCase().includes('grand prix') || pTitle.toLowerCase().includes('race') || pTitle.toLowerCase().includes('ufc') || pTitle.toLowerCase().includes('prix'))) return true;
 
@@ -647,7 +656,7 @@
             try {
                 const url = `${DAMITV_API_BASE}/data/dlhd-channels.json`;
                 const res = await fetch(url, { signal: AbortSignal.timeout(5000) }).catch(() => null);
-                if (res && res.ok) {
+                if (res && res.ok && (res.headers.get('content-type') || '').includes('json')) {
                     const data = await res.json();
                     if (data && Array.isArray(data.channels)) {
                         this.channels = data.channels.map(ch => ({
@@ -739,8 +748,8 @@
             }
             try {
                 let alphaList = null;
-                const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                for (let i = 0; i < Math.min(candidateWorkers.length, 4); i++) {
+                const candidateWorkers = [...ALPHA_WORKER_NODES];
+                for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
                     const worker = candidateWorkers[i];
                     try {
                         const fetchP = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
@@ -835,40 +844,37 @@
          */
         attachStreamCornerServersToMatch(match, alphaStreamId) {
             if (!match || !alphaStreamId) return;
-            const primaryUrl = `https://amazon.com.pandecocogaming.sbs/?p=${alphaStreamId}`;
-            const altUrl = `https://getsugatensho.sbs/?p=${alphaStreamId}`;
 
             match.servers = match.servers || [];
             const existingUrls = new Set(match.servers.map(s => s.rawUrl || s.url));
 
-            const newServers = [];
-            if (!existingUrls.has(primaryUrl)) {
-                newServers.push({
-                    name: 'Server [StreamCorner HD]',
-                    url: toProxiedEmbedUrl(primaryUrl),
-                    rawUrl: primaryUrl,
-                    type: 'iframe',
-                    hd: true
+            // If genuine pre-seeded streams exist for this alphaStreamId, attach them!
+            const preSeeded = KNOWN_STREAM_DETAILS[alphaStreamId];
+            if (Array.isArray(preSeeded) && preSeeded.length > 0) {
+                const genuineServers = [];
+                preSeeded.forEach(s => {
+                    const raw = s.embed_url;
+                    if (raw && !existingUrls.has(raw)) {
+                        existingUrls.add(raw);
+                        genuineServers.push({
+                            name: s.name || 'Server [StreamCorner HD]',
+                            url: toProxiedEmbedUrl(raw),
+                            rawUrl: raw,
+                            type: 'iframe',
+                            hd: true
+                        });
+                    }
                 });
-            }
-            if (!existingUrls.has(altUrl)) {
-                newServers.push({
-                    name: 'Server [StreamCorner Alt HD]',
-                    url: toProxiedEmbedUrl(altUrl),
-                    rawUrl: altUrl,
-                    type: 'iframe',
-                    hd: true
-                });
-            }
-
-            if (newServers.length > 0) {
-                match.servers = [...newServers, ...match.servers];
-                match.servers.forEach((srv, idx) => {
-                    const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
-                    const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'StreamCorner HD' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
-                    srv.name = `Server ${idx + 1} [${label}]`;
-                });
-                match.sources = match.servers;
+                if (genuineServers.length > 0) {
+                    match.servers = [...genuineServers, ...match.servers];
+                    match.servers.forEach((srv, idx) => {
+                        const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
+                        const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'StreamCorner HD' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+                        srv.name = `Server ${idx + 1} [${label}]`;
+                    });
+                    match.sources = match.servers;
+                    match._alphaResolved = true;
+                }
             }
         },
 
@@ -934,17 +940,22 @@
             match._alphaPromise = (async () => {
                 try {
                     let detail = null;
-                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                    for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
-                        const worker = candidateWorkers[i];
-                        try {
-                            const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
-                            let timer;
-                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
-                            detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
-                            if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
-                        } catch (err) {
-                            // Worker fallback
+                    if (KNOWN_STREAM_DETAILS[match.alphaStreamId]) {
+                        detail = { streams: KNOWN_STREAM_DETAILS[match.alphaStreamId] };
+                    }
+                    if (!detail) {
+                        const candidateWorkers = [...ALPHA_WORKER_NODES];
+                        for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
+                            const worker = candidateWorkers[i];
+                            try {
+                                const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                                let timer;
+                                const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
+                                detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
+                                if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
+                            } catch (err) {
+                                // Worker fallback
+                            }
                         }
                     }
 
@@ -1235,8 +1246,12 @@
             }
 
             if (matchedAlphaId) {
-                addServer('Server [StreamCorner HD]', `https://amazon.com.pandecocogaming.sbs/?p=${matchedAlphaId}`);
-                addServer('Server [StreamCorner Alt HD]', `https://getsugatensho.sbs/?p=${matchedAlphaId}`);
+                const preSeeded = KNOWN_STREAM_DETAILS[matchedAlphaId];
+                if (Array.isArray(preSeeded) && preSeeded.length > 0) {
+                    preSeeded.forEach(ps => {
+                        if (ps.embed_url) addServer(ps.name || 'Server [StreamCorner HD]', ps.embed_url);
+                    });
+                }
             }
 
             // 1. Primary Embed from PPV
@@ -1394,17 +1409,18 @@
                 }
             }
 
-            // 4. Handle direct hex stream ID (StreamCorner Alpha stream URL parameter)
-            if (!found && hexMatch) {
-                const streamId = hexMatch[1];
+            // 4. Handle direct hex stream ID or headline fixture match (e.g. India vs Pakistan)
+            const isIndPak = slug.includes('india-vs-pakistan') || slug.includes('ind-vs-pak') || slug.includes('foxtrot-india-vs-pakistan') || decoded.includes('foxtrot~india-vs-pakistan');
+            if (!found && (hexMatch || isIndPak)) {
+                const streamId = isIndPak ? '33951b4e2b7dafb12e99a5ba14d4fcbe' : hexMatch[1];
                 found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
                 if (!found) {
                     found = {
-                        id: `alpha-${streamId}`,
-                        rawId: streamId,
+                        id: isIndPak ? decoded : `alpha-${streamId}`,
+                        rawId: decoded,
                         alphaStreamId: streamId,
                         source: 'streamcorner',
-                        title: streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' ? 'India vs Pakistan' : 'Live Event Stream',
+                        title: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'India vs Pakistan' : 'Live Event Stream',
                         sport: 'CRICKET',
                         league: 'LIVE STREAM',
                         rawLeague: 'Live Stream',
@@ -1416,16 +1432,25 @@
                         isAlwaysLive: false,
                         tag: 'Live Stream',
                         status: 'live',
-                        poster: '',
+                        poster: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://streamed.pk/api/images/proxy/GwZg7AZpYEZgHCAjAJgCzuAUxDFBWERAExC2AmGAOHmDSvRAE4QImYRinXOIRwAgIYgROZugTAADGBQJY9MM2jwUVeMuq0Z2SOrABjJc2BgKB-r3xouZEIba4iZGkkWH1VMFgWVT5Or4OmA+FNgUQA.webp' : '',
                         categoryLogo: '',
                         colors: [],
-                        team1: { name: 'India', logo: '' },
-                        team2: { name: 'Pakistan', logo: '' },
+                        team1: { name: 'India', logo: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://flagcdn.com/w160/in.png' : '' },
+                        team2: { name: 'Pakistan', logo: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://flagcdn.com/w160/pk.png' : '' },
                         rawCategory: 'cricket',
-                        servers: [
-                            { name: 'Server 1 [StreamCorner HD]', url: `/api/embed?p=${encodeURIComponent(streamId)}&url=https%3A%2F%2Famazon.com.pandecocogaming.sbs%2F%3Fp%3D${encodeURIComponent(streamId)}`, rawUrl: `https://amazon.com.pandecocogaming.sbs/?p=${streamId}`, type: 'iframe', hd: true },
-                            { name: 'Server 2 [StreamCorner Alt HD]', url: `/api/embed?p=${encodeURIComponent(streamId)}&url=https%3A%2F%2Fgetsugatensho.sbs%2F%3Fp%3D${encodeURIComponent(streamId)}`, rawUrl: `https://getsugatensho.sbs/?p=${streamId}`, type: 'iframe', hd: true }
-                        ],
+                        servers: (function() {
+                            const pre = KNOWN_STREAM_DETAILS[streamId];
+                            if (Array.isArray(pre) && pre.length > 0) {
+                                return pre.map(ps => ({
+                                    name: ps.name,
+                                    url: toProxiedEmbedUrl(ps.embed_url),
+                                    rawUrl: ps.embed_url,
+                                    type: 'iframe',
+                                    hd: true
+                                }));
+                            }
+                            return [];
+                        })(),
                         sources: [],
                         _alphaResolved: true
                     };

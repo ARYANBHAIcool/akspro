@@ -81,7 +81,7 @@ window.AryanPlayerEngine = {
         }
 
         // Route any domains with frame-ancestors restrictions or untrusted SSL through the Cloudflare Pages embed proxy
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st') || rawUrl.includes('embed.st')) {
             try {
                 const parsed = new URL(rawUrl);
                 const p = parsed.searchParams.get('p') || '';
@@ -315,7 +315,7 @@ window.AryanPlayerEngine = {
             html += `<video id="global-video-element" class="w-full h-full object-contain" controls autoplay playsinline></video>`;
         } else {
             const initialSrc = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
-            html += `<iframe id="global-iframe-element" src="${initialSrc}" class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *" referrerpolicy="no-referrer"></iframe>`;
+            html += `<iframe id="global-iframe-element" src="${initialSrc}" class="w-full h-full border-0" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *"></iframe>`;
         }
 
         html += `</div>`;
