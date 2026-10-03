@@ -80,8 +80,8 @@ window.AryanPlayerEngine = {
             } catch (e) {}
         }
 
-        // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+        // Route any domains with frame-ancestors restrictions or untrusted SSL through the Cloudflare Pages embed proxy
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st')) {
             try {
                 const parsed = new URL(rawUrl);
                 const p = parsed.searchParams.get('p') || '';

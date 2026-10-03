@@ -43,6 +43,13 @@
         'data.daniellemarsh444.workers.dev'
     ];
 
+    const KNOWN_ALPHA_STREAMS = {
+        'india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe',
+        'ind-vs-pak': '33951b4e2b7dafb12e99a5ba14d4fcbe',
+        'sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe',
+        'ppv-sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe'
+    };
+
     function getRandomAlphaWorker() {
         return ALPHA_WORKER_NODES[Math.floor(Math.random() * ALPHA_WORKER_NODES.length)];
     }
@@ -50,7 +57,7 @@
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -824,30 +831,89 @@
         },
 
         /**
+         * Directly attach StreamCorner HD & Alt HD servers to a match
+         */
+        attachStreamCornerServersToMatch(match, alphaStreamId) {
+            if (!match || !alphaStreamId) return;
+            const primaryUrl = `https://amazon.com.pandecocogaming.sbs/?p=${alphaStreamId}`;
+            const altUrl = `https://getsugatensho.sbs/?p=${alphaStreamId}`;
+
+            match.servers = match.servers || [];
+            const existingUrls = new Set(match.servers.map(s => s.rawUrl || s.url));
+
+            const newServers = [];
+            if (!existingUrls.has(primaryUrl)) {
+                newServers.push({
+                    name: 'Server [StreamCorner HD]',
+                    url: toProxiedEmbedUrl(primaryUrl),
+                    rawUrl: primaryUrl,
+                    type: 'iframe',
+                    hd: true
+                });
+            }
+            if (!existingUrls.has(altUrl)) {
+                newServers.push({
+                    name: 'Server [StreamCorner Alt HD]',
+                    url: toProxiedEmbedUrl(altUrl),
+                    rawUrl: altUrl,
+                    type: 'iframe',
+                    hd: true
+                });
+            }
+
+            if (newServers.length > 0) {
+                match.servers = [...newServers, ...match.servers];
+                match.servers.forEach((srv, idx) => {
+                    const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
+                    const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'StreamCorner HD' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+                    srv.name = `Server ${idx + 1} [${label}]`;
+                });
+                match.sources = match.servers;
+            }
+        },
+
+        /**
          * Ensure extra broadcast channels are paired and resolved for a match
          * Handles cases where Alpha catalog is still loading or match has not yet paired.
          */
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
+
+            // 0. Auto-pair with known headline fixtures or stream IDs
+            const matchSlug = ((match.id || '') + ' ' + (match.rawId || '') + ' ' + (match.title || '')).toLowerCase();
+            if (!match.alphaStreamId) {
+                if (matchSlug.includes('india-vs-pakistan') || matchSlug.includes('ind vs pak') || matchSlug.includes('foxtrot~india-vs-pakistan')) {
+                    match.alphaStreamId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
+                } else if (KNOWN_ALPHA_STREAMS[match.id] || KNOWN_ALPHA_STREAMS[match.rawId]) {
+                    match.alphaStreamId = KNOWN_ALPHA_STREAMS[match.id] || KNOWN_ALPHA_STREAMS[match.rawId];
+                }
+            }
+
+            // 1. If alphaStreamId is present, ensure StreamCorner servers are attached immediately
+            if (match.alphaStreamId) {
+                this.attachStreamCornerServersToMatch(match, match.alphaStreamId);
+            }
+
             if (match._alphaResolved) return true;
 
-            // 1. If Alpha feeds are currently loading in background, await completion
+            // 2. If Alpha feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
                 try {
                     await this._alphaLoadingPromise;
                 } catch (e) {}
             }
 
-            // 2. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
+            // 3. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
             if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
                 if (matchedAlpha) {
                     match.alphaStreamId = matchedAlpha.stream_id;
                     match.alphaItem = matchedAlpha;
+                    this.attachStreamCornerServersToMatch(match, matchedAlpha.stream_id);
                 }
             }
 
-            // 3. If alphaStreamId is present, resolve and return
+            // 4. If alphaStreamId is present, resolve extra broadcaster channels
             if (match.alphaStreamId) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
@@ -1156,16 +1222,33 @@
                 });
             };
 
+            // 0. StreamCorner Primary & Alternate HD feeds if matched to an Alpha Stream
+            const matchSlug = ((s.id || '') + ' ' + title).toLowerCase();
+            let matchedAlphaId = null;
+            if (matchSlug.includes('india-vs-pakistan') || matchSlug.includes('ind vs pak') || matchSlug.includes('foxtrot~india-vs-pakistan')) {
+                matchedAlphaId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
+            } else if (KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[matchSlug]) {
+                matchedAlphaId = KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[matchSlug];
+            } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                const matched = this.alphaCatalog.find(a => isSameMatch(s, a));
+                if (matched) matchedAlphaId = matched.stream_id;
+            }
+
+            if (matchedAlphaId) {
+                addServer('Server [StreamCorner HD]', `https://amazon.com.pandecocogaming.sbs/?p=${matchedAlphaId}`);
+                addServer('Server [StreamCorner Alt HD]', `https://getsugatensho.sbs/?p=${matchedAlphaId}`);
+            }
+
             // 1. Primary Embed from PPV
             const mainEmbed = s.iframe || s.embedUrl || s.url || '';
             const mainLabel = (s.source_tag || '').trim() ? `${s.source_tag.trim()} HD` : 'Main HD 1080p';
             if (mainEmbed) {
-                addServer(`Server 1 [${mainLabel}]`, mainEmbed);
+                addServer(`Server [${mainLabel}]`, mainEmbed);
                 const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
-                addServer('Server 2 [Backup HD Feed]', backupUrl);
+                addServer('Server [Backup HD Feed]', backupUrl);
             } else {
-                addServer('Server 1 [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
-                addServer('Server 2 [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
+                addServer('Server [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
+                addServer('Server [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
             }
 
             // 2. Substreams from official PPV feed (authentic broadcaster channels)
@@ -1215,7 +1298,8 @@
                 rawCategory: catKey,
                 servers: servers,
                 sources: servers,
-                _alphaResolved: false
+                alphaStreamId: matchedAlphaId || null,
+                _alphaResolved: Boolean(matchedAlphaId)
             };
         },
 
@@ -1274,6 +1358,9 @@
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             const stripped = decoded.replace(/^(ppv|dami|alpha)-/i, '');
 
+            // Heuristic check for hex stream ID (e.g. 33951b4e2b7dafb12e99a5ba14d4fcbe)
+            const hexMatch = decoded.match(/([a-f0-9]{32})/i) || stripped.match(/([a-f0-9]{32})/i);
+
             // 1. Direct ID, rawId, or slug match
             let found = this.matches.find(m => {
                 if (m.id === decoded || m.rawId === decoded || m.rawId === stripped || m.alphaStreamId === decoded || m.alphaStreamId === stripped) return true;
@@ -1304,6 +1391,61 @@
                     if (found) {
                         this.matches.push(found);
                     }
+                }
+            }
+
+            // 4. Handle direct hex stream ID (StreamCorner Alpha stream URL parameter)
+            if (!found && hexMatch) {
+                const streamId = hexMatch[1];
+                found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
+                if (!found) {
+                    found = {
+                        id: `alpha-${streamId}`,
+                        rawId: streamId,
+                        alphaStreamId: streamId,
+                        source: 'streamcorner',
+                        title: streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' ? 'India vs Pakistan' : 'Live Event Stream',
+                        sport: 'CRICKET',
+                        league: 'LIVE STREAM',
+                        rawLeague: 'Live Stream',
+                        category: 'Cricket',
+                        startTime: Date.now() - 3600000,
+                        endTime: Date.now() + 7200000,
+                        isLive: true,
+                        always_live: 0,
+                        isAlwaysLive: false,
+                        tag: 'Live Stream',
+                        status: 'live',
+                        poster: '',
+                        categoryLogo: '',
+                        colors: [],
+                        team1: { name: 'India', logo: '' },
+                        team2: { name: 'Pakistan', logo: '' },
+                        rawCategory: 'cricket',
+                        servers: [
+                            { name: 'Server 1 [StreamCorner HD]', url: `/api/embed?p=${encodeURIComponent(streamId)}&url=https%3A%2F%2Famazon.com.pandecocogaming.sbs%2F%3Fp%3D${encodeURIComponent(streamId)}`, rawUrl: `https://amazon.com.pandecocogaming.sbs/?p=${streamId}`, type: 'iframe', hd: true },
+                            { name: 'Server 2 [StreamCorner Alt HD]', url: `/api/embed?p=${encodeURIComponent(streamId)}&url=https%3A%2F%2Fgetsugatensho.sbs%2F%3Fp%3D${encodeURIComponent(streamId)}`, rawUrl: `https://getsugatensho.sbs/?p=${streamId}`, type: 'iframe', hd: true }
+                        ],
+                        sources: [],
+                        _alphaResolved: true
+                    };
+                    found.sources = found.servers;
+                    this.matches.push(found);
+                }
+            }
+
+            // 5. Ensure StreamCorner servers are attached if alphaStreamId or headline match exists
+            if (found) {
+                const fSlug = ((found.id || '') + ' ' + (found.rawId || '') + ' ' + (found.title || '')).toLowerCase();
+                if (!found.alphaStreamId) {
+                    if (fSlug.includes('india-vs-pakistan') || fSlug.includes('ind vs pak') || fSlug.includes('foxtrot~india-vs-pakistan')) {
+                        found.alphaStreamId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
+                    } else if (KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId]) {
+                        found.alphaStreamId = KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId];
+                    }
+                }
+                if (found.alphaStreamId) {
+                    this.attachStreamCornerServersToMatch(found, found.alphaStreamId);
                 }
             }
 

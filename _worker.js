@@ -74,20 +74,39 @@ async function onRequest2(context) {
         parsedTarget.searchParams.set("player", reqEngine);
       }
     }
+    if (requestUrl.searchParams.has("subpath")) {
+      const sub = requestUrl.searchParams.get("subpath");
+      parsedTarget.pathname = sub.startsWith("/") ? sub : `/${sub}`;
+    }
+    const isStreamCorner = parsedTarget.origin.includes("pandecocogaming") ||
+                           parsedTarget.origin.includes("getsugatensho") ||
+                           parsedTarget.origin.includes("streamcorner");
+    const upstreamHeaders = {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      "Referer": isStreamCorner ? "https://streamcorner.foo/" : `${parsedTarget.origin}/`,
+      "Origin": isStreamCorner ? "https://streamcorner.foo" : parsedTarget.origin,
+      "Accept": "*/*",
+      "Accept-Language": "en-US,en;q=0.9"
+    };
     const upstreamResponse = await fetch(parsedTarget.toString(), {
       method: context.request.method,
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        "Referer": "https://streamcorner.fun/",
-        "Origin": "https://streamcorner.fun",
-        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-        "Accept-Language": "en-US,en;q=0.9"
-      }
+      headers: upstreamHeaders
     });
     if (!upstreamResponse.ok) {
       return new Response(`Upstream returned ${upstreamResponse.status}`, {
         status: upstreamResponse.status,
         headers: { "Access-Control-Allow-Origin": "*" }
+      });
+    }
+    if (parsedTarget.pathname.endsWith(".js") || targetUrl.includes(".js")) {
+      const jsText = await upstreamResponse.text();
+      return new Response(jsText, {
+        status: 200,
+        headers: {
+          "Content-Type": "application/javascript; charset=utf-8",
+          "Access-Control-Allow-Origin": "*",
+          "Cache-Control": "public, max-age=3600"
+        }
       });
     }
     let html = await upstreamResponse.text();
@@ -283,6 +302,11 @@ async function onRequest2(context) {
     ${injectScript}`);
     html = html.replace(/aclib\.runPop\([^)]*\)/g, "/* ad popup removed */");
     html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, "<!-- devtool disabled -->");
+    if (html.includes('location.protocol+"//"+location.host')) {
+      html = html.replace('var a=location.protocol+"//"+location.host', `var a="/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
+    }
+    html = html.replace(/e\.setAttribute\(["']src["'],\s*a\s*\+\s*\(["']clappr["']\s*===\s*t\s*\?\s*["']\/js\/bundle\.js["']\s*:\s*["']\/js\/bundle-jw\.js["']\)\)/g,
+      `e.setAttribute("src", "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
     const responseHeaders = new Headers();
     responseHeaders.set("Content-Type", "text/html; charset=utf-8");
     responseHeaders.set("Access-Control-Allow-Origin", "*");
@@ -650,8 +674,67 @@ __name(onRequest5, "onRequest5");
 __name2(onRequest5, "onRequest5");
 __name22(onRequest5, "onRequest5");
 __name222(onRequest5, "onRequest5");
-__name2222(onRequest5, "onRequest");
+async function onRequestBundleJw(context) {
+  try {
+    const res = await fetch("https://embedindia.st/js/bundle-jw.js", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Referer": "https://embedindia.st/"
+      }
+    });
+    const js = await res.text();
+    return new Response(js, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=3600"
+      }
+    });
+  } catch (e) {
+    return new Response('console.error("bundle-jw load error");', { status: 502, headers: { "Content-Type": "application/javascript" } });
+  }
+}
+__name(onRequestBundleJw, "onRequestBundleJw");
+
+async function onRequestBundleClappr(context) {
+  try {
+    const res = await fetch("https://embedindia.st/js/bundle.js", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Referer": "https://embedindia.st/"
+      }
+    });
+    const js = await res.text();
+    return new Response(js, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=3600"
+      }
+    });
+  } catch (e) {
+    return new Response('console.error("bundle load error");', { status: 502, headers: { "Content-Type": "application/javascript" } });
+  }
+}
+__name(onRequestBundleClappr, "onRequestBundleClappr");
+
 var routes = [
+  {
+    routePath: "/js/bundle-jw.js",
+    mountPath: "/js",
+    method: "",
+    middlewares: [],
+    modules: [onRequestBundleJw]
+  },
+  {
+    routePath: "/js/bundle.js",
+    mountPath: "/js",
+    method: "",
+    middlewares: [],
+    modules: [onRequestBundleClappr]
+  },
   {
     routePath: "/api/damitv/:path*",
     mountPath: "/api/damitv",

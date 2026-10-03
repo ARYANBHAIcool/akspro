@@ -342,9 +342,9 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.0"></script>
-    <script src="js/paramount-core.js?v=4.7"></script>
-    <script src="js/player.js?v=4.7"></script>
-    <script src="js/api.js?v=5.2"></script>
+    <script src="js/paramount-core.js?v=4.8"></script>
+    <script src="js/player.js?v=4.8"></script>
+    <script src="js/api.js?v=5.3"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -919,6 +919,12 @@
                 targetId = decodeURIComponent(urlParams.get('match'));
             } else if (urlParams.get('m')) {
                 targetId = decodeURIComponent(urlParams.get('m'));
+            } else if (urlParams.get('stream')) {
+                targetId = decodeURIComponent(urlParams.get('stream'));
+            } else if (urlParams.get('s')) {
+                targetId = decodeURIComponent(urlParams.get('s'));
+            } else if (urlParams.get('channel')) {
+                targetId = decodeURIComponent(urlParams.get('channel'));
             } else {
                 const pathMatch = window.location.pathname.match(/^\/(?:match|watch)\/(.+)$/);
                 if (pathMatch && pathMatch[1]) {

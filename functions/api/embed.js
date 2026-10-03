@@ -38,21 +38,45 @@ export async function onRequest(context) {
             }
         }
 
+        if (requestUrl.searchParams.has('subpath')) {
+            const sub = requestUrl.searchParams.get('subpath');
+            parsedTarget.pathname = sub.startsWith('/') ? sub : `/${sub}`;
+        }
+
+        const isStreamCorner = parsedTarget.origin.includes('pandecocogaming') ||
+                               parsedTarget.origin.includes('getsugatensho') ||
+                               parsedTarget.origin.includes('streamcorner');
+
+        const upstreamHeaders = {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+            'Referer': isStreamCorner ? 'https://streamcorner.foo/' : `${parsedTarget.origin}/`,
+            'Origin': isStreamCorner ? 'https://streamcorner.foo' : parsedTarget.origin,
+            'Accept': '*/*',
+            'Accept-Language': 'en-US,en;q=0.9'
+        };
+
         const upstreamResponse = await fetch(parsedTarget.toString(), {
             method: context.request.method,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://streamcorner.fun/',
-                'Origin': 'https://streamcorner.fun',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.9'
-            }
+            headers: upstreamHeaders
         });
 
         if (!upstreamResponse.ok) {
             return new Response(`Upstream returned ${upstreamResponse.status}`, {
                 status: upstreamResponse.status,
                 headers: { 'Access-Control-Allow-Origin': '*' }
+            });
+        }
+
+        // If target is a JavaScript file, return with application/javascript
+        if (parsedTarget.pathname.endsWith('.js') || targetUrl.includes('.js')) {
+            const jsText = await upstreamResponse.text();
+            return new Response(jsText, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/javascript; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=3600'
+                }
             });
         }
 
@@ -239,6 +263,13 @@ export async function onRequest(context) {
         // Neutralize annoying popup and anti-devtool scripts
         html = html.replace(/aclib\.runPop\([^)]*\)/g, '/* ad popup removed */');
         html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, '<!-- devtool disabled -->');
+
+        // Rewrite dynamic script location in embedindia so bundle loads through /api/embed with valid SSL
+        if (html.includes('location.protocol+"//"+location.host')) {
+            html = html.replace('var a=location.protocol+"//"+location.host', `var a="/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
+        }
+        html = html.replace(/e\.setAttribute\(["']src["'],\s*a\s*\+\s*\(["']clappr["']\s*===\s*t\s*\?\s*["']\/js\/bundle\.js["']\s*:\s*["']\/js\/bundle-jw\.js["']\)\)/g,
+            `e.setAttribute("src", "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath=" + ("clappr"===t?"/js/bundle.js":"/js/bundle-jw.js"))`);
 
         // Build clean response headers removing all framing restrictions
         const responseHeaders = new Headers();
