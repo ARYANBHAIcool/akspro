@@ -35,12 +35,7 @@
         'data.yedmzoa.workers.dev'
     ];
 
-    const KNOWN_ALPHA_STREAMS = {
-        'india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe',
-        'ind-vs-pak': '33951b4e2b7dafb12e99a5ba14d4fcbe',
-        'sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe',
-        'ppv-sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe'
-    };
+    const KNOWN_ALPHA_STREAMS = {};
 
     const MATCH_CACHE_LIMIT = 200;
 
@@ -96,9 +91,22 @@
                      .replace(/\s*-\s*$/, '')
                      .trim();
 
+        const lLower = label.toLowerCase();
+        if (lLower.includes('willow')) {
+            label = lLower.includes('alt') ? 'Willow Alt' : 'Willow Cricket';
+        } else if (lLower.includes('bein')) {
+            label = 'beIN Sports';
+        } else if (lLower.includes('fox')) {
+            label = 'FOX Sports';
+        } else if (lLower.includes('sky')) {
+            label = 'Sky Sports';
+        } else if (lLower.includes('tve')) {
+            label = 'TVE';
+        }
+
         const u = (rawUrl || '').toLowerCase();
-        if (!label || /^hd$/i.test(label) || /^server$/i.test(label) || /^stream$/i.test(label)) {
-            if (u.includes('willow')) label = 'Willow Cricket';
+        if (!label || /^hd$/i.test(label) || /^server$/i.test(label) || /^stream$/i.test(label) || /^feed$/i.test(label)) {
+            if (u.includes('willow')) label = u.includes('alt') ? 'Willow Alt' : 'Willow Cricket';
             else if (u.includes('sky')) label = 'Sky Sports';
             else if (u.includes('bein')) label = 'beIN Sports';
             else if (u.includes('fox')) label = 'FOX Sports';
@@ -111,9 +119,9 @@
             else if (u.includes('sony')) label = 'Sony Sports';
             else if (u.includes('optus')) label = 'Optus Sport';
             else if (u.includes('dazn')) label = 'DAZN';
-            else if (idx === 0) label = 'Main Feed';
-            else if (idx === 1) label = 'Alternate Feed';
-            else label = `Feed ${idx + 1}`;
+            else if (idx === 0) label = 'Main Server';
+            else if (idx === 1) label = 'Backup Server';
+            else label = `Server ${idx + 1}`;
         }
 
         return label;
@@ -122,7 +130,7 @@
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st') || rawUrl.includes('embed.st')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embedindia.st') || rawUrl.includes('embed.st') || rawUrl.includes('.mpd') || rawUrl.includes('cenc') || rawUrl.includes('aiv-cdn.net') || rawUrl.includes('pv-cdn.net') || rawUrl.includes('amazonvideo.com')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -209,7 +217,7 @@
         clean.forEach((s, idx) => {
             const raw = s.rawUrl || s.url || '';
             const label = extractCleanServerLabel(s.name, raw, idx);
-            s.name = `Server ${idx + 1} [${label}]`;
+            s.name = label;
         });
 
         match.servers = clean;
@@ -540,6 +548,11 @@
          */
         async loadPPVFeeds() {
             const CACHE_KEY = 'aryan_cached_matches_v33';
+            if (this._alphaLoadingPromise) {
+                try {
+                    await this._alphaLoadingPromise;
+                } catch (e) {}
+            }
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -832,18 +845,28 @@
             }
             try {
                 let alphaList = null;
-                const candidateWorkers = [...ALPHA_WORKER_NODES];
-                for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
-                    const worker = candidateWorkers[i];
+                const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                for (let i = 0; i < candidateWorkers.length; i += 4) {
+                    const batch = candidateWorkers.slice(i, i + 4);
                     try {
-                        const fetchP = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list');
-                        let timer;
-                        const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 4000); });
-                        alphaList = await Promise.race([fetchP, timeoutP]).finally(() => clearTimeout(timer));
+                        const batchPromises = batch.map(worker => {
+                            return new Promise((resolve, reject) => {
+                                const timer = setTimeout(() => reject(new Error('timeout')), 3500);
+                                window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list')
+                                    .then(res => {
+                                        clearTimeout(timer);
+                                        if (Array.isArray(res) && res.length > 0) resolve(res);
+                                        else reject(new Error('empty'));
+                                    })
+                                    .catch(err => {
+                                        clearTimeout(timer);
+                                        reject(err);
+                                    });
+                            });
+                        });
+                        alphaList = await Promise.any(batchPromises);
                         if (Array.isArray(alphaList) && alphaList.length > 0) break;
-                    } catch (e) {
-                        console.warn(`Worker ${worker} failed for alpha catalog:`, e);
-                    }
+                    } catch (e) {}
                 }
                 if (!Array.isArray(alphaList) || alphaList.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
@@ -984,18 +1007,28 @@
             match._alphaPromise = (async () => {
                 try {
                     let detail = null;
-                    const candidateWorkers = [...ALPHA_WORKER_NODES];
-                    for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
-                        const worker = candidateWorkers[i];
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                    for (let i = 0; i < candidateWorkers.length; i += 4) {
+                        const batch = candidateWorkers.slice(i, i + 4);
                         try {
-                            const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
-                            let timer;
-                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
-                            detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
+                            const batchPromises = batch.map(worker => {
+                                return new Promise((resolve, reject) => {
+                                    const timer = setTimeout(() => reject(new Error('timeout')), 4500);
+                                    window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail')
+                                        .then(res => {
+                                            clearTimeout(timer);
+                                            if (res && Array.isArray(res.streams) && res.streams.length > 0) resolve(res);
+                                            else reject(new Error('empty'));
+                                        })
+                                        .catch(err => {
+                                            clearTimeout(timer);
+                                            reject(err);
+                                        });
+                                });
+                            });
+                            detail = await Promise.any(batchPromises);
                             if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
-                        } catch (err) {
-                            // Worker fallback
-                        }
+                        } catch (err) {}
                     }
 
                     if (!detail && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
@@ -1037,11 +1070,12 @@
                             if (key && seenKeys.has(key)) return;
                             if (key) seenKeys.add(key);
 
-                            const isDirectHls = rawUrl.includes('.m3u8');
+                            const isDirectHls = !rawUrl.includes('.mpd') && !rawUrl.includes('cenc') && rawUrl.includes('.m3u8');
                             const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
+                            const cleanLabel = extractCleanServerLabel(label, rawUrl, newServers.length);
 
                             newServers.push({
-                                name: `Server [${label}]`,
+                                name: cleanLabel,
                                 url: srvUrl,
                                 rawUrl: rawUrl,
                                 type: isDirectHls ? 'video' : 'iframe',
@@ -1283,14 +1317,14 @@
                             label += ` (${sub.locale.toUpperCase()})`;
                         }
                         const finalLabel = extractCleanServerLabel(label, subUrl, sIdx);
-                        addServer(`Server [${finalLabel}]`, subUrl);
+                        addServer(finalLabel, subUrl);
                     }
                 });
             } else if (mainEmbed) {
                 const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
-                addServer(`Server [${finalLabel}]`, mainEmbed);
+                addServer(finalLabel, mainEmbed);
             } else if (s.id) {
-                addServer('Server [Main Feed]', `https://embedindia.st/embed/${s.id}`);
+                addServer('Main Server', `https://embedindia.st/embed/${s.id}`);
             }
 
             // Clean, deduplicate against canonical keys, and re-index server names

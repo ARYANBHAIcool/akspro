@@ -211,7 +211,7 @@ window.AryanPlayerEngine = {
         }
 
         const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
-        const isHls = currentServer.type === 'video' || serverUrl.includes('.m3u8');
+        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) && !serverUrl.includes('.mpd') && !serverUrl.includes('cenc');
 
         let html = '';
 
@@ -355,16 +355,25 @@ window.AryanPlayerEngine = {
                     }
                 });
 
+                let networkRetries = 0;
                 hls.on(Hls.Events.ERROR, (event, data) => {
                     if (data.fatal) {
                         switch (data.type) {
                             case Hls.ErrorTypes.NETWORK_ERROR:
-                                hls.startLoad();
+                                networkRetries++;
+                                if (networkRetries <= 2) {
+                                    hls.startLoad();
+                                } else {
+                                    hls.destroy();
+                                    if (loader) loader.remove();
+                                    if (errorOverlay) errorOverlay.classList.remove('hidden');
+                                }
                                 break;
                             case Hls.ErrorTypes.MEDIA_ERROR:
                                 hls.recoverMediaError();
                                 break;
                             default:
+                                hls.destroy();
                                 if (loader) loader.remove();
                                 if (errorOverlay) errorOverlay.classList.remove('hidden');
                                 break;
