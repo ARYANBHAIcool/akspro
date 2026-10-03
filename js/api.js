@@ -42,25 +42,81 @@
         'ppv-sd-foxtrot~india-vs-pakistan': '33951b4e2b7dafb12e99a5ba14d4fcbe'
     };
 
-    const KNOWN_STREAM_DETAILS = {
-        '33951b4e2b7dafb12e99a5ba14d4fcbe': [
-            {
-                name: 'Server [WILLOW HD 1080p]',
-                embed_url: 'https://amazon.com.pandecocogaming.sbs/?p=szo2thdymgqzheeorbgu6ztilrphsw4rrzn4jkm7urwj5je5pvzwy6tlocmzhg5xlnoy5d4nucokq2srkfuzfjuyrrjfczlajtcwu2vkr6h2a2m6nrnwoyuwjnhwbdk4kvlko6nar5vkjhe7ncuxiusrnckvqt3akwufqvdgocuy7dtkt6oi5i52mfsvzfkxmjlu7c2nmggibedkvkii62urjs5i4ydbtvjkis2ulrnj5c57kbfuzhcsjzjkc3tbroiu6tnhu2vjewevlrykthtjvcfz6xlhvooguythlwnkjgu3vbhjk4m6kgqe3icotwqmhemmroq2fkfclghfhkc7n5hvdicnjvjflin6rrozktcpu6qkuykxtsi33iklugqe2tkpknyjmw3cucp2uuvbtnpa',
-                stream_url: 'https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/mzok2ls3uu/out/v1/0ad7f4cfca624501a737fce44ac1805c/cenc.mpd',
-                stream_keys: '3f8fc6e2e3be85523604a1f8fd46e227:f32f8de160db442f0fe2248e8de052d9'
-            },
-            {
-                name: 'Server [WILLOW ALT HD]',
-                embed_url: 'https://amazon.com.pandecocogaming.sbs/?p=szo2thdymgqzheeorbgu6ztilrphsw4rrzn4jkm7urwj5je5pvzwy6tlocmzhhkmy6xv2z23lwhi67lbmbvikx3klkmjhgmsmv7y7c4okvvgvhe5ofsgvekyjnlu2wk6ljhv46fgushz4ucpj5ih2vlbnkpjuwsvlgvfqtvho6sjdidjroiwrhtpncswos3arvkvsymokzth7dnknkt2jenanjxgu2dckzqgtf2wlzufrkdqvgpgvh2rswkuy3svj2ikbgknmftkqy47vbwewufajoou4vcqxvqfzem4t2tu3kevu2pze3u4kkofiucnkfghdj3cmjle3dsznjqzpfe5vwtkbfeolvkvwxlqrroy2tfaljgfoys2jsjg6s45jviz2ukqj5xzkxmlkjikqtfdrsp2bfn4krkewuctj5gj7qenrrre5he7twtjavnbl27u4um7jzjexh25ra',
-                stream_url: 'https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/d6zz1cyw70/out/v1/a05e0b3952fe4421a28515ca7a95261f/cenc.mpd',
-                stream_keys: 'e2f0d4bbcead5d0b26b654d9f2bd0b73:0819905841d515ef09147d3a436d370d'
-            }
-        ]
-    };
+    const MATCH_CACHE_LIMIT = 200;
 
     function getRandomAlphaWorker() {
         return ALPHA_WORKER_NODES[Math.floor(Math.random() * ALPHA_WORKER_NODES.length)];
+    }
+
+    function getCanonicalServerKey(rawUrl) {
+        if (!rawUrl || typeof rawUrl !== 'string') return '';
+        let u = rawUrl.trim();
+        // If wrapped in /api/embed, unwrap it to find root stream identity
+        if (u.includes('/api/embed')) {
+            try {
+                const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';
+                const parsed = new URL(u, dummy);
+                const target = parsed.searchParams.get('url');
+                if (target) u = target;
+            } catch (e) {}
+        }
+        try {
+            const parsed = new URL(u);
+            const p = parsed.searchParams.get('p');
+            if (p) {
+                return `pandeco:${p}`;
+            }
+            parsed.searchParams.delete('backup');
+            parsed.searchParams.delete('bk');
+            parsed.searchParams.delete('b');
+            parsed.searchParams.delete('player');
+            let path = parsed.pathname.replace(/\/+$/, '');
+            return `${parsed.hostname.toLowerCase()}${path}${parsed.search ? parsed.search : ''}`;
+        } catch (e) {
+            return u.replace(/[?&](?:backup|bk|b|player)=[^&]*/gi, '').replace(/\/+$/, '').toLowerCase();
+        }
+    }
+
+    function extractCleanServerLabel(name, rawUrl, idx) {
+        let label = '';
+        if (name) {
+            const bracketMatch = name.match(/\[(.*?)\]/);
+            if (bracketMatch && bracketMatch[1]) {
+                label = bracketMatch[1].trim();
+            } else {
+                label = name.replace(/^server\s*\d*\s*[-:]*\s*/i, '')
+                            .replace(/^stream\s*\d*\s*[-:]*\s*/i, '')
+                            .trim();
+            }
+        }
+
+        // Clean redundant fake quality tags and trailing hyphens
+        label = label.replace(/\s*1080p\s*/gi, '')
+                     .replace(/\s*720p\s*/gi, '')
+                     .replace(/\s*-\s*$/, '')
+                     .trim();
+
+        const u = (rawUrl || '').toLowerCase();
+        if (!label || /^hd$/i.test(label) || /^server$/i.test(label) || /^stream$/i.test(label)) {
+            if (u.includes('willow')) label = 'Willow Cricket';
+            else if (u.includes('sky')) label = 'Sky Sports';
+            else if (u.includes('bein')) label = 'beIN Sports';
+            else if (u.includes('fox')) label = 'FOX Sports';
+            else if (u.includes('espn')) label = 'ESPN';
+            else if (u.includes('tnt')) label = 'TNT Sports';
+            else if (u.includes('tve')) label = 'TVE';
+            else if (u.includes('canal')) label = 'Canal+';
+            else if (u.includes('hotstar')) label = 'Hotstar';
+            else if (u.includes('star')) label = 'Star Sports';
+            else if (u.includes('sony')) label = 'Sony Sports';
+            else if (u.includes('optus')) label = 'Optus Sport';
+            else if (u.includes('dazn')) label = 'DAZN';
+            else if (idx === 0) label = 'Main Feed';
+            else if (idx === 1) label = 'Alternate Feed';
+            else label = `Feed ${idx + 1}`;
+        }
+
+        return label;
     }
 
     function toProxiedEmbedUrl(rawUrl) {
@@ -133,23 +189,26 @@
         }
         if (!Array.isArray(match.servers)) return match;
         const clean = [];
-        const seen = new Set();
+        const seenKeys = new Set();
         for (const s of match.servers) {
-            if (!s || !s.url) continue;
-            const url = s.url;
+            if (!s || (!s.url && !s.rawUrl && !s.embedUrl)) continue;
+            const targetUrl = s.rawUrl || s.url || s.embedUrl;
             // Drop any unwanted broadcast TV channel dumps (embedindia.st/embed/<numeric_id>)
-            if (/embedindia\.st\/embed\/\d+$/i.test(url) && !url.includes('backup=')) {
+            if (/embedindia\.st\/embed\/\d+$/i.test(targetUrl) && !targetUrl.includes('backup=')) {
                 continue;
             }
-            if (seen.has(url)) continue;
-            seen.add(url);
+            // Eliminate duplicate original, ?backup=1, and proxied variants
+            const key = getCanonicalServerKey(targetUrl);
+            if (key && seenKeys.has(key)) continue;
+            if (key) seenKeys.add(key);
+
             clean.push(s);
         }
 
-        // Re-index server names cleanly: Server 1, Server 2, Server 3...
+        // Re-index server names preserving genuine broadcaster and source labels
         clean.forEach((s, idx) => {
-            const labelMatch = (s.name || '').match(/\[(.*?)\]/);
-            const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
+            const raw = s.rawUrl || s.url || '';
+            const label = extractCleanServerLabel(s.name, raw, idx);
             s.name = `Server ${idx + 1} [${label}]`;
         });
 
@@ -158,25 +217,54 @@
         return match;
     }
 
-    const MATCH_STOP_WORDS = new Set([
-        'vs', 'v', 'at', 'the', 'fc', 'cf', 'sc', 'united', 'city', 'town', 'county', 'club', 
-        'real', 'de', 'la', 'and', 'women', 'men', 'live', 'stream', 'hd', 'test', 'day',
-        'afc', '1', '2', '07', '04', 'sv', 'rb', 'cd', 'ud', 'sk', 'san', 'south', 'north', 'east', 'west'
+    const GENERIC_TEAM_WORDS = new Set([
+        'fc', 'cf', 'sc', 'cd', 'ud', 'sk', 'sv', 'rb', 'afc', 'ac', 'as', 'ss',
+        'united', 'city', 'town', 'county', 'club', 'athletic', 'athletics',
+        'state', 'tech', 'st', 'univ', 'university', 'college',
+        'women', 'womens', 'men', 'mens', 'u17', 'u18', 'u19', 'u20', 'u21', 'u23', 'reserves',
+        'hawks', 'tigers', 'wildcats', 'bulldogs', 'panthers', 'eagles', 'lions', 'bears',
+        'cougars', 'warriors', 'knights', 'cardinals', 'rams', 'falcons', 'hornets', 'saxons',
+        'vs', 'v', 'at', 'the', 'and', 'de', 'la', 'san', 'south', 'north', 'east', 'west',
+        'red', 'blue', 'green', 'white', 'black', 'gold', 'yellow'
     ]);
 
-    function tokenizeMatchStr(str) {
-        if (!str) return [];
-        return cleanMatchStr(str)
-            .replace(/[^a-z0-9]/g, ' ')
+    const TEAM_ALIASES = {
+        'czech republic': 'czechia',
+        'czech': 'czechia',
+        'man utd': 'manchester united',
+        'manchester utd': 'manchester united',
+        'spurs': 'tottenham',
+        'wolves': 'wolverhampton'
+    };
+
+    function normalizeTeamName(str) {
+        if (!str) return '';
+        let s = cleanMatchStr(str).replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
+        for (const [k, v] of Object.entries(TEAM_ALIASES)) {
+            const re = new RegExp('\\b' + k + '\\b', 'g');
+            s = s.replace(re, v);
+        }
+        return s.trim();
+    }
+
+    function getDistinctiveTokens(name) {
+        return normalizeTeamName(name)
             .split(/\s+/)
-            .filter(w => w.length >= 2 && !MATCH_STOP_WORDS.has(w));
+            .filter(w => w.length >= 3 && !GENERIC_TEAM_WORDS.has(w));
     }
 
     function matchTeams(teamA, teamB) {
-        const toksA = tokenizeMatchStr(teamA);
-        const toksB = tokenizeMatchStr(teamB);
+        if (!teamA || !teamB) return false;
+        const cA = normalizeTeamName(teamA).replace(/\s+/g, '');
+        const cB = normalizeTeamName(teamB).replace(/\s+/g, '');
+        if (cA && cB && cA === cB) return true;
+        if (cA.length >= 5 && cB.length >= 5 && (cA.includes(cB) || cB.includes(cA))) return true;
+
+        const toksA = getDistinctiveTokens(teamA);
+        const toksB = getDistinctiveTokens(teamB);
         if (toksA.length === 0 || toksB.length === 0) return false;
-        return toksA.some(a => toksB.some(b => a === b || (a.length >= 3 && b.length >= 3 && (a.includes(b) || b.includes(a)))));
+
+        return toksA.some(a => toksB.includes(a));
     }
 
     function isSameMatch(ppv, alpha) {
@@ -221,36 +309,42 @@
             }
         }
 
-        // 2. Start time proximity check (within 12 hours)
+        // 2. Start time proximity check (within 8 hours)
         const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
         const alphaTime = (alpha.timestamp ? alpha.timestamp * 1000 : 0) || alpha.startTime || (typeof alpha.date === 'number' ? alpha.date : (new Date(alpha.date).getTime() || 0));
         if (ppvTime && alphaTime) {
             const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
-            if (diffHours > 12) return false;
+            if (diffHours > 8) return false;
         }
 
         const pParts = pTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
         const aParts = aTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
 
-        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || pParts[0] || '';
-        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || pParts[1] || '';
+        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || (pParts.length >= 2 ? pParts[0] : '');
+        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || (pParts.length >= 2 ? pParts[1] : '');
 
-        const aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || aParts[0] || '';
-        const aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || aParts[1] || '';
+        const aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || (aParts.length >= 2 ? aParts[0] : '');
+        const aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || (aParts.length >= 2 ? aParts[1] : '');
 
+        // If BOTH fixtures have opposing teams, BOTH TEAMS MUST MATCH!
         if (pHome && pAway && aHome && aAway) {
             const homeHome = matchTeams(pHome, aHome);
             const awayAway = matchTeams(pAway, aAway);
             const homeAway = matchTeams(pHome, aAway);
             const awayHome = matchTeams(pAway, aHome);
             if ((homeHome && awayAway) || (homeAway && awayHome)) return true;
+            // Prevent disparate matchups (e.g. Hartwick vs Alfred matching Miami OH) from false merging
+            return false;
         }
 
-        const pToks = tokenizeMatchStr(pTitle);
-        const aToks = tokenizeMatchStr(aTitle);
-        const common = aToks.filter(t => pToks.some(p => p === t || (p.length >= 3 && t.length >= 3 && (p.includes(t) || t.includes(p)))));
-        if (common.length >= 2) return true;
-        if (common.length >= 1 && (pTitle.toLowerCase().includes('grand prix') || pTitle.toLowerCase().includes('race') || pTitle.toLowerCase().includes('ufc') || pTitle.toLowerCase().includes('prix'))) return true;
+        // Only for non-team single-entity events (Formula 1, MotoGP, UFC fight cards)
+        const isSingleEntity = pTitle.toLowerCase().includes('grand prix') || pTitle.toLowerCase().includes('race') || pTitle.toLowerCase().includes('ufc') || pTitle.toLowerCase().includes('prix');
+        if (isSingleEntity) {
+            const pToks = getDistinctiveTokens(pTitle);
+            const aToks = getDistinctiveTokens(aTitle);
+            const common = aToks.filter(t => pToks.includes(t));
+            if (common.length >= 2) return true;
+        }
 
         return false;
     }
@@ -359,12 +453,15 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v32';
-            // 1. Explicitly purge any bloated legacy caches containing old channel dumps or old ordering
+            const CACHE_KEY = 'aryan_cached_matches_v33';
+            // 1. Explicitly purge any bloated legacy caches (v1 through v32) dynamically
             try {
-                ['aryan_cached_matches_v1', 'aryan_cached_matches_v2', 'aryan_cached_matches_v3', 'aryan_cached_matches_v4', 'aryan_cached_matches_v5', 'aryan_cached_matches_v6', 'aryan_cached_matches_v10', 'aryan_cached_matches_v11', 'aryan_cached_matches_v12', 'aryan_cached_matches_v13', 'aryan_cached_matches_v14', 'aryan_cached_matches_v15', 'aryan_cached_matches_v16', 'aryan_cached_matches_v17', 'aryan_cached_matches_v18', 'aryan_cached_matches_v19', 'aryan_cached_matches_v20', 'aryan_cached_matches_v21', 'aryan_cached_matches_v22', 'aryan_cached_matches_v23', 'aryan_cached_matches_v24', 'aryan_cached_matches_v25', 'aryan_cached_matches_v26', 'aryan_cached_matches_v27', 'aryan_cached_matches_v28', 'aryan_cached_matches_v29', 'aryan_cached_matches_v30'].forEach(k => {
-                    localStorage.removeItem(k);
-                });
+                for (let i = localStorage.length - 1; i >= 0; i--) {
+                    const k = localStorage.key(i);
+                    if (k && k.startsWith('aryan_cached_matches_') && k !== CACHE_KEY) {
+                        localStorage.removeItem(k);
+                    }
+                }
             } catch (e) {}
 
             // 2. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
@@ -442,7 +539,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v32';
+            const CACHE_KEY = 'aryan_cached_matches_v33';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -537,21 +634,8 @@
                             if (!existingInNew.categoryLogo && norm.categoryLogo) {
                                 existingInNew.categoryLogo = norm.categoryLogo;
                             }
-                            // Merge unique servers cleanly
-                            const seenUrls = new Set(existingInNew.servers.map(srv => srv.rawUrl || srv.url));
-                            for (const srv of norm.servers) {
-                                const u = srv.rawUrl || srv.url;
-                                if (u && !seenUrls.has(u)) {
-                                    seenUrls.add(u);
-                                    existingInNew.servers.push(srv);
-                                }
-                            }
-                            // Re-index servers
-                            existingInNew.servers.forEach((srv, idx) => {
-                                const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
-                                const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
-                                srv.name = `Server ${idx + 1} [${label}]`;
-                            });
+                            // Merge unique servers cleanly using canonical key deduplication
+                            existingInNew.servers = sanitizeMatchServers({ servers: [...existingInNew.servers, ...norm.servers] }).servers;
                             existingInNew.sources = existingInNew.servers;
 
                             // Inherit Alpha stream ID if present
@@ -640,7 +724,7 @@
                             this.autoResolveAllAlphaSources();
                         }
                         try {
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 250)));
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
                     }
                 }
@@ -815,8 +899,8 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v32';
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                        const CACHE_KEY = 'aryan_cached_matches_v33';
+                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
 
@@ -840,42 +924,11 @@
         },
 
         /**
-         * Directly attach StreamCorner HD & Alt HD servers to a match
+         * Directly pair StreamCorner ID to a match
          */
         attachStreamCornerServersToMatch(match, alphaStreamId) {
             if (!match || !alphaStreamId) return;
-
-            match.servers = match.servers || [];
-            const existingUrls = new Set(match.servers.map(s => s.rawUrl || s.url));
-
-            // If genuine pre-seeded streams exist for this alphaStreamId, attach them!
-            const preSeeded = KNOWN_STREAM_DETAILS[alphaStreamId];
-            if (Array.isArray(preSeeded) && preSeeded.length > 0) {
-                const genuineServers = [];
-                preSeeded.forEach(s => {
-                    const raw = s.embed_url;
-                    if (raw && !existingUrls.has(raw)) {
-                        existingUrls.add(raw);
-                        genuineServers.push({
-                            name: s.name || 'Server [StreamCorner HD]',
-                            url: toProxiedEmbedUrl(raw),
-                            rawUrl: raw,
-                            type: 'iframe',
-                            hd: true
-                        });
-                    }
-                });
-                if (genuineServers.length > 0) {
-                    match.servers = [...genuineServers, ...match.servers];
-                    match.servers.forEach((srv, idx) => {
-                        const labelMatch = (srv.name || '').match(/\[(.*?)\]/);
-                        const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'StreamCorner HD' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
-                        srv.name = `Server ${idx + 1} [${label}]`;
-                    });
-                    match.sources = match.servers;
-                    match._alphaResolved = true;
-                }
-            }
+            match.alphaStreamId = alphaStreamId;
         },
 
         /**
@@ -885,41 +938,32 @@
         async ensureAlphaSourcesForMatch(match) {
             if (!match) return false;
 
-            // 0. Auto-pair with known headline fixtures or stream IDs
-            const matchSlug = ((match.id || '') + ' ' + (match.rawId || '') + ' ' + (match.title || '')).toLowerCase();
+            // 0. Auto-pair with known stream IDs if mapped
             if (!match.alphaStreamId) {
-                if (matchSlug.includes('india-vs-pakistan') || matchSlug.includes('ind vs pak') || matchSlug.includes('foxtrot~india-vs-pakistan')) {
-                    match.alphaStreamId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
-                } else if (KNOWN_ALPHA_STREAMS[match.id] || KNOWN_ALPHA_STREAMS[match.rawId]) {
+                if (KNOWN_ALPHA_STREAMS[match.id] || KNOWN_ALPHA_STREAMS[match.rawId]) {
                     match.alphaStreamId = KNOWN_ALPHA_STREAMS[match.id] || KNOWN_ALPHA_STREAMS[match.rawId];
                 }
             }
 
-            // 1. If alphaStreamId is present, ensure StreamCorner servers are attached immediately
-            if (match.alphaStreamId) {
-                this.attachStreamCornerServersToMatch(match, match.alphaStreamId);
-            }
-
             if (match._alphaResolved) return true;
 
-            // 2. If Alpha feeds are currently loading in background, await completion
+            // 1. If Alpha feeds are currently loading in background, await completion
             if (this._alphaLoadingPromise) {
                 try {
                     await this._alphaLoadingPromise;
                 } catch (e) {}
             }
 
-            // 3. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
+            // 2. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
             if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
                 if (matchedAlpha) {
                     match.alphaStreamId = matchedAlpha.stream_id;
                     match.alphaItem = matchedAlpha;
-                    this.attachStreamCornerServersToMatch(match, matchedAlpha.stream_id);
                 }
             }
 
-            // 4. If alphaStreamId is present, resolve extra broadcaster channels
+            // 3. If alphaStreamId is present, resolve extra broadcaster channels
             if (match.alphaStreamId) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
@@ -940,22 +984,17 @@
             match._alphaPromise = (async () => {
                 try {
                     let detail = null;
-                    if (KNOWN_STREAM_DETAILS[match.alphaStreamId]) {
-                        detail = { streams: KNOWN_STREAM_DETAILS[match.alphaStreamId] };
-                    }
-                    if (!detail) {
-                        const candidateWorkers = [...ALPHA_WORKER_NODES];
-                        for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
-                            const worker = candidateWorkers[i];
-                            try {
-                                const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
-                                let timer;
-                                const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
-                                detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
-                                if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
-                            } catch (err) {
-                                // Worker fallback
-                            }
+                    const candidateWorkers = [...ALPHA_WORKER_NODES];
+                    for (let i = 0; i < Math.min(candidateWorkers.length, 8); i++) {
+                        const worker = candidateWorkers[i];
+                        try {
+                            const p = window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail');
+                            let timer;
+                            const timeoutP = new Promise((_, rej) => { timer = setTimeout(() => rej(new Error('timeout')), 8000); });
+                            detail = await Promise.race([p, timeoutP]).finally(() => clearTimeout(timer));
+                            if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
+                        } catch (err) {
+                            // Worker fallback
                         }
                     }
 
@@ -968,20 +1007,18 @@
                     }
 
                     if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
-                        // 1. Keep base PPV servers (Server 1 [Main HD] & Server 2 [Backup HD]), filtering out any stray channels
+                        // 1. Keep base PPV servers, filtering out any stray or duplicate channels
                         const baseServers = (match.servers || []).filter(s => {
                             const u = s.url || '';
-                            // Drop unwanted broadcast channels (embedindia.st/embed/<numeric_id>)
                             if (/embedindia\.st\/embed\/\d+$/i.test(u) && !u.includes('backup=')) return false;
-                            // Drop previous alpha feeds so they are cleanly refreshed without accumulating duplicates
                             if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho')) return false;
                             return true;
                         });
 
-                        const seenUrls = new Set();
+                        const seenKeys = new Set();
                         baseServers.forEach(s => {
-                            if (s.url) seenUrls.add(s.url);
-                            if (s.rawUrl) seenUrls.add(s.rawUrl);
+                            const k = getCanonicalServerKey(s.rawUrl || s.url);
+                            if (k) seenKeys.add(k);
                         });
 
                         const newServers = [];
@@ -990,21 +1027,18 @@
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
                             if (!rawUrl) return;
 
-                            let label = (s.source_name || s.name || 'HD Channel').trim().toUpperCase().replace(/\s*-\s*$/, '');
+                            let label = (s.source_name || s.name || 'Feed').trim().replace(/\s*-\s*$/, '');
 
-                            // 1. Strictly drop any unwanted streamcorner-branded fallback links
+                            // Drop generic unwanted branding
                             if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
-
-                            // 2. Strictly drop duplicate ppv / embedindia / damitv streams (Server 1 & Server 2 already provide them)
                             if (/embedindia|damitv|ppv/i.test(rawUrl) || /embedindia|damitv|ppv/i.test(label)) return;
 
-                            // 3. Deduplicate against seen URLs
-                            if (seenUrls.has(rawUrl)) return;
-                            seenUrls.add(rawUrl);
+                            const key = getCanonicalServerKey(rawUrl);
+                            if (key && seenKeys.has(key)) return;
+                            if (key) seenKeys.add(key);
 
                             const isDirectHls = rawUrl.includes('.m3u8');
                             const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
-                            seenUrls.add(srvUrl);
 
                             newServers.push({
                                 name: `Server [${label}]`,
@@ -1015,21 +1049,15 @@
                             });
                         });
 
-                        // Place StreamCorner feeds first, followed by base PPV feeds
-                        const combined = [...newServers, ...baseServers];
-                        // Re-index all servers cleanly: Server 1, Server 2, Server 3...
-                        combined.forEach((s, idx) => {
-                            const labelMatch = (s.name || '').match(/\[(.*?)\]/);
-                            const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
-                            s.name = `Server ${idx + 1} [${label}]`;
-                        });
+                        // Place StreamCorner feeds first, followed by base PPV feeds, and sanitize
+                        const combined = sanitizeMatchServers({ servers: [...newServers, ...baseServers] }).servers;
 
                         match.servers = combined;
                         match.sources = combined;
+                        match._alphaResolved = true;
 
                         // Real-time update if user is currently viewing this match
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
-                            // Find the URL of the server currently being played by the player
                             const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                             const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[activeIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
@@ -1056,13 +1084,15 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v32';
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, 180)));
+                            const CACHE_KEY = 'aryan_cached_matches_v33';
+                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
+
+                        return true;
                     }
 
-                    match._alphaResolved = true;
-                    return true;
+                    // On failure or empty details, leave _alphaResolved as false to allow retry
+                    return false;
                 } catch (err) {
                     console.warn('Resolve Alpha sources failed:', match.title, err);
                     return false;
@@ -1167,8 +1197,6 @@
                 always_live: 0,
                 isAlwaysLive: false,
                 tag: league,
-                league: league,
-                sport: sport,
                 status: isLive ? 'live' : 'upcoming',
                 poster: sanitizePosterUrl(alpha.poster || ''),
                 categoryLogo: sanitizeLogoUrl(alpha.category_logo || ''),
@@ -1233,61 +1261,40 @@
                 });
             };
 
-            // 0. StreamCorner Primary & Alternate HD feeds if matched to an Alpha Stream
-            const matchSlug = ((s.id || '') + ' ' + title).toLowerCase();
+            // 0. Match with Alpha catalog if present
             let matchedAlphaId = null;
-            if (matchSlug.includes('india-vs-pakistan') || matchSlug.includes('ind vs pak') || matchSlug.includes('foxtrot~india-vs-pakistan')) {
-                matchedAlphaId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
-            } else if (KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[matchSlug]) {
-                matchedAlphaId = KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[matchSlug];
+            if (KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[s.rawId]) {
+                matchedAlphaId = KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[s.rawId];
             } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const matched = this.alphaCatalog.find(a => isSameMatch(s, a));
                 if (matched) matchedAlphaId = matched.stream_id;
             }
 
-            if (matchedAlphaId) {
-                const preSeeded = KNOWN_STREAM_DETAILS[matchedAlphaId];
-                if (Array.isArray(preSeeded) && preSeeded.length > 0) {
-                    preSeeded.forEach(ps => {
-                        if (ps.embed_url) addServer(ps.name || 'Server [StreamCorner HD]', ps.embed_url);
-                    });
-                }
-            }
-
-            // 1. Primary Embed from PPV
+            // 1. Authenticate and build stream servers without artificial duplicate backups
             const mainEmbed = s.iframe || s.embedUrl || s.url || '';
-            const mainLabel = (s.source_tag || '').trim() ? `${s.source_tag.trim()} HD` : 'Main HD 1080p';
-            if (mainEmbed) {
-                addServer(`Server [${mainLabel}]`, mainEmbed);
-                const backupUrl = mainEmbed + (mainEmbed.includes('?') ? '&backup=1' : '?backup=1');
-                addServer('Server [Backup HD Feed]', backupUrl);
-            } else {
-                addServer('Server [Main HD 1080p]', `https://embedindia.st/embed/${s.id}`);
-                addServer('Server [Backup HD Feed]', `https://embedindia.st/embed/${s.id}?backup=1`);
-            }
+            const mainLabel = (s.source_tag || '').trim() || 'Main Feed';
 
-            // 2. Substreams from official PPV feed (authentic broadcaster channels)
-            if (Array.isArray(s.substreams)) {
-                s.substreams.forEach(sub => {
+            if (Array.isArray(s.substreams) && s.substreams.length > 0) {
+                s.substreams.forEach((sub, sIdx) => {
                     const subUrl = sub.url || sub.iframe || sub.embedUrl;
                     if (subUrl) {
-                        const srvIndex = servers.length + 1;
-                        let label = sub.source_tag || sub.source || sub.name || '';
+                        let label = (sub.source_tag || sub.source || sub.name || '').trim();
                         if (sub.locale && !label.toLowerCase().includes(sub.locale.toLowerCase())) {
                             label += ` (${sub.locale.toUpperCase()})`;
                         }
-                        const finalName = label ? `Server ${srvIndex} [${label}]` : `Server ${srvIndex} [HD]`;
-                        addServer(finalName, subUrl);
+                        const finalLabel = extractCleanServerLabel(label, subUrl, sIdx);
+                        addServer(`Server [${finalLabel}]`, subUrl);
                     }
                 });
+            } else if (mainEmbed) {
+                const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
+                addServer(`Server [${finalLabel}]`, mainEmbed);
+            } else if (s.id) {
+                addServer('Server [Main Feed]', `https://embedindia.st/embed/${s.id}`);
             }
 
-            // Re-index all servers cleanly: Server 1, Server 2, Server 3...
-            servers.forEach((srv, idx) => {
-                const labelMatch = (srv.name || '').match(/\[(.*)\]/);
-                const label = labelMatch ? labelMatch[1] : (idx === 0 ? 'Main HD 1080p' : (idx === 1 ? 'Backup HD Feed' : 'HD'));
-                srv.name = `Server ${idx + 1} [${label}]`;
-            });
+            // Clean, deduplicate against canonical keys, and re-index server names
+            const cleanServers = sanitizeMatchServers({ servers: servers }).servers;
 
             return {
                 id: `ppv-${s.id}`,
@@ -1311,10 +1318,10 @@
                 team1: { name: team1Name, logo: team1Logo },
                 team2: { name: team2Name, logo: team2Logo },
                 rawCategory: catKey,
-                servers: servers,
-                sources: servers,
+                servers: cleanServers,
+                sources: cleanServers,
                 alphaStreamId: matchedAlphaId || null,
-                _alphaResolved: Boolean(matchedAlphaId)
+                _alphaResolved: false
             };
         },
 
@@ -1409,68 +1416,54 @@
                 }
             }
 
-            // 4. Handle direct hex stream ID or headline fixture match (e.g. India vs Pakistan)
-            const isIndPak = slug.includes('india-vs-pakistan') || slug.includes('ind-vs-pak') || slug.includes('foxtrot-india-vs-pakistan') || decoded.includes('foxtrot~india-vs-pakistan');
-            if (!found && (hexMatch || isIndPak)) {
-                const streamId = isIndPak ? '33951b4e2b7dafb12e99a5ba14d4fcbe' : hexMatch[1];
+            // 4. Handle direct hex stream ID or StreamCorner stream link
+            if (!found && hexMatch) {
+                const streamId = hexMatch[1];
                 found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
+                if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                    const alpha = this.alphaCatalog.find(a => a.stream_id === streamId);
+                    if (alpha) {
+                        found = this.normalizeAlphaMatch(alpha);
+                        if (found) this.matches.push(found);
+                    }
+                }
                 if (!found) {
+                    // Create pending dynamic placeholder for direct stream ID link
                     found = {
-                        id: isIndPak ? decoded : `alpha-${streamId}`,
-                        rawId: decoded,
+                        id: `alpha-${streamId}`,
+                        rawId: streamId,
                         alphaStreamId: streamId,
                         source: 'streamcorner',
-                        title: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'India vs Pakistan' : 'Live Event Stream',
-                        sport: 'CRICKET',
+                        title: 'Live Stream Event',
+                        sport: 'OTHERS',
                         league: 'LIVE STREAM',
                         rawLeague: 'Live Stream',
-                        category: 'Cricket',
-                        startTime: Date.now() - 3600000,
+                        category: 'Sports',
+                        startTime: Date.now() - 1800000,
                         endTime: Date.now() + 7200000,
                         isLive: true,
                         always_live: 0,
                         isAlwaysLive: false,
                         tag: 'Live Stream',
                         status: 'live',
-                        poster: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://streamed.pk/api/images/proxy/GwZg7AZpYEZgHCAjAJgCzuAUxDFBWERAExC2AmGAOHmDSvRAE4QImYRinXOIRwAgIYgROZugTAADGBQJY9MM2jwUVeMuq0Z2SOrABjJc2BgKB-r3xouZEIba4iZGkkWH1VMFgWVT5Or4OmA+FNgUQA.webp' : '',
+                        poster: '',
                         categoryLogo: '',
                         colors: [],
-                        team1: { name: 'India', logo: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://flagcdn.com/w160/in.png' : '' },
-                        team2: { name: 'Pakistan', logo: (streamId === '33951b4e2b7dafb12e99a5ba14d4fcbe' || isIndPak) ? 'https://flagcdn.com/w160/pk.png' : '' },
-                        rawCategory: 'cricket',
-                        servers: (function() {
-                            const pre = KNOWN_STREAM_DETAILS[streamId];
-                            if (Array.isArray(pre) && pre.length > 0) {
-                                return pre.map(ps => ({
-                                    name: ps.name,
-                                    url: toProxiedEmbedUrl(ps.embed_url),
-                                    rawUrl: ps.embed_url,
-                                    type: 'iframe',
-                                    hd: true
-                                }));
-                            }
-                            return [];
-                        })(),
+                        team1: { name: 'Live Stream', logo: '' },
+                        team2: { name: '', logo: '' },
+                        rawCategory: 'sports',
+                        servers: [],
                         sources: [],
-                        _alphaResolved: true
+                        _alphaResolved: false
                     };
-                    found.sources = found.servers;
                     this.matches.push(found);
                 }
             }
 
-            // 5. Ensure StreamCorner servers are attached if alphaStreamId or headline match exists
-            if (found) {
-                const fSlug = ((found.id || '') + ' ' + (found.rawId || '') + ' ' + (found.title || '')).toLowerCase();
-                if (!found.alphaStreamId) {
-                    if (fSlug.includes('india-vs-pakistan') || fSlug.includes('ind vs pak') || fSlug.includes('foxtrot~india-vs-pakistan')) {
-                        found.alphaStreamId = '33951b4e2b7dafb12e99a5ba14d4fcbe';
-                    } else if (KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId]) {
-                        found.alphaStreamId = KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId];
-                    }
-                }
-                if (found.alphaStreamId) {
-                    this.attachStreamCornerServersToMatch(found, found.alphaStreamId);
+            // 5. Ensure StreamCorner ID is linked if mapped in KNOWN_ALPHA_STREAMS
+            if (found && !found.alphaStreamId) {
+                if (KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId]) {
+                    found.alphaStreamId = KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId];
                 }
             }
 

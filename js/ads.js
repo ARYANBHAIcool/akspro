@@ -17,6 +17,17 @@
 (function () {
     'use strict';
 
+    // Global protection against third-party ad script MutationObserver "parameter 1 is not of type Node" exceptions
+    if (typeof window !== 'undefined' && typeof window.MutationObserver !== 'undefined' && window.MutationObserver.prototype && window.MutationObserver.prototype.observe) {
+        const _origObserve = window.MutationObserver.prototype.observe;
+        window.MutationObserver.prototype.observe = function (target, options) {
+            if (!target || !(target instanceof Node)) {
+                return;
+            }
+            return _origObserve.call(this, target, options);
+        };
+    }
+
     const AryanAds = {
         // ==========================================
         // ⚙️ AD CONFIGURATION
@@ -74,13 +85,15 @@
                     return true;
                 } else {
                     // Fallback for strict mobile popup blockers: programmatically dispatch anchor click
-                    const a = document.createElement('a');
-                    a.href = this.DIRECT_LINK;
-                    a.target = '_blank';
-                    a.rel = 'noopener noreferrer';
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
+                    if (document && document.body) {
+                        const a = document.createElement('a');
+                        a.href = this.DIRECT_LINK;
+                        a.target = '_blank';
+                        a.rel = 'noopener noreferrer';
+                        document.body.appendChild(a);
+                        a.click();
+                        a.remove();
+                    }
                     return true;
                 }
             } catch (err) {
@@ -140,7 +153,9 @@
                 }
             });
 
-            container.appendChild(overlay);
+            if (container && container.appendChild) {
+                container.appendChild(overlay);
+            }
         },
 
         /**

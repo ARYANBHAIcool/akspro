@@ -72,7 +72,8 @@ window.AryanPlayerEngine = {
         // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
         if (rawUrl.includes('/api/embed')) {
             try {
-                const u = new URL(rawUrl, window.location.origin);
+                const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';
+                const u = new URL(rawUrl, dummy);
                 const target = u.searchParams.get('url');
                 if (target) {
                     rawUrl = target;
@@ -90,12 +91,10 @@ window.AryanPlayerEngine = {
                 } else {
                     parsed.searchParams.delete('player');
                 }
-                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
                 const pParam = p ? `p=${encodeURIComponent(p)}&` : '';
-                return `/api/embed?${pParam}url=${encodeURIComponent(parsed.toString())}${playerParam}`;
+                return `/api/embed?${pParam}url=${encodeURIComponent(parsed.toString())}`;
             } catch (e) {
-                const playerParam = (engine && engine !== 'bitmovin') ? `&player=${encodeURIComponent(engine)}` : '';
-                return `/api/embed?url=${encodeURIComponent(rawUrl)}${playerParam}`;
+                return `/api/embed?url=${encodeURIComponent(rawUrl)}`;
             }
         }
 
@@ -137,11 +136,7 @@ window.AryanPlayerEngine = {
 
     changePlayerEngine(engine) {
         this.currentPlayerEngine = engine || 'bitmovin';
-        const servers = this.getServers();
-        const currentServer = servers[this.activeServerIdx] || servers[0];
-        if (currentServer) {
-            currentServer.url = this.getProxiedUrl(currentServer, this.currentPlayerEngine);
-        }
+        // Reload player with the new engine without corrupting or mutating the server's raw URL
         this.reloadPlayer();
 
         if (typeof updatePlayerDropdownUI === 'function') {
@@ -333,16 +328,31 @@ window.AryanPlayerEngine = {
             if (window.Hls && Hls.isSupported() && serverUrl.includes('.m3u8')) {
                 const hls = new Hls({
                     enableWorker: true,
-                    lowLatencyMode: true,
-                    backBufferLength: 60
+                    lowLatencyMode: false,
+                    liveSyncDurationCount: 3,
+                    liveMaxLatencyDurationCount: 8,
+                    maxBufferLength: 30,
+                    maxMaxBufferLength: 60,
+                    backBufferLength: 30,
+                    manifestLoadingTimeOut: 15000,
+                    levelLoadingTimeOut: 15000
                 });
                 hls.loadSource(serverUrl);
                 hls.attachMedia(video);
                 this.hls = hls;
 
                 hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    video.play().catch(() => {});
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(() => {
+                            video.muted = true;
+                            video.play().catch(() => {});
+                        });
+                    }
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.remove(), 300);
+                    }
                 });
 
                 hls.on(Hls.Events.ERROR, (event, data) => {
@@ -364,8 +374,17 @@ window.AryanPlayerEngine = {
             } else if (serverUrl) {
                 video.src = serverUrl;
                 video.onloadeddata = () => {
-                    video.play().catch(() => {});
-                    if (loader) loader.style.opacity = '0', setTimeout(() => loader.remove(), 300);
+                    const playPromise = video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(() => {
+                            video.muted = true;
+                            video.play().catch(() => {});
+                        });
+                    }
+                    if (loader) {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.remove(), 300);
+                    }
                 };
                 video.onerror = () => {
                     if (loader) loader.remove();
