@@ -379,9 +379,13 @@
                     navLive.innerText = `LIVE (${liveCount})`;
                 }
 
-                renderMatchesGrid();
-                renderChannelsView();
-                populateMultiviewerDropdowns();
+                if (currentView === 'home') {
+                    renderMatchesGrid();
+                } else if (currentView === 'channels') {
+                    renderChannelsView();
+                } else if (currentView === 'multiviewer') {
+                    populateMultiviewerDropdowns();
+                }
                 checkUrlForMatch();
             });
 
@@ -396,9 +400,9 @@
                 if (statusEl) statusEl.innerText = `${liveCount} Live Matches (${totalCount} Total)`;
                 const navLive = document.getElementById('nav-live-count');
                 if (navLive) navLive.innerText = `LIVE (${liveCount})`;
-                renderMatchesGrid();
-                renderChannelsView();
-                populateMultiviewerDropdowns();
+                if (currentView === 'home') renderMatchesGrid();
+                if (currentView === 'channels') renderChannelsView();
+                if (currentView === 'multiviewer') populateMultiviewerDropdowns();
             }
 
             // Check if user navigated directly to a match link
@@ -848,6 +852,7 @@
         }
 
         function updateCountdowns() {
+            if (currentView !== 'home') return;
             document.querySelectorAll('.countdown-badge').forEach(badge => {
                 const start = parseInt(badge.getAttribute('data-start'), 10);
                 if (!start) return;

@@ -225,6 +225,18 @@
         return match;
     }
 
+    const STATIC_SPORT_GROUPS = {
+        'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN'],
+        'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB'],
+        'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST'],
+        'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING'],
+        'MOTORSPORTS': ['MOTORSPORTS', 'F1', 'MOTOGP', 'FORMULA', 'NASCAR', 'RALLY'],
+        'BASEBALL': ['BASEBALL', 'MLB'],
+        'BASKETBALL': ['BASKETBALL', 'NBA', 'NBL', 'EUROLEAGUE'],
+        'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL'],
+        'RUGBY': ['RUGBY', 'NRL', 'AFL']
+    };
+
     const GENERIC_TEAM_WORDS = new Set([
         'fc', 'cf', 'sc', 'cd', 'ud', 'sk', 'sv', 'rb', 'afc', 'ac', 'as', 'ss',
         'united', 'city', 'town', 'county', 'club', 'athletic', 'athletics',
@@ -290,21 +302,10 @@
         const pSport = (ppv.sport || ppv.category || ppv.catName || '').toUpperCase();
         const aCat = (alpha.category || alpha.league || '').toUpperCase();
 
-        const sportGroups = {
-            'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN'],
-            'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB'],
-            'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST'],
-            'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING'],
-            'MOTORSPORTS': ['MOTORSPORTS', 'F1', 'MOTOGP', 'FORMULA', 'NASCAR', 'RALLY'],
-            'BASEBALL': ['BASEBALL', 'MLB'],
-            'BASKETBALL': ['BASKETBALL', 'NBA', 'NBL', 'EUROLEAGUE'],
-            'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL'],
-            'RUGBY': ['RUGBY', 'NRL', 'AFL']
-        };
-
         if (pSport && aCat) {
             let compatible = false;
-            for (const [group, members] of Object.entries(sportGroups)) {
+            for (const group in STATIC_SPORT_GROUPS) {
+                const members = STATIC_SPORT_GROUPS[group];
                 const pInGroup = pSport.includes(group) || members.some(m => pSport.includes(m));
                 const aInGroup = aCat.includes(group) || members.some(m => aCat.includes(m));
                 if (pInGroup && aInGroup) {
@@ -618,8 +619,22 @@
 
                 if (rawItems.length > 0) {
                     const newMatches = [];
+                    const newMatchesById = new Map();
+                    const existingMatchesById = new Map();
 
-                    for (const item of rawItems) {
+                    if (Array.isArray(this.matches)) {
+                        for (let i = 0; i < this.matches.length; i++) {
+                            const m = this.matches[i];
+                            if (m.id) existingMatchesById.set(m.id, m);
+                            if (m.rawId) existingMatchesById.set(m.rawId, m);
+                        }
+                    }
+
+                    for (let i = 0; i < rawItems.length; i++) {
+                        if (i > 0 && i % 80 === 0) {
+                            await new Promise(r => setTimeout(r, 0));
+                        }
+                        const item = rawItems[i];
                         const s = item.stream;
                         const catName = item.category;
                         const is247Cat = item.is247;
@@ -630,7 +645,13 @@
                         if (!norm) continue;
 
                         // 1. Check if this fixture already exists in newMatches (deduplicate PPV & Streamed.pk)
-                        const existingInNew = newMatches.find(m => m.id === norm.id || m.rawId === norm.rawId || isSameMatch(m, norm));
+                        let existingInNew = newMatchesById.get(norm.id) || (norm.rawId ? newMatchesById.get(norm.rawId) : null);
+                        if (!existingInNew) {
+                            existingInNew = newMatches.find(m => {
+                                if (m.sport && norm.sport && m.sport !== 'OTHERS' && norm.sport !== 'OTHERS' && m.sport !== norm.sport) return false;
+                                return isSameMatch(m, norm);
+                            });
+                        }
                         if (existingInNew) {
                             // Merge authentic poster
                             if ((!existingInNew.poster || existingInNew.poster.includes('logo-icon.png')) && norm.poster && !norm.poster.includes('logo-icon.png')) {
@@ -660,7 +681,13 @@
                         }
 
                         // 2. Check against previous matches state to preserve resolved alpha feeds
-                        const existing = this.matches.find(m => m.id === norm.id || m.rawId === norm.rawId || isSameMatch(m, norm));
+                        let existing = existingMatchesById.get(norm.id) || (norm.rawId ? existingMatchesById.get(norm.rawId) : null);
+                        if (!existing) {
+                            existing = this.matches.find(m => {
+                                if (m.sport && norm.sport && m.sport !== 'OTHERS' && norm.sport !== 'OTHERS' && m.sport !== norm.sport) return false;
+                                return isSameMatch(m, norm);
+                            });
+                        }
 
                         if (existing && existing._alphaResolved) {
                             norm.alphaStreamId = existing.alphaStreamId;
@@ -680,7 +707,22 @@
                             norm.alphaStreamId = existing.alphaStreamId;
                             norm.alphaItem = existing.alphaItem;
                         } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                            const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(norm, a));
+                            const matchedAlpha = this.alphaCatalog.find(a => {
+                                const aCat = (a.category || a.league || '').toUpperCase();
+                                if (norm.sport && aCat && norm.sport !== 'OTHERS' && aCat !== 'OTHERS' && norm.sport !== aCat) {
+                                    let comp = false;
+                                    for (const group in STATIC_SPORT_GROUPS) {
+                                        const members = STATIC_SPORT_GROUPS[group];
+                                        if ((norm.sport.includes(group) || members.some(m => norm.sport.includes(m))) &&
+                                            (aCat.includes(group) || members.some(m => aCat.includes(m)))) {
+                                            comp = true;
+                                            break;
+                                        }
+                                    }
+                                    if (!comp) return false;
+                                }
+                                return isSameMatch(norm, a);
+                            });
                             if (matchedAlpha) {
                                 norm.alphaStreamId = matchedAlpha.stream_id;
                                 norm.alphaItem = matchedAlpha;
@@ -710,13 +752,26 @@
                         }
 
                         newMatches.push(norm);
+                        newMatchesById.set(norm.id, norm);
+                        if (norm.rawId) newMatchesById.set(norm.rawId, norm);
                     }
 
                     if (newMatches.length > 0) {
                         // Also preserve any independent Alpha fixtures that were added or are in alphaCatalog
                         if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            const newMatchesByAlphaId = new Map();
+                            for (let i = 0; i < newMatches.length; i++) {
+                                if (newMatches[i].alphaStreamId) {
+                                    newMatchesByAlphaId.set(newMatches[i].alphaStreamId, newMatches[i]);
+                                }
+                            }
                             for (const alpha of this.alphaCatalog) {
-                                const isMatched = newMatches.some(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
+                                if (newMatchesByAlphaId.has(alpha.stream_id)) continue;
+                                const isMatched = newMatches.some(m => {
+                                    const aCat = (alpha.category || alpha.league || '').toUpperCase();
+                                    if (m.sport && aCat && m.sport !== 'OTHERS' && aCat !== 'OTHERS' && m.sport !== aCat) return false;
+                                    return isSameMatch(m, alpha);
+                                });
                                 if (!isMatched) {
                                     const existingIndependent = this.matches.find(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
                                     if (existingIndependent) {
@@ -1143,6 +1198,7 @@
          */
         async autoResolveAllAlphaSources() {
             if (this._resolvingAllAlpha) return;
+            if (typeof currentView !== 'undefined' && currentView === 'watch') return;
             this._resolvingAllAlpha = true;
 
             try {
