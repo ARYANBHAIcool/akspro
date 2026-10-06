@@ -462,7 +462,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v33';
+            const CACHE_KEY = 'aryan_cached_matches_v34';
             // 1. Explicitly purge any bloated legacy caches (v1 through v32) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -548,7 +548,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v33';
+            const CACHE_KEY = 'aryan_cached_matches_v34';
             if (this._alphaLoadingPromise) {
                 try {
                     await this._alphaLoadingPromise;
@@ -672,9 +672,10 @@
                             existingInNew.servers = sanitizeMatchServers({ servers: [...existingInNew.servers, ...norm.servers] }).servers;
                             existingInNew.sources = existingInNew.servers;
 
-                            // Inherit Alpha stream ID if present
+                            // Inherit Alpha stream ID and type if present
                             if (!existingInNew.alphaStreamId && norm.alphaStreamId) {
                                 existingInNew.alphaStreamId = norm.alphaStreamId;
+                                existingInNew.alphaStreamType = norm.alphaStreamType || (norm.alphaItem && norm.alphaItem.stream_type) || 'alpha';
                                 existingInNew.alphaItem = norm.alphaItem;
                             }
                             continue;
@@ -691,6 +692,7 @@
 
                         if (existing && existing._alphaResolved) {
                             norm.alphaStreamId = existing.alphaStreamId;
+                            norm.alphaStreamType = existing.alphaStreamType || (existing.alphaItem && existing.alphaItem.stream_type) || 'alpha';
                             norm.alphaItem = existing.alphaItem;
                             norm._alphaResolved = existing._alphaResolved;
                             // Strictly preserve only genuine StreamCorner Alpha broadcast channels
@@ -705,6 +707,7 @@
                             }
                         } else if (existing && existing.alphaStreamId) {
                             norm.alphaStreamId = existing.alphaStreamId;
+                            norm.alphaStreamType = existing.alphaStreamType || (existing.alphaItem && existing.alphaItem.stream_type) || 'alpha';
                             norm.alphaItem = existing.alphaItem;
                         } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                             const matchedAlpha = this.alphaCatalog.find(a => {
@@ -725,6 +728,7 @@
                             });
                             if (matchedAlpha) {
                                 norm.alphaStreamId = matchedAlpha.stream_id;
+                                norm.alphaStreamType = matchedAlpha.stream_type || 'alpha';
                                 norm.alphaItem = matchedAlpha;
                                 if (matchedAlpha.home_team_logo && (!norm.team1 || !norm.team1.logo || norm.team1.logo.includes('logo-icon.png'))) {
                                     norm.team1 = { name: matchedAlpha.home_team || (norm.team1 && norm.team1.name) || '', logo: sanitizeLogoUrl(matchedAlpha.home_team_logo) };
@@ -769,7 +773,18 @@
                                 if (newMatchesByAlphaId.has(alpha.stream_id)) continue;
                                 const isMatched = newMatches.some(m => {
                                     const aCat = (alpha.category || alpha.league || '').toUpperCase();
-                                    if (m.sport && aCat && m.sport !== 'OTHERS' && aCat !== 'OTHERS' && m.sport !== aCat) return false;
+                                    if (m.sport && aCat && m.sport !== 'OTHERS' && aCat !== 'OTHERS' && m.sport !== aCat) {
+                                        let comp = false;
+                                        for (const group in STATIC_SPORT_GROUPS) {
+                                            const members = STATIC_SPORT_GROUPS[group];
+                                            if ((m.sport.includes(group) || members.some(x => m.sport.includes(x))) &&
+                                                (aCat.includes(group) || members.some(x => aCat.includes(x)))) {
+                                                comp = true;
+                                                break;
+                                            }
+                                        }
+                                        if (!comp) return false;
+                                    }
                                     return isSameMatch(m, alpha);
                                 });
                                 if (!isMatched) {
@@ -891,39 +906,52 @@
         },
 
         /**
-         * Load StreamCorner Alpha live & sports fixtures
-         * Pairs with PPV fixtures and introduces independent Alpha matches
+         * Load StreamCorner Alpha, NBA & Beta live sports fixtures
+         * Pairs with PPV fixtures and introduces independent StreamCorner matches
          */
         async loadStreamCornerAlphaFeeds() {
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
                 return;
             }
             try {
-                let alphaList = null;
-                const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                for (let i = 0; i < candidateWorkers.length; i += 4) {
-                    const batch = candidateWorkers.slice(i, i + 4);
-                    try {
-                        const batchPromises = batch.map(worker => {
-                            return new Promise((resolve, reject) => {
-                                const timer = setTimeout(() => reject(new Error('timeout')), 3500);
-                                window.StreamCornerCore.t(`https://${worker}/corner?p=alpha`, false, 'alpha list')
-                                    .then(res => {
-                                        clearTimeout(timer);
-                                        if (Array.isArray(res) && res.length > 0) resolve(res);
-                                        else reject(new Error('empty'));
-                                    })
-                                    .catch(err => {
-                                        clearTimeout(timer);
-                                        reject(err);
-                                    });
+                const fetchEndpoint = async (endpoint) => {
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                    for (let i = 0; i < candidateWorkers.length; i += 4) {
+                        const batch = candidateWorkers.slice(i, i + 4);
+                        try {
+                            const batchPromises = batch.map(worker => {
+                                return new Promise((resolve, reject) => {
+                                    const timer = setTimeout(() => reject(new Error('timeout')), 4000);
+                                    window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, `corner ${endpoint}`)
+                                        .then(res => {
+                                            clearTimeout(timer);
+                                            if (Array.isArray(res) && res.length > 0) resolve(res);
+                                            else reject(new Error('empty'));
+                                        })
+                                        .catch(err => {
+                                            clearTimeout(timer);
+                                            reject(err);
+                                        });
+                                });
                             });
-                        });
-                        alphaList = await Promise.any(batchPromises);
-                        if (Array.isArray(alphaList) && alphaList.length > 0) break;
-                    } catch (e) {}
-                }
-                if (!Array.isArray(alphaList) || alphaList.length === 0) {
+                            const res = await Promise.any(batchPromises);
+                            if (Array.isArray(res) && res.length > 0) return res;
+                        } catch (e) {}
+                    }
+                    return [];
+                };
+
+                const [alphaRes, nbaRes, betaRes] = await Promise.allSettled([
+                    fetchEndpoint('alpha'),
+                    fetchEndpoint('nba'),
+                    fetchEndpoint('beta')
+                ]);
+
+                const rawAlpha = (alphaRes.status === 'fulfilled' && Array.isArray(alphaRes.value)) ? alphaRes.value : [];
+                const rawNba = (nbaRes.status === 'fulfilled' && Array.isArray(nbaRes.value)) ? nbaRes.value : [];
+                const rawBeta = (betaRes.status === 'fulfilled' && Array.isArray(betaRes.value)) ? betaRes.value : [];
+
+                if (rawAlpha.length === 0 && rawNba.length === 0 && rawBeta.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
                         this._hasAttemptedAutoHeal = true;
                         console.warn('StreamCorner catalog returned empty/error. Auto-healing core engine from edge...');
@@ -935,15 +963,53 @@
                     return;
                 }
 
-                this.alphaCatalog = alphaList;
+                // Normalize NBA games into unified catalog structure
+                const normNba = rawNba.map(g => ({
+                    stream_id: g.game_id || g.stream_id,
+                    stream_type: 'nba',
+                    event_name: g.event_name || (g.home_team && g.away_team ? `${g.home_team} vs. ${g.away_team}` : (g.home_team || g.away_team || 'NBA Game')),
+                    category: 'BASKETBALL',
+                    league: 'NBA',
+                    home_team: g.home_team,
+                    away_team: g.away_team,
+                    home_team_logo: g.home_logo || g.home_team_logo,
+                    away_team_logo: g.away_logo || g.away_team_logo,
+                    poster: g.poster,
+                    timestamp: g.timestamp,
+                    time: g.time,
+                    home_score: g.home_score,
+                    away_score: g.away_score
+                }));
+
+                const normAlpha = rawAlpha.map(a => ({
+                    ...a,
+                    stream_type: a.stream_type || 'alpha'
+                }));
+
+                const normBeta = rawBeta.map(b => ({
+                    ...b,
+                    stream_type: b.stream_type || 'beta'
+                }));
+
+                const seenStreamIds = new Set();
+                const combinedCatalog = [];
+                for (const item of [...normAlpha, ...normNba, ...normBeta]) {
+                    if (item && item.stream_id && !seenStreamIds.has(item.stream_id)) {
+                        seenStreamIds.add(item.stream_id);
+                        combinedCatalog.push(item);
+                    }
+                }
+
+                this.alphaCatalog = combinedCatalog;
                 const matchedAlphaIds = new Set();
 
-                // 1. Link matching PPV matches with their Alpha counterparts
-                for (const alpha of alphaList) {
+                // 1. Link matching PPV matches with their Alpha / NBA counterparts
+                for (const alpha of this.alphaCatalog) {
                     const matchedPPV = this.matches.find(m => isSameMatch(m, alpha));
                     if (matchedPPV) {
                         matchedAlphaIds.add(alpha.stream_id);
                         matchedPPV.alphaStreamId = alpha.stream_id;
+                        matchedPPV.alphaStreamType = alpha.stream_type || 'alpha';
                         matchedPPV.alphaItem = alpha;
                         if (alpha.home_team_logo && (!matchedPPV.team1 || !matchedPPV.team1.logo || matchedPPV.team1.logo.includes('logo-icon.png'))) {
                             matchedPPV.team1 = { name: alpha.home_team || (matchedPPV.team1 && matchedPPV.team1.name) || '', logo: sanitizeLogoUrl(alpha.home_team_logo) };
@@ -957,9 +1023,9 @@
                     }
                 }
 
-                // 2. Introduce independent / exclusive StreamCorner Alpha fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
+                // 2. Introduce independent / exclusive StreamCorner Alpha/NBA fixtures (e.g. CPL, UFC, Formula 1, MotoGP, NBA games)
                 let addedIndependent = false;
-                for (const alpha of alphaList) {
+                for (const alpha of this.alphaCatalog) {
                     if (!matchedAlphaIds.has(alpha.stream_id)) {
                         const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}` || isSameMatch(m, alpha));
                         if (!exists) {
@@ -977,7 +1043,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v33';
+                        const CACHE_KEY = 'aryan_cached_matches_v34';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
@@ -989,6 +1055,7 @@
                         : this.alphaCatalog.find(a => isSameMatch(currentWatchItem, a));
                     if (matchedAlpha) {
                         currentWatchItem.alphaStreamId = matchedAlpha.stream_id;
+                        currentWatchItem.alphaStreamType = matchedAlpha.stream_type || 'alpha';
                         currentWatchItem.alphaItem = matchedAlpha;
                         this.resolveAlphaSourcesForMatch(currentWatchItem);
                     }
@@ -1037,6 +1104,7 @@
                 const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
                 if (matchedAlpha) {
                     match.alphaStreamId = matchedAlpha.stream_id;
+                    match.alphaStreamType = matchedAlpha.stream_type || 'alpha';
                     match.alphaItem = matchedAlpha;
                 }
             }
@@ -1061,6 +1129,23 @@
 
             match._alphaPromise = (async () => {
                 try {
+                    let pType = match.alphaStreamType || (match.alphaItem && match.alphaItem.stream_type);
+                    if (!pType && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                        const foundInCat = this.alphaCatalog.find(a => a.stream_id === match.alphaStreamId);
+                        if (foundInCat) {
+                            pType = foundInCat.stream_type;
+                            match.alphaStreamType = pType;
+                            if (!match.alphaItem) match.alphaItem = foundInCat;
+                        }
+                    }
+                    if (!pType) {
+                        if (/^00\d+/.test(String(match.alphaStreamId)) || match.sport === 'BASKETBALL') {
+                            pType = 'nba';
+                        } else {
+                            pType = 'alpha';
+                        }
+                    }
+
                     let detail = null;
                     const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
                     for (let i = 0; i < candidateWorkers.length; i += 4) {
@@ -1069,10 +1154,11 @@
                             const batchPromises = batch.map(worker => {
                                 return new Promise((resolve, reject) => {
                                     const timer = setTimeout(() => reject(new Error('timeout')), 4500);
-                                    window.StreamCornerCore.t(`https://${worker}/corner?p=alpha&id=${match.alphaStreamId}`, false, match.title || 'alpha detail')
+                                    window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${match.alphaStreamId}`, false, match.title || 'alpha detail')
                                         .then(res => {
                                             clearTimeout(timer);
-                                            if (res && Array.isArray(res.streams) && res.streams.length > 0) resolve(res);
+                                            const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
+                                            if (hasStreams) resolve(res);
                                             else reject(new Error('empty'));
                                         })
                                         .catch(err => {
@@ -1082,8 +1168,17 @@
                                 });
                             });
                             detail = await Promise.any(batchPromises);
-                            if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) break;
+                            const hasStreams = detail && ((Array.isArray(detail.streams) && detail.streams.length > 0) || (Array.isArray(detail.live) && detail.live.length > 0));
+                            if (hasStreams) break;
                         } catch (err) {}
+                    }
+
+                    // Fallback to alternate endpoint if detail not found
+                    if (!detail && pType === 'alpha' && (match.sport === 'BASKETBALL' || /^00\d+/.test(String(match.alphaStreamId)))) {
+                        try {
+                            const fallbackWorker = candidateWorkers[0];
+                            detail = await window.StreamCornerCore.t(`https://${fallbackWorker}/corner?p=nba&id=${match.alphaStreamId}`, false, match.title || 'nba fallback');
+                        } catch (e) {}
                     }
 
                     if (!detail && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
@@ -1094,7 +1189,9 @@
                         }
                     }
 
-                    if (detail && Array.isArray(detail.streams) && detail.streams.length > 0) {
+                    const rawStreams = detail ? (Array.isArray(detail.streams) ? detail.streams : (Array.isArray(detail.live) ? detail.live : [])) : [];
+
+                    if (detail && rawStreams.length > 0) {
                         // 1. Keep base PPV servers, filtering out any stray or duplicate channels
                         const baseServers = (match.servers || []).filter(s => {
                             const u = s.url || '';
@@ -1111,7 +1208,7 @@
 
                         const newServers = [];
 
-                        detail.streams.forEach((s) => {
+                        rawStreams.forEach((s) => {
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
                             if (!rawUrl) return;
 
@@ -1173,7 +1270,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v33';
+                            const CACHE_KEY = 'aryan_cached_matches_v34';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
 
@@ -1258,12 +1355,16 @@
             const endTs = startTs ? startTs + 10800000 : 0;
             const now = Date.now();
 
-            // Discard Alpha matches that have already ended (ended more than 15 minutes ago)
+            // Discard Alpha/NBA matches that have already ended (ended more than 15 minutes ago or marked Final)
+            if (alpha.time && alpha.time.toLowerCase() === 'final') {
+                return null;
+            }
             if (endTs > 0 && now > (endTs + 900000)) {
                 return null;
             }
 
-            const isLive = startTs > 0 && now >= (startTs - 900000) && now <= endTs;
+            const isLive = Boolean((alpha.time && (alpha.time.toLowerCase().includes('qtr') || alpha.time.toLowerCase().includes('half'))) ||
+                           (startTs > 0 && now >= (startTs - 900000) && now <= endTs));
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
@@ -1297,6 +1398,7 @@
                 servers: [],
                 sources: [],
                 alphaStreamId: alpha.stream_id,
+                alphaStreamType: alpha.stream_type || 'alpha',
                 alphaItem: alpha,
                 _alphaResolved: false
             };
@@ -1353,11 +1455,17 @@
 
             // 0. Match with Alpha catalog if present
             let matchedAlphaId = null;
+            let matchedAlphaType = null;
+            let matchedAlphaItem = null;
             if (KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[s.rawId]) {
                 matchedAlphaId = KNOWN_ALPHA_STREAMS[s.id] || KNOWN_ALPHA_STREAMS[s.rawId];
             } else if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const matched = this.alphaCatalog.find(a => isSameMatch(s, a));
-                if (matched) matchedAlphaId = matched.stream_id;
+                if (matched) {
+                    matchedAlphaId = matched.stream_id;
+                    matchedAlphaType = matched.stream_type || 'alpha';
+                    matchedAlphaItem = matched;
+                }
             }
 
             // 1. Authenticate and build stream servers without artificial duplicate backups
@@ -1423,6 +1531,8 @@
                 servers: cleanServers,
                 sources: cleanServers,
                 alphaStreamId: matchedAlphaId || null,
+                alphaStreamType: matchedAlphaType || null,
+                alphaItem: matchedAlphaItem || null,
                 _alphaResolved: false
             };
         },
@@ -1482,12 +1592,16 @@
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
             const stripped = decoded.replace(/^(ppv|dami|alpha)-/i, '');
 
-            // Heuristic check for hex stream ID (e.g. 33951b4e2b7dafb12e99a5ba14d4fcbe)
+            // Heuristic check for hex stream ID, NBA game ID, or URL path extraction
             const hexMatch = decoded.match(/([a-f0-9]{32})/i) || stripped.match(/([a-f0-9]{32})/i);
+            const nbaMatch = decoded.match(/\b(00\d{8})\b/) || stripped.match(/\b(00\d{8})\b/);
+            const urlIdMatch = decoded.match(/(?:live|stream|match|nba)[/=]([a-zA-Z0-9_-]+)/i);
+            const extractedId = (urlIdMatch && urlIdMatch[1]) ? urlIdMatch[1] : (nbaMatch ? nbaMatch[1] : null);
 
             // 1. Direct ID, rawId, or slug match
             let found = this.matches.find(m => {
                 if (m.id === decoded || m.rawId === decoded || m.rawId === stripped || m.alphaStreamId === decoded || m.alphaStreamId === stripped) return true;
+                if (extractedId && (m.id === extractedId || m.rawId === extractedId || m.alphaStreamId === extractedId || ('alpha-' + m.alphaStreamId) === ('alpha-' + extractedId))) return true;
                 if (('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || ('alpha-' + m.rawId) === decoded || ('alpha-' + m.alphaStreamId) === decoded) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
@@ -1507,9 +1621,10 @@
                 }
             }
 
-            // 3. Search alphaCatalog directly for independent alpha stream links
+            // 3. Search alphaCatalog directly for independent alpha/nba stream links
             if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                const alpha = this.alphaCatalog.find(a => a.stream_id === stripped || a.stream_id === decoded);
+                const targetId = extractedId || stripped || decoded;
+                const alpha = this.alphaCatalog.find(a => a.stream_id === targetId || a.stream_id === stripped || a.stream_id === decoded);
                 if (alpha) {
                     found = this.normalizeAlphaMatch(alpha);
                     if (found) {
@@ -1518,18 +1633,20 @@
                 }
             }
 
-            // 4. Handle direct hex stream ID or StreamCorner stream link
-            if (!found && hexMatch) {
-                const streamId = hexMatch[1];
-                found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
-                if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                    const alpha = this.alphaCatalog.find(a => a.stream_id === streamId);
-                    if (alpha) {
-                        found = this.normalizeAlphaMatch(alpha);
-                        if (found) this.matches.push(found);
+            // 4. Handle direct hex stream ID, NBA game ID, or StreamCorner stream link
+            if (!found && (hexMatch || nbaMatch)) {
+                const streamId = hexMatch ? hexMatch[1] : (nbaMatch ? nbaMatch[1] : null);
+                if (streamId) {
+                    found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
+                    if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                        const alpha = this.alphaCatalog.find(a => a.stream_id === streamId);
+                        if (alpha) {
+                            found = this.normalizeAlphaMatch(alpha);
+                            if (found) this.matches.push(found);
+                        }
                     }
                 }
-                if (!found) {
+                if (!found && hexMatch) {
                     // Create pending dynamic placeholder for direct stream ID link
                     found = {
                         id: `alpha-${streamId}`,
