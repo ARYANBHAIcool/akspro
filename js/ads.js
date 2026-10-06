@@ -3,9 +3,9 @@
  * Path: js/ads.js
  * 
  * Integrated Units:
- * 1. Popunder (pl31503790)
- * 2. Social Bar (pl31503799)
- * 3. Smartlink (https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8)
+ * 1. Popunder (capitalhospitals.org)
+ * 2. Social Bar (czernik.org)
+ * 3. Smartlink (https://budgetezy.org/4/6da983d7e115700ad4dc612c0e107ec8)
  * 
  * Monetization Flow:
  * - Shared links and match cards open directly to the match page with ZERO ads on load or navigation.
@@ -32,7 +32,7 @@
         // ==========================================
         // ⚙️ AD CONFIGURATION
         // ==========================================
-        DIRECT_LINK: 'https://www.profitableratecpmnetwork.com/t8e8e5yh?key=6da983d7e115700ad4dc612c0e107ec8',
+        DIRECT_LINK: 'https://budgetezy.org/4/6da983d7e115700ad4dc612c0e107ec8',
         
         // Cooldown between direct link triggers in milliseconds (60 seconds)
         cooldownMs: 60000,
