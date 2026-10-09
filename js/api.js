@@ -138,8 +138,13 @@
 
     function toProxiedEmbedUrl(rawUrl) {
         if (!rawUrl) return '';
+        if (rawUrl.includes('shaka_player.html')) return rawUrl;
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('.mpd') || rawUrl.includes('cenc') || rawUrl.includes('aiv-cdn.net') || rawUrl.includes('pv-cdn.net') || rawUrl.includes('amazonvideo.com')) {
+        // Direct DASH stream with keys should use local static shaka_player with 0 Cloudflare requests
+        if (rawUrl.includes('.mpd') && (rawUrl.includes('kid=') || rawUrl.includes('key='))) {
+            return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
+        }
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -826,16 +831,211 @@
         },
 
         /**
-         * Load 24/7 TV channels from DaddyHD and TimStreams
+         * Load 24/7 TV channels with StreamCorner premier Zero-CF channels and DaddyLive catalog
          */
         async loadChannelsCatalog() {
+            const STREAMCORNER_PREMIER_CHANNELS = [
+                {
+                    id: "sc-tnt1",
+                    channelId: "sc-tnt1",
+                    name: "TNT Sports 1 (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/tnt-sports-1-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/rhf2dwosdt/out/v1/ee550d2a68d846c797e6ce4de2e8b76d/cenc.mpd&kid=69a5aa835a061ce64a630d1046727e40&key=d02feac8a999bd06bf4059bf33411749", type: "iframe", hd: true },
+                        { name: "Server 2 (Backup)", url: "shaka_player.html?mpd=https://otte.live.fly.ww.aiv-cdn.net/iad-nitro/live/clients/dash/enc/rhf2dwosdt/out/v1/ee550d2a68d846c797e6ce4de2e8b76d/cenc.mpd&kid=69a5aa835a061ce64a630d1046727e40&key=d02feac8a999bd06bf4059bf33411749", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-tnt2",
+                    channelId: "sc-tnt2",
+                    name: "TNT Sports 2 (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/tnt-sports-2-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/puehlftk5j/out/v1/f7f0da1ee112481ca0024e6d4dd97f4a/cenc.mpd&kid=f3df7843080ae743bf865dc5fdf64c68&key=567c863bc12eb74788ea74888c042e1b", type: "iframe", hd: true },
+                        { name: "Server 2 (Backup)", url: "shaka_player.html?mpd=https://otte.live.fly.ww.aiv-cdn.net/bom-nitro/live/clients/dash/enc/puehlftk5j/out/v1/f7f0da1ee112481ca0024e6d4dd97f4a/cenc.mpd&kid=f3df7843080ae743bf865dc5fdf64c68&key=567c863bc12eb74788ea74888c042e1b", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-tnt3",
+                    channelId: "sc-tnt3",
+                    name: "TNT Sports 3 HD (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/tnt-sports-3-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/dev1hjwzh9/out/v1/a5f0ee7ad7b24906b14f43bebbbe4678/cenc.mpd&kid=cc91508324ce9dcaf425a43d58f1d9d4&key=643e5474d9edd87c7d9091c8c97994ca", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-tnt4",
+                    channelId: "sc-tnt4",
+                    name: "TNT Sports 4 HD (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/tnt-sports-4-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.live.fly.ww.aiv-cdn.net/iad-nitro/live/clients/dash/enc/tdijwiga2k/out/v1/f5fde318678f4f7583bf27b7231bde1f/cenc.mpd&kid=fa34fa8c90336dd528c7a23871cad1fe&key=552a78d1aeb74f1650d68255c5749408", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-bein1",
+                    channelId: "sc-bein1",
+                    name: "beIN Sports 1 AU (SC)",
+                    country: "AU",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/australia/bein-sports-1-au.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/ghwcl6hv68/out/v1/83536910d8034e9b9895a20fbe1c1687/cenc.mpd&kid=335dad778109954503dcbb21dc92015f&key=24bfd75d436cbf73168a2a2dccd40281", type: "iframe", hd: true },
+                        { name: "Server 2 (Backup)", url: "shaka_player.html?mpd=https://otte.live.fly.ww.aiv-cdn.net/syd-nitro/live/clients/dash/enc/ghwcl6hv68/out/v1/83536910d8034e9b9895a20fbe1c1687/cenc.mpd&kid=335dad778109954503dcbb21dc92015f&key=24bfd75d436cbf73168a2a2dccd40281", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-bein2",
+                    channelId: "sc-bein2",
+                    name: "beIN Sports 2 AU (SC)",
+                    country: "AU",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/australia/bein-sports-2-au.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/8m8cd46i1t/out/v1/83985c68e4174e90a58a1f2c024be4c9/cenc.mpd&kid=0b42be2664d7e811d04f3e504e0924c5&key=ae24090123b8c72ac5404dc152847cb8", type: "iframe", hd: true },
+                        { name: "Server 2 (Backup)", url: "shaka_player.html?mpd=https://otte.live.fly.ww.aiv-cdn.net/syd-nitro/live/clients/dash/enc/8m8cd46i1t/out/v1/83985c68e4174e90a58a1f2c024be4c9/cenc.mpd&kid=0b42be2664d7e811d04f3e504e0924c5&key=ae24090123b8c72ac5404dc152847cb8", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-bein3",
+                    channelId: "sc-bein3",
+                    name: "beIN Sports 3 AU (SC)",
+                    country: "AU",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/australia/bein-sports-3-au.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/q4u5nwaogz/out/v1/18de6d3e65934f3a8de4358e69eab86c/cenc.mpd&kid=7995c724a13748ed970840a8ab5bb9b3&key=67bdaf1e2175b9ff682fcdf0e2354b1e", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-fubo",
+                    channelId: "sc-fubo",
+                    name: "FUBO Sports - Premier League (SC)",
+                    country: "US",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/fubo-sports-network-us.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/u3yyxpyqxr/out/v1/63f0844e26d046ab88a2b07df145e87c/cenc.mpd&kid=c387c5521edf61057dbdda6bcfa7b6d0&key=24738f6cc7f70b5c7bf94b2667ba35fc", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-fox",
+                    channelId: "sc-fox",
+                    name: "Fox Sports (SC)",
+                    country: "US",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/fox-sports-1-us.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/awxnrqkbo5/out/v1/716529a4091947b0877e6cb80dbd6ccb/cenc.mpd&kid=09453ce820d65fbc675de3185f9e454c&key=98cff9600995fa381c76fdacf3c7edae", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-foxdep",
+                    channelId: "sc-foxdep",
+                    name: "Fox Deportes (SC)",
+                    country: "US",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/fox-deportes-us.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/vkpoljjpkj/out/v1/502bcf68b3514cd28a220e6f0a43816f/cenc.mpd&kid=d1a163914db8ffad2c3e94f979896a0d&key=9728800a3959aafdd5b0bcfbf3768811", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-sportdigital",
+                    channelId: "sc-sportdigital",
+                    name: "Sportdigital Fussball (SC)",
+                    country: "DE",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/germany/sportdigital-fussball-de.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/ssdefyhkkr/out/v1/cf01290cb7f64525bdf861580a016ca8/cenc.mpd&kid=0ad4080cdff8c60b1233b22087f0b340&key=285f129c5eca01dd08a5d5a14ad801c8", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-tsn",
+                    channelId: "sc-tsn",
+                    name: "TSN Sports (SC)",
+                    country: "CA",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/canada/tsn-1-ca.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/cscevwljkq/out/v1/972185041b244140860b7d56398e9aaf/cenc.mpd&kid=385ceb9714b75e0cef61254f80b31002&key=18dce92a2891fee68d21ede5173230f8", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-premier",
+                    channelId: "sc-premier",
+                    name: "Premier Sports (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-kingdom/premier-sports-1-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/m6sqanvm2m/out/v1/f6beb46c6e9a4132ad739f3ca27df6aa/cenc.mpd&kid=1444f4235529f183f0a5a486befe9cdb&key=e5e3fec67a1bb3472a2089c8a0a2557f", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-fancode",
+                    channelId: "sc-fancode",
+                    name: "Fancode (SC)",
+                    country: "IN",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/india/fancode-in.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/b3b3fkmrbl/out/v1/1084d5c9a97a4c5b9f9554c88f486646/cenc.mpd&kid=82dfca238e8c4b430a3269db71965db9&key=a00b28caf4ac628e77a553d440c0ddca", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-sky-f1",
+                    channelId: "sc-sky-f1",
+                    name: "Sky Sports F1 HD (SC)",
+                    country: "UK",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/refs/heads/main/countries/united-kingdom/sky-sports-f1-uk.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://a96aivottlinear-a.akamaihd.net/OTTB/pdx-nitro/live/clients/dash/enc/iryr4nfnvz/out/v1/56a65d76a55e49ffa4ac4669a8f9cf26/cenc.mpd&kid=5734bfc9aca5e8e478c98f0617ae56f7&key=b24ed75de070e35c154feeb68fc21e57", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-cbs-sports",
+                    channelId: "sc-cbs-sports",
+                    name: "CBS Sports HD (SC)",
+                    country: "US",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/cbs-sports-network-us.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://a166aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/rbem8rorcw/out/v1/5318821e2c3c44c2a439681b9aa86e9b/cenc.mpd&kid=d9623774ac5c8c351aafe97c5fe70267&key=5164e6d05164a2d65fa8fcc962aa4861", type: "iframe", hd: true }
+                    ]
+                },
+                {
+                    id: "sc-vix-tudn",
+                    channelId: "sc-vix-tudn",
+                    name: "ViX TUDN HD (SC)",
+                    country: "US",
+                    category: "24/7 STREAMS",
+                    logo: "https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/united-states/tudn-us.png",
+                    servers: [
+                        { name: "Direct HD (Zero-CF)", url: "shaka_player.html?mpd=https://a166aivottlinear-a.akamaihd.net/OTTB/iad-nitro/live/clients/dash/enc/mitr07scim/out/v1/4fb1073240a549479fd2f343e6cad4ba/cenc.mpd&kid=f45d1fecebca3a1aa154943fcf3e8276&key=4dbef5d8ed2a4bfbaecdbfe319e7a83d", type: "iframe", hd: true }
+                    ]
+                }
+            ];
+
+            let externalChannels = [];
             try {
                 const url = `${DAMITV_API_BASE}/data/dlhd-channels.json`;
                 const res = await fetch(url, { signal: AbortSignal.timeout(5000) }).catch(() => null);
                 if (res && res.ok && (res.headers.get('content-type') || '').includes('json')) {
                     const data = await res.json();
                     if (data && Array.isArray(data.channels)) {
-                        this.channels = data.channels.map(ch => ({
+                        externalChannels = data.channels.map(ch => ({
                             id: `dlhd-${ch.id}`,
                             channelId: ch.id,
                             name: ch.name,
@@ -862,6 +1062,9 @@
             } catch (err) {
                 console.warn('Channels catalog load failed:', err);
             }
+
+            // Always combine StreamCorner Zero-CF premier channels with external channels
+            this.channels = [...STREAMCORNER_PREMIER_CHANNELS, ...externalChannels];
 
             // Fallback popular sports channels if empty
             if (this.channels.length === 0) {

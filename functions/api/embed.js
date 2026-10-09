@@ -85,65 +85,6 @@ export async function onRequest(context) {
         // Safe storage check, player engine search sync, audio unmuting, and loading overlay dismiss
         const injectScript = `<script>
 (function() {
-    // Route Amazon Nitro/CloudFront CDN requests via /api/nitro with allowed origin
-    var nitroBase = (window.location.origin || '') + '/api/nitro?url=';
-    function shouldProxyUrl(u) {
-        if (!u || typeof u !== 'string') return false;
-        if (u.startsWith(nitroBase) || u.startsWith('data:') || u.startsWith('blob:')) return false;
-        // Only proxy genuine video manifests and segment chunks
-        return u.includes('.mpd') || u.includes('.m4s') || u.includes('.m4v') || u.includes('.m4a') ||
-               u.includes('cenc') || u.includes('dash') || u.includes('aiv-cdn.net') || u.includes('pv-cdn.net') ||
-               u.includes('cloudfront.net') || u.includes('amazonvideo.com');
-    }
-
-    var origFetch = window.fetch;
-    window.fetch = function(input, init) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof input === 'string') {
-                urlStr = input;
-            } else if (input && input.url) {
-                urlStr = input.url;
-            } else if (input && input.href) {
-                urlStr = input.href;
-            } else if (input) {
-                urlStr = String(input);
-            }
-            if (shouldProxyUrl(urlStr)) {
-                var proxied = nitroBase + encodeURIComponent(urlStr);
-                if (typeof input === 'string') {
-                    input = proxied;
-                } else if (input && input.url) {
-                    input = new Request(proxied, input);
-                } else {
-                    input = proxied;
-                }
-                args[0] = input;
-            }
-        } catch (e) {}
-        return origFetch.apply(this, args);
-    };
-
-    var origOpen = XMLHttpRequest.prototype.open;
-    XMLHttpRequest.prototype.open = function(method, url, async, user, pass) {
-        var args = Array.prototype.slice.call(arguments);
-        try {
-            var urlStr = '';
-            if (typeof url === 'string') {
-                urlStr = url;
-            } else if (url && url.href) {
-                urlStr = url.href;
-            } else if (url) {
-                urlStr = String(url);
-            }
-            if (shouldProxyUrl(urlStr)) {
-                url = nitroBase + encodeURIComponent(urlStr);
-                args[1] = url;
-            }
-        } catch (e) {}
-        return origOpen.apply(this, args);
-    };
 
     // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
     try {

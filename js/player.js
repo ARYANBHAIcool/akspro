@@ -67,7 +67,7 @@ window.AryanPlayerEngine = {
         }
 
         if (!rawUrl) return '';
-        if (rawUrl.includes('.m3u8')) return rawUrl;
+        if (rawUrl.includes('.m3u8') || rawUrl.includes('shaka_player.html')) return rawUrl;
 
         // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
         if (rawUrl.includes('/api/embed')) {
