@@ -17,11 +17,19 @@
         : 'https://damitv.st';
 
     const ALPHA_WORKER_NODES = [
-        'data.leehyein444.workers.dev',
-        'data.minjikim444.workers.dev',
-        'data.daniellemarsh444.workers.dev',
-        'data.kanghaerin444.workers.dev',
-        'data.phamviet444.workers.dev',
+        'data.gigav.workers.dev',
+        'data.yedmzoa.workers.dev',
+        'data.ngagzipx.workers.dev',
+        'data.miopks.workers.dev',
+        'data.jccldjshj8sw.workers.dev',
+        'data.l0o1afmju0.workers.dev',
+        'data.nibflolsi9.workers.dev',
+        'data.5j181.workers.dev',
+        'data.rim1043.workers.dev',
+        'data.kuig2.workers.dev',
+        'data.senbon001.workers.dev',
+        'data.senbon001-2.workers.dev',
+        'data.senbon002.workers.dev',
         'data.senbon003.workers.dev',
         'data.kageyoshi001.workers.dev',
         'data.silentbyte125.workers.dev',
@@ -29,10 +37,11 @@
         'data.redjoy256.workers.dev',
         'data.anonfox144.workers.dev',
         'data.cripw4lk000.workers.dev',
-        'data.senbon001-2.workers.dev',
-        'data.senbon002.workers.dev',
-        'data.gigav.workers.dev',
-        'data.yedmzoa.workers.dev'
+        'data.phamviet444.workers.dev',
+        'data.kanghaerin444.workers.dev',
+        'data.minjikim444.workers.dev',
+        'data.leehyein444.workers.dev',
+        'data.daniellemarsh444.workers.dev'
     ];
 
     const KNOWN_ALPHA_STREAMS = {};
@@ -462,7 +471,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v34';
+            const CACHE_KEY = 'aryan_cached_matches_v35';
             // 1. Explicitly purge any bloated legacy caches (v1 through v32) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -548,7 +557,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v34';
+            const CACHE_KEY = 'aryan_cached_matches_v35';
             if (this._alphaLoadingPromise) {
                 try {
                     await this._alphaLoadingPromise;
@@ -1043,7 +1052,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v34';
+                        const CACHE_KEY = 'aryan_cached_matches_v35';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
@@ -1270,7 +1279,7 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v34';
+                            const CACHE_KEY = 'aryan_cached_matches_v35';
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
 
