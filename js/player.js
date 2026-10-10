@@ -61,6 +61,9 @@ window.AryanPlayerEngine = {
         let rawUrl = '';
 
         if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
+            if (serverOrUrl.url && (serverOrUrl.url.includes('shaka_player.html') || serverOrUrl.url.startsWith('/api/embed'))) {
+                return serverOrUrl.url;
+            }
             rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';
         } else {
             rawUrl = String(serverOrUrl);
@@ -68,6 +71,26 @@ window.AryanPlayerEngine = {
 
         if (!rawUrl) return '';
         if (rawUrl.includes('.m3u8') || rawUrl.includes('shaka_player.html')) return rawUrl;
+
+        // Direct DASH stream with keys should use local static shaka_player with 0 Cloudflare requests
+        if (rawUrl.includes('.mpd')) {
+            let kid = '';
+            let key = '';
+            try {
+                const u = new URL(rawUrl);
+                kid = u.searchParams.get('kid') || '';
+                key = u.searchParams.get('key') || '';
+            } catch (e) {
+                const mKid = rawUrl.match(/[?&]kid=([a-fA-F0-9]+)/i);
+                const mKey = rawUrl.match(/[?&]key=([a-fA-F0-9]+)/i);
+                if (mKid) kid = mKid[1];
+                if (mKey) key = mKey[1];
+            }
+            if (kid && key) {
+                return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}&kid=${encodeURIComponent(kid)}&key=${encodeURIComponent(key)}`;
+            }
+            return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
+        }
 
         // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
         if (rawUrl.includes('/api/embed')) {
@@ -211,7 +234,7 @@ window.AryanPlayerEngine = {
         }
 
         const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
-        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) && !serverUrl.includes('.mpd') && !serverUrl.includes('cenc');
+        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) && !serverUrl.includes('.mpd') && !serverUrl.includes('cenc') && !serverUrl.includes('shaka_player.html');
 
         let html = '';
 

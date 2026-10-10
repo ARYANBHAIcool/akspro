@@ -81,6 +81,8 @@
         }
     }
 
+    const INTERNAL_SERVER_NAMES = /^(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner|internal|node\d*|server\d*|stream\d*|feed\d*|hd|sd|fhd|live|main|backup)\b/i;
+
     function extractCleanServerLabel(name, rawUrl, idx) {
         let label = '';
         if (name) {
@@ -90,15 +92,24 @@
             } else {
                 label = name.replace(/^server\s*\d*\s*[-:]*\s*/i, '')
                             .replace(/^stream\s*\d*\s*[-:]*\s*/i, '')
+                            .replace(/^feed\s*\d*\s*[-:]*\s*/i, '')
                             .trim();
             }
         }
 
-        // Clean redundant fake quality tags and trailing hyphens
-        label = label.replace(/\s*1080p\s*/gi, '')
-                     .replace(/\s*720p\s*/gi, '')
+        // Clean redundant fake quality tags, brackets, and trailing hyphens
+        label = label.replace(/[\(\[\{]?\s*(?:1080p|720p|480p|fhd|hd|sd|uhd|4k)\s*[\)\]\}]?/gi, '')
                      .replace(/\s*-\s*$/, '')
                      .trim();
+
+        // Discard internal cluster names or pure quality labels
+        const cleanNoPunct = label.replace(/^[^\w]+|[^\w]+$/g, '');
+        if (!label || 
+            /^[\(\[\{]?\s*(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner|hd|sd|fhd|uhd|4k|server\s*\d*|stream\s*\d*|feed\s*\d*|main|backup)?\s*[\)\]\}]?$/i.test(label) ||
+            INTERNAL_SERVER_NAMES.test(cleanNoPunct) ||
+            /^(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner)$/i.test(cleanNoPunct)) {
+            label = '';
+        }
 
         const lLower = label.toLowerCase();
         if (lLower.includes('willow')) {
@@ -109,18 +120,35 @@
             label = 'FOX Sports';
         } else if (lLower.includes('sky')) {
             label = 'Sky Sports';
+        } else if (lLower.includes('tnt')) {
+            label = 'TNT Sports';
+        } else if (lLower.includes('espn')) {
+            label = 'ESPN';
+        } else if (lLower.includes('fancode')) {
+            label = 'FanCode';
+        } else if (lLower.includes('cbs')) {
+            label = 'CBS Sports';
+        } else if (lLower.includes('paramount')) {
+            label = 'Paramount+';
+        } else if (lLower.includes('sportv')) {
+            label = 'SporTV';
+        } else if (lLower.includes('star sports') || lLower.includes('star')) {
+            label = lLower.includes('hin') ? 'Star Sports Hindi' : 'Star Sports';
         } else if (lLower.includes('tve')) {
             label = 'TVE';
         }
 
         const u = (rawUrl || '').toLowerCase();
-        if (!label || /^hd$/i.test(label) || /^server$/i.test(label) || /^stream$/i.test(label) || /^feed$/i.test(label)) {
+        if (!label || /^[\(\[\{]?\s*(?:hd|sd|fhd|server\s*\d*|stream\s*\d*|feed\s*\d*)\s*[\)\]\}]?$/i.test(label) || INTERNAL_SERVER_NAMES.test(cleanNoPunct)) {
             if (u.includes('willow')) label = u.includes('alt') ? 'Willow Alt' : 'Willow Cricket';
             else if (u.includes('sky')) label = 'Sky Sports';
             else if (u.includes('bein')) label = 'beIN Sports';
             else if (u.includes('fox')) label = 'FOX Sports';
             else if (u.includes('espn')) label = 'ESPN';
             else if (u.includes('tnt')) label = 'TNT Sports';
+            else if (u.includes('paramount')) label = 'Paramount+';
+            else if (u.includes('cbs')) label = 'CBS Sports';
+            else if (u.includes('fancode')) label = 'FanCode';
             else if (u.includes('tve')) label = 'TVE';
             else if (u.includes('canal')) label = 'Canal+';
             else if (u.includes('hotstar')) label = 'Hotstar';
@@ -128,8 +156,9 @@
             else if (u.includes('sony')) label = 'Sony Sports';
             else if (u.includes('optus')) label = 'Optus Sport';
             else if (u.includes('dazn')) label = 'DAZN';
+            else if (u.includes('fandango')) label = 'Fandango';
             else if (idx === 0) label = 'Main Server';
-            else if (idx === 1) label = 'Backup Server';
+            else if (idx === 1) label = 'Server 2';
             else label = `Server ${idx + 1}`;
         }
 
@@ -141,7 +170,22 @@
         if (rawUrl.includes('shaka_player.html')) return rawUrl;
         if (rawUrl.startsWith('/api/embed') || rawUrl.includes('/api/embed')) return rawUrl;
         // Direct DASH stream with keys should use local static shaka_player with 0 Cloudflare requests
-        if (rawUrl.includes('.mpd') && (rawUrl.includes('kid=') || rawUrl.includes('key='))) {
+        if (rawUrl.includes('.mpd')) {
+            let kid = '';
+            let key = '';
+            try {
+                const u = new URL(rawUrl);
+                kid = u.searchParams.get('kid') || '';
+                key = u.searchParams.get('key') || '';
+            } catch (e) {
+                const mKid = rawUrl.match(/[?&]kid=([a-fA-F0-9]+)/i);
+                const mKey = rawUrl.match(/[?&]key=([a-fA-F0-9]+)/i);
+                if (mKid) kid = mKid[1];
+                if (mKey) key = mKey[1];
+            }
+            if (kid && key) {
+                return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}&kid=${encodeURIComponent(kid)}&key=${encodeURIComponent(key)}`;
+            }
             return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
         }
         if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
@@ -240,16 +284,32 @@
     }
 
     const STATIC_SPORT_GROUPS = {
-        'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN'],
-        'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB'],
-        'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST'],
-        'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING'],
-        'MOTORSPORTS': ['MOTORSPORTS', 'F1', 'MOTOGP', 'FORMULA', 'NASCAR', 'RALLY'],
-        'BASEBALL': ['BASEBALL', 'MLB'],
-        'BASKETBALL': ['BASKETBALL', 'NBA', 'NBL', 'EUROLEAGUE'],
-        'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL'],
-        'RUGBY': ['RUGBY', 'NRL', 'AFL']
+        'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN', 'MLS', 'CPL', 'CANADIAN PREMIER LEAGUE', 'EFL', 'CHAMPIONSHIP'],
+        'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB', 'NCAA FOOTBALL'],
+        'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST', 'BBL', 'PSL', 'THE HUNDRED', 'WCL', 'WORLD CHAMPIONSHIP OF LEGENDS'],
+        'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING', 'FIGHT', 'WWE', 'AEW', 'WRESTLING', 'BELLATOR', 'ONE FC', 'RIZIN', 'BKFC', 'JUDO', 'BJJ'],
+        'MOTORSPORTS': ['MOTORSPORTS', 'MOTORSPORT', 'F1', 'MOTOGP', 'FORMULA', 'FORMULA 1', 'NASCAR', 'RALLY', 'RACING', 'WORLDSBK', 'WORLDSSP', 'SUPERBIKE', 'INDYCAR', 'LE MANS'],
+        'BASEBALL': ['BASEBALL', 'MLB', 'NPB', 'KBO'],
+        'BASKETBALL': ['BASKETBALL', 'NBA', 'WNBA', 'NBL', 'EUROLEAGUE', 'NCAA BASKETBALL'],
+        'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL', 'KHL', 'SHL', 'IIHF'],
+        'RUGBY': ['RUGBY', 'NRL', 'AFL', 'AUSTRALIAN FOOTBALL', 'SUPER RUGBY', 'SIX NATIONS'],
+        'TENNIS': ['TENNIS', 'ATP', 'WTA', 'GRAND SLAM', 'WIMBLEDON', 'US OPEN', 'AUSTRALIAN OPEN', 'ROLAND GARROS', 'DAVIS CUP'],
+        'CYCLING': ['CYCLING', 'BMX', 'CYCLO-CROSS', 'TOUR DE FRANCE', 'GIRO', 'VUELTA'],
+        'SNOOKER': ['SNOOKER', 'POOL', 'DARTS'],
+        '24/7 STREAMS': ['24/7', 'CHANNELS', 'LIVE TV', 'STREAM']
     };
+
+    function normalizeSport(str) {
+        if (!str || typeof str !== 'string') return '';
+        const sUpper = str.trim().toUpperCase();
+        for (const [canonical, aliases] of Object.entries(STATIC_SPORT_GROUPS)) {
+            if (sUpper === canonical || sUpper.includes(canonical)) return canonical;
+            if (aliases.some(a => sUpper === a || sUpper.includes(a) || a.includes(sUpper))) {
+                return canonical;
+            }
+        }
+        return (typeof SPORT_MAPPINGS !== 'undefined' && SPORT_MAPPINGS[str.toLowerCase()]) ? SPORT_MAPPINGS[str.toLowerCase()] : sUpper;
+    }
 
     const GENERIC_TEAM_WORDS = new Set([
         'fc', 'cf', 'sc', 'cd', 'ud', 'sk', 'sv', 'rb', 'afc', 'ac', 'as', 'ss',
@@ -268,7 +328,26 @@
         'man utd': 'manchester united',
         'manchester utd': 'manchester united',
         'spurs': 'tottenham',
-        'wolves': 'wolverhampton'
+        'wolves': 'wolverhampton',
+        'bayern munchen': 'bayern munich',
+        'bayern muenchen': 'bayern munich',
+        'inter milan': 'internazionale',
+        'inter': 'internazionale',
+        'ac milan': 'milan',
+        'psg': 'paris saint germain',
+        'paris sg': 'paris saint germain',
+        'atletico': 'atletico madrid',
+        'real': 'real madrid',
+        'barca': 'barcelona',
+        'brighton': 'brighton hove albion',
+        'newcastle': 'newcastle united',
+        'sheffield': 'sheffield united',
+        'west ham': 'west ham united',
+        'la lakers': 'los angeles lakers',
+        'la clippers': 'los angeles clippers',
+        'gs warriors': 'golden state warriors',
+        'ny knicks': 'new york knicks',
+        'okc thunder': 'oklahoma city thunder'
     };
 
     function normalizeTeamName(str) {
@@ -308,28 +387,19 @@
         const aTitle = alpha.event_name || alpha.title || '';
 
         // Immediate direct clean string match
-        const cP = cleanMatchStr(pTitle).replace(/[^a-z0-9]/g, '');
-        const cA = cleanMatchStr(aTitle).replace(/[^a-z0-9]/g, '');
+        const cleanP = (pTitle.split(/[|\[]/)[0] || pTitle).trim();
+        const cleanA = (aTitle.split(/[|\[]/)[0] || aTitle).trim();
+        const cP = cleanMatchStr(cleanP).replace(/[^a-z0-9]/g, '');
+        const cA = cleanMatchStr(cleanA).replace(/[^a-z0-9]/g, '');
         if (cP && cA && cP === cA) return true;
+        if (cP.length >= 8 && cA.length >= 8 && (cP.includes(cA) || cA.includes(cP))) return true;
 
         // 1. Sport & Category compatibility check
-        const pSport = (ppv.sport || ppv.category || ppv.catName || '').toUpperCase();
-        const aCat = (alpha.category || alpha.league || '').toUpperCase();
+        const pSport = normalizeSport(ppv.sport || ppv.category || ppv.catName || ppv.league || '');
+        const aSport = normalizeSport(alpha.sport || alpha.category || alpha.league || '');
 
-        if (pSport && aCat) {
-            let compatible = false;
-            for (const group in STATIC_SPORT_GROUPS) {
-                const members = STATIC_SPORT_GROUPS[group];
-                const pInGroup = pSport.includes(group) || members.some(m => pSport.includes(m));
-                const aInGroup = aCat.includes(group) || members.some(m => aCat.includes(m));
-                if (pInGroup && aInGroup) {
-                    compatible = true;
-                    break;
-                }
-            }
-            if (!compatible && pSport !== 'OTHERS' && aCat !== 'OTHERS' && pSport !== aCat) {
-                return false;
-            }
+        if (pSport && aSport && pSport !== 'OTHERS' && aSport !== 'OTHERS' && pSport !== aSport) {
+            return false;
         }
 
         // 2. Start time proximity check (within 8 hours)
@@ -340,14 +410,19 @@
             if (diffHours > 8) return false;
         }
 
-        const pParts = pTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
-        const aParts = aTitle.split(/\s+(?:vs\.?|@|-)\s+/i);
+        const pParts = cleanP.split(/\s+(?:vs\.?|@|v\.?|-)\s+/i);
+        const aParts = cleanA.split(/\s+(?:vs\.?|@|v\.?|-)\s+/i);
 
-        const pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || (pParts.length >= 2 ? pParts[0] : '');
-        const pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || (pParts.length >= 2 ? pParts[1] : '');
+        let pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || (pParts.length >= 2 ? pParts[0] : '');
+        let pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || (pParts.length >= 2 ? pParts[1] : '');
 
-        const aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || (aParts.length >= 2 ? aParts[0] : '');
-        const aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || (aParts.length >= 2 ? aParts[1] : '');
+        let aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || (aParts.length >= 2 ? aParts[0] : '');
+        let aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || (aParts.length >= 2 ? aParts[1] : '');
+
+        pHome = (pHome.split(/[|\[]/)[0] || pHome).trim();
+        pAway = (pAway.split(/[|\[]/)[0] || pAway).trim();
+        aHome = (aHome.split(/[|\[]/)[0] || aHome).trim();
+        aAway = (aAway.split(/[|\[]/)[0] || aAway).trim();
 
         // If BOTH fixtures have opposing teams, BOTH TEAMS MUST MATCH!
         if (pHome && pAway && aHome && aAway) {
@@ -356,12 +431,12 @@
             const homeAway = matchTeams(pHome, aAway);
             const awayHome = matchTeams(pAway, aHome);
             if ((homeHome && awayAway) || (homeAway && awayHome)) return true;
-            // Prevent disparate matchups (e.g. Hartwick vs Alfred matching Miami OH) from false merging
             return false;
         }
 
         // Only for non-team single-entity events (Formula 1, MotoGP, UFC fight cards)
-        const isSingleEntity = pTitle.toLowerCase().includes('grand prix') || pTitle.toLowerCase().includes('race') || pTitle.toLowerCase().includes('ufc') || pTitle.toLowerCase().includes('prix');
+        const isSingleEntity = /grand\s*prix|qualifying|practice|race|ufc|bellator|fight\s*night|rally|motogp|nascar|marathon|tour\s*de/i.test(pTitle) ||
+                               /grand\s*prix|qualifying|practice|race|ufc|bellator|fight\s*night|rally|motogp|nascar|marathon|tour\s*de/i.test(aTitle);
         if (isSingleEntity) {
             const pToks = getDistinctiveTokens(pTitle);
             const aToks = getDistinctiveTokens(aTitle);
@@ -1456,26 +1531,33 @@
 
                         // Real-time update if user is currently viewing this match
                         if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
-                            const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                            const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[activeIdx];
+                            const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                            const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
+                            const wasUninitialized = !currentPlayingUrl || (baseServers.length === 0);
 
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
                             currentWatchItem._alphaResolved = true;
 
+                            let newActiveIdx = 0;
                             if (window.AryanPlayerEngine) {
                                 window.AryanPlayerEngine.currentStream = currentWatchItem;
-                                if (currentPlayingUrl) {
-                                    const newIdx = match.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
-                                    if (newIdx !== -1) {
-                                        window.AryanPlayerEngine.activeServerIdx = newIdx;
+                                if (currentPlayingUrl && !wasUninitialized) {
+                                    const matchIdx = match.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
+                                    if (matchIdx !== -1) {
+                                        newActiveIdx = matchIdx;
                                     }
+                                }
+                                window.AryanPlayerEngine.activeServerIdx = newActiveIdx;
+
+                                // If the player was empty or uninitialized, automatically start playing the primary broadcast feed!
+                                if (wasUninitialized && typeof window.AryanPlayerEngine.reloadPlayer === 'function') {
+                                    window.AryanPlayerEngine.reloadPlayer();
                                 }
                             }
 
                             if (typeof renderWatchSources === 'function') {
-                                const newActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                                 renderWatchSources(currentWatchItem, newActiveIdx);
                             }
                         }
@@ -1701,8 +1783,10 @@
                 s.sources.forEach((srcItem, sIdx) => {
                     if (srcItem && srcItem.source && srcItem.id) {
                         const embedUrl = `https://embed.st/embed/${srcItem.source}/${srcItem.id}/1`;
-                        const label = (srcItem.source || 'Server').toUpperCase();
-                        addServer(`Server ${servers.length + 1} [${label}]`, embedUrl);
+                        const rawSrc = String(srcItem.source || '').trim();
+                        const isInternal = INTERNAL_SERVER_NAMES.test(rawSrc) || /^(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner)$/i.test(rawSrc);
+                        const cleanLabel = isInternal ? (servers.length === 0 ? 'Main Server' : `Server ${servers.length + 1}`) : extractCleanServerLabel(rawSrc, embedUrl, servers.length);
+                        addServer(cleanLabel, embedUrl);
                     }
                 });
             }
@@ -1767,7 +1851,65 @@
             return this.normalizePPVMatch(raw);
         },
 
+        deduplicateMatchesList() {
+            if (!Array.isArray(this.matches) || this.matches.length === 0) return;
+            const unique = [];
+            const seenIds = new Set();
+            for (let i = 0; i < this.matches.length; i++) {
+                const m = this.matches[i];
+                if (!m) continue;
+                if (m.id && seenIds.has(m.id)) continue;
+
+                const dupIdx = unique.findIndex(u => {
+                    if (u.id === m.id) return true;
+                    if (u.rawId && m.rawId && String(u.rawId) === String(m.rawId)) return true;
+                    if (u.alphaStreamId && m.alphaStreamId && String(u.alphaStreamId) === String(m.alphaStreamId)) return true;
+                    return isSameMatch(u, m);
+                });
+
+                if (dupIdx !== -1) {
+                    const existing = unique[dupIdx];
+                    if (m.id) seenIds.add(m.id);
+                    if (m.rawId) seenIds.add(String(m.rawId));
+
+                    // Merge servers cleanly using canonical key deduplication
+                    const combinedServers = [...(existing.servers || []), ...(m.servers || [])];
+                    existing.servers = sanitizeMatchServers({ servers: combinedServers }).servers;
+                    existing.sources = existing.servers;
+
+                    // Link StreamCorner Alpha streams
+                    if (!existing.alphaStreamId && m.alphaStreamId) {
+                        existing.alphaStreamId = m.alphaStreamId;
+                        existing.alphaStreamType = m.alphaStreamType || 'alpha';
+                        existing.alphaItem = m.alphaItem;
+                        existing._alphaResolved = m._alphaResolved;
+                    }
+
+                    // Prefer authentic poster / logos
+                    if ((!existing.poster || existing.poster.includes('logo-icon.png')) && m.poster && !m.poster.includes('logo-icon.png')) {
+                        existing.poster = m.poster;
+                    }
+                    if ((!existing.team1 || !existing.team1.logo) && (m.team1 && m.team1.logo)) {
+                        existing.team1 = m.team1;
+                    }
+                    if ((!existing.team2 || !existing.team2.logo) && (m.team2 && m.team2.logo)) {
+                        existing.team2 = m.team2;
+                    }
+                    if (!existing.categoryLogo && m.categoryLogo) {
+                        existing.categoryLogo = m.categoryLogo;
+                    }
+                    if (m.isLive) existing.isLive = true;
+                } else {
+                    if (m.id) seenIds.add(m.id);
+                    if (m.rawId) seenIds.add(String(m.rawId));
+                    unique.push(m);
+                }
+            }
+            this.matches = unique;
+        },
+
         sortMatches() {
+            this.deduplicateMatchesList();
             this.matches.sort((a, b) => {
                 const aLive = a.isLive && !this.isExcludedFromLiveNow(a);
                 const bLive = b.isLive && !this.isExcludedFromLiveNow(b);

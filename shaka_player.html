@@ -340,7 +340,18 @@
             var activeKey = KEY;
             var activeCookie = COOKIE;
             var activeRawCookie = rawCookie(COOKIE);
-            var activeClearKeys = {};
+            if (activeMpd && (!activeKid || !activeKey)) {
+                try {
+                    var u = new URL(activeMpd);
+                    if (!activeKid) activeKid = u.searchParams.get('kid') || '';
+                    if (!activeKey) activeKey = u.searchParams.get('key') || '';
+                } catch(e) {
+                    var mKid = activeMpd.match(/[?&]kid=([a-fA-F0-9]+)/i);
+                    var mKey = activeMpd.match(/[?&]key=([a-fA-F0-9]+)/i);
+                    if (!activeKid && mKid) activeKid = mKid[1];
+                    if (!activeKey && mKey) activeKey = mKey[1];
+                }
+            }
 
             if (activeKid && activeKey) {
                 activeClearKeys[activeKid.toLowerCase()] = activeKey.toLowerCase();
