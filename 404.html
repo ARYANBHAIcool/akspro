@@ -344,7 +344,7 @@
     <script src="js/ads.js?v=1.1"></script>
     <script src="js/paramount-core.js?v=6.0"></script>
     <script src="js/player.js?v=5.0"></script>
-    <script src="js/api.js?v=6.0"></script>
+    <script src="js/api.js?v=6.1"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -964,18 +964,15 @@
             // Ensure StreamCorner Alpha broadcast channels are resolved immediately on first click
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
-                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId)) {
+                    if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId || (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => sc.id === item.alphaStreamId)))) {
                         currentWatchItem.servers = item.servers;
                         currentWatchItem.sources = item.servers;
                         currentWatchItem._alphaResolved = true;
 
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                        if (window.AryanPlayerEngine) {
-                            window.AryanPlayerEngine.currentStream = currentWatchItem;
-                            window.AryanPlayerEngine.activeServerIdx = activeIdx;
-                            window.AryanPlayerEngine.reloadPlayer();
+                        if (typeof renderWatchSources === 'function') {
+                            renderWatchSources(currentWatchItem, activeIdx);
                         }
-                        renderWatchSources(currentWatchItem, activeIdx);
                     }
                 }).catch(err => console.warn('ensureAlphaSources error:', err));
             }

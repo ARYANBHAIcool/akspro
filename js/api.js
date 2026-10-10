@@ -112,18 +112,42 @@
         }
 
         const lLower = label.toLowerCase();
-        if (lLower.includes('willow')) {
+        if (lLower.includes('tsn')) {
+            const num = label.match(/\b\d\b/);
+            label = num ? `TSN ${num[0]}` : 'TSN Sports';
+        } else if (lLower.includes('caze')) {
+            label = 'Cazé TV';
+        } else if (lLower.includes('willow')) {
             label = lLower.includes('alt') ? 'Willow Alt' : 'Willow Cricket';
         } else if (lLower.includes('bein')) {
-            label = 'beIN Sports';
+            if (lLower.includes('eng')) label = 'beIN Sports (English)';
+            else if (lLower.includes('esp') || lLower.includes('span')) label = 'beIN Sports (Spanish)';
+            else if (lLower.includes('fr')) label = 'beIN Sports (French)';
+            else if (lLower.includes('ar') && !lLower.includes('bar')) label = 'beIN Sports (Arabic)';
+            else if (lLower.includes('3') && lLower.includes('au')) label = 'beIN Sports 3 AU';
+            else if (lLower.includes('au')) label = 'beIN Sports AU';
+            else if (/\b\d\b/.test(label)) label = `beIN Sports ${label.match(/\b\d\b/)[0]}`;
+            else label = 'beIN Sports';
         } else if (lLower.includes('fox')) {
-            label = 'FOX Sports';
+            if (lLower.includes('1') || lLower.includes('fs1')) label = 'FS1';
+            else if (lLower.includes('2') || lLower.includes('fs2')) label = 'FS2';
+            else label = 'FOX Sports';
         } else if (lLower.includes('sky')) {
-            label = 'Sky Sports';
+            if (lLower.includes('main')) label = 'Sky Sports Main Event';
+            else if (lLower.includes('prem')) label = 'Sky Sports Premier League';
+            else if (lLower.includes('f1')) label = 'Sky Sports F1';
+            else if (lLower.includes('foot')) label = 'Sky Sports Football';
+            else if (lLower.includes('crick')) label = 'Sky Sports Cricket';
+            else label = 'Sky Sports';
         } else if (lLower.includes('tnt')) {
-            label = 'TNT Sports';
+            const num = label.match(/\b\d\b/);
+            label = num ? `TNT Sports ${num[0]}` : 'TNT Sports';
         } else if (lLower.includes('espn')) {
-            label = 'ESPN';
+            if (lLower.includes('2')) label = 'ESPN 2';
+            else if (lLower.includes('ar')) label = 'ESPN AR';
+            else if (lLower.includes('dep') || lLower.includes('span')) label = 'ESPN Deportes';
+            else if (lLower.includes('plus') || lLower.includes('+')) label = 'ESPN+';
+            else label = 'ESPN';
         } else if (lLower.includes('fancode')) {
             label = 'FanCode';
         } else if (lLower.includes('cbs')) {
@@ -131,11 +155,28 @@
         } else if (lLower.includes('paramount')) {
             label = 'Paramount+';
         } else if (lLower.includes('sportv')) {
-            label = 'SporTV';
+            const num = label.match(/\b\d\b/);
+            label = num ? `SporTV ${num[0]}` : 'SporTV';
         } else if (lLower.includes('star sports') || lLower.includes('star')) {
             label = lLower.includes('hin') ? 'Star Sports Hindi' : 'Star Sports';
-        } else if (lLower.includes('tve')) {
-            label = 'TVE';
+        } else if (lLower.includes('tve') || lLower.includes('la 1') || lLower.includes('la1')) {
+            label = 'TVE La 1';
+        } else if (lLower.includes('movistar')) {
+            label = 'Movistar+';
+        } else if (lLower.includes('dazn')) {
+            label = 'DAZN';
+        } else if (lLower.includes('optus')) {
+            label = 'Optus Sport';
+        } else if (lLower.includes('sony') || lLower.includes('ten')) {
+            label = 'Sony Sports';
+        } else if (lLower.includes('supersport')) {
+            label = 'SuperSport';
+        } else if (lLower.includes('canal')) {
+            label = 'Canal+';
+        } else if (lLower.includes('hotstar')) {
+            label = 'Hotstar';
+        } else if (lLower.includes('fandango')) {
+            label = 'Fandango';
         }
 
         const u = (rawUrl || '').toLowerCase();
@@ -143,6 +184,7 @@
             if (u.includes('willow')) label = u.includes('alt') ? 'Willow Alt' : 'Willow Cricket';
             else if (u.includes('sky')) label = 'Sky Sports';
             else if (u.includes('bein')) label = 'beIN Sports';
+            else if (u.includes('tsn')) label = 'TSN Sports';
             else if (u.includes('fox')) label = 'FOX Sports';
             else if (u.includes('espn')) label = 'ESPN';
             else if (u.includes('tnt')) label = 'TNT Sports';
@@ -1290,14 +1332,25 @@
                 this.alphaCatalog = combinedCatalog;
                 const matchedAlphaIds = new Set();
 
-                // 1. Link matching PPV matches with their Alpha / NBA counterparts
+                // 1. Link matching PPV matches with ALL their Alpha / NBA / Beta counterparts
                 for (const alpha of this.alphaCatalog) {
                     const matchedPPV = this.matches.find(m => isSameMatch(m, alpha));
                     if (matchedPPV) {
                         matchedAlphaIds.add(alpha.stream_id);
-                        matchedPPV.alphaStreamId = alpha.stream_id;
-                        matchedPPV.alphaStreamType = alpha.stream_type || 'alpha';
-                        matchedPPV.alphaItem = alpha;
+                        matchedPPV.streamCornerSources = matchedPPV.streamCornerSources || [];
+                        if (!matchedPPV.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
+                            matchedPPV.streamCornerSources.push({
+                                id: alpha.stream_id,
+                                type: alpha.stream_type || 'alpha',
+                                item: alpha
+                            });
+                        }
+                        // Set primary alphaStreamId (preferring 'alpha' feed if available, otherwise first)
+                        if (!matchedPPV.alphaStreamId || alpha.stream_type === 'alpha') {
+                            matchedPPV.alphaStreamId = alpha.stream_id;
+                            matchedPPV.alphaStreamType = alpha.stream_type || 'alpha';
+                            matchedPPV.alphaItem = alpha;
+                        }
                         if (alpha.home_team_logo && (!matchedPPV.team1 || !matchedPPV.team1.logo || matchedPPV.team1.logo.includes('logo-icon.png'))) {
                             matchedPPV.team1 = { name: alpha.home_team || (matchedPPV.team1 && matchedPPV.team1.name) || '', logo: sanitizeLogoUrl(alpha.home_team_logo) };
                         }
@@ -1314,12 +1367,38 @@
                 let addedIndependent = false;
                 for (const alpha of this.alphaCatalog) {
                     if (!matchedAlphaIds.has(alpha.stream_id)) {
-                        const exists = this.matches.some(m => m.alphaStreamId === alpha.stream_id || m.id === `alpha-${alpha.stream_id}` || isSameMatch(m, alpha));
-                        if (!exists) {
+                        const existingMatch = this.matches.find(m => 
+                            (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
+                            m.alphaStreamId === alpha.stream_id ||
+                            m.id === `alpha-${alpha.stream_id}` ||
+                            isSameMatch(m, alpha)
+                        );
+                        if (existingMatch) {
+                            matchedAlphaIds.add(alpha.stream_id);
+                            existingMatch.streamCornerSources = existingMatch.streamCornerSources || [];
+                            if (!existingMatch.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
+                                existingMatch.streamCornerSources.push({
+                                    id: alpha.stream_id,
+                                    type: alpha.stream_type || 'alpha',
+                                    item: alpha
+                                });
+                            }
+                            if (!existingMatch.alphaStreamId || alpha.stream_type === 'alpha') {
+                                existingMatch.alphaStreamId = alpha.stream_id;
+                                existingMatch.alphaStreamType = alpha.stream_type || 'alpha';
+                                existingMatch.alphaItem = alpha;
+                            }
+                        } else {
                             const newMatch = this.normalizeAlphaMatch(alpha);
                             if (newMatch) {
+                                newMatch.streamCornerSources = [{
+                                    id: alpha.stream_id,
+                                    type: alpha.stream_type || 'alpha',
+                                    item: alpha
+                                }];
                                 this.matches.push(newMatch);
                                 addedIndependent = true;
+                                matchedAlphaIds.add(alpha.stream_id);
                             }
                         }
                     }
@@ -1386,18 +1465,29 @@
                 } catch (e) {}
             }
 
-            // 2. If match does not have alphaStreamId yet, try to pair with alphaCatalog now
-            if (!match.alphaStreamId && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                const matchedAlpha = this.alphaCatalog.find(a => isSameMatch(match, a));
-                if (matchedAlpha) {
-                    match.alphaStreamId = matchedAlpha.stream_id;
-                    match.alphaStreamType = matchedAlpha.stream_type || 'alpha';
-                    match.alphaItem = matchedAlpha;
-                }
+            // 2. Discover and link ALL matching items in alphaCatalog (both Alpha, Beta, and NBA)
+            match.streamCornerSources = match.streamCornerSources || [];
+            if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                this.alphaCatalog.forEach(a => {
+                    if (isSameMatch(match, a)) {
+                        if (!match.streamCornerSources.some(sc => sc.id === a.stream_id)) {
+                            match.streamCornerSources.push({
+                                id: a.stream_id,
+                                type: a.stream_type || 'alpha',
+                                item: a
+                            });
+                        }
+                        if (!match.alphaStreamId || a.stream_type === 'alpha') {
+                            match.alphaStreamId = a.stream_id;
+                            match.alphaStreamType = a.stream_type || 'alpha';
+                            match.alphaItem = a;
+                        }
+                    }
+                });
             }
 
-            // 3. If alphaStreamId is present, resolve extra broadcaster channels
-            if (match.alphaStreamId) {
+            // 3. Resolve extra broadcaster channels across all streamCornerSources
+            if (match.streamCornerSources.length > 0 || match.alphaStreamId) {
                 return await this.resolveAlphaSourcesForMatch(match);
             }
 
@@ -1405,70 +1495,118 @@
         },
 
         /**
-         * Resolve extra broadcast channels for a match from StreamCorner Alpha
-         * e.g. Fox Sports, TNT Sports, Sky Sports, Fancode, Apple TV, Willow, etc.
+         * Resolve extra broadcast channels for a match from StreamCorner Alpha/Beta/NBA feeds
+         * e.g. Fox Sports, TNT Sports, Sky Sports, Fancode, TSN, Caze TV, beIN Sports, etc.
          */
         async resolveAlphaSourcesForMatch(match) {
-            if (!match || !match.alphaStreamId) return false;
+            if (!match) return false;
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
 
             match._alphaPromise = (async () => {
                 try {
-                    let pType = match.alphaStreamType || (match.alphaItem && match.alphaItem.stream_type);
-                    if (!pType && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                        const foundInCat = this.alphaCatalog.find(a => a.stream_id === match.alphaStreamId);
-                        if (foundInCat) {
-                            pType = foundInCat.stream_type;
-                            match.alphaStreamType = pType;
-                            if (!match.alphaItem) match.alphaItem = foundInCat;
-                        }
+                    // Gather all distinct StreamCorner targets to query
+                    const targets = [];
+                    const seenTargetIds = new Set();
+                    const addTarget = (id, type, item) => {
+                        if (!id || seenTargetIds.has(id)) return;
+                        seenTargetIds.add(id);
+                        targets.push({
+                            id: id,
+                            type: type || (item && item.stream_type) || 'alpha',
+                            item: item
+                        });
+                    };
+
+                    if (Array.isArray(match.streamCornerSources)) {
+                        match.streamCornerSources.forEach(sc => addTarget(sc.id, sc.type, sc.item));
                     }
-                    if (!pType) {
-                        if (/^00\d+/.test(String(match.alphaStreamId)) || match.sport === 'BASKETBALL') {
-                            pType = 'nba';
-                        } else {
-                            pType = 'alpha';
-                        }
+                    if (match.alphaStreamId) {
+                        addTarget(match.alphaStreamId, match.alphaStreamType, match.alphaItem);
+                    }
+                    if (Array.isArray(this.alphaCatalog)) {
+                        this.alphaCatalog.forEach(a => {
+                            if (a && a.stream_id && isSameMatch(match, a)) {
+                                addTarget(a.stream_id, a.stream_type, a);
+                            }
+                        });
                     }
 
-                    let detail = null;
+                    if (targets.length === 0) return false;
+
                     const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                    for (let i = 0; i < candidateWorkers.length; i += 4) {
-                        const batch = candidateWorkers.slice(i, i + 4);
-                        try {
-                            const batchPromises = batch.map(worker => {
-                                return new Promise((resolve, reject) => {
-                                    const timer = setTimeout(() => reject(new Error('timeout')), 4500);
-                                    window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${match.alphaStreamId}`, false, match.title || 'alpha detail')
-                                        .then(res => {
-                                            clearTimeout(timer);
-                                            const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
-                                            if (hasStreams) resolve(res);
-                                            else reject(new Error('empty'));
-                                        })
-                                        .catch(err => {
-                                            clearTimeout(timer);
-                                            reject(err);
-                                        });
+
+                    const fetchTarget = async (t) => {
+                        let pType = t.type || 'alpha';
+                        if (t.id && String(t.id).startsWith('GRNT')) {
+                            pType = 'beta';
+                        } else if (!pType) {
+                            if (/^00\d+/.test(String(t.id)) || match.sport === 'BASKETBALL') {
+                                pType = 'nba';
+                            } else {
+                                pType = 'alpha';
+                            }
+                        }
+                        for (let i = 0; i < candidateWorkers.length; i += 4) {
+                            const batch = candidateWorkers.slice(i, i + 4);
+                            try {
+                                const batchPromises = batch.map(worker => {
+                                    return new Promise((resolve, reject) => {
+                                        const timer = setTimeout(() => reject(new Error('timeout')), 4500);
+                                        window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${t.id}`, false, match.title || 'corner detail')
+                                            .then(res => {
+                                                clearTimeout(timer);
+                                                const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
+                                                if (hasStreams) resolve(res);
+                                                else reject(new Error('empty'));
+                                            })
+                                            .catch(err => {
+                                                clearTimeout(timer);
+                                                reject(err);
+                                            });
+                                    });
                                 });
+                                const res = await Promise.any(batchPromises);
+                                if (res) return res;
+                            } catch (e) {}
+                        }
+
+                        // Seamless fallback: if primary pType returned empty, retry with alternate cluster
+                        const altType = (pType === 'alpha') ? 'beta' : (pType === 'beta' ? 'alpha' : null);
+                        if (altType) {
+                            for (let i = 0; i < Math.min(candidateWorkers.length, 4); i++) {
+                                try {
+                                    const worker = candidateWorkers[i];
+                                    const res = await window.StreamCornerCore.t(`https://${worker}/corner?p=${altType}&id=${t.id}`, false, match.title || 'corner detail');
+                                    const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
+                                    if (hasStreams) return res;
+                                } catch (e) {}
+                            }
+                        }
+
+                        return null;
+                    };
+
+                    const results = await Promise.allSettled(targets.map(fetchTarget));
+
+                    let rawStreams = [];
+                    const seenRawUrls = new Set();
+                    results.forEach(r => {
+                        if (r.status === 'fulfilled' && r.value) {
+                            const d = r.value;
+                            const list = Array.isArray(d.streams) ? d.streams : (Array.isArray(d.live) ? d.live : []);
+                            list.forEach(s => {
+                                const u = (s.embed_url || s.stream_url || '').trim();
+                                if (u && !seenRawUrls.has(u)) {
+                                    seenRawUrls.add(u);
+                                    rawStreams.push(s);
+                                }
                             });
-                            detail = await Promise.any(batchPromises);
-                            const hasStreams = detail && ((Array.isArray(detail.streams) && detail.streams.length > 0) || (Array.isArray(detail.live) && detail.live.length > 0));
-                            if (hasStreams) break;
-                        } catch (err) {}
-                    }
+                        }
+                    });
 
-                    // Fallback to alternate endpoint if detail not found
-                    if (!detail && pType === 'alpha' && (match.sport === 'BASKETBALL' || /^00\d+/.test(String(match.alphaStreamId)))) {
-                        try {
-                            const fallbackWorker = candidateWorkers[0];
-                            detail = await window.StreamCornerCore.t(`https://${fallbackWorker}/corner?p=nba&id=${match.alphaStreamId}`, false, match.title || 'nba fallback');
-                        } catch (e) {}
-                    }
-
-                    if (!detail && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
+                    if (rawStreams.length === 0 && typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
                         this._hasAttemptedAutoHeal = true;
                         const healed = await this.reloadLatestStreamCornerCore();
                         if (healed) {
@@ -1476,9 +1614,7 @@
                         }
                     }
 
-                    const rawStreams = detail ? (Array.isArray(detail.streams) ? detail.streams : (Array.isArray(detail.live) ? detail.live : [])) : [];
-
-                    if (detail && rawStreams.length > 0) {
+                    if (rawStreams.length > 0) {
                         // 1. Keep base PPV servers, filtering out any stray or duplicate channels
                         const baseServers = (match.servers || []).filter(s => {
                             const u = s.url || '';
@@ -1530,7 +1666,7 @@
                         match._alphaResolved = true;
 
                         // Real-time update if user is currently viewing this match
-                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId)) {
+                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId || (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => seenTargetIds.has(sc.id))))) {
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                             const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
@@ -1543,17 +1679,18 @@
                             let newActiveIdx = 0;
                             if (window.AryanPlayerEngine) {
                                 window.AryanPlayerEngine.currentStream = currentWatchItem;
-                                if (currentPlayingUrl && !wasUninitialized) {
+                                if (window.AryanPlayerEngine.activeServerIdx === 0 || wasUninitialized) {
+                                    newActiveIdx = 0;
+                                    window.AryanPlayerEngine.activeServerIdx = 0;
+                                    if (typeof window.AryanPlayerEngine.reloadPlayer === 'function') {
+                                        window.AryanPlayerEngine.reloadPlayer();
+                                    }
+                                } else if (currentPlayingUrl) {
                                     const matchIdx = match.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
                                     if (matchIdx !== -1) {
                                         newActiveIdx = matchIdx;
+                                        window.AryanPlayerEngine.activeServerIdx = newActiveIdx;
                                     }
-                                }
-                                window.AryanPlayerEngine.activeServerIdx = newActiveIdx;
-
-                                // If the player was empty or uninitialized, automatically start playing the primary broadcast feed!
-                                if (wasUninitialized && typeof window.AryanPlayerEngine.reloadPlayer === 'function') {
-                                    window.AryanPlayerEngine.reloadPlayer();
                                 }
                             }
 
@@ -1564,14 +1701,13 @@
 
                         // Persist enriched servers into localStorage cache so repeat visits have 0ms latency
                         try {
-                            const CACHE_KEY = 'aryan_cached_matches_v35';
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+                            const CACHE_KEY = `sc_enriched_${match.alphaStreamId || match.id}`;
+                            localStorage.setItem(CACHE_KEY, JSON.stringify({ servers: match.servers, ts: Date.now() }));
                         } catch (e) {}
 
                         return true;
                     }
 
-                    // On failure or empty details, leave _alphaResolved as false to allow retry
                     return false;
                 } catch (err) {
                     console.warn('Resolve Alpha sources failed:', match.title, err);
@@ -1877,13 +2013,37 @@
                     existing.servers = sanitizeMatchServers({ servers: combinedServers }).servers;
                     existing.sources = existing.servers;
 
-                    // Link StreamCorner Alpha streams
-                    if (!existing.alphaStreamId && m.alphaStreamId) {
-                        existing.alphaStreamId = m.alphaStreamId;
-                        existing.alphaStreamType = m.alphaStreamType || 'alpha';
-                        existing.alphaItem = m.alphaItem;
-                        existing._alphaResolved = m._alphaResolved;
+                    // Link all StreamCorner streams
+                    existing.streamCornerSources = existing.streamCornerSources || [];
+                    if (existing.alphaStreamId && !existing.streamCornerSources.some(sc => sc.id === existing.alphaStreamId)) {
+                        existing.streamCornerSources.push({
+                            id: existing.alphaStreamId,
+                            type: existing.alphaStreamType || 'alpha',
+                            item: existing.alphaItem
+                        });
                     }
+                    if (Array.isArray(m.streamCornerSources)) {
+                        m.streamCornerSources.forEach(sc => {
+                            if (!existing.streamCornerSources.some(s => s.id === sc.id)) {
+                                existing.streamCornerSources.push(sc);
+                            }
+                        });
+                    } else if (m.alphaStreamId) {
+                        if (!existing.streamCornerSources.some(s => s.id === m.alphaStreamId)) {
+                            existing.streamCornerSources.push({
+                                id: m.alphaStreamId,
+                                type: m.alphaStreamType || 'alpha',
+                                item: m.alphaItem
+                            });
+                        }
+                    }
+
+                    if (!existing.alphaStreamId || (m.alphaStreamType === 'alpha' && existing.alphaStreamType !== 'alpha')) {
+                        existing.alphaStreamId = m.alphaStreamId || existing.alphaStreamId;
+                        existing.alphaStreamType = m.alphaStreamType || existing.alphaStreamType || 'alpha';
+                        existing.alphaItem = m.alphaItem || existing.alphaItem;
+                    }
+                    existing._alphaResolved = existing._alphaResolved || m._alphaResolved;
 
                     // Prefer authentic poster / logos
                     if ((!existing.poster || existing.poster.includes('logo-icon.png')) && m.poster && !m.poster.includes('logo-icon.png')) {
@@ -2038,6 +2198,22 @@
                 if (KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId]) {
                     found.alphaStreamId = KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId];
                 }
+            }
+
+            // 6. Fast-load cached enriched servers for 0ms initial click latency
+            if (found && !found._alphaResolved) {
+                try {
+                    const cacheKey = `sc_enriched_${found.alphaStreamId || found.id}`;
+                    const raw = localStorage.getItem(cacheKey);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        if (parsed && Array.isArray(parsed.servers) && parsed.servers.length > 0 && (Date.now() - parsed.ts < 1800000)) {
+                            found.servers = parsed.servers;
+                            found.sources = parsed.servers;
+                            found._alphaResolved = true;
+                        }
+                    }
+                } catch (e) {}
             }
 
             return found
