@@ -61,7 +61,7 @@ window.AryanPlayerEngine = {
         let rawUrl = '';
 
         if (typeof serverOrUrl === 'object' && serverOrUrl !== null) {
-            if (serverOrUrl.url && (serverOrUrl.url.includes('shaka_player.html') || serverOrUrl.url.startsWith('/api/embed'))) {
+            if (serverOrUrl.url && serverOrUrl.url.includes('shaka_player.html')) {
                 return serverOrUrl.url;
             }
             rawUrl = serverOrUrl.rawUrl || serverOrUrl.url || '';

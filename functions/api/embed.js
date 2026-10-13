@@ -49,8 +49,8 @@ export async function onRequest(context) {
 
         const upstreamHeaders = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-            'Referer': isStreamCorner ? 'https://streamcorner.foo/' : `${parsedTarget.origin}/`,
-            'Origin': isStreamCorner ? 'https://streamcorner.foo' : parsedTarget.origin,
+            'Referer': isStreamCorner ? 'https://streamcorner.st/' : `${parsedTarget.origin}/`,
+            'Origin': isStreamCorner ? 'https://streamcorner.st' : parsedTarget.origin,
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9'
         };
@@ -133,12 +133,27 @@ export async function onRequest(context) {
         var vids = document.querySelectorAll('video');
         for (var i = 0; i < vids.length; i++) {
             var v = vids[i];
-            if (v.muted) v.muted = false;
-            if (v.volume === 0) v.volume = 1.0;
+            if (!v.paused && v.currentTime > 0) {
+                if (v.muted) v.muted = false;
+                if (v.volume === 0) v.volume = 1.0;
+            }
         }
         var mutedElements = document.querySelectorAll('.bmpui-ui-volumetogglebutton.bmpui-muted, button.bmpui-muted, .op-volume--muted');
         for (var j = 0; j < mutedElements.length; j++) {
             mutedElements[j].classList.remove('bmpui-muted', 'op-volume--muted');
+        }
+    }
+
+    function ensurePlayback(v) {
+        if (!v) return;
+        if (v.paused && v.readyState >= 2) {
+            var playPromise = v.play();
+            if (playPromise !== undefined) {
+                playPromise.catch(function() {
+                    v.muted = true;
+                    v.play().catch(function() {});
+                });
+            }
         }
     }
 
@@ -174,9 +189,9 @@ export async function onRequest(context) {
         var vids = document.querySelectorAll('video');
         for (var i = 0; i < vids.length; i++) {
             var v = vids[i];
+            ensurePlayback(v);
             if (!v.paused || v.currentTime > 0 || v.readyState >= 2) {
                 hideStreamLoadingOverlay();
-                syncAndUnmuteAudio();
                 break;
             }
         }

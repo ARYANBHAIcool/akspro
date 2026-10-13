@@ -133,15 +133,37 @@
             else if (lLower.includes('2') || lLower.includes('fs2')) label = 'FS2';
             else label = 'FOX Sports';
         } else if (lLower.includes('sky')) {
-            if (lLower.includes('main')) label = 'Sky Sports Main Event';
-            else if (lLower.includes('prem')) label = 'Sky Sports Premier League';
-            else if (lLower.includes('f1')) label = 'Sky Sports F1';
-            else if (lLower.includes('foot')) label = 'Sky Sports Football';
-            else if (lLower.includes('crick')) label = 'Sky Sports Cricket';
-            else label = 'Sky Sports';
+            const itNum = label.match(/25\d/);
+            if (itNum) {
+                label = `Sky Sport ${itNum[0]} (Italy)`;
+            } else if (lLower.includes('calcio')) {
+                label = 'Sky Sport Calcio (Italy)';
+            } else if (lLower.includes('arena')) {
+                label = 'Sky Sport Arena (Italy)';
+            } else if (lLower.includes('main')) {
+                label = 'Sky Sports Main Event';
+            } else if (lLower.includes('prem')) {
+                label = 'Sky Sports Premier League';
+            } else if (lLower.includes('f1')) {
+                label = 'Sky Sports F1';
+            } else if (lLower.includes('foot')) {
+                label = 'Sky Sports Football';
+            } else if (lLower.includes('crick')) {
+                label = 'Sky Sports Cricket';
+            } else if (lLower.includes('it') || lLower.includes('ital')) {
+                label = 'Sky Sport (Italy)';
+            } else {
+                label = 'Sky Sports';
+            }
         } else if (lLower.includes('tnt')) {
             const num = label.match(/\b\d\b/);
-            label = num ? `TNT Sports ${num[0]}` : 'TNT Sports';
+            const feed = label.match(/feed\s*(\d+)/i);
+            const base = num ? `TNT Sports ${num[0]}` : 'TNT Sports';
+            label = feed ? `${base} (Feed ${feed[1]})` : base;
+        } else if (lLower.includes('vix')) {
+            label = 'VIX Español';
+        } else if (lLower.includes('champions league') || lLower.includes('ucl')) {
+            label = 'Champions League (English)';
         } else if (lLower.includes('espn')) {
             if (lLower.includes('2')) label = 'ESPN 2';
             else if (lLower.includes('ar')) label = 'ESPN AR';
@@ -153,7 +175,8 @@
         } else if (lLower.includes('cbs')) {
             label = 'CBS Sports';
         } else if (lLower.includes('paramount')) {
-            label = 'Paramount+';
+            const num = label.match(/\b\d\b/);
+            label = num ? `Paramount+ ${num[0]}` : 'Paramount+';
         } else if (lLower.includes('sportv')) {
             const num = label.match(/\b\d\b/);
             label = num ? `SporTV ${num[0]}` : 'SporTV';
@@ -320,6 +343,19 @@
             s.name = label;
         });
 
+        // Disambiguate duplicate names (e.g. multiple Paramount+, TNT Sports, etc.)
+        const nameCounts = {};
+        clean.forEach(s => {
+            nameCounts[s.name] = (nameCounts[s.name] || 0) + 1;
+        });
+        const nameCurrent = {};
+        clean.forEach(s => {
+            if (nameCounts[s.name] > 1) {
+                nameCurrent[s.name] = (nameCurrent[s.name] || 0) + 1;
+                s.name = `${s.name} ${nameCurrent[s.name]}`;
+            }
+        });
+
         match.servers = clean;
         match.sources = clean;
         return match;
@@ -355,6 +391,7 @@
 
     const GENERIC_TEAM_WORDS = new Set([
         'fc', 'cf', 'sc', 'cd', 'ud', 'sk', 'sv', 'rb', 'afc', 'ac', 'as', 'ss',
+        'fk', 'rc', 'cp', 'fem', 'feminine', 'feminin', 'damen',
         'united', 'city', 'town', 'county', 'club', 'athletic', 'athletics',
         'state', 'tech', 'st', 'univ', 'university', 'college',
         'women', 'womens', 'men', 'mens', 'u17', 'u18', 'u19', 'u20', 'u21', 'u23', 'reserves',
@@ -367,6 +404,14 @@
     const TEAM_ALIASES = {
         'czech republic': 'czechia',
         'czech': 'czechia',
+        'praha': 'prague',
+        'slavia praha': 'slavia prague',
+        'sporting cp': 'sporting',
+        'sporting lisbon': 'sporting',
+        'rc lens': 'lens',
+        'sabah fk': 'sabah',
+        'wien': 'vienna',
+        'austria wien': 'austria vienna',
         'man utd': 'manchester united',
         'manchester utd': 'manchester united',
         'spurs': 'tottenham',
@@ -452,8 +497,8 @@
             if (diffHours > 8) return false;
         }
 
-        const pParts = cleanP.split(/\s+(?:vs\.?|@|v\.?|-)\s+/i);
-        const aParts = cleanA.split(/\s+(?:vs\.?|@|v\.?|-)\s+/i);
+        const pParts = cleanP.split(/\s+(?:vs\.?|@|v\.?|-|x)\s+/i);
+        const aParts = cleanA.split(/\s+(?:vs\.?|@|v\.?|-|x)\s+/i);
 
         let pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || (pParts.length >= 2 ? pParts[0] : '');
         let pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || (pParts.length >= 2 ? pParts[1] : '');
@@ -892,39 +937,37 @@
                     }
 
                     if (newMatches.length > 0) {
-                        // Also preserve any independent Alpha fixtures that were added or are in alphaCatalog
+                        // Also preserve any independent StreamCorner fixtures that were added or are in alphaCatalog
                         if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                            const newMatchesByAlphaId = new Map();
-                            for (let i = 0; i < newMatches.length; i++) {
-                                if (newMatches[i].alphaStreamId) {
-                                    newMatchesByAlphaId.set(newMatches[i].alphaStreamId, newMatches[i]);
-                                }
-                            }
                             for (const alpha of this.alphaCatalog) {
-                                if (newMatchesByAlphaId.has(alpha.stream_id)) continue;
-                                const isMatched = newMatches.some(m => {
-                                    const aCat = (alpha.category || alpha.league || '').toUpperCase();
-                                    if (m.sport && aCat && m.sport !== 'OTHERS' && aCat !== 'OTHERS' && m.sport !== aCat) {
-                                        let comp = false;
-                                        for (const group in STATIC_SPORT_GROUPS) {
-                                            const members = STATIC_SPORT_GROUPS[group];
-                                            if ((m.sport.includes(group) || members.some(x => m.sport.includes(x))) &&
-                                                (aCat.includes(group) || members.some(x => aCat.includes(x)))) {
-                                                comp = true;
-                                                break;
-                                            }
-                                        }
-                                        if (!comp) return false;
+                                const matched = newMatches.find(m => 
+                                    (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
+                                    m.alphaStreamId === alpha.stream_id ||
+                                    isSameMatch(m, alpha)
+                                );
+                                if (matched) {
+                                    matched.streamCornerSources = matched.streamCornerSources || [];
+                                    if (!matched.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
+                                        matched.streamCornerSources.push({
+                                            id: alpha.stream_id,
+                                            type: alpha.stream_type || 'alpha',
+                                            item: alpha
+                                        });
                                     }
-                                    return isSameMatch(m, alpha);
-                                });
-                                if (!isMatched) {
-                                    const existingIndependent = this.matches.find(m => m.alphaStreamId === alpha.stream_id || isSameMatch(m, alpha));
-                                    if (existingIndependent) {
-                                        newMatches.push(existingIndependent);
-                                    } else {
-                                        const normAlpha = this.normalizeAlphaMatch(alpha);
-                                        if (normAlpha) newMatches.push(normAlpha);
+                                    if (!matched.alphaStreamId || alpha.stream_type === 'alpha' || alpha.stream_type === 'admin') {
+                                        matched.alphaStreamId = alpha.stream_id;
+                                        matched.alphaStreamType = alpha.stream_type || 'alpha';
+                                        matched.alphaItem = alpha;
+                                    }
+                                } else {
+                                    const normAlpha = this.normalizeAlphaMatch(alpha);
+                                    if (normAlpha) {
+                                        normAlpha.streamCornerSources = [{
+                                            id: alpha.stream_id,
+                                            type: alpha.stream_type || 'alpha',
+                                            item: alpha
+                                        }];
+                                        newMatches.push(normAlpha);
                                     }
                                 }
                             }
@@ -1270,17 +1313,27 @@
                     return [];
                 };
 
-                const [alphaRes, nbaRes, betaRes] = await Promise.allSettled([
+                const [alphaRes, adminRes, betaRes, nbaRes, ex3Res, ex4Res, cfRes, bbRes] = await Promise.allSettled([
                     fetchEndpoint('alpha'),
+                    fetchEndpoint('admin'),
+                    fetchEndpoint('beta'),
                     fetchEndpoint('nba'),
-                    fetchEndpoint('beta')
+                    fetchEndpoint('extra003'),
+                    fetchEndpoint('extra004'),
+                    fetchEndpoint('001'),
+                    fetchEndpoint('003')
                 ]);
 
                 const rawAlpha = (alphaRes.status === 'fulfilled' && Array.isArray(alphaRes.value)) ? alphaRes.value : [];
-                const rawNba = (nbaRes.status === 'fulfilled' && Array.isArray(nbaRes.value)) ? nbaRes.value : [];
+                const rawAdmin = (adminRes.status === 'fulfilled' && Array.isArray(adminRes.value)) ? adminRes.value : [];
                 const rawBeta = (betaRes.status === 'fulfilled' && Array.isArray(betaRes.value)) ? betaRes.value : [];
+                const rawNba = (nbaRes.status === 'fulfilled' && Array.isArray(nbaRes.value)) ? nbaRes.value : [];
+                const rawEx3 = (ex3Res.status === 'fulfilled' && Array.isArray(ex3Res.value)) ? ex3Res.value : [];
+                const rawEx4 = (ex4Res.status === 'fulfilled' && Array.isArray(ex4Res.value)) ? ex4Res.value : [];
+                const rawCf = (cfRes.status === 'fulfilled' && Array.isArray(cfRes.value)) ? cfRes.value : [];
+                const rawBb = (bbRes.status === 'fulfilled' && Array.isArray(bbRes.value)) ? bbRes.value : [];
 
-                if (rawAlpha.length === 0 && rawNba.length === 0 && rawBeta.length === 0) {
+                if (rawAlpha.length === 0 && rawAdmin.length === 0 && rawBeta.length === 0 && rawNba.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
                         this._hasAttemptedAutoHeal = true;
                         console.warn('StreamCorner catalog returned empty/error. Auto-healing core engine from edge...');
@@ -1310,19 +1363,17 @@
                     away_score: g.away_score
                 }));
 
-                const normAlpha = rawAlpha.map(a => ({
-                    ...a,
-                    stream_type: a.stream_type || 'alpha'
-                }));
-
-                const normBeta = rawBeta.map(b => ({
-                    ...b,
-                    stream_type: b.stream_type || 'beta'
-                }));
+                const normAlpha = rawAlpha.map(a => ({ ...a, stream_type: a.stream_type || 'alpha' }));
+                const normAdmin = rawAdmin.map(a => ({ ...a, stream_type: a.stream_type || 'admin' }));
+                const normBeta = rawBeta.map(b => ({ ...b, stream_type: b.stream_type || 'beta' }));
+                const normEx3 = rawEx3.map(a => ({ ...a, stream_type: a.stream_type || 'extra003' }));
+                const normEx4 = rawEx4.map(a => ({ ...a, stream_type: a.stream_type || 'extra004' }));
+                const normCf = rawCf.map(a => ({ ...a, stream_type: a.stream_type || '001' }));
+                const normBb = rawBb.map(a => ({ ...a, stream_type: a.stream_type || '003' }));
 
                 const seenStreamIds = new Set();
                 const combinedCatalog = [];
-                for (const item of [...normAlpha, ...normNba, ...normBeta]) {
+                for (const item of [...normAlpha, ...normAdmin, ...normBeta, ...normNba, ...normEx3, ...normEx4, ...normCf, ...normBb]) {
                     if (item && item.stream_id && !seenStreamIds.has(item.stream_id)) {
                         seenStreamIds.add(item.stream_id);
                         combinedCatalog.push(item);
@@ -1331,75 +1382,52 @@
 
                 this.alphaCatalog = combinedCatalog;
                 const matchedAlphaIds = new Set();
+                let addedIndependent = false;
 
-                // 1. Link matching PPV matches with ALL their Alpha / NBA / Beta counterparts
+                // Merge and pair all catalog items into single match cards
                 for (const alpha of this.alphaCatalog) {
-                    const matchedPPV = this.matches.find(m => isSameMatch(m, alpha));
-                    if (matchedPPV) {
+                    let matchedMatch = this.matches.find(m => 
+                        (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
+                        m.alphaStreamId === alpha.stream_id ||
+                        m.id === `alpha-${alpha.stream_id}` ||
+                        isSameMatch(m, alpha)
+                    );
+                    if (matchedMatch) {
                         matchedAlphaIds.add(alpha.stream_id);
-                        matchedPPV.streamCornerSources = matchedPPV.streamCornerSources || [];
-                        if (!matchedPPV.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
-                            matchedPPV.streamCornerSources.push({
+                        matchedMatch.streamCornerSources = matchedMatch.streamCornerSources || [];
+                        if (!matchedMatch.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
+                            matchedMatch.streamCornerSources.push({
                                 id: alpha.stream_id,
                                 type: alpha.stream_type || 'alpha',
                                 item: alpha
                             });
                         }
-                        // Set primary alphaStreamId (preferring 'alpha' feed if available, otherwise first)
-                        if (!matchedPPV.alphaStreamId || alpha.stream_type === 'alpha') {
-                            matchedPPV.alphaStreamId = alpha.stream_id;
-                            matchedPPV.alphaStreamType = alpha.stream_type || 'alpha';
-                            matchedPPV.alphaItem = alpha;
+                        // Prioritize primary alphaStreamId
+                        if (!matchedMatch.alphaStreamId || alpha.stream_type === 'alpha' || alpha.stream_type === 'admin') {
+                            matchedMatch.alphaStreamId = alpha.stream_id;
+                            matchedMatch.alphaStreamType = alpha.stream_type || 'alpha';
+                            matchedMatch.alphaItem = alpha;
                         }
-                        if (alpha.home_team_logo && (!matchedPPV.team1 || !matchedPPV.team1.logo || matchedPPV.team1.logo.includes('logo-icon.png'))) {
-                            matchedPPV.team1 = { name: alpha.home_team || (matchedPPV.team1 && matchedPPV.team1.name) || '', logo: sanitizeLogoUrl(alpha.home_team_logo) };
+                        if (alpha.home_team_logo && (!matchedMatch.team1 || !matchedMatch.team1.logo || matchedMatch.team1.logo.includes('logo-icon.png'))) {
+                            matchedMatch.team1 = { name: alpha.home_team || (matchedMatch.team1 && matchedMatch.team1.name) || '', logo: sanitizeLogoUrl(alpha.home_team_logo) };
                         }
-                        if (alpha.away_team_logo && (!matchedPPV.team2 || !matchedPPV.team2.logo || matchedPPV.team2.logo.includes('logo-icon.png'))) {
-                            matchedPPV.team2 = { name: alpha.away_team || (matchedPPV.team2 && matchedPPV.team2.name) || '', logo: sanitizeLogoUrl(alpha.away_team_logo) };
+                        if (alpha.away_team_logo && (!matchedMatch.team2 || !matchedMatch.team2.logo || matchedMatch.team2.logo.includes('logo-icon.png'))) {
+                            matchedMatch.team2 = { name: alpha.away_team || (matchedMatch.team2 && matchedMatch.team2.name) || '', logo: sanitizeLogoUrl(alpha.away_team_logo) };
                         }
-                        if (alpha.poster && (!matchedPPV.poster || matchedPPV.poster.includes('logo-icon.png'))) {
-                            matchedPPV.poster = sanitizePosterUrl(alpha.poster);
+                        if (alpha.poster && (!matchedMatch.poster || matchedMatch.poster.includes('logo-icon.png'))) {
+                            matchedMatch.poster = sanitizePosterUrl(alpha.poster);
                         }
-                    }
-                }
-
-                // 2. Introduce independent / exclusive StreamCorner Alpha/NBA fixtures (e.g. CPL, UFC, Formula 1, MotoGP, NBA games)
-                let addedIndependent = false;
-                for (const alpha of this.alphaCatalog) {
-                    if (!matchedAlphaIds.has(alpha.stream_id)) {
-                        const existingMatch = this.matches.find(m => 
-                            (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
-                            m.alphaStreamId === alpha.stream_id ||
-                            m.id === `alpha-${alpha.stream_id}` ||
-                            isSameMatch(m, alpha)
-                        );
-                        if (existingMatch) {
+                    } else {
+                        const newMatch = this.normalizeAlphaMatch(alpha);
+                        if (newMatch) {
+                            newMatch.streamCornerSources = [{
+                                id: alpha.stream_id,
+                                type: alpha.stream_type || 'alpha',
+                                item: alpha
+                            }];
+                            this.matches.push(newMatch);
+                            addedIndependent = true;
                             matchedAlphaIds.add(alpha.stream_id);
-                            existingMatch.streamCornerSources = existingMatch.streamCornerSources || [];
-                            if (!existingMatch.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
-                                existingMatch.streamCornerSources.push({
-                                    id: alpha.stream_id,
-                                    type: alpha.stream_type || 'alpha',
-                                    item: alpha
-                                });
-                            }
-                            if (!existingMatch.alphaStreamId || alpha.stream_type === 'alpha') {
-                                existingMatch.alphaStreamId = alpha.stream_id;
-                                existingMatch.alphaStreamType = alpha.stream_type || 'alpha';
-                                existingMatch.alphaItem = alpha;
-                            }
-                        } else {
-                            const newMatch = this.normalizeAlphaMatch(alpha);
-                            if (newMatch) {
-                                newMatch.streamCornerSources = [{
-                                    id: alpha.stream_id,
-                                    type: alpha.stream_type || 'alpha',
-                                    item: alpha
-                                }];
-                                this.matches.push(newMatch);
-                                addedIndependent = true;
-                                matchedAlphaIds.add(alpha.stream_id);
-                            }
                         }
                     }
                 }
@@ -1572,10 +1600,10 @@
                             } catch (e) {}
                         }
 
-                        // Seamless fallback: if primary pType returned empty, retry with alternate cluster
-                        const altType = (pType === 'alpha') ? 'beta' : (pType === 'beta' ? 'alpha' : null);
-                        if (altType) {
-                            for (let i = 0; i < Math.min(candidateWorkers.length, 4); i++) {
+                        // Seamless fallback: if primary pType returned empty, retry with alternate clusters
+                        const altClusters = ['admin', 'alpha', 'beta', 'extra003'].filter(c => c !== pType);
+                        for (const altType of altClusters) {
+                            for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
                                 try {
                                     const worker = candidateWorkers[i];
                                     const res = await window.StreamCornerCore.t(`https://${worker}/corner?p=${altType}&id=${t.id}`, false, match.title || 'corner detail');

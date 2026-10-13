@@ -342,9 +342,9 @@
 
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=1.1"></script>
-    <script src="js/paramount-core.js?v=6.0"></script>
-    <script src="js/player.js?v=5.0"></script>
-    <script src="js/api.js?v=6.1"></script>
+    <script src="js/paramount-core.js?v=6.2"></script>
+    <script src="js/player.js?v=6.2"></script>
+    <script src="js/api.js?v=6.2"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -702,7 +702,7 @@
                         : rawPoster
                 );
                 return `
-                    <div class="w-36 sm:w-44 h-full relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
+                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
                         <img src="${posterSrc}" 
                              class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 brightness-95" 
                              alt="${m.title}" 
@@ -723,7 +723,7 @@
             let t1Name = (m.team1 && m.team1.name) || '';
             let t2Name = (m.team2 && m.team2.name) || '';
             if (!t1Name && !t2Name && m.title) {
-                const parts = m.title.split(/\s+(?:vs\.?|@|-)\s+/i);
+                const parts = m.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
                 if (parts.length >= 2) {
                     t1Name = parts[0].trim();
                     t2Name = parts[1].trim();
@@ -746,7 +746,7 @@
                     : `<span class="w-full h-full text-[10px] font-black text-red-400 flex items-center justify-center uppercase tracking-wider">${t2Init}</span>`;
 
                 return `
-                    <div class="w-36 sm:w-44 h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center px-2 py-1">
+                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center px-2 py-1">
                         <div class="absolute inset-0 bg-gradient-to-r from-blue-500/10 via-transparent to-red-500/10 pointer-events-none"></div>
                         <div class="relative z-10 flex items-center justify-around w-full gap-1.5">
                             <div class="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-[#111a2e] border border-gray-700/60 p-1 flex items-center justify-center shadow-md flex-shrink-0 relative overflow-hidden">
@@ -765,12 +765,12 @@
             let singleLogo = resolveCardLogo(m.categoryLogo || (m.team1 && m.team1.logo) || (m.team2 && m.team2.logo));
             if (singleLogo) {
                 return `
-                    <div class="w-36 sm:w-44 h-full relative overflow-hidden flex-shrink-0 bg-[#070c16] flex items-center justify-center p-3">
+                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#070c16] flex items-center justify-center p-3">
                         <img src="${singleLogo}" 
                              class="max-w-[70%] max-h-[70%] object-contain drop-shadow group-hover:scale-105 transition-transform duration-300" 
                              alt="${m.title}" 
                              loading="lazy" 
-                             onerror="this.onerror=null; this.src='assets/img/logo-icon.png'; this.className='w-full h-full object-contain p-4 opacity-40';">
+                             onerror="this.style.display='none';">
                     </div>
                 `;
             }
@@ -806,7 +806,7 @@
             }
 
             return `
-                <div class="w-36 sm:w-44 h-full relative overflow-hidden flex-shrink-0 bg-gradient-to-br ${sportColor} flex flex-col items-center justify-center p-2 border-r border-gray-800/40">
+                <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-gradient-to-br ${sportColor} flex flex-col items-center justify-center p-2 border-r border-gray-800/40">
                     <span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">${sportIcon}</span>
                     <span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] opacity-90">${m.league || m.sport || 'Sports'}</span>
                 </div>
@@ -972,6 +972,11 @@
                         const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                         if (typeof renderWatchSources === 'function') {
                             renderWatchSources(currentWatchItem, activeIdx);
+                        }
+                        if (window.AryanPlayerEngine && (!window.AryanPlayerEngine.getServers().length || activeIdx === 0)) {
+                            window.AryanPlayerEngine.currentStream = currentWatchItem;
+                            window.AryanPlayerEngine.activeServerIdx = activeIdx;
+                            window.AryanPlayerEngine.reloadPlayer();
                         }
                     }
                 }).catch(err => console.warn('ensureAlphaSources error:', err));
