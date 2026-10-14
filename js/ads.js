@@ -76,11 +76,9 @@
             this.clickCount++;
 
             try {
-                // Open direct link in a new tab
+                // Open direct link in a new tab smoothly without freezing browser thread
                 const adWin = window.open(this.DIRECT_LINK, '_blank');
                 if (adWin) {
-                    try { adWin.blur(); } catch (e) {}
-                    try { window.focus(); } catch (e) {}
                     console.log(`[AryanAds] Smartlink opened (${source}). Total clicks: ${this.clickCount}`);
                     return true;
                 } else {
@@ -100,6 +98,21 @@
                 console.warn('[AryanAds] Direct link trigger exception:', err);
             }
             return false;
+        },
+
+        /**
+         * Dynamically load Popunder script in a controlled manner without blocking UI clicks
+         */
+        _popunderLoaded: false,
+        loadPopunder() {
+            if (this._popunderLoaded || typeof document === 'undefined') return;
+            this._popunderLoaded = true;
+            try {
+                const s = document.createElement('script');
+                s.setAttribute('data-cfasync', 'false');
+                s.src = 'https://capitalhospitals.org/1/ec8caf215d92bd77dfa766d702a1ec0f';
+                document.body.appendChild(s);
+            } catch (e) {}
         },
 
         /**
@@ -144,6 +157,7 @@
 
                 // Trigger direct link ad synchronously once on play
                 this.trigger('player_play', true);
+                this.loadPopunder();
 
                 // Unmute and play native video if HLS
                 const videoEl = document.getElementById('global-video-element');

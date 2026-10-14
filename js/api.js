@@ -638,8 +638,8 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v35';
-            // 1. Explicitly purge any bloated legacy caches (v1 through v32) dynamically
+            const CACHE_KEY = 'aryan_cached_matches_v36';
+            // 1. Explicitly purge any bloated legacy caches (v1 through v35) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
                     const k = localStorage.key(i);
@@ -649,7 +649,7 @@
                 }
             } catch (e) {}
 
-            // 2. Immediately hydrate from localStorage cache so fixtures appear with 0ms delay on reload/back
+            // 2. Immediately hydrate from fresh localStorage cache so fixtures appear with 0ms delay on reload/back
             try {
                 const cached = localStorage.getItem(CACHE_KEY);
                 if (cached) {
@@ -657,15 +657,25 @@
                     if (Array.isArray(parsed) && parsed.length > 0) {
                         const now = Date.now();
                         this.matches = parsed.filter(m => {
-                            if (m.isAlwaysLive || m.always_live === 1 || !m.endTime) return true;
-                            return now <= (m.endTime + 900000);
+                            if (!m || !m.title) return false;
+                            if (m.isAlwaysLive || m.always_live === 1 || m.sport === '24/7 STREAMS' || m.rawCategory === '24/7-streams' || m.tag === '24/7 channel' || m.tag === '24/7 streams') return false;
+                            if (m.title.toLowerCase().includes('family guy')) return false;
+                            // Expire games that started > 4 hours ago or ended > 15 minutes ago
+                            if (m.endTime && now > (m.endTime + 900000)) return false;
+                            if (m.startTime && now > (m.startTime + 14400000)) return false;
+                            // Must have valid startTime
+                            if (!m.startTime || m.startTime <= 0) return false;
+                            return true;
                         }).map(m => {
                             if (m.poster) m.poster = sanitizePosterUrl(m.poster);
+                            m.isLive = Boolean(m.startTime && m.startTime <= now && (!m.endTime || now <= m.endTime) && !this.isExcludedFromLiveNow(m));
                             return sanitizeMatchServers(m);
                         });
-                        this.isLoading = false;
-                        this.sortMatches();
-                        this.emitUpdate();
+                        if (this.matches.length > 0) {
+                            this.isLoading = false;
+                            this.sortMatches();
+                            this.emitUpdate();
+                        }
                     }
                 }
             } catch (e) {}
@@ -678,7 +688,7 @@
             // 1. Launch Alpha feed aggregation in parallel
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
-            // 2. Load PPV feeds, Alpha feeds, and channels in parallel
+            // 2. Load PPV feeds, Alpha feeds, and channels concurrently
             await Promise.allSettled([
                 this.loadPPVFeeds(),
                 this._alphaLoadingPromise,
@@ -724,12 +734,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v35';
-            if (this._alphaLoadingPromise) {
-                try {
-                    await this._alphaLoadingPromise;
-                } catch (e) {}
-            }
+            const CACHE_KEY = 'aryan_cached_matches_v36';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -939,13 +944,47 @@
                     if (newMatches.length > 0) {
                         // Also preserve any independent StreamCorner fixtures that were added or are in alphaCatalog
                         if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                            const ppvById = new Map();
+                            const ppvByTok = new Map();
+                            for (const m of newMatches) {
+                                if (m.id) ppvById.set(m.id, m);
+                                if (m.rawId) ppvById.set(String(m.rawId), m);
+                                if (m.alphaStreamId) ppvById.set(m.alphaStreamId, m);
+                                if (Array.isArray(m.streamCornerSources)) {
+                                    for (const sc of m.streamCornerSources) {
+                                        if (sc && sc.id) ppvById.set(sc.id, m);
+                                    }
+                                }
+                                const toks = getDistinctiveTokens(m.title || '');
+                                for (const t of toks) {
+                                    let l = ppvByTok.get(t);
+                                    if (!l) { l = []; ppvByTok.set(t, l); }
+                                    l.push(m);
+                                }
+                            }
+
                             for (const alpha of this.alphaCatalog) {
-                                const matched = newMatches.find(m => 
-                                    (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
-                                    m.alphaStreamId === alpha.stream_id ||
-                                    isSameMatch(m, alpha)
-                                );
+                                if (!alpha || !alpha.stream_id) continue;
+                                let matched = ppvById.get(alpha.stream_id) || ppvById.get(`alpha-${alpha.stream_id}`);
+                                if (!matched) {
+                                    const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
+                                    const aToks = getDistinctiveTokens(aTitle);
+                                    if (aToks.length >= 2) {
+                                        const cands = new Set();
+                                        for (const t of aToks) {
+                                            const l = ppvByTok.get(t);
+                                            if (l) { for (const c of l) cands.add(c); }
+                                        }
+                                        for (const c of cands) {
+                                            if (isSameMatch(c, alpha)) {
+                                                matched = c;
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
                                 if (matched) {
+                                    ppvById.set(alpha.stream_id, matched);
                                     matched.streamCornerSources = matched.streamCornerSources || [];
                                     if (!matched.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
                                         matched.streamCornerSources.push({
@@ -968,6 +1007,14 @@
                                             item: alpha
                                         }];
                                         newMatches.push(normAlpha);
+                                        ppvById.set(alpha.stream_id, normAlpha);
+                                        ppvById.set(normAlpha.id, normAlpha);
+                                        const nToks = getDistinctiveTokens(normAlpha.title || '');
+                                        for (const t of nToks) {
+                                            let l = ppvByTok.get(t);
+                                            if (!l) { l = []; ppvByTok.set(t, l); }
+                                            l.push(normAlpha);
+                                        }
                                     }
                                 }
                             }
@@ -1384,16 +1431,53 @@
                 const matchedAlphaIds = new Set();
                 let addedIndependent = false;
 
+                // Build fast lookup index for this.matches
+                const matchById = new Map();
+                const matchByTok = new Map();
+                for (const m of this.matches) {
+                    if (!m) continue;
+                    if (m.id) matchById.set(m.id, m);
+                    if (m.rawId) matchById.set(String(m.rawId), m);
+                    if (m.alphaStreamId) matchById.set(m.alphaStreamId, m);
+                    if (Array.isArray(m.streamCornerSources)) {
+                        for (const sc of m.streamCornerSources) {
+                            if (sc && sc.id) matchById.set(sc.id, m);
+                        }
+                    }
+                    const toks = getDistinctiveTokens(m.title || '');
+                    for (const t of toks) {
+                        let l = matchByTok.get(t);
+                        if (!l) { l = []; matchByTok.set(t, l); }
+                        l.push(m);
+                    }
+                }
+
                 // Merge and pair all catalog items into single match cards
                 for (const alpha of this.alphaCatalog) {
-                    let matchedMatch = this.matches.find(m => 
-                        (m.streamCornerSources && m.streamCornerSources.some(sc => sc.id === alpha.stream_id)) ||
-                        m.alphaStreamId === alpha.stream_id ||
-                        m.id === `alpha-${alpha.stream_id}` ||
-                        isSameMatch(m, alpha)
-                    );
+                    if (!alpha || !alpha.stream_id) continue;
+                    let matchedMatch = matchById.get(alpha.stream_id) || matchById.get(`alpha-${alpha.stream_id}`);
+                    if (!matchedMatch) {
+                        const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
+                        const aToks = getDistinctiveTokens(aTitle);
+                        if (aToks.length >= 2) {
+                            const candidates = new Set();
+                            for (const t of aToks) {
+                                const list = matchByTok.get(t);
+                                if (list) {
+                                    for (const c of list) candidates.add(c);
+                                }
+                            }
+                            for (const cand of candidates) {
+                                if (isSameMatch(cand, alpha)) {
+                                    matchedMatch = cand;
+                                    break;
+                                }
+                            }
+                        }
+                    }
                     if (matchedMatch) {
                         matchedAlphaIds.add(alpha.stream_id);
+                        matchById.set(alpha.stream_id, matchedMatch);
                         matchedMatch.streamCornerSources = matchedMatch.streamCornerSources || [];
                         if (!matchedMatch.streamCornerSources.some(sc => sc.id === alpha.stream_id)) {
                             matchedMatch.streamCornerSources.push({
@@ -1428,6 +1512,14 @@
                             this.matches.push(newMatch);
                             addedIndependent = true;
                             matchedAlphaIds.add(alpha.stream_id);
+                            matchById.set(alpha.stream_id, newMatch);
+                            matchById.set(newMatch.id, newMatch);
+                            const nToks = getDistinctiveTokens(newMatch.title || '');
+                            for (const t of nToks) {
+                                let l = matchByTok.get(t);
+                                if (!l) { l = []; matchByTok.set(t, l); }
+                                l.push(newMatch);
+                            }
                         }
                     }
                 }
@@ -1437,7 +1529,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v35';
+                        const CACHE_KEY = 'aryan_cached_matches_v36';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
@@ -1493,11 +1585,12 @@
                 } catch (e) {}
             }
 
-            // 2. Discover and link ALL matching items in alphaCatalog (both Alpha, Beta, and NBA)
+            // 2. Discover and link matching items in alphaCatalog only if not already paired
             match.streamCornerSources = match.streamCornerSources || [];
-            if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                this.alphaCatalog.forEach(a => {
-                    if (isSameMatch(match, a)) {
+            if (match.streamCornerSources.length === 0 && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                for (const a of this.alphaCatalog) {
+                    if (!a || !a.stream_id) continue;
+                    if (a.stream_id === match.alphaStreamId || isSameMatch(match, a)) {
                         if (!match.streamCornerSources.some(sc => sc.id === a.stream_id)) {
                             match.streamCornerSources.push({
                                 id: a.stream_id,
@@ -1505,13 +1598,13 @@
                                 item: a
                             });
                         }
-                        if (!match.alphaStreamId || a.stream_type === 'alpha') {
+                        if (!match.alphaStreamId || a.stream_type === 'alpha' || a.stream_type === 'admin') {
                             match.alphaStreamId = a.stream_id;
                             match.alphaStreamType = a.stream_type || 'alpha';
                             match.alphaItem = a;
                         }
                     }
-                });
+                }
             }
 
             // 3. Resolve extra broadcaster channels across all streamCornerSources
@@ -1552,13 +1645,6 @@
                     }
                     if (match.alphaStreamId) {
                         addTarget(match.alphaStreamId, match.alphaStreamType, match.alphaItem);
-                    }
-                    if (Array.isArray(this.alphaCatalog)) {
-                        this.alphaCatalog.forEach(a => {
-                            if (a && a.stream_id && isSameMatch(match, a)) {
-                                addTarget(a.stream_id, a.stream_type, a);
-                            }
-                        });
                     }
 
                     if (targets.length === 0) return false;
@@ -1803,33 +1889,77 @@
             return await this.autoResolveAllAlphaSources();
         },
 
+        parseTimeET(str) {
+            if (!str || typeof str !== 'string') return 0;
+            const s = str.trim();
+            if (s.toUpperCase().includes('LIVE')) return Date.now();
+            const m = s.match(/(\d{1,2})\/(\d{1,2})\/(\d{2,4})\s+(\d{1,2}):(\d{2})\s*(AM|PM)?\s*(?:ET|EDT|EST)?/i);
+            if (m) {
+                let [_, month, day, year, hour, min, ampm] = m;
+                if (year.length === 2) year = '20' + year;
+                let h = parseInt(hour, 10);
+                if (ampm) {
+                    if (ampm.toUpperCase() === 'PM' && h < 12) h += 12;
+                    if (ampm.toUpperCase() === 'AM' && h === 12) h = 0;
+                }
+                const iso = `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}T${String(h).padStart(2, '0')}:${min.padStart(2, '0')}:00-04:00`;
+                const ts = new Date(iso).getTime();
+                return isNaN(ts) ? 0 : ts;
+            }
+            return 0;
+        },
+
         /**
          * Normalize a fixture item from StreamCorner Alpha feeds
          * For independent fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
          */
         normalizeAlphaMatch(alpha) {
-            const rawTitle = (alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || alpha.away_team) || 'Live Event').trim();
-            const startTs = alpha.timestamp ? (alpha.timestamp * 1000) : (alpha.time_utc ? (new Date(alpha.time_utc + ' UTC').getTime() || 0) : 0);
-            const endTs = startTs ? startTs + 10800000 : 0;
-            const now = Date.now();
+            if (!alpha) return null;
+
+            const catUpper = (alpha.category || '').toUpperCase();
+            const rawTitle = (alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || alpha.away_team) || '').trim();
+            const titleLower = rawTitle.toLowerCase();
+
+            // Strictly reject non-sports 24/7 linear channels or entertainment loops (e.g. Family Guy, South Park)
+            if (catUpper.includes('24/7') || titleLower.includes('family guy') || titleLower.includes('south park')) {
+                return null;
+            }
 
             // Discard Alpha/NBA matches that have already ended (ended more than 15 minutes ago or marked Final)
             if (alpha.time && alpha.time.toLowerCase() === 'final') {
                 return null;
             }
+
+            let startTs = alpha.timestamp ? (alpha.timestamp * 1000) : 0;
+            if (!startTs && alpha.time_utc) {
+                startTs = new Date(alpha.time_utc + ' UTC').getTime() || 0;
+            }
+            if (!startTs && alpha.time_et) {
+                startTs = this.parseTimeET(alpha.time_et);
+            }
+            if (!startTs && alpha.start_time) {
+                startTs = new Date(alpha.start_time).getTime() || 0;
+            }
+
+            const now = Date.now();
+            const endTs = (alpha.end_time ? new Date(alpha.end_time).getTime() : 0) || (startTs ? startTs + 10800000 : 0);
+
+            // Filter out finished / expired matches
             if (endTs > 0 && now > (endTs + 900000)) {
                 return null;
             }
 
-            const isLive = Boolean((alpha.time && (alpha.time.toLowerCase().includes('qtr') || alpha.time.toLowerCase().includes('half'))) ||
-                           (startTs > 0 && now >= (startTs - 900000) && now <= endTs));
+            const timeStr = (alpha.time || alpha.time_et || '').toLowerCase();
+            const isExplicitLive = Boolean(timeStr.includes('qtr') || timeStr.includes('half') || timeStr.includes('live') || timeStr.includes('1st') || timeStr.includes('2nd') || timeStr.includes('3rd') || timeStr.includes('4th') || timeStr.includes('ot') || timeStr.includes('set '));
+            const isTimeLive = Boolean(startTs > 0 && now >= (startTs - 900000) && (!endTs || now <= endTs));
+            const isLive = Boolean(isExplicitLive || isTimeLive);
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
             const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[league.toLowerCase()] || (alpha.category ? alpha.category.toUpperCase() : 'OTHERS');
 
-            const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ /i)[0] || rawTitle;
-            const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ /i)[1] || '';
+            const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ | x /i)[0] || rawTitle;
+            const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ | x /i)[1] || '';
 
             return {
                 id: `alpha-${alpha.stream_id}`,
@@ -2019,46 +2149,70 @@
             if (!Array.isArray(this.matches) || this.matches.length === 0) return;
             const unique = [];
             const seenIds = new Set();
+            const tokenMap = new Map();
+
             for (let i = 0; i < this.matches.length; i++) {
                 const m = this.matches[i];
                 if (!m) continue;
                 if (m.id && seenIds.has(m.id)) continue;
 
-                const dupIdx = unique.findIndex(u => {
-                    if (u.id === m.id) return true;
-                    if (u.rawId && m.rawId && String(u.rawId) === String(m.rawId)) return true;
-                    if (u.alphaStreamId && m.alphaStreamId && String(u.alphaStreamId) === String(m.alphaStreamId)) return true;
-                    return isSameMatch(u, m);
-                });
+                let dup = null;
 
-                if (dupIdx !== -1) {
-                    const existing = unique[dupIdx];
+                // 1. Direct ID / Stream ID match
+                if (m.rawId && seenIds.has(String(m.rawId))) {
+                    dup = unique.find(u => u.rawId && String(u.rawId) === String(m.rawId));
+                } else if (m.alphaStreamId && seenIds.has(m.alphaStreamId)) {
+                    dup = unique.find(u => u.alphaStreamId && u.alphaStreamId === m.alphaStreamId);
+                }
+
+                // 2. Distinctive token index lookup
+                if (!dup) {
+                    const mToks = getDistinctiveTokens(m.title || '');
+                    if (mToks.length >= 2) {
+                        const candidates = new Set();
+                        for (const t of mToks) {
+                            const list = tokenMap.get(t);
+                            if (list) {
+                                for (const cand of list) candidates.add(cand);
+                            }
+                        }
+                        for (const cand of candidates) {
+                            if (isSameMatch(cand, m)) {
+                                dup = cand;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                if (dup) {
                     if (m.id) seenIds.add(m.id);
                     if (m.rawId) seenIds.add(String(m.rawId));
+                    if (m.alphaStreamId) seenIds.add(m.alphaStreamId);
 
                     // Merge servers cleanly using canonical key deduplication
-                    const combinedServers = [...(existing.servers || []), ...(m.servers || [])];
-                    existing.servers = sanitizeMatchServers({ servers: combinedServers }).servers;
-                    existing.sources = existing.servers;
+                    const combinedServers = [...(dup.servers || []), ...(m.servers || [])];
+                    dup.servers = sanitizeMatchServers({ servers: combinedServers }).servers;
+                    dup.sources = dup.servers;
 
                     // Link all StreamCorner streams
-                    existing.streamCornerSources = existing.streamCornerSources || [];
-                    if (existing.alphaStreamId && !existing.streamCornerSources.some(sc => sc.id === existing.alphaStreamId)) {
-                        existing.streamCornerSources.push({
-                            id: existing.alphaStreamId,
-                            type: existing.alphaStreamType || 'alpha',
-                            item: existing.alphaItem
+                    dup.streamCornerSources = dup.streamCornerSources || [];
+                    if (dup.alphaStreamId && !dup.streamCornerSources.some(sc => sc.id === dup.alphaStreamId)) {
+                        dup.streamCornerSources.push({
+                            id: dup.alphaStreamId,
+                            type: dup.alphaStreamType || 'alpha',
+                            item: dup.alphaItem
                         });
                     }
                     if (Array.isArray(m.streamCornerSources)) {
                         m.streamCornerSources.forEach(sc => {
-                            if (!existing.streamCornerSources.some(s => s.id === sc.id)) {
-                                existing.streamCornerSources.push(sc);
+                            if (!dup.streamCornerSources.some(s => s.id === sc.id)) {
+                                dup.streamCornerSources.push(sc);
                             }
                         });
                     } else if (m.alphaStreamId) {
-                        if (!existing.streamCornerSources.some(s => s.id === m.alphaStreamId)) {
-                            existing.streamCornerSources.push({
+                        if (!dup.streamCornerSources.some(s => s.id === m.alphaStreamId)) {
+                            dup.streamCornerSources.push({
                                 id: m.alphaStreamId,
                                 type: m.alphaStreamType || 'alpha',
                                 item: m.alphaItem
@@ -2066,34 +2220,70 @@
                         }
                     }
 
-                    if (!existing.alphaStreamId || (m.alphaStreamType === 'alpha' && existing.alphaStreamType !== 'alpha')) {
-                        existing.alphaStreamId = m.alphaStreamId || existing.alphaStreamId;
-                        existing.alphaStreamType = m.alphaStreamType || existing.alphaStreamType || 'alpha';
-                        existing.alphaItem = m.alphaItem || existing.alphaItem;
+                    if (!dup.alphaStreamId || (m.alphaStreamType === 'alpha' && dup.alphaStreamType !== 'alpha')) {
+                        dup.alphaStreamId = m.alphaStreamId || dup.alphaStreamId;
+                        dup.alphaStreamType = m.alphaStreamType || dup.alphaStreamType || 'alpha';
+                        dup.alphaItem = m.alphaItem || dup.alphaItem;
                     }
-                    existing._alphaResolved = existing._alphaResolved || m._alphaResolved;
+                    dup._alphaResolved = dup._alphaResolved || m._alphaResolved;
 
                     // Prefer authentic poster / logos
-                    if ((!existing.poster || existing.poster.includes('logo-icon.png')) && m.poster && !m.poster.includes('logo-icon.png')) {
-                        existing.poster = m.poster;
+                    if ((!dup.poster || dup.poster.includes('logo-icon.png')) && m.poster && !m.poster.includes('logo-icon.png')) {
+                        dup.poster = m.poster;
                     }
-                    if ((!existing.team1 || !existing.team1.logo) && (m.team1 && m.team1.logo)) {
-                        existing.team1 = m.team1;
+                    if ((!dup.team1 || !dup.team1.logo) && (m.team1 && m.team1.logo)) {
+                        dup.team1 = m.team1;
                     }
-                    if ((!existing.team2 || !existing.team2.logo) && (m.team2 && m.team2.logo)) {
-                        existing.team2 = m.team2;
+                    if ((!dup.team2 || !dup.team2.logo) && (m.team2 && m.team2.logo)) {
+                        dup.team2 = m.team2;
                     }
-                    if (!existing.categoryLogo && m.categoryLogo) {
-                        existing.categoryLogo = m.categoryLogo;
+                    if (!dup.categoryLogo && m.categoryLogo) {
+                        dup.categoryLogo = m.categoryLogo;
                     }
-                    if (m.isLive) existing.isLive = true;
+                    if (m.isLive) dup.isLive = true;
                 } else {
                     if (m.id) seenIds.add(m.id);
                     if (m.rawId) seenIds.add(String(m.rawId));
+                    if (m.alphaStreamId) seenIds.add(m.alphaStreamId);
                     unique.push(m);
+
+                    const toks = getDistinctiveTokens(m.title || '');
+                    for (const t of toks) {
+                        let l = tokenMap.get(t);
+                        if (!l) { l = []; tokenMap.set(t, l); }
+                        l.push(m);
+                    }
                 }
             }
             this.matches = unique;
+        },
+
+        rebuildMatchIndex() {
+            const map = new Map();
+            for (const m of this.matches) {
+                if (!m) continue;
+                if (m.id) map.set(m.id, m);
+                if (m.rawId) {
+                    const rawStr = String(m.rawId);
+                    map.set(rawStr, m);
+                    map.set(`ppv-${rawStr}`, m);
+                    map.set(`dami-${rawStr}`, m);
+                    map.set(`alpha-${rawStr}`, m);
+                }
+                if (m.alphaStreamId) {
+                    map.set(m.alphaStreamId, m);
+                    map.set(`alpha-${m.alphaStreamId}`, m);
+                }
+                if (Array.isArray(m.streamCornerSources)) {
+                    for (const sc of m.streamCornerSources) {
+                        if (sc && sc.id) {
+                            map.set(sc.id, m);
+                            map.set(`alpha-${sc.id}`, m);
+                        }
+                    }
+                }
+            }
+            this._matchById = map;
         },
 
         sortMatches() {
@@ -2104,20 +2294,24 @@
                 // Live matches always on top
                 if (aLive && !bLive) return -1;
                 if (!aLive && bLive) return 1;
-                // Then chronological by start time
-                return (a.startTime || 0) - (b.startTime || 0);
+                // Upcoming fixtures sorted chronologically; non-timestamped items go to bottom (Infinity)
+                const aTime = (a.startTime && a.startTime > 0) ? a.startTime : Infinity;
+                const bTime = (b.startTime && b.startTime > 0) ? b.startTime : Infinity;
+                return aTime - bTime;
             });
+            this.rebuildMatchIndex();
         },
 
         updateLiveStatuses() {
             const now = Date.now();
-            // Strictly remove matches that ended more than 15 minutes ago
+            // Strictly remove matches that ended more than 15 minutes ago or started > 4h ago
             this.matches = this.matches.filter(m => {
                 if (m.isAlwaysLive || m.always_live === 1 || !m.endTime) return true;
+                if (m.startTime && now > (m.startTime + 14400000)) return false;
                 return now <= (m.endTime + 900000);
             });
             this.matches.forEach(m => {
-                if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams' || !m.startTime) {
+                if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams' || !m.startTime || this.isExcludedFromLiveNow(m)) {
                     m.isLive = false;
                     m.status = 'live_tv';
                 } else {
@@ -2131,104 +2325,90 @@
         getItemById(id) {
             if (!id) return null;
             const decoded = decodeURIComponent(String(id)).trim();
-            const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+            // 1. Instant O(1) indexed lookup
+            if (this._matchById && this._matchById.has(decoded)) {
+                return this._matchById.get(decoded);
+            }
             const stripped = decoded.replace(/^(ppv|dami|alpha)-/i, '');
-
-            // Heuristic check for hex stream ID, NBA game ID, or URL path extraction
-            const hexMatch = decoded.match(/([a-f0-9]{32})/i) || stripped.match(/([a-f0-9]{32})/i);
-            const nbaMatch = decoded.match(/\b(00\d{8})\b/) || stripped.match(/\b(00\d{8})\b/);
-            const urlIdMatch = decoded.match(/(?:live|stream|match|nba)[/=]([a-zA-Z0-9_-]+)/i);
-            const extractedId = (urlIdMatch && urlIdMatch[1]) ? urlIdMatch[1] : (nbaMatch ? nbaMatch[1] : null);
-
-            // 1. Direct ID, rawId, or slug match
-            let found = this.matches.find(m => {
-                if (m.id === decoded || m.rawId === decoded || m.rawId === stripped || m.alphaStreamId === decoded || m.alphaStreamId === stripped) return true;
-                if (extractedId && (m.id === extractedId || m.rawId === extractedId || m.alphaStreamId === extractedId || ('alpha-' + m.alphaStreamId) === ('alpha-' + extractedId))) return true;
-                if (('ppv-' + m.rawId) === decoded || ('dami-' + m.rawId) === decoded || ('alpha-' + m.rawId) === decoded || ('alpha-' + m.alphaStreamId) === decoded) return true;
-                if (m.slug && m.slug === slug) return true;
-                const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                if (mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)))) return true;
-                return false;
-            });
-
-            // 2. Token overlap match (e.g. "ppv-pl/2026-09-12/liv-ful" -> "Liverpool vs. Fulham")
-            if (!found) {
-                const qToks = tokenizeMatchStr(stripped);
-                if (qToks.length >= 2) {
-                    found = this.matches.find(m => {
-                        const tToks = tokenizeMatchStr(m.title);
-                        if (tToks.length < 2) return false;
-                        return tToks.every(t => qToks.some(q => t.startsWith(q) || q.startsWith(t)));
-                    });
-                }
+            if (this._matchById && this._matchById.has(stripped)) {
+                return this._matchById.get(stripped);
             }
 
-            // 3. Search alphaCatalog directly for independent alpha/nba stream links
+            // 2. Hex stream ID or NBA game ID lookup
+            const hexMatch = decoded.match(/([a-f0-9]{32})/i) || stripped.match(/([a-f0-9]{32})/i);
+            const nbaMatch = decoded.match(/\b(00\d{8})\b/) || stripped.match(/\b(00\d{8})\b/);
+            const streamId = hexMatch ? hexMatch[1] : (nbaMatch ? nbaMatch[1] : null);
+            if (streamId && this._matchById && this._matchById.has(streamId)) {
+                return this._matchById.get(streamId);
+            }
+
+            const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+
+            // 3. Fallback slug search
+            let found = this.matches.find(m => {
+                if (m.slug && m.slug === slug) return true;
+                const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+                return mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)));
+            });
+
+            // 4. Search alphaCatalog directly for independent stream links
             if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                const targetId = extractedId || stripped || decoded;
+                const targetId = streamId || stripped || decoded;
                 const alpha = this.alphaCatalog.find(a => a.stream_id === targetId || a.stream_id === stripped || a.stream_id === decoded);
                 if (alpha) {
                     found = this.normalizeAlphaMatch(alpha);
                     if (found) {
                         this.matches.push(found);
-                    }
-                }
-            }
-
-            // 4. Handle direct hex stream ID, NBA game ID, or StreamCorner stream link
-            if (!found && (hexMatch || nbaMatch)) {
-                const streamId = hexMatch ? hexMatch[1] : (nbaMatch ? nbaMatch[1] : null);
-                if (streamId) {
-                    found = this.matches.find(m => m.alphaStreamId === streamId || (m.rawId && m.rawId.includes(streamId)));
-                    if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                        const alpha = this.alphaCatalog.find(a => a.stream_id === streamId);
-                        if (alpha) {
-                            found = this.normalizeAlphaMatch(alpha);
-                            if (found) this.matches.push(found);
+                        if (this._matchById) {
+                            this._matchById.set(found.id, found);
+                            if (found.alphaStreamId) this._matchById.set(found.alphaStreamId, found);
                         }
                     }
                 }
-                if (!found && hexMatch) {
-                    // Create pending dynamic placeholder for direct stream ID link
-                    found = {
-                        id: `alpha-${streamId}`,
-                        rawId: streamId,
-                        alphaStreamId: streamId,
-                        source: 'streamcorner',
-                        title: 'Live Stream Event',
-                        sport: 'OTHERS',
-                        league: 'LIVE STREAM',
-                        rawLeague: 'Live Stream',
-                        category: 'Sports',
-                        startTime: Date.now() - 1800000,
-                        endTime: Date.now() + 7200000,
-                        isLive: true,
-                        always_live: 0,
-                        isAlwaysLive: false,
-                        tag: 'Live Stream',
-                        status: 'live',
-                        poster: '',
-                        categoryLogo: '',
-                        colors: [],
-                        team1: { name: 'Live Stream', logo: '' },
-                        team2: { name: '', logo: '' },
-                        rawCategory: 'sports',
-                        servers: [],
-                        sources: [],
-                        _alphaResolved: false
-                    };
-                    this.matches.push(found);
+            }
+
+            if (!found && hexMatch) {
+                found = {
+                    id: `alpha-${streamId}`,
+                    rawId: streamId,
+                    alphaStreamId: streamId,
+                    source: 'streamcorner',
+                    title: 'Live Stream Event',
+                    sport: 'OTHERS',
+                    league: 'LIVE STREAM',
+                    rawLeague: 'Live Stream',
+                    category: 'Sports',
+                    startTime: Date.now() - 1800000,
+                    endTime: Date.now() + 7200000,
+                    isLive: true,
+                    always_live: 0,
+                    isAlwaysLive: false,
+                    tag: 'Live Stream',
+                    status: 'live',
+                    poster: '',
+                    categoryLogo: '',
+                    colors: [],
+                    team1: { name: 'Live Stream', logo: '' },
+                    team2: { name: '', logo: '' },
+                    rawCategory: 'sports',
+                    servers: [],
+                    sources: [],
+                    _alphaResolved: false
+                };
+                this.matches.push(found);
+                if (this._matchById) {
+                    this._matchById.set(found.id, found);
+                    this._matchById.set(streamId, found);
                 }
             }
 
-            // 5. Ensure StreamCorner ID is linked if mapped in KNOWN_ALPHA_STREAMS
             if (found && !found.alphaStreamId) {
                 if (KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId]) {
                     found.alphaStreamId = KNOWN_ALPHA_STREAMS[found.id] || KNOWN_ALPHA_STREAMS[found.rawId];
                 }
             }
 
-            // 6. Fast-load cached enriched servers for 0ms initial click latency
             if (found && !found._alphaResolved) {
                 try {
                     const cacheKey = `sc_enriched_${found.alphaStreamId || found.id}`;
@@ -2312,8 +2492,8 @@
                 return true;
             }
 
-            // Exclude 24/7 streams / network loops
-            if (s === '24/7 streams' || c === '24/7-streams' || t.includes('24/7') || l.includes('24/7')) {
+            // Exclude 24/7 streams / network loops / cartoons
+            if (s === '24/7 streams' || c === '24/7-streams' || t.includes('24/7') || l.includes('24/7') || t.includes('family guy')) {
                 return true;
             }
 
@@ -2323,7 +2503,7 @@
             }
 
             // Exclude 24/7 linear sports network channels from live match showcase
-            const linearChannels = ['nfl network', 'fox footy', 'fox cricket', 'fox league', 'willow', 'rally tv'];
+            const linearChannels = ['nfl network', 'fox footy', 'fox cricket', 'fox league', 'willow', 'rally tv', 'sky sports golf', 'sky sports news', 'tennis channel'];
             if (linearChannels.some(ch => t === ch || t.startsWith(ch + ' '))) {
                 return true;
             }
