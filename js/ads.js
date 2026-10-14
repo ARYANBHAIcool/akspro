@@ -2,16 +2,12 @@
  * AryanStreams Global - Advanced Monetization & Ad Experience Engine
  * Path: js/ads.js
  * 
- * Integrated Units:
- * 1. Popunder (capitalhospitals.org)
- * 2. Social Bar (czernik.org)
- * 3. Smartlink (https://budgetezy.org/4/6da983d7e115700ad4dc612c0e107ec8)
- * 
  * Monetization Flow:
- * - Shared links and match cards open directly to the match page with ZERO ads on load or navigation.
- * - When the user clicks the Player ("Click to Play Stream"), the Smartlink is triggered ONCE.
+ * - Direct Match Links & Match Cards open directly with ZERO ads on load or navigation.
+ * - When the user clicks the Player ("Click to Play Stream"), the Smartlink is opened once in a new tab.
  * - The overlay disappears and video playback starts seamlessly.
  * - Switching servers or navigating back does NOT re-trigger ads or trap the user.
+ * - ZERO popunders, ZERO full-window click traps, ZERO DOM blocking.
  */
 
 (function () {
@@ -52,7 +48,7 @@
          */
         init() {
             if (!this.enabled) return;
-            console.log('[AryanAds] Monetization engine ready (Play-to-Redirect mode).');
+            console.log('[AryanAds] Monetization engine ready (Clean Smartlink mode).');
         },
 
         /**
@@ -77,42 +73,15 @@
 
             try {
                 // Open direct link in a new tab smoothly without freezing browser thread
-                const adWin = window.open(this.DIRECT_LINK, '_blank');
+                const adWin = window.open(this.DIRECT_LINK, '_blank', 'noopener,noreferrer');
                 if (adWin) {
                     console.log(`[AryanAds] Smartlink opened (${source}). Total clicks: ${this.clickCount}`);
-                    return true;
-                } else {
-                    // Fallback for strict mobile popup blockers: programmatically dispatch anchor click
-                    if (document && document.body) {
-                        const a = document.createElement('a');
-                        a.href = this.DIRECT_LINK;
-                        a.target = '_blank';
-                        a.rel = 'noopener noreferrer';
-                        document.body.appendChild(a);
-                        a.click();
-                        a.remove();
-                    }
                     return true;
                 }
             } catch (err) {
                 console.warn('[AryanAds] Direct link trigger exception:', err);
             }
             return false;
-        },
-
-        /**
-         * Dynamically load Popunder script in a controlled manner without blocking UI clicks
-         */
-        _popunderLoaded: false,
-        loadPopunder() {
-            if (this._popunderLoaded || typeof document === 'undefined') return;
-            this._popunderLoaded = true;
-            try {
-                const s = document.createElement('script');
-                s.setAttribute('data-cfasync', 'false');
-                s.src = 'https://capitalhospitals.org/1/ec8caf215d92bd77dfa766d702a1ec0f';
-                document.body.appendChild(s);
-            } catch (e) {}
         },
 
         /**
@@ -155,9 +124,8 @@
                 overlay.remove();
                 this.hasPlayedCurrentStream = true;
 
-                // Trigger direct link ad synchronously once on play
+                // Trigger direct link ad cleanly once on genuine click
                 this.trigger('player_play', true);
-                this.loadPopunder();
 
                 // Unmute and play native video if HLS
                 const videoEl = document.getElementById('global-video-element');

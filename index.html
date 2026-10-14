@@ -339,10 +339,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=1.2"></script>
-    <script src="js/paramount-core.js?v=6.3"></script>
-    <script src="js/player.js?v=6.3"></script>
-    <script src="js/api.js?v=6.3"></script>
+    <script src="js/ads.js?v=6.4"></script>
+    <script src="js/paramount-core.js?v=6.4"></script>
+    <script src="js/player.js?v=6.4"></script>
+    <script src="js/api.js?v=6.4"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -925,6 +925,11 @@
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item) return;
 
+            // If already viewing this exact match, do not reload player
+            if (currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.id === id) && currentView === 'watch') {
+                return;
+            }
+
             hasHandledInitialUrlMatch = true;
 
             if (window.AryanAds && typeof window.AryanAds.resetStreamState === 'function') {
@@ -971,9 +976,9 @@
                         if (typeof renderWatchSources === 'function') {
                             renderWatchSources(currentWatchItem, activeIdx);
                         }
-                        if (window.AryanPlayerEngine && (!window.AryanPlayerEngine.getServers().length || activeIdx === 0)) {
+                        if (window.AryanPlayerEngine && !window.AryanPlayerEngine.getServers().length) {
                             window.AryanPlayerEngine.currentStream = currentWatchItem;
-                            window.AryanPlayerEngine.activeServerIdx = activeIdx;
+                            window.AryanPlayerEngine.activeServerIdx = 0;
                             window.AryanPlayerEngine.reloadPlayer();
                         }
                     }
@@ -1321,6 +1326,9 @@
 
         function switchWatchServer(idx) {
             if (!currentWatchItem) return;
+            if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === idx) {
+                return;
+            }
             window.AryanPlayerEngine.switchServer(idx);
             renderWatchSources(currentWatchItem, idx);
         }
@@ -1376,7 +1384,5 @@
             }
         }
     </script>
-    <!-- Social Bar -->
-    <script data-cfasync="false" src="https://czernik.org/14/de42cdeb3c7aad7b416550c1f72cb2e0"></script>
 </body>
 </html>

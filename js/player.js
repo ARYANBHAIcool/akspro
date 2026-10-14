@@ -127,6 +127,7 @@ window.AryanPlayerEngine = {
     switchServer(idx) {
         const servers = this.getServers();
         if (idx < 0 || idx >= servers.length) return;
+        if (this.activeServerIdx === idx) return;
         this.destroy();
         this.activeServerIdx = idx;
         const watchContainer = document.getElementById('watch-player-container');

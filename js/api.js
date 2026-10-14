@@ -1578,10 +1578,14 @@
 
             if (match._alphaResolved) return true;
 
-            // 1. If Alpha feeds are currently loading in background, await completion
-            if (this._alphaLoadingPromise) {
+            // 1. If not already paired and Alpha feeds are currently loading in background, await with a fast timeout
+            const hasExistingTargets = match.alphaStreamId || (match.streamCornerSources && match.streamCornerSources.length > 0);
+            if (!hasExistingTargets && this._alphaLoadingPromise) {
                 try {
-                    await this._alphaLoadingPromise;
+                    await Promise.race([
+                        this._alphaLoadingPromise,
+                        new Promise(resolve => setTimeout(resolve, 2000))
+                    ]);
                 } catch (e) {}
             }
 
@@ -1784,7 +1788,7 @@
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                             const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
-                            const wasUninitialized = !currentPlayingUrl || (baseServers.length === 0);
+                            const wasUninitialized = !currentPlayingUrl || (baseServers.length === 0) || !window.AryanPlayerEngine || !window.AryanPlayerEngine.getServers().length;
 
                             currentWatchItem.servers = match.servers;
                             currentWatchItem.sources = match.servers;
@@ -1793,7 +1797,7 @@
                             let newActiveIdx = 0;
                             if (window.AryanPlayerEngine) {
                                 window.AryanPlayerEngine.currentStream = currentWatchItem;
-                                if (window.AryanPlayerEngine.activeServerIdx === 0 || wasUninitialized) {
+                                if (wasUninitialized) {
                                     newActiveIdx = 0;
                                     window.AryanPlayerEngine.activeServerIdx = 0;
                                     if (typeof window.AryanPlayerEngine.reloadPlayer === 'function') {
@@ -1804,6 +1808,8 @@
                                     if (matchIdx !== -1) {
                                         newActiveIdx = matchIdx;
                                         window.AryanPlayerEngine.activeServerIdx = newActiveIdx;
+                                    } else {
+                                        newActiveIdx = prevActiveIdx;
                                     }
                                 }
                             }
