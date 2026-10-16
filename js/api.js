@@ -1329,7 +1329,15 @@
          * Pairs with PPV fixtures and introduces independent StreamCorner matches
          */
         async loadStreamCornerAlphaFeeds() {
-            if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
+            if (typeof window === 'undefined') return;
+            if (!window.StreamCornerCore || !window.StreamCornerCore.w || typeof window.StreamCornerCore.w[6] !== 'function') {
+                if (!this._hasAttemptedAutoHeal) {
+                    this._hasAttemptedAutoHeal = true;
+                    console.warn('StreamCornerCore missing or outdated. Auto-healing core engine...');
+                    await this.reloadLatestStreamCornerCore();
+                }
+            }
+            if (!window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
                 return;
             }
             try {
@@ -1627,7 +1635,14 @@
             if (!match) return false;
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
-            if (typeof window === 'undefined' || !window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
+            if (typeof window === 'undefined') return false;
+            if (!window.StreamCornerCore || !window.StreamCornerCore.w || typeof window.StreamCornerCore.w[6] !== 'function') {
+                if (!this._hasAttemptedAutoHeal) {
+                    this._hasAttemptedAutoHeal = true;
+                    await this.reloadLatestStreamCornerCore();
+                }
+            }
+            if (!window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') return false;
 
             match._alphaPromise = (async () => {
                 try {
@@ -1876,12 +1891,13 @@
                 const res = await fetch(`/api/streamcorner-core?refresh=1&t=${Date.now()}`);
                 if (!res.ok) return false;
                 const scriptText = await res.text();
-                if (!scriptText || !scriptText.includes('window.StreamCornerCore')) return false;
+                if (!scriptText || !scriptText.includes('StreamCornerCore')) return false;
 
                 // Execute updated script to refresh window.StreamCornerCore on the fly
                 const scriptEl = document.createElement('script');
                 scriptEl.textContent = scriptText;
                 document.head.appendChild(scriptEl);
+                this._hasAttemptedAutoHeal = false;
                 console.log('StreamCornerCore dynamically updated and auto-healed!');
                 return true;
             } catch (e) {
