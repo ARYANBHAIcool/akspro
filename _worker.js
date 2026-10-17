@@ -383,6 +383,38 @@ async function onRequest4(context) {
       }
     });
   }
+  const reqUrl = new URL(context.request.url);
+  const endpointParam = (reqUrl.searchParams.get("endpoint") || reqUrl.searchParams.get("type") || "").toLowerCase();
+  if (endpointParam === "all" || endpointParam === "schedule" || endpointParam === "matches") {
+    const scheduleMirrors = [
+      "https://streamed.pk/api/matches/all",
+      "https://damitv.st/papi/matches/all-today"
+    ];
+    for (const mirror of scheduleMirrors) {
+      try {
+        const sResp = await fetch(mirror, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+            "Accept": "application/json"
+          }
+        });
+        if (sResp.ok) {
+          const data = await sResp.json();
+          if (Array.isArray(data) && data.length > 0) {
+            return new Response(JSON.stringify(data), {
+              status: 200,
+              headers: {
+                "Content-Type": "application/json; charset=utf-8",
+                "Access-Control-Allow-Origin": "*",
+                "Cache-Control": "public, max-age=60, s-maxage=60"
+              }
+            });
+          }
+        }
+      } catch (e) {
+      }
+    }
+  }
   function transformDamiListToCategories(items) {
     if (!Array.isArray(items)) return [];
     const catMap = /* @__PURE__ */ new Map();

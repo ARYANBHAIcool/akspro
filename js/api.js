@@ -638,7 +638,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v36';
+            const CACHE_KEY = 'aryan_cached_matches_v37';
             // 1. Explicitly purge any bloated legacy caches (v1 through v35) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -685,24 +685,21 @@
                 this.emitUpdate();
             }
 
-            // 1. Launch Alpha feed aggregation in parallel
-            this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
-
-            // 2. Load PPV feeds, Alpha feeds, and channels concurrently
-            await Promise.allSettled([
-                this.loadPPVFeeds(),
-                this._alphaLoadingPromise,
-                this.loadChannelsCatalog()
-            ]);
-
+            // 1. Load authoritative PPV fixtures first via Cloudflare edge proxy
+            await this.loadPPVFeeds();
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
 
-            // When Alpha finishes in background, pair fixtures and pre-fetch live Alpha sources
-            this._alphaLoadingPromise.then(() => {
-                this.preFetchLiveAlphaSources();
-            }).catch(() => {});
+            // 2. Concurrently enrich with StreamCorner feeds and channels
+            this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+            await Promise.allSettled([
+                this._alphaLoadingPromise,
+                this.loadChannelsCatalog()
+            ]);
+
+            this.sortMatches();
+            this.emitUpdate();
 
             // Auto-refresh match feeds, Alpha channels & statuses every 90 seconds
             if (!this.refreshInterval) {
@@ -734,15 +731,15 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v36';
+            const CACHE_KEY = 'aryan_cached_matches_v37';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
 
                 // 1. Fetch official PPV Live Streams
                 const ppvEndpoints = [
-                    'https://api.ppv.st/api/streams',
-                    '/api/ppv'
+                    '/api/ppv',
+                    'https://api.ppv.st/api/streams'
                 ];
                 for (const ep of ppvEndpoints) {
                     try {
@@ -769,11 +766,11 @@
                     } catch (e) {}
                 }
 
-                // 2. Fetch Complete Fixtures Schedule (Includes all upcoming F1, MotoGP, Cricket, NFL, etc.)
+                // 2. Fetch Complete Fixtures Schedule (Fast Cloudflare edge proxy first)
                 const scheduleEndpoints = [
+                    '/api/ppv?endpoint=all',
                     'https://streamed.pk/api/matches/all',
-                    '/api/nitro?url=https://streamed.pk/api/matches/all',
-                    '/api/ppv?endpoint=all'
+                    'https://damitv.st/papi/matches/all-today'
                 ];
                 for (const ep of scheduleEndpoints) {
                     try {
@@ -1024,9 +1021,7 @@
                         this.isLoading = false;
                         this.sortMatches();
                         this.emitUpdate();
-                        if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
-                            this.autoResolveAllAlphaSources();
-                        }
+                        // Alpha sources resolved on-demand per match without freezing UI
                         try {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
@@ -1537,7 +1532,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v36';
+                        const CACHE_KEY = 'aryan_cached_matches_v37';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
@@ -1555,8 +1550,7 @@
                     }
                 }
 
-                // Automatically resolve and attach all StreamCorner broadcast channels across all matches
-                this.autoResolveAllAlphaSources();
+                // Alpha sources resolved on-demand per match without background CPU contention
             } catch (err) {
                 console.warn('StreamCorner Alpha feeds load failed:', err);
             }
@@ -1636,6 +1630,22 @@
             if (match._alphaResolved) return true;
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined') return false;
+
+            // Instant 0ms Cache Check: check localStorage for previously decrypted streams
+            const targetKey = match.alphaStreamId || (match.streamCornerSources && match.streamCornerSources[0] && match.streamCornerSources[0].id) || match.id;
+            try {
+                const cachedRaw = localStorage.getItem('sc_enriched_' + targetKey);
+                if (cachedRaw) {
+                    const parsed = JSON.parse(cachedRaw);
+                    if (parsed && Array.isArray(parsed.servers) && parsed.servers.length > 0 && (Date.now() - (parsed.ts || 0) < 1800000)) {
+                        match.servers = parsed.servers;
+                        match.sources = parsed.servers;
+                        match._alphaResolved = true;
+                        return true;
+                    }
+                }
+            } catch (e) {}
+
             if (!window.StreamCornerCore || !window.StreamCornerCore.w || typeof window.StreamCornerCore.w[6] !== 'function') {
                 if (!this._hasAttemptedAutoHeal) {
                     this._hasAttemptedAutoHeal = true;
@@ -1646,7 +1656,10 @@
 
             match._alphaPromise = (async () => {
                 try {
-                    // Gather all distinct StreamCorner targets to query
+                    // Yield main thread to allow instant click animations & UI response
+                    await new Promise(r => setTimeout(r, 0));
+
+                    // Gather distinct StreamCorner targets to query
                     const targets = [];
                     const seenTargetIds = new Set();
                     const addTarget = (id, type, item) => {
@@ -1668,7 +1681,8 @@
 
                     if (targets.length === 0) return false;
 
-                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
+                    // Query at most 2 candidate workers with tight 2500ms timeout
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5).slice(0, 2);
 
                     const fetchTarget = async (t) => {
                         let pType = t.type || 'alpha';
@@ -1681,43 +1695,29 @@
                                 pType = 'alpha';
                             }
                         }
-                        for (let i = 0; i < candidateWorkers.length; i += 4) {
-                            const batch = candidateWorkers.slice(i, i + 4);
-                            try {
-                                const batchPromises = batch.map(worker => {
-                                    return new Promise((resolve, reject) => {
-                                        const timer = setTimeout(() => reject(new Error('timeout')), 4500);
-                                        window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${t.id}`, false, match.title || 'corner detail')
-                                            .then(res => {
-                                                clearTimeout(timer);
-                                                const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
-                                                if (hasStreams) resolve(res);
-                                                else reject(new Error('empty'));
-                                            })
-                                            .catch(err => {
-                                                clearTimeout(timer);
-                                                reject(err);
-                                            });
-                                    });
-                                });
-                                const res = await Promise.any(batchPromises);
-                                if (res) return res;
-                            } catch (e) {}
-                        }
 
-                        // Seamless fallback: if primary pType returned empty, retry with alternate clusters
-                        const altClusters = ['admin', 'alpha', 'beta', 'extra003'].filter(c => c !== pType);
-                        for (const altType of altClusters) {
-                            for (let i = 0; i < Math.min(candidateWorkers.length, 3); i++) {
-                                try {
-                                    const worker = candidateWorkers[i];
-                                    const res = await window.StreamCornerCore.t(`https://${worker}/corner?p=${altType}&id=${t.id}`, false, match.title || 'corner detail');
-                                    const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
-                                    if (hasStreams) return res;
-                                } catch (e) {}
+                        for (const worker of candidateWorkers) {
+                            try {
+                                const fetchPromise = new Promise((resolve, reject) => {
+                                    const timer = setTimeout(() => reject(new Error('timeout')), 2500);
+                                    window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${t.id}`, false, match.title || 'corner detail')
+                                        .then(res => {
+                                            clearTimeout(timer);
+                                            const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
+                                            if (hasStreams) resolve(res);
+                                            else reject(new Error('empty'));
+                                        })
+                                        .catch(err => {
+                                            clearTimeout(timer);
+                                            reject(err);
+                                        });
+                                });
+                                const res = await fetchPromise;
+                                if (res) return res;
+                            } catch (e) {
+                                await new Promise(r => setTimeout(r, 0));
                             }
                         }
-
                         return null;
                     };
 
@@ -1972,9 +1972,14 @@
             }
 
             const timeStr = (alpha.time || alpha.time_et || '').toLowerCase();
-            const isExplicitLive = Boolean(timeStr.includes('qtr') || timeStr.includes('half') || timeStr.includes('live') || timeStr.includes('1st') || timeStr.includes('2nd') || timeStr.includes('3rd') || timeStr.includes('4th') || timeStr.includes('ot') || timeStr.includes('set '));
-            const isTimeLive = Boolean(startTs > 0 && now >= (startTs - 900000) && (!endTs || now <= endTs));
-            const isLive = Boolean(isExplicitLive || isTimeLive);
+            // Strictly match in-game quarter/half/set indicators without falsely matching "1st Round", "2nd Leg", "1st T20I"
+            const isExplicitLive = Boolean(
+                /\b(?:live|ht|halftime|half-time|overtime|ot)\b/i.test(timeStr) ||
+                /\b(?:1st|2nd|3rd|4th)\s*(?:qtr|quarter|half|period|set)\b/i.test(timeStr) ||
+                /\b(?:q[1-4]|set\s*\d)\b/i.test(timeStr)
+            );
+            const isTimeLive = Boolean(startTs > 0 && now >= startTs && (!endTs || now <= endTs));
+            const isLive = Boolean((isExplicitLive || isTimeLive) && (!endTs || now <= endTs));
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
@@ -2503,6 +2508,8 @@
             if (m.isAlwaysLive || m.always_live === 1) return true;
             if (m.tag === '24/7 channel' || m.tag === '24/7 streams') return true;
             if (!m.startTime || m.startTime <= 0) return true;
+            // Never include future fixtures in Live Now
+            if (m.startTime && m.startTime > Date.now()) return true;
 
             const t = (m.title || '').toLowerCase();
             const l = (m.league || '').toLowerCase();
@@ -2535,7 +2542,12 @@
 
         getLiveMatches() {
             const now = Date.now();
-            return this.matches.filter(m => m.isLive && !this.isExcludedFromLiveNow(m) && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => {
+                if (!m.isLive || this.isExcludedFromLiveNow(m)) return false;
+                if (m.startTime && m.startTime > now) return false;
+                if (m.endTime && now > (m.endTime + 900000)) return false;
+                return true;
+            });
         },
 
         getUpcomingMatches() {
