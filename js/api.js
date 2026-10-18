@@ -639,7 +639,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v38';
+            const CACHE_KEY = 'aryan_cached_matches_v39';
             // 1. Explicitly purge any bloated legacy caches (v1 through v35) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -738,7 +738,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v38';
+            const CACHE_KEY = 'aryan_cached_matches_v39';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -1080,7 +1080,8 @@
                         });
                         if (streamRes.ok) {
                             const { categories } = await streamRes.json();
-                            const validCats = Array.isArray(categories) ? categories.filter(c => c && c !== 'rugby' && c !== 'golf') : [];
+                            const validCats = Array.isArray(categories) ? categories.filter(c => typeof c === 'string' && c.trim().length > 0) : [];
+                            const now = Date.now();
                             const promises = validCats.map(async cat => {
                                 try {
                                     const cRes = await fetch(`https://www.futbol-x.xyz/api/${cat}.json`, {
@@ -1094,20 +1095,24 @@
                                         for (const g of cData.streams) {
                                             if (g && Array.isArray(g.streams)) {
                                                 for (const ev of g.streams) {
+                                                    if (!ev || !ev.name) continue;
+                                                    const start = ev.starts_at ? new Date(ev.starts_at).getTime() : 0;
+                                                    const end = ev.ends_at ? new Date(ev.ends_at).getTime() : (start ? start + 10800000 : 0);
+                                                    if (end > 0 && now > (end + 900000) && !ev.always_live) continue;
+
                                                     const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0);
-                                                    if (activeStreams.length > 0) {
-                                                        events.push({
-                                                            id: `fx-${ev.uri_name || Math.random().toString(36).slice(2, 8)}`,
-                                                            uri_name: ev.uri_name,
-                                                            title: (ev.name || '').trim(),
-                                                            tag: (ev.tag || '').trim(),
-                                                            category: cat,
-                                                            poster: ev.poster || '',
-                                                            starts_at: ev.starts_at || '',
-                                                            ends_at: ev.ends_at || '',
-                                                            streams: activeStreams
-                                                        });
-                                                    }
+                                                    events.push({
+                                                        id: `fx-${ev.uri_name || Math.random().toString(36).slice(2, 8)}`,
+                                                        uri_name: ev.uri_name,
+                                                        title: (ev.name || '').trim(),
+                                                        tag: (ev.tag || '').trim(),
+                                                        category: cat,
+                                                        poster: ev.poster || '',
+                                                        starts_at: ev.starts_at || '',
+                                                        ends_at: ev.ends_at || '',
+                                                        always_live: ev.always_live || 0,
+                                                        streams: activeStreams
+                                                    });
                                                 }
                                             }
                                         }
@@ -1146,7 +1151,7 @@
                 const now = Date.now();
 
                 for (const fx of fxMatches) {
-                    const fxStreams = (fx.streams || []).map((s, idx) => ({
+                    const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
                         url: s.url,
                         rawUrl: s.url,
@@ -1155,7 +1160,7 @@
                         hd: true
                     }));
 
-                    // Find if match already exists in this.matches
+                    const fxStart = fx.starts_at ? new Date(fx.starts_at).getTime() : 0;
                     const fxToks = getTokens(fx.title || '');
                     let matchedFixture = null;
 
@@ -1174,6 +1179,13 @@
                             }
                         }
                         for (const [cand, count] of candidates.entries()) {
+                            const fxCatUpper = (SPORT_MAPPINGS[(fx.category || '').toLowerCase()] || (fx.category || '').toUpperCase());
+                            if (cand.sport && fxCatUpper && cand.sport !== 'OTHERS' && fxCatUpper !== 'OTHERS' && cand.sport !== fxCatUpper) {
+                                continue;
+                            }
+                            if (cand.startTime && fxStart && Math.abs(cand.startTime - fxStart) > 43200000) {
+                                continue;
+                            }
                             if (count >= 2 || (fxToks.length === 1 && count >= 1)) {
                                 matchedFixture = cand;
                                 break;
@@ -1183,19 +1195,31 @@
 
                     if (matchedFixture) {
                         // Attach FX streams to existing fixture
-                        const existingUrls = new Set((matchedFixture.servers || []).map(srv => srv.rawUrl || srv.url));
-                        const newFxServers = fxStreams.filter(s => !existingUrls.has(s.url));
-                        if (newFxServers.length > 0) {
-                            matchedFixture.servers = [...newFxServers, ...(matchedFixture.servers || [])];
-                            matchedFixture.sources = matchedFixture.servers;
-                            matchedFixture.isFutbolX = true;
-                            if (fx.uri_name) matchedFixture.uriName = fx.uri_name;
+                        if (fxStreams.length > 0) {
+                            const existingUrls = new Set((matchedFixture.servers || []).map(srv => srv.rawUrl || srv.url));
+                            const newFxServers = fxStreams.filter(s => !existingUrls.has(s.url));
+                            if (newFxServers.length > 0) {
+                                matchedFixture.servers = [...newFxServers, ...(matchedFixture.servers || [])];
+                                matchedFixture.sources = matchedFixture.servers;
+                            }
+                        }
+                        matchedFixture.isFutbolX = true;
+                        if (fx.uri_name) {
+                            matchedFixture.uriName = fx.uri_name;
+                            if (this._matchById) {
+                                this._matchById.set(fx.uri_name, matchedFixture);
+                                this._matchById.set(`fx-${fx.uri_name}`, matchedFixture);
+                            }
                         }
                         if (fx.poster && (!matchedFixture.poster || matchedFixture.poster.includes('logo-icon.png'))) {
                             matchedFixture.poster = sanitizePosterUrl(fx.poster);
                         }
+                        if (!matchedFixture.isLive && matchedFixture.startTime && matchedFixture.startTime <= now && (!matchedFixture.endTime || now <= matchedFixture.endTime) && fxStreams.length > 0) {
+                            matchedFixture.isLive = true;
+                            matchedFixture.status = 'live';
+                        }
                     } else {
-                        // Exclusive FutbolX match
+                        // Exclusive FutbolX match (both live and upcoming future events!)
                         const newMatch = this.normalizeFutbolXMatch(fx, fxStreams);
                         if (newMatch) {
                             this.matches.push(newMatch);
@@ -1203,7 +1227,10 @@
                             if (this._matchById) {
                                 this._matchById.set(newMatch.id, newMatch);
                                 if (newMatch.rawId) this._matchById.set(String(newMatch.rawId), newMatch);
-                                if (newMatch.uriName) this._matchById.set(newMatch.uriName, newMatch);
+                                if (newMatch.uriName) {
+                                    this._matchById.set(newMatch.uriName, newMatch);
+                                    this._matchById.set(`fx-${newMatch.uriName}`, newMatch);
+                                }
                             }
                         }
                     }
@@ -1213,7 +1240,7 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v38';
+                        const CACHE_KEY = 'aryan_cached_matches_v39';
                         localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                     } catch (e) {}
                 }
@@ -2419,6 +2446,8 @@
                     dup = unique.find(u => u.rawId && String(u.rawId) === String(m.rawId));
                 } else if (m.alphaStreamId && seenIds.has(m.alphaStreamId)) {
                     dup = unique.find(u => u.alphaStreamId && u.alphaStreamId === m.alphaStreamId);
+                } else if (m.uriName && seenIds.has(m.uriName)) {
+                    dup = unique.find(u => u.uriName && u.uriName === m.uriName);
                 }
 
                 // 2. Distinctive token index lookup
@@ -2445,6 +2474,11 @@
                     if (m.id) seenIds.add(m.id);
                     if (m.rawId) seenIds.add(String(m.rawId));
                     if (m.alphaStreamId) seenIds.add(m.alphaStreamId);
+                    if (m.uriName) {
+                        seenIds.add(m.uriName);
+                        if (!dup.uriName) dup.uriName = m.uriName;
+                    }
+                    if (m.isFutbolX) dup.isFutbolX = true;
 
                     // Merge servers cleanly using canonical key deduplication
                     const combinedServers = [...(dup.servers || []), ...(m.servers || [])];
@@ -2501,6 +2535,7 @@
                     if (m.id) seenIds.add(m.id);
                     if (m.rawId) seenIds.add(String(m.rawId));
                     if (m.alphaStreamId) seenIds.add(m.alphaStreamId);
+                    if (m.uriName) seenIds.add(m.uriName);
                     unique.push(m);
 
                     const toks = getDistinctiveTokens(m.title || '');

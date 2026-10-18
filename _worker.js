@@ -465,7 +465,8 @@ async function onRequest4(context) {
       });
       if (streamRes.ok) {
         const { categories } = await streamRes.json();
-        const validCats = Array.isArray(categories) ? categories.filter(c => c && c !== "rugby" && c !== "golf") : [];
+        const validCats = Array.isArray(categories) ? categories.filter(c => typeof c === "string" && c.trim().length > 0) : [];
+        const now = Date.now();
         const catPromises = validCats.map(async cat => {
           try {
             const cResp = await fetch("https://www.futbol-x.xyz/api/" + cat + ".json", {
@@ -481,20 +482,25 @@ async function onRequest4(context) {
               for (const group of cData.streams) {
                 if (group && Array.isArray(group.streams)) {
                   for (const ev of group.streams) {
+                    if (!ev || !ev.name) continue;
+                    const start = ev.starts_at ? new Date(ev.starts_at).getTime() : 0;
+                    const end = ev.ends_at ? new Date(ev.ends_at).getTime() : (start ? start + 10800000 : 0);
+                    // Filter out matches that ended more than 15 minutes ago
+                    if (end > 0 && now > (end + 900000) && !ev.always_live) continue;
+
                     const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0);
-                    if (activeStreams.length > 0) {
-                      events.push({
-                        id: "fx-" + (ev.uri_name || Math.random().toString(36).slice(2, 8)),
-                        uri_name: ev.uri_name,
-                        title: (ev.name || "").trim(),
-                        tag: (ev.tag || "").trim(),
-                        category: cat,
-                        poster: ev.poster || "",
-                        starts_at: ev.starts_at || "",
-                        ends_at: ev.ends_at || "",
-                        streams: activeStreams
-                      });
-                    }
+                    events.push({
+                      id: "fx-" + (ev.uri_name || Math.random().toString(36).slice(2, 8)),
+                      uri_name: ev.uri_name,
+                      title: (ev.name || "").trim(),
+                      tag: (ev.tag || "").trim(),
+                      category: cat,
+                      poster: ev.poster || "",
+                      starts_at: ev.starts_at || "",
+                      ends_at: ev.ends_at || "",
+                      always_live: ev.always_live || 0,
+                      streams: activeStreams
+                    });
                   }
                 }
               }
