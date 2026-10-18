@@ -232,9 +232,8 @@ export async function onRequest(context) {
         html = html.replace(/<script[^>]*\/cdn-cgi\/challenge-platform\/[^>]*><\/script>/gi, '<!-- cf challenge removed -->');
 
         // Neutralize anti-framing and domain guard checks in StreamCorner admin/fubo/peacock players
-        html = html.replace(/return!!window[\s\S]*?\}catch\([A-Za-z0-9_$]+\)\{return![^;\}]+;?\}/g, 'return true;}');
-        html = html.replace(/function G\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, 'function G(){return true;}');
-        html = html.replace(/function\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, 'function(){return true;}');
+        html = html.replace(/function\s+G\s*\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, 'function G(){return true;}');
+        html = html.replace(/function\s*\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, 'function(){return true;}');
 
         // Rewrite dynamic script location in embedindia so bundle loads through /api/embed with valid SSL
         if (html.includes('location.protocol+"//"+location.host')) {

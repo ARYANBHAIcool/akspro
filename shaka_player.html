@@ -124,6 +124,8 @@
 
     <div id="status-toast"></div>
 
+    <script src="https://cdn.jsdelivr.net/npm/mux.js@6.0.1/dist/mux.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/hls.js@1.5.8/dist/hls.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/shaka-player@5.2.4/dist/shaka-player.ui.min.js"></script>
     <script>
     (function() {
@@ -452,8 +454,8 @@
                                     u = u.replace('.cdn.jio.com//', '.cdn.jio.com/');
                                 }
                                 return withCookie(u, activeRawCookie);
-                    } else if (url && (url.includes('futbolx') || url.includes('ryzn.pro'))) {
-                        req.headers["Referer"] = REFERER || "https://www.futbol-x.xyz/";
+                            });
+                        }
                     } else if (REFERER) {
                         req.headers["Referer"] = REFERER;
                     }
@@ -509,14 +511,51 @@
 
                 player.configure(config);
 
-                await player.load(activeStream);
-                $video.muted = false;
-                var playPromise = $video.play();
-                if (playPromise !== undefined) {
-                    playPromise.catch(function() {
-                        $video.muted = true;
-                        $video.play().catch(function() {});
-                    });
+                var isHlsStream = Boolean(activeStream && (activeStream.includes('.m3u8') || HLS_URL));
+                var hlsFallbackActive = false;
+
+                function startHlsFallback() {
+                    if (hlsFallbackActive) return;
+                    hlsFallbackActive = true;
+                    console.log('Initiating Hls.js fallback for:', activeStream);
+                    try { player.destroy(); } catch(e) {}
+                    if (window.Hls && Hls.isSupported()) {
+                        var hls = new Hls({
+                            enableWorker: true,
+                            lowLatencyMode: false,
+                            manifestLoadingTimeOut: 12000
+                        });
+                        hls.loadSource(activeStream);
+                        hls.attachMedia($video);
+                        hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                            hideLoading();
+                            var p = $video.play();
+                            if (p !== undefined) {
+                                p.catch(function() {
+                                    $video.muted = true;
+                                    $video.play().catch(function() {});
+                                });
+                            }
+                        });
+                        hls.on(Hls.Events.ERROR, function(event, data) {
+                            if (data.fatal) {
+                                if (data.type === Hls.ErrorTypes.NETWORK_ERROR) {
+                                    hls.startLoad();
+                                } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
+                                    hls.recoverMediaError();
+                                } else {
+                                    hideLoading();
+                                    showError('Unable to load stream. Please try another server.');
+                                }
+                            }
+                        });
+                    } else {
+                        $video.src = activeStream;
+                        $video.play().catch(function() {
+                            $video.muted = true;
+                            $video.play().catch(function() {});
+                        });
+                    }
                 }
 
                 $video.addEventListener('playing', function() {
@@ -526,6 +565,29 @@
                 $video.addEventListener('canplay', function() {
                     hideLoading();
                 });
+
+                $video.addEventListener('loadeddata', function() {
+                    hideLoading();
+                });
+
+                try {
+                    await player.load(activeStream);
+                    $video.muted = false;
+                    var playPromise = $video.play();
+                    if (playPromise !== undefined) {
+                        playPromise.catch(function() {
+                            $video.muted = true;
+                            $video.play().catch(function() {});
+                        });
+                    }
+                } catch(loadErr) {
+                    console.warn('Shaka load failed:', loadErr);
+                    if (isHlsStream) {
+                        startHlsFallback();
+                    } else {
+                        throw loadErr;
+                    }
+                }
 
                 player.addEventListener('error', async function(ev) {
                     var err = ev.detail;
