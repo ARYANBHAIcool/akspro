@@ -54,7 +54,7 @@ export async function onRequest(context) {
     }
 
     // Route: /api/ppv?endpoint=futbolx (FutbolX active streams proxy with edge caching)
-    if (endpointParam === 'futbolx' || endpointParam === 'fx') {
+    if (reqUrl.pathname.includes('/api/futbolx') || endpointParam === 'futbolx' || endpointParam === 'fx') {
         const isTokenReq = reqUrl.searchParams.get('token') === '1' || reqUrl.searchParams.has('path');
         if (isTokenReq) {
             let streamUrl = reqUrl.searchParams.get('url') || '';

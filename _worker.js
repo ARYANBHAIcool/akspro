@@ -415,7 +415,7 @@ async function onRequest4(context) {
       }
     }
   }
-  if (endpointParam === "futbolx" || endpointParam === "fx") {
+  if (reqUrl.pathname.includes('/api/futbolx') || endpointParam === "futbolx" || endpointParam === "fx") {
     const isTokenReq = reqUrl.searchParams.get("token") === "1" || reqUrl.searchParams.has("path");
     if (isTokenReq) {
       let streamUrl = reqUrl.searchParams.get("url") || "";

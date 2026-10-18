@@ -1051,6 +1051,7 @@
             try {
                 let fxMatches = [];
                 const endpoints = [
+                    '/api/futbolx?endpoint=futbolx',
                     '/api/futbolx',
                     '/api/ppv?endpoint=futbolx'
                 ];
