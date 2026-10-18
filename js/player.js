@@ -70,7 +70,15 @@ window.AryanPlayerEngine = {
         }
 
         if (!rawUrl) return '';
-        if (rawUrl.includes('.m3u8') || rawUrl.includes('shaka_player.html')) return rawUrl;
+        if (rawUrl.includes('shaka_player.html')) return rawUrl;
+
+        // Route FutbolX match sources to Shaka Player engine
+        const isFx = (typeof serverOrUrl === 'object' && serverOrUrl !== null && (serverOrUrl.isFutbolX || (serverOrUrl.name && /^FX\s*\d*/i.test(serverOrUrl.name)))) || rawUrl.includes('ryzn.pro') || rawUrl.includes('futbolx');
+        if (isFx) {
+            return `shaka_player.html?hls=${encodeURIComponent(rawUrl)}`;
+        }
+
+        if (rawUrl.includes('.m3u8')) return rawUrl;
 
         // Direct DASH stream with keys should use local static shaka_player with 0 Cloudflare requests
         if (rawUrl.includes('.mpd')) {
@@ -235,7 +243,14 @@ window.AryanPlayerEngine = {
         }
 
         const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
-        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) && !serverUrl.includes('.mpd') && !serverUrl.includes('cenc') && !serverUrl.includes('shaka_player.html');
+        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) &&
+                      !serverUrl.includes('.mpd') &&
+                      !serverUrl.includes('cenc') &&
+                      !serverUrl.includes('shaka_player.html') &&
+                      !currentServer.isFutbolX &&
+                      !serverUrl.includes('ryzn.pro') &&
+                      !serverUrl.includes('futbolx') &&
+                      !(currentServer.name && /^FX\s*\d*/i.test(currentServer.name));
 
         let html = '';
 

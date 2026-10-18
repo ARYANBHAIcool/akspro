@@ -83,8 +83,8 @@ async function onRequest2(context) {
                            parsedTarget.origin.includes("streamcorner");
     const upstreamHeaders = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Referer": isStreamCorner ? "https://streamcorner.foo/" : `${parsedTarget.origin}/`,
-      "Origin": isStreamCorner ? "https://streamcorner.foo" : parsedTarget.origin,
+      "Referer": isStreamCorner ? "https://streamcorner.fun/" : `${parsedTarget.origin}/`,
+      "Origin": isStreamCorner ? "https://streamcorner.fun" : parsedTarget.origin,
       "Accept": "*/*",
       "Accept-Language": "en-US,en;q=0.9"
     };
@@ -258,6 +258,15 @@ async function onRequest2(context) {
     }
     html = html.replace(/aclib\.runPop\([^)]*\)/g, "/* ad popup removed */");
     html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, "<!-- devtool disabled -->");
+
+    // Neutralize Cloudflare Turnstile / Challenge platform script which blocks sandboxed iframes
+    html = html.replace(/<script[^>]*__CF\$cv\$params[\s\S]*?<\/script>/gi, "<!-- cf challenge removed -->");
+    html = html.replace(/<script[^>]*\/cdn-cgi\/challenge-platform\/[^>]*><\/script>/gi, "<!-- cf challenge removed -->");
+
+    // Neutralize anti-framing and domain guard checks in StreamCorner admin/fubo/peacock players
+    html = html.replace(/return!!window[\s\S]*?\}catch\([A-Za-z0-9_$]+\)\{return![^;\}]+;?\}/g, "return true;}");
+    html = html.replace(/function G\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, "function G(){return true;}");
+    html = html.replace(/function\(\)\s*\{return\s+[a-zA-Z0-9_$]+\(\)\|\|[a-zA-Z0-9_$]+\(\)\}/g, "function(){return true;}");
     if (html.includes('location.protocol+"//"+location.host')) {
       html = html.replace('var a=location.protocol+"//"+location.host', `var a=(window.location.origin||"") + "/api/embed?url=" + encodeURIComponent("${parsedTarget.origin}") + "&subpath="`);
     }

@@ -84,6 +84,9 @@
     const INTERNAL_SERVER_NAMES = /^(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner|internal|node\d*|server\d*|stream\d*|feed\d*|hd|sd|fhd|live|main|backup)\b/i;
 
     function extractCleanServerLabel(name, rawUrl, idx) {
+        if (name && /^FX\s*\d*/i.test(name.trim())) {
+            return name.trim();
+        }
         let label = '';
         if (name) {
             const bracketMatch = name.match(/\[(.*?)\]/);
@@ -112,7 +115,11 @@
         }
 
         const lLower = label.toLowerCase();
-        if (lLower.includes('tsn')) {
+        if (lLower.includes('fubo')) {
+            label = 'Fubo Sports';
+        } else if (lLower.includes('peacock')) {
+            label = 'Peacock';
+        } else if (lLower.includes('tsn')) {
             const num = label.match(/\b\d\b/);
             label = num ? `TSN ${num[0]}` : 'TSN Sports';
         } else if (lLower.includes('caze')) {
@@ -313,6 +320,18 @@
         return url;
     }
 
+    function prioritizeFxServers(servers) {
+        if (!Array.isArray(servers) || servers.length <= 1) return servers || [];
+        const isFx = (s) => Boolean(s && (s.isFutbolX || /^FX\s*\d*/i.test(s.name || '') || (s.url && s.url.includes('futbolx')) || (s.rawUrl && s.rawUrl.includes('futbolx')) || (s.url && s.url.includes('ryzn.pro')) || (s.rawUrl && s.rawUrl.includes('ryzn.pro'))));
+        const fxList = [];
+        const otherList = [];
+        for (const s of servers) {
+            if (isFx(s)) fxList.push(s);
+            else otherList.push(s);
+        }
+        return [...fxList, ...otherList];
+    }
+
     function sanitizeMatchServers(match) {
         if (!match) return match;
         if (match.poster) {
@@ -356,8 +375,9 @@
             }
         });
 
-        match.servers = clean;
-        match.sources = clean;
+        const sorted = prioritizeFxServers(clean);
+        match.servers = sorted;
+        match.sources = sorted;
         return match;
     }
 
@@ -1154,9 +1174,9 @@
                 for (const fx of fxMatches) {
                     const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: s.url,
+                        url: `shaka_player.html?hls=${encodeURIComponent(s.url)}`,
                         rawUrl: s.url,
-                        type: 'video',
+                        type: 'iframe',
                         isFutbolX: true,
                         hd: true
                     }));
@@ -1195,12 +1215,12 @@
                     }
 
                     if (matchedFixture) {
-                        // Attach FX streams to existing fixture
+                        // Attach FX streams to existing fixture at the very top
                         if (fxStreams.length > 0) {
                             const existingUrls = new Set((matchedFixture.servers || []).map(srv => srv.rawUrl || srv.url));
-                            const newFxServers = fxStreams.filter(s => !existingUrls.has(s.url));
+                            const newFxServers = fxStreams.filter(s => !existingUrls.has(s.rawUrl || s.url));
                             if (newFxServers.length > 0) {
-                                matchedFixture.servers = [...newFxServers, ...(matchedFixture.servers || [])];
+                                matchedFixture.servers = prioritizeFxServers([...newFxServers, ...(matchedFixture.servers || [])]);
                                 matchedFixture.sources = matchedFixture.servers;
                             }
                         }
@@ -2641,12 +2661,26 @@
 
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-            // 3. Fallback slug search
+            // 3. Fallback search by ID, slug, and path tokens
             let found = this.matches.find(m => {
+                if (m.id === decoded || m.id === stripped || m.rawId === decoded || m.rawId === stripped) return true;
                 if (m.slug && m.slug === slug) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
                 return mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)));
             });
+
+            if (!found) {
+                found = this.matches.find(m => {
+                    const uStr = JSON.stringify(m.servers || []).toLowerCase();
+                    if (uStr.includes(stripped.toLowerCase())) return true;
+                    const slugParts = stripped.toLowerCase().split(/[\/\-_]/).filter(p => p.length >= 3 && !['2026', '2025', '2024', 'ppv', 'embed', 'live'].includes(p));
+                    if (slugParts.length >= 2) {
+                        const mTitleLower = (m.title || '').toLowerCase();
+                        if (slugParts.every(p => mTitleLower.includes(p))) return true;
+                    }
+                    return false;
+                });
+            }
 
             // 3.5. Search futbolxCatalog directly for independent FutbolX links
             if (!found && Array.isArray(this.futbolxCatalog) && this.futbolxCatalog.length > 0) {
@@ -2654,9 +2688,9 @@
                 if (fx) {
                     const fxStreams = (fx.streams || []).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: s.url,
+                        url: `shaka_player.html?hls=${encodeURIComponent(s.url)}`,
                         rawUrl: s.url,
-                        type: 'video',
+                        type: 'iframe',
                         isFutbolX: true,
                         hd: true
                     }));

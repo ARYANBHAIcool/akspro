@@ -132,11 +132,13 @@
         var params = new URLSearchParams(location.search || location.hash.replace('#',''));
 
         var MPD_URL  = params.get('mpd')  || '';
+        var HLS_URL  = params.get('hls')  || params.get('m3u8') || params.get('url') || params.get('stream') || '';
         var KEY_ID   = params.get('kid')  || '';
         var KEY      = params.get('key')  || '';
         var CH_ID    = params.get('chid') || params.get('id') || '';
         var COOKIE   = params.get('cookie') || '';
         var REFERER  = params.get('referer') || '';
+        var activeClearKeys = {};
 
         var $video   = document.getElementById('video');
         var $loading = document.getElementById('loading');
@@ -335,19 +337,48 @@
         }
 
         async function initPlayer() {
-            var activeMpd = MPD_URL;
+            var activeStream = HLS_URL || MPD_URL;
             var activeKid = KEY_ID;
             var activeKey = KEY;
             var activeCookie = COOKIE;
             var activeRawCookie = rawCookie(COOKIE);
-            if (activeMpd && (!activeKid || !activeKey)) {
+
+            // Auto-sign FutbolX Flussonic streams if needed
+            if (activeStream && activeStream.includes('ryzn.pro') && !activeStream.includes('token=')) {
+                showToast('Authorizing FutbolX Stream...', 'info');
                 try {
-                    var u = new URL(activeMpd);
-                    if (!activeKid) activeKid = u.searchParams.get('kid') || '';
-                    if (!activeKey) activeKey = u.searchParams.get('key') || '';
+                    var u = new URL(activeStream);
+                    var tParams = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
+                    var tRes = await fetch('https://www.futbol-x.xyz/api/token.js?' + tParams.toString());
+                    if (tRes.ok) {
+                        var tData = await tRes.json();
+                        if (tData && tData.url) activeStream = tData.url;
+                    } else {
+                        var edgeRes = await fetch('/api/futbolx?token=1&url=' + encodeURIComponent(activeStream));
+                        if (edgeRes.ok) {
+                            var edgeData = await edgeRes.json();
+                            if (edgeData && edgeData.url) activeStream = edgeData.url;
+                        }
+                    }
                 } catch(e) {
-                    var mKid = activeMpd.match(/[?&]kid=([a-fA-F0-9]+)/i);
-                    var mKey = activeMpd.match(/[?&]key=([a-fA-F0-9]+)/i);
+                    try {
+                        var edgeRes2 = await fetch('/api/futbolx?token=1&url=' + encodeURIComponent(activeStream));
+                        if (edgeRes2.ok) {
+                            var edgeData2 = await edgeRes2.json();
+                            if (edgeData2 && edgeData2.url) activeStream = edgeData2.url;
+                        }
+                    } catch(e2) {}
+                }
+            }
+
+            if (activeStream && activeStream.includes('.mpd') && (!activeKid || !activeKey)) {
+                try {
+                    var uMpd = new URL(activeStream);
+                    if (!activeKid) activeKid = uMpd.searchParams.get('kid') || '';
+                    if (!activeKey) activeKey = uMpd.searchParams.get('key') || '';
+                } catch(e) {
+                    var mKid = activeStream.match(/[?&]kid=([a-fA-F0-9]+)/i);
+                    var mKey = activeStream.match(/[?&]key=([a-fA-F0-9]+)/i);
                     if (!activeKid && mKid) activeKid = mKid[1];
                     if (!activeKey && mKey) activeKey = mKey[1];
                 }
@@ -357,11 +388,11 @@
                 activeClearKeys[activeKid.toLowerCase()] = activeKey.toLowerCase();
             }
 
-            if (CH_ID && (!activeMpd || !activeKey || Object.keys(activeClearKeys).length === 0)) {
+            if (CH_ID && (!activeStream || !activeKey || Object.keys(activeClearKeys).length === 0)) {
                 showToast('Connecting Channel...', 'info');
                 var ch = await fetchChannelData(CH_ID);
                 if (ch) {
-                    activeMpd = ch.stream_url;
+                    activeStream = ch.stream_url;
                     activeKid = ch.key_id;
                     activeKey = ch.key;
                     activeCookie = ch.cookie || '';
@@ -374,9 +405,9 @@
                 }
             }
 
-            if (!activeMpd) {
+            if (!activeStream) {
                 hideLoading();
-                showError('No MPD URL provided. Use ?mpd=<URL>&kid=<KEY_ID>&key=<KEY> or ?chid=<ID>');
+                showError('No stream URL provided. Use ?hls=<URL> or ?mpd=<URL>');
                 return;
             }
 
@@ -421,8 +452,8 @@
                                     u = u.replace('.cdn.jio.com//', '.cdn.jio.com/');
                                 }
                                 return withCookie(u, activeRawCookie);
-                            });
-                        }
+                    } else if (url && (url.includes('futbolx') || url.includes('ryzn.pro'))) {
+                        req.headers["Referer"] = REFERER || "https://www.futbol-x.xyz/";
                     } else if (REFERER) {
                         req.headers["Referer"] = REFERER;
                     }
@@ -478,7 +509,7 @@
 
                 player.configure(config);
 
-                await player.load(activeMpd);
+                await player.load(activeStream);
                 $video.muted = false;
                 var playPromise = $video.play();
                 if (playPromise !== undefined) {
@@ -505,7 +536,7 @@
                         try {
                             var refreshed = await fetchChannelData(CH_ID);
                             if (refreshed) {
-                                activeMpd = refreshed.stream_url;
+                                activeStream = refreshed.stream_url;
                                 activeKid = refreshed.key_id;
                                 activeKey = refreshed.key;
                                 activeCookie = refreshed.cookie || '';
@@ -522,7 +553,7 @@
                             }
                         } catch(e) {}
                     }
-                    setTimeout(function() { player.load(activeMpd).catch(function(){}); }, 3000);
+                    setTimeout(function() { player.load(activeStream).catch(function(){}); }, 3000);
                 });
             } catch(e) {
                 console.error('Init error:', e);
