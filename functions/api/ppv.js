@@ -53,6 +53,110 @@ export async function onRequest(context) {
         }
     }
 
+    // Route: /api/ppv?endpoint=futbolx (FutbolX active streams proxy with edge caching)
+    if (endpointParam === 'futbolx' || endpointParam === 'fx') {
+        const isTokenReq = reqUrl.searchParams.get('token') === '1' || reqUrl.searchParams.has('path');
+        if (isTokenReq) {
+            let streamUrl = reqUrl.searchParams.get('url') || '';
+            let path = reqUrl.searchParams.get('path') || '';
+            let sourceHost = reqUrl.searchParams.get('sourceHost') || '';
+            if (streamUrl && !path) {
+                try {
+                    const u = new URL(streamUrl);
+                    path = u.pathname;
+                    sourceHost = u.hostname;
+                } catch (e) {}
+            }
+            if (path && sourceHost) {
+                try {
+                    const tokenApiUrl = `https://www.futbol-x.xyz/api/token.js?path=${encodeURIComponent(path)}&sourceHost=${encodeURIComponent(sourceHost)}&expires=900`;
+                    const tResp = await fetch(tokenApiUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                            'Referer': 'https://www.futbol-x.xyz/'
+                        }
+                    });
+                    if (tResp.ok) {
+                        const data = await tResp.json();
+                        return new Response(JSON.stringify(data), {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'application/json; charset=utf-8',
+                                'Access-Control-Allow-Origin': '*',
+                                'Cache-Control': 'public, max-age=300'
+                            }
+                        });
+                    }
+                } catch (e) {}
+            }
+            return new Response(JSON.stringify({ success: false, error: 'Token generation failed' }), {
+                status: 400,
+                headers: { 'Content-Type': 'application/json; charset=utf-8', 'Access-Control-Allow-Origin': '*' }
+            });
+        }
+
+        try {
+            const streamRes = await fetch('https://www.futbol-x.xyz/api/stream', {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                    'Referer': 'https://www.futbol-x.xyz/'
+                }
+            });
+            if (streamRes.ok) {
+                const { categories } = await streamRes.json();
+                const validCats = Array.isArray(categories) ? categories.filter(c => c && c !== 'rugby' && c !== 'golf') : [];
+                const catPromises = validCats.map(async cat => {
+                    try {
+                        const cResp = await fetch(`https://www.futbol-x.xyz/api/${cat}.json`, {
+                            headers: {
+                                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                                'Referer': 'https://www.futbol-x.xyz/'
+                            }
+                        });
+                        if (!cResp.ok) return [];
+                        const cData = await cResp.json();
+                        const events = [];
+                        if (cData && Array.isArray(cData.streams)) {
+                            for (const group of cData.streams) {
+                                if (group && Array.isArray(group.streams)) {
+                                    for (const ev of group.streams) {
+                                        const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0);
+                                        if (activeStreams.length > 0) {
+                                            events.push({
+                                                id: `fx-${ev.uri_name || Math.random().toString(36).slice(2, 8)}`,
+                                                uri_name: ev.uri_name,
+                                                title: (ev.name || '').trim(),
+                                                tag: (ev.tag || '').trim(),
+                                                category: cat,
+                                                poster: ev.poster || '',
+                                                starts_at: ev.starts_at || '',
+                                                ends_at: ev.ends_at || '',
+                                                streams: activeStreams
+                                            });
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                        return events;
+                    } catch (e) {
+                        return [];
+                    }
+                });
+                const allResults = await Promise.all(catPromises);
+                const matches = allResults.flat();
+                return new Response(JSON.stringify({ success: true, count: matches.length, matches }), {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'application/json; charset=utf-8',
+                        'Access-Control-Allow-Origin': '*',
+                        'Cache-Control': 'public, max-age=60, s-maxage=60'
+                    }
+                });
+            }
+        } catch (e) {}
+    }
+
     function transformDamiListToCategories(items) {
         if (!Array.isArray(items)) return [];
         const catMap = new Map();

@@ -349,80 +349,107 @@ window.AryanPlayerEngine = {
             const video = document.getElementById('global-video-element');
             if (!video) return;
 
-            if (window.Hls && Hls.isSupported() && serverUrl.includes('.m3u8')) {
-                const hls = new Hls({
-                    enableWorker: true,
-                    lowLatencyMode: false,
-                    liveSyncDurationCount: 3,
-                    liveMaxLatencyDurationCount: 8,
-                    maxBufferLength: 30,
-                    maxMaxBufferLength: 60,
-                    backBufferLength: 30,
-                    manifestLoadingTimeOut: 15000,
-                    levelLoadingTimeOut: 15000
-                });
-                hls.loadSource(serverUrl);
-                hls.attachMedia(video);
-                this.hls = hls;
+            const startPlayback = (playableUrl) => {
+                if (window.Hls && Hls.isSupported() && playableUrl.includes('.m3u8')) {
+                    const hls = new Hls({
+                        enableWorker: true,
+                        lowLatencyMode: false,
+                        liveSyncDurationCount: 3,
+                        liveMaxLatencyDurationCount: 8,
+                        maxBufferLength: 30,
+                        maxMaxBufferLength: 60,
+                        backBufferLength: 30,
+                        manifestLoadingTimeOut: 15000,
+                        levelLoadingTimeOut: 15000
+                    });
+                    hls.loadSource(playableUrl);
+                    hls.attachMedia(video);
+                    this.hls = hls;
 
-                hls.on(Hls.Events.MANIFEST_PARSED, () => {
-                    const playPromise = video.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                            video.muted = true;
-                            video.play().catch(() => {});
-                        });
-                    }
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 300);
-                    }
-                });
+                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                        const playPromise = video.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(() => {
+                                video.muted = true;
+                                video.play().catch(() => {});
+                            });
+                        }
+                        if (loader) {
+                            loader.style.opacity = '0';
+                            setTimeout(() => loader.remove(), 300);
+                        }
+                    });
 
-                let networkRetries = 0;
-                hls.on(Hls.Events.ERROR, (event, data) => {
-                    if (data.fatal) {
-                        switch (data.type) {
-                            case Hls.ErrorTypes.NETWORK_ERROR:
-                                networkRetries++;
-                                if (networkRetries <= 2) {
-                                    hls.startLoad();
-                                } else {
+                    let networkRetries = 0;
+                    hls.on(Hls.Events.ERROR, (event, data) => {
+                        if (data.fatal) {
+                            switch (data.type) {
+                                case Hls.ErrorTypes.NETWORK_ERROR:
+                                    networkRetries++;
+                                    if (networkRetries <= 2) {
+                                        hls.startLoad();
+                                    } else {
+                                        hls.destroy();
+                                        if (loader) loader.remove();
+                                        if (errorOverlay) errorOverlay.classList.remove('hidden');
+                                    }
+                                    break;
+                                case Hls.ErrorTypes.MEDIA_ERROR:
+                                    hls.recoverMediaError();
+                                    break;
+                                default:
                                     hls.destroy();
                                     if (loader) loader.remove();
                                     if (errorOverlay) errorOverlay.classList.remove('hidden');
-                                }
-                                break;
-                            case Hls.ErrorTypes.MEDIA_ERROR:
-                                hls.recoverMediaError();
-                                break;
-                            default:
-                                hls.destroy();
-                                if (loader) loader.remove();
-                                if (errorOverlay) errorOverlay.classList.remove('hidden');
-                                break;
+                                    break;
+                            }
                         }
-                    }
-                });
-            } else if (serverUrl) {
-                video.src = serverUrl;
-                video.onloadeddata = () => {
-                    const playPromise = video.play();
-                    if (playPromise !== undefined) {
-                        playPromise.catch(() => {
-                            video.muted = true;
-                            video.play().catch(() => {});
+                    });
+                } else if (playableUrl) {
+                    video.src = playableUrl;
+                    video.onloadeddata = () => {
+                        const playPromise = video.play();
+                        if (playPromise !== undefined) {
+                            playPromise.catch(() => {
+                                video.muted = true;
+                                video.play().catch(() => {});
+                            });
+                        }
+                        if (loader) {
+                            loader.style.opacity = '0';
+                            setTimeout(() => loader.remove(), 300);
+                        }
+                    };
+                    video.onerror = () => {
+                        if (loader) loader.remove();
+                        if (errorOverlay) errorOverlay.classList.remove('hidden');
+                    };
+                }
+            };
+
+            // Flussonic token resolution for FutbolX streams (e.g. ryzn.pro)
+            if (serverUrl.includes('ryzn.pro') && !serverUrl.includes('token=')) {
+                try {
+                    const u = new URL(serverUrl);
+                    const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
+                    fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(3500) })
+                        .then(r => r.json())
+                        .then(data => {
+                            const tokenized = (data && data.url) ? data.url : serverUrl;
+                            startPlayback(tokenized);
+                        })
+                        .catch(() => {
+                            // Fallback to local edge token proxy
+                            fetch(`/api/futbolx?token=1&url=${encodeURIComponent(serverUrl)}`, { signal: AbortSignal.timeout(3000) })
+                                .then(r => r.json())
+                                .then(d => startPlayback(d && d.url ? d.url : serverUrl))
+                                .catch(() => startPlayback(serverUrl));
                         });
-                    }
-                    if (loader) {
-                        loader.style.opacity = '0';
-                        setTimeout(() => loader.remove(), 300);
-                    }
-                };
-                video.onerror = () => {
-                    if (loader) loader.remove();
-                    if (errorOverlay) errorOverlay.classList.remove('hidden');
-                };
+                } catch (e) {
+                    startPlayback(serverUrl);
+                }
+            } else {
+                startPlayback(serverUrl);
             }
         } else {
             const iframe = document.getElementById('global-iframe-element');

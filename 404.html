@@ -6,6 +6,13 @@
     <title>AryanStreams Global – Live Sports & Multi-Server Streaming</title>
     <meta name="description" content="AryanStreams Global - Watch Live Sports, Football, Basketball, UFC, NFL, F1, Tennis, and 800+ 24/7 Live TV Channels with Multi-Server options.">
     <link rel="icon" type="image/png" href="assets/img/logo-icon.png">
+    <!-- Speed & Preconnect Directives -->
+    <link rel="preconnect" href="https://asppv.pages.dev">
+    <link rel="preconnect" href="https://wsrv.nl" crossorigin>
+    <link rel="preconnect" href="https://static.ppvservices.st" crossorigin>
+    <link rel="preconnect" href="https://www.futbol-x.xyz" crossorigin>
+    <link rel="dns-prefetch" href="https://g.futbolx.ryzn.pro">
+    <link rel="dns-prefetch" href="https://streamed.pk">
 
     <!-- Tailwind CSS & HLS.js -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -31,6 +38,15 @@
         }
     </script>
     <style>
+        * {
+            -webkit-tap-highlight-color: transparent;
+        }
+        .match-card, a[href*="?match="] {
+            touch-action: manipulation;
+            content-visibility: auto;
+            contain-intrinsic-size: 100px;
+            transform: translateZ(0);
+        }
         body {
             background-color: #080c14;
             color: #f1f5f9;
@@ -339,10 +355,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=6.6"></script>
-    <script src="js/paramount-core.js?v=6.6"></script>
-    <script src="js/player.js?v=6.6"></script>
-    <script src="js/api.js?v=6.6"></script>
+    <script src="js/ads.js?v=6.7"></script>
+    <script src="js/paramount-core.js?v=6.7"></script>
+    <script src="js/player.js?v=6.7"></script>
+    <script src="js/api.js?v=6.7"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -1034,7 +1050,7 @@
             } else if (urlParams.get('channel')) {
                 targetId = decodeURIComponent(urlParams.get('channel'));
             } else {
-                const pathMatch = window.location.pathname.match(/^\/(?:match|watch)\/(.+)$/);
+                const pathMatch = window.location.pathname.match(/^\/(?:match|watch|live)\/(.+)$/);
                 if (pathMatch && pathMatch[1]) {
                     targetId = decodeURIComponent(pathMatch[1]);
                 } else if (window.location.hash && window.location.hash.startsWith('#watch-')) {
