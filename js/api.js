@@ -287,12 +287,14 @@
     function sanitizePosterUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
-        if (!url || url.includes('logo-icon.png')) return '';
+        if (!url || url.includes('logo-icon.png') || url.includes('poocloud.in')) return '';
         if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
         if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
             url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
+        } else if (url.startsWith('/img/')) {
+            url = 'https://damitv.st' + url;
         }
-        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
+        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&output=webp`;
         }
         return url;
@@ -301,7 +303,7 @@
     function sanitizeLogoUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
-        if (!url || url.includes('logo-icon.png')) return '';
+        if (!url || url.includes('logo-icon.png') || url.includes('poocloud.in')) return '';
         if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
         if (url.includes('sofascore.com')) {
             return `https://serveproxy.com/?url=${encodeURIComponent(url)}`;
@@ -309,12 +311,13 @@
         if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//') && !url.startsWith('assets/')) {
             if (url.startsWith('/api/images') || url.startsWith('/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
+            } else if (url.startsWith('/img/')) {
+                url = 'https://damitv.st' + url;
             } else if (/^[a-zA-Z0-9_\-=+]{20,}$/.test(url)) {
-                // Streamed.pk base64 badge key
                 url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
             }
         }
-        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st') || url.includes('damitv.st')) {
+        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&output=webp`;
         }
         return url;
@@ -1518,7 +1521,7 @@
                             id: `dlhd-${ch.id}`,
                             channelId: ch.id,
                             name: ch.name,
-                            logo: ch.image || `https://wsrv.nl/?url=https://raw.githubusercontent.com/tv-logo/tv-logos/main/countries/${ch.country || 'united-states'}/${encodeURIComponent(ch.name.toLowerCase().replace(/\s+/g, '-'))}.png&w=120&h=120&fit=contain&default=https://via.placeholder.com/120?text=TV`,
+                            logo: (ch.image && ch.image.startsWith('/img/')) ? ('https://damitv.st' + ch.image) : (ch.image || 'assets/img/logo-icon.png'),
                             country: (ch.country || 'GLOBAL').toUpperCase(),
                             category: '24/7 STREAMS',
                             servers: [
@@ -1614,29 +1617,26 @@
             }
             try {
                 const fetchEndpoint = async (endpoint) => {
-                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5);
-                    for (let i = 0; i < candidateWorkers.length; i += 4) {
-                        const batch = candidateWorkers.slice(i, i + 4);
-                        try {
-                            const batchPromises = batch.map(worker => {
-                                return new Promise((resolve, reject) => {
-                                    const timer = setTimeout(() => reject(new Error('timeout')), 4000);
-                                    window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, `corner ${endpoint}`)
-                                        .then(res => {
-                                            clearTimeout(timer);
-                                            if (Array.isArray(res) && res.length > 0) resolve(res);
-                                            else reject(new Error('empty'));
-                                        })
-                                        .catch(err => {
-                                            clearTimeout(timer);
-                                            reject(err);
-                                        });
-                                });
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5).slice(0, 4);
+                    try {
+                        const batchPromises = candidateWorkers.map(worker => {
+                            return new Promise((resolve, reject) => {
+                                const timer = setTimeout(() => reject(new Error('timeout')), 2500);
+                                window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, `corner ${endpoint}`)
+                                    .then(res => {
+                                        clearTimeout(timer);
+                                        if (Array.isArray(res) && res.length > 0) resolve(res);
+                                        else reject(new Error('empty'));
+                                    })
+                                    .catch(err => {
+                                        clearTimeout(timer);
+                                        reject(err);
+                                    });
                             });
-                            const res = await Promise.any(batchPromises);
-                            if (Array.isArray(res) && res.length > 0) return res;
-                        } catch (e) {}
-                    }
+                        });
+                        const res = await Promise.any(batchPromises);
+                        if (Array.isArray(res) && res.length > 0) return res;
+                    } catch (e) {}
                     return [];
                 };
 
