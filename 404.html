@@ -711,9 +711,7 @@
             if (url.includes('sofascore.com')) {
                 return `https://serveproxy.com/?url=${encodeURIComponent(url)}`;
             }
-            if (url.startsWith('/img/')) {
-                return 'https://damitv.st' + url;
-            }
+            
             if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
             } else if (/^[a-zA-Z0-9_\-=+]{20,}$/.test(url)) {
@@ -808,11 +806,9 @@
                     } catch (e) {}
                 } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
                     directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
-                } else if (directRaw.startsWith('/img/')) {
-                    directRaw = 'https://damitv.st' + directRaw;
-                }
+                
                 const posterSrc = (rawPoster.includes('wsrv.nl/?url=') || rawPoster.includes('serveproxy.com')) ? rawPoster : (
-                    rawPoster.startsWith('/img/') ? ('https://damitv.st' + rawPoster) : (
+                    (
                         (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
                             ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
                             : rawPoster

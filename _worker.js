@@ -12,15 +12,15 @@ var __defProp2222 = Object.defineProperty;
 var __name2222 = /* @__PURE__ */ __name222((target, value) => __defProp2222(target, "name", { value, configurable: true }), "__name");
 async function onRequest(context) {
   const url = new URL(context.request.url);
-  const targetPath = url.pathname.replace(/^\/api\/damitv\//, "");
+  return new Response("Not Found", { status: 404 });
   const search = url.search;
-  const targetUrl = `https://damitv.st/${targetPath}${search}`;
+  
   try {
     const response = await fetch(targetUrl, {
       method: context.request.method,
       headers: {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
-        "Referer": "https://damitv.st/",
+        
         "Accept": "application/json, text/plain, */*"
       }
     });
@@ -395,8 +395,7 @@ async function onRequest4(context) {
   const endpointParam = (reqUrl.searchParams.get("endpoint") || reqUrl.searchParams.get("type") || "").toLowerCase();
   if (endpointParam === "all" || endpointParam === "schedule" || endpointParam === "matches") {
     const scheduleMirrors = [
-      "https://streamed.pk/api/matches/all",
-      "https://damitv.st/papi/matches/all-today"
+      "https://streamed.pk/api/matches/all"
     ];
     for (const mirror of scheduleMirrors) {
       try {
@@ -531,54 +530,7 @@ async function onRequest4(context) {
       }
     } catch (e) {}
   }
-  function transformDamiListToCategories(items) {
-    if (!Array.isArray(items)) return [];
-    const catMap = /* @__PURE__ */ new Map();
-    for (const item of items) {
-      if (!item || !item.id && !item.title) continue;
-      const rawCat = (item.category || "sports").trim().toLowerCase();
-      const catName = rawCat.split("-").map((w) => w.charAt(0).toUpperCase() + w.slice(1)).join(" ");
-      if (!catMap.has(catName)) {
-        catMap.set(catName, []);
-      }
-      const nowSec = Math.floor(Date.now() / 1e3);
-      const startSec = item.date ? typeof item.date === "number" ? Math.floor(item.date / 1e3) : Math.floor(new Date(item.date).getTime() / 1e3) : 0;
-      const endSec = startSec ? startSec + 10800 : 0;
-      if (item.status === "ended" || item.status === "finished") {
-        continue;
-      }
-      if (endSec > 0 && nowSec > endSec + 900 && !item.always_live) {
-        continue;
-      }
-      let rawPoster = item.poster || item.image || "";
-      if (rawPoster.startsWith("/api/images") || rawPoster.startsWith("/images") || rawPoster.startsWith("api/images")) {
-        rawPoster = "https://streamed.pk/" + rawPoster.replace(/^\/+/, "");
-      }
-      const cleanPoster = rawPoster && (rawPoster.includes("streamed.pk") || rawPoster.includes("static.ppvservices.st")) ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp` : rawPoster;
-      catMap.get(catName).push({
-        id: item.id,
-        name: item.title,
-        tag: item.league || catName,
-        starts_at: startSec,
-        ends_at: endSec,
-        iframe: item.embedUrl || (item.id ? `https://embedindia.st/embed/${item.id}` : ""),
-        poster: cleanPoster,
-        popular: Boolean(item.popular),
-        status: item.status || "upcoming",
-        category: rawCat,
-        substreams: Array.isArray(item.substreams) ? item.substreams : [],
-        teams: item.teams || (item.team1 && item.team2 ? { home: item.team1, away: item.team2 } : null)
-      });
-    }
-    const streams = [];
-    for (const [cat, streamList] of catMap.entries()) {
-      streams.push({
-        category: cat,
-        streams: streamList
-      });
-    }
-    return streams;
-  }
+  
   __name(transformDamiListToCategories, "transformDamiListToCategories");
   __name2(transformDamiListToCategories, "transformDamiListToCategories");
   __name22(transformDamiListToCategories, "transformDamiListToCategories");
@@ -618,31 +570,6 @@ async function onRequest4(context) {
     }
   } catch (e1) {
     console.warn("api.ppv.st fetch failed in /api/ppv proxy:", e1.message);
-  }
-  try {
-    const damitvResp = await fetch("https://damitv.st/papi/matches/all-today", {
-      headers: {
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-        "Referer": "https://damitv.st/",
-        "Accept": "application/json"
-      }
-    });
-    if (damitvResp.ok) {
-      const rawList = await damitvResp.json();
-      if (Array.isArray(rawList) && rawList.length > 0) {
-        const categories = transformDamiListToCategories(rawList);
-        return new Response(JSON.stringify({ success: true, streams: categories }), {
-          status: 200,
-          headers: {
-            "Content-Type": "application/json; charset=utf-8",
-            "Access-Control-Allow-Origin": "*",
-            "Cache-Control": "public, max-age=300, s-maxage=300"
-          }
-        });
-      }
-    }
-  } catch (err) {
-    console.warn("damitv fetch failed in /api/ppv proxy:", err.message);
   }
   return new Response(JSON.stringify({ success: false, error: "Could not retrieve feeds from upstream" }), {
     status: 502,
@@ -979,13 +906,7 @@ var routes = [
     middlewares: [],
     modules: [onRequestBundleClappr]
   },
-  {
-    routePath: "/api/damitv/:path*",
-    mountPath: "/api/damitv",
-    method: "",
-    middlewares: [],
-    modules: [onRequest]
-  },
+  
   {
     routePath: "/api/embed",
     mountPath: "/api",

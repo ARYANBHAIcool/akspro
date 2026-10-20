@@ -2,7 +2,7 @@
  * AryanStreams Global - Automated Live Sports & Stream Aggregation Engine
  * Real-time integration with:
  * 1. Futbol-X Public API (https://www.futbol-x.xyz/api)
- * 2. DamiTV & PPV Services (https://damitv.st/papi & https://ppv.st)
+ * 2. PPV Services (https://ppv.st)
  * 3. 24/7 Live TV Channels Catalog (DaddyHD & TimStreams)
  */
 
@@ -12,10 +12,6 @@
     const FUTBOLX_API_BASE = 'https://www.futbol-x.xyz/api';
     const isBrowser = typeof window !== 'undefined' && typeof window.location !== 'undefined';
     const hostname = isBrowser ? (window.location.hostname || '') : '';
-    const DAMITV_API_BASE = hostname.includes('pages.dev') || hostname === 'localhost' || hostname === '127.0.0.1'
-        ? '/api/damitv'
-        : 'https://damitv.st';
-
     const ALPHA_WORKER_NODES = [
         'data.gigav.workers.dev',
         'data.yedmzoa.workers.dev',
@@ -291,8 +287,6 @@
         if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
         if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
             url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
-        } else if (url.startsWith('/img/')) {
-            url = 'https://damitv.st' + url;
         }
         if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&output=webp`;
@@ -311,8 +305,6 @@
         if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//') && !url.startsWith('assets/')) {
             if (url.startsWith('/api/images') || url.startsWith('/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
-            } else if (url.startsWith('/img/')) {
-                url = 'https://damitv.st' + url;
             } else if (/^[a-zA-Z0-9_\-=+]{20,}$/.test(url)) {
                 url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
             }
@@ -803,8 +795,7 @@
                 // 2. Fetch Complete Fixtures Schedule (Fast Cloudflare edge proxy first)
                 const scheduleEndpoints = [
                     '/api/ppv?endpoint=all',
-                    'https://streamed.pk/api/matches/all',
-                    'https://damitv.st/papi/matches/all-today'
+                    'https://streamed.pk/api/matches/all'
                 ];
                 for (const ep of scheduleEndpoints) {
                     try {
@@ -817,7 +808,7 @@
                             if (Array.isArray(json) && json.length > 0) {
                                 json.forEach(s => {
                                     if (s && s.id && !seenRawIds.has(s.id)) {
-                                        // Filter out synthetic / manual / fake DamiTV CMS test fixtures & phantom matches
+                                        // Filter out synthetic / manual / fake phantom matches
                                         const sIdLower = String(s.id || '').toLowerCase();
                                         const sTitleLower = String(s.name || s.title || '').toLowerCase();
                                         if (s.isManual || s.auto === 'own' || sIdLower.startsWith('mm-own') || sIdLower.startsWith('mm-yl') || sIdLower.startsWith('mm-cric')) {
@@ -1535,7 +1526,7 @@
 
             let externalChannels = [];
             try {
-                const url = `${DAMITV_API_BASE}/data/dlhd-channels.json`;
+                const url = 'data/channels.json';
                 const res = await fetch(url, { signal: AbortSignal.timeout(5000) }).catch(() => null);
                 if (res && res.ok && (res.headers.get('content-type') || '').includes('json')) {
                     const data = await res.json();
@@ -1544,7 +1535,7 @@
                             id: `dlhd-${ch.id}`,
                             channelId: ch.id,
                             name: ch.name,
-                            logo: (ch.image && ch.image.startsWith('/img/')) ? ('https://damitv.st' + ch.image) : (ch.image || 'assets/img/logo-icon.png'),
+                            logo: ch.image || 'assets/img/logo-icon.png',
                             country: (ch.country || 'GLOBAL').toUpperCase(),
                             category: '24/7 STREAMS',
                             servers: [
@@ -2072,7 +2063,7 @@
 
                             // Drop generic unwanted branding
                             if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
-                            if (/embedindia|damitv|ppv/i.test(rawUrl) || /embedindia|damitv|ppv/i.test(label)) return;
+                            if (/embedindia|ppv/i.test(rawUrl) || /embedindia|ppv/i.test(label)) return;
 
                             const key = getCanonicalServerKey(rawUrl);
                             if (key && seenKeys.has(key)) return;
@@ -2492,9 +2483,7 @@
             }, raw.category || 'Sports', Boolean(raw.always_live));
         },
 
-        normalizeDamiMatch(raw) {
-            return this.normalizePPVMatch(raw);
-        },
+        
 
         deduplicateMatchesList() {
             if (!Array.isArray(this.matches) || this.matches.length === 0) return;
