@@ -122,11 +122,15 @@ export async function onRequest(context) {
                                 if (group && Array.isArray(group.streams)) {
                                     for (const ev of group.streams) {
                                         if (!ev || !ev.name) continue;
+                                        const titleLower = (ev.name || '').toLowerCase();
+                                        if ((titleLower.includes('wolves') || titleLower.includes('wolverhampton')) && (titleLower.includes('pompey') || titleLower.includes('portsmouth'))) continue;
+                                        if (titleLower.includes('diriyah') && titleLower.includes('riyadh')) continue;
                                         const start = ev.starts_at ? new Date(ev.starts_at).getTime() : 0;
                                         const end = ev.ends_at ? new Date(ev.ends_at).getTime() : (start ? start + 10800000 : 0);
-                                        if (end > 0 && now > (end + 900000) && !ev.always_live) continue;
+                                        if (end > 0 && now > (end + 1800000) && !ev.always_live) continue;
 
-                                        const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0);
+                                        const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0 && !s.url.includes('placeholder'));
+                                        if (activeStreams.length === 0) continue;
                                         events.push({
                                             id: `fx-${ev.uri_name || Math.random().toString(36).slice(2, 8)}`,
                                             uri_name: ev.uri_name,

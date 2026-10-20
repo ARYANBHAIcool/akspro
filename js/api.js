@@ -817,7 +817,7 @@
                                         if (sTitleLower.includes('diriyah') && sTitleLower.includes('riyadh')) {
                                             return;
                                         }
-                                        if (sTitleLower.includes('wolverhampton') && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
+                                        if ((sTitleLower.includes('wolves') || sTitleLower.includes('wolverhampton')) && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
                                             return;
                                         }
                                         if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
@@ -1258,6 +1258,7 @@
                         }
                     } else {
                         // Exclusive FutbolX match (both live and upcoming future events!)
+                        if (!Array.isArray(fxStreams) || fxStreams.length === 0) continue;
                         const newMatch = this.normalizeFutbolXMatch(fx, fxStreams);
                         if (newMatch) {
                             this.matches.push(newMatch);
@@ -1289,13 +1290,25 @@
 
         normalizeFutbolXMatch(fx, fxStreams) {
             if (!fx || !fx.title) return null;
+            const fxTitleLower = (fx.title || fx.name || '').toLowerCase();
+            if ((fxTitleLower.includes('wolves') || fxTitleLower.includes('wolverhampton')) && (fxTitleLower.includes('pompey') || fxTitleLower.includes('portsmouth'))) {
+                return null;
+            }
+            if (fxTitleLower.includes('diriyah') && fxTitleLower.includes('riyadh')) {
+                return null;
+            }
+            if (!Array.isArray(fxStreams) || fxStreams.length === 0) {
+                return null;
+            }
+
             const startTs = fx.starts_at ? new Date(fx.starts_at).getTime() : Date.now();
             const endTs = fx.ends_at ? new Date(fx.ends_at).getTime() : (startTs ? startTs + 10800000 : 0);
             const now = Date.now();
 
-            if (endTs > 0 && now > (endTs + 900000)) return null;
+            if (endTs > 0 && now > (endTs + 1800000)) return null;
 
-            const isLive = Boolean(startTs > 0 && now >= startTs && (!endTs || now <= endTs));
+            const isExplicitLive = Boolean(fx.status === 'live' || fx.status === 'in_progress' || fx.isLive);
+            const isLive = Boolean(isExplicitLive || (startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000))));
             const rawCat = (fx.category || 'football').toLowerCase();
             const sport = SPORT_MAPPINGS[rawCat] || (fx.category ? fx.category.toUpperCase() : 'FOOTBALL');
 
@@ -2258,19 +2271,22 @@
             const endTs = (alpha.end_time ? new Date(alpha.end_time).getTime() : 0) || (startTs ? startTs + 10800000 : 0);
 
             // Filter out finished / expired matches
-            if (endTs > 0 && now > (endTs + 900000)) {
+            if (endTs > 0 && now > (endTs + 1800000)) {
                 return null;
             }
 
             const timeStr = (alpha.time || alpha.time_et || '').toLowerCase();
             // Strictly match in-game quarter/half/set indicators without falsely matching "1st Round", "2nd Leg", "1st T20I"
             const isExplicitLive = Boolean(
+                alpha.status === 'live' ||
+                alpha.status === 'in_progress' ||
+                alpha.isLive === true ||
                 /\b(?:live|ht|halftime|half-time|overtime|ot)\b/i.test(timeStr) ||
                 /\b(?:1st|2nd|3rd|4th)\s*(?:qtr|quarter|half|period|set)\b/i.test(timeStr) ||
                 /\b(?:q[1-4]|set\s*\d)\b/i.test(timeStr)
             );
-            const isTimeLive = Boolean(startTs > 0 && now >= startTs && (!endTs || now <= endTs));
-            const isLive = Boolean((isExplicitLive || isTimeLive) && (!endTs || now <= endTs));
+            const isTimeLive = Boolean(startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000)));
+            const isLive = Boolean((isExplicitLive || isTimeLive) && (!endTs || now <= (endTs + 1800000)));
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
@@ -2323,7 +2339,7 @@
             const isAlwaysLive = Boolean(s.always_live || is247Cat || tag.toLowerCase().includes('24/7') || !startTs);
 
             // Filter out finished / ended matches (ended more than 15 minutes ago)
-            if (!isAlwaysLive && endTs > 0 && now > (endTs + 900000)) {
+            if (!isAlwaysLive && endTs > 0 && now > (endTs + 1800000)) {
                 return null;
             }
             if (s.status === 'ended' || s.status === 'finished') {
@@ -2339,7 +2355,7 @@
             if (sTitleLower.includes('diriyah') && sTitleLower.includes('riyadh')) {
                 return null;
             }
-            if (sTitleLower.includes('wolverhampton') && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
+            if ((sTitleLower.includes('wolves') || sTitleLower.includes('wolverhampton')) && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
                 return null;
             }
             if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
@@ -2349,7 +2365,14 @@
                 return null;
             }
 
-            const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
+            const isExplicitLive = Boolean(
+                s.status === 'live' ||
+                s.status === 'in_progress' ||
+                s.isLive === true ||
+                s.live === true ||
+                (typeof s.tag === 'string' && s.tag.toLowerCase().includes('live'))
+            );
+            const isLive = !isAlwaysLive && (isExplicitLive || (startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000))));
 
             const title = (s.name || s.title || 'Live Event').trim();
             const rawCat = (s.category || catName || '').toLowerCase().replace(/[\s_]+/g, '-');
@@ -2667,7 +2690,9 @@
                     m.isLive = false;
                     m.status = 'live_tv';
                 } else {
-                    m.isLive = m.startTime <= now && now <= m.endTime;
+                    const isExplicitLive = m.status === 'live' || m.status === 'in_progress';
+                    const isInTimeWindow = (m.startTime - 900000) <= now && (!m.endTime || now <= (m.endTime + 1800000));
+                    m.isLive = Boolean(isExplicitLive || isInTimeWindow);
                     m.status = m.isLive ? 'live' : 'upcoming';
                 }
             });
@@ -2871,8 +2896,13 @@
             if (m.isAlwaysLive || m.always_live === 1) return true;
             if (m.tag === '24/7 channel' || m.tag === '24/7 streams') return true;
             if (!m.startTime || m.startTime <= 0) return true;
-            // Never include future fixtures in Live Now
-            if (m.startTime && m.startTime > Date.now()) return true;
+            const now = Date.now();
+            const isExplicitLive = m.status === 'live' || m.status === 'in_progress' || Boolean(m.isLive);
+            // Never include future fixtures in Live Now unless explicitly live or within 15 min warmup
+            if (!isExplicitLive && m.startTime && m.startTime > (now + 900000)) return true;
+
+            // Never include fixtures that ended more than 30 minutes ago
+            if (m.endTime && now > (m.endTime + 1800000)) return true;
 
             const t = (m.title || '').toLowerCase();
             const l = (m.league || '').toLowerCase();
@@ -2906,10 +2936,10 @@
         getLiveMatches() {
             const now = Date.now();
             return this.matches.filter(m => {
-                if (!m.isLive || this.isExcludedFromLiveNow(m)) return false;
-                if (m.startTime && m.startTime > now) return false;
-                if (m.endTime && now > (m.endTime + 900000)) return false;
-                return true;
+                if (this.isExcludedFromLiveNow(m)) return false;
+                const isExplicitLive = m.status === 'live' || m.status === 'in_progress';
+                const isInTimeWindow = (m.startTime && (m.startTime - 900000) <= now && (!m.endTime || now <= (m.endTime + 1800000)));
+                return Boolean(m.isLive || isExplicitLive || isInTimeWindow);
             });
         },
 
