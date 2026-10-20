@@ -806,13 +806,11 @@
                     } catch (e) {}
                 } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
                     directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
-                
+                }
                 const posterSrc = (rawPoster.includes('wsrv.nl/?url=') || rawPoster.includes('serveproxy.com')) ? rawPoster : (
-                    (
-                        (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
-                            ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
-                            : rawPoster
-                    )
+                    (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
+                        ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
+                        : rawPoster
                 );
                 return `
                     <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
