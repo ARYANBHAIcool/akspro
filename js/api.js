@@ -785,6 +785,10 @@
                                     const is247 = cat.always_live || cName.toLowerCase().includes('24/7');
                                     (cat.streams || []).forEach(s => {
                                         if (s && s.id && !seenRawIds.has(s.id)) {
+                                            const mainIframe = s.iframe || s.embedUrl || '';
+                                            if (mainIframe.includes('taifood-blog.asia') && (!Array.isArray(s.substreams) || s.substreams.length === 0)) {
+                                                return; // Skip dead taifood ghost fixture
+                                            }
                                             seenRawIds.add(s.id);
                                             rawItems.push({ stream: s, category: cName, is247: is247 });
                                         }
@@ -813,6 +817,25 @@
                             if (Array.isArray(json) && json.length > 0) {
                                 json.forEach(s => {
                                     if (s && s.id && !seenRawIds.has(s.id)) {
+                                        // Filter out synthetic / manual / fake DamiTV CMS test fixtures & phantom matches
+                                        const sIdLower = String(s.id || '').toLowerCase();
+                                        const sTitleLower = String(s.name || s.title || '').toLowerCase();
+                                        if (s.isManual || s.auto === 'own' || sIdLower.startsWith('mm-own') || sIdLower.startsWith('mm-yl') || sIdLower.startsWith('mm-cric')) {
+                                            return;
+                                        }
+                                        if (sTitleLower.includes('diriyah') && sTitleLower.includes('riyadh')) {
+                                            return;
+                                        }
+                                        if (sTitleLower.includes('wolverhampton') && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
+                                            return;
+                                        }
+                                        if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
+                                            return;
+                                        }
+                                        const mainIframe = s.iframe || s.embedUrl || '';
+                                        if (mainIframe.includes('taifood-blog.asia') && (!Array.isArray(s.substreams) || s.substreams.length === 0) && (!Array.isArray(s.sources) || s.sources.length === 0)) {
+                                            return;
+                                        }
                                         seenRawIds.add(s.id);
                                         const cName = (s.category || 'Sports').trim();
                                         const is247 = s.always_live || cName.toLowerCase().includes('24/7');
@@ -2316,6 +2339,25 @@
                 return null;
             }
 
+            // Exclude synthetic / manual / phantom CMS test fixtures & non-existent matches
+            const sIdLower = String(s.id || '').toLowerCase();
+            const sTitleLower = String(s.name || s.title || '').toLowerCase();
+            if (s.isManual || s.auto === 'own' || sIdLower.startsWith('mm-own') || sIdLower.startsWith('mm-yl') || sIdLower.startsWith('mm-cric')) {
+                return null;
+            }
+            if (sTitleLower.includes('diriyah') && sTitleLower.includes('riyadh')) {
+                return null;
+            }
+            if (sTitleLower.includes('wolverhampton') && (sTitleLower.includes('portsmouth') || sTitleLower.includes('pompey'))) {
+                return null;
+            }
+            if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
+                return null;
+            }
+            if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
+                return null;
+            }
+
             const isLive = !isAlwaysLive && (startTs > 0 && now >= startTs && now <= endTs);
 
             const title = (s.name || s.title || 'Live Event').trim();
@@ -2336,6 +2378,7 @@
             const seenUrls = new Set();
             const addServer = (name, url, isHd = true) => {
                 if (!url || seenUrls.has(url)) return;
+                if (url.includes('taifood-blog.asia') || url.includes('/embed/manual/')) return;
                 seenUrls.add(url);
                 servers.push({
                     name: name,
@@ -2380,8 +2423,9 @@
             if (Array.isArray(s.sources) && s.sources.length > 0) {
                 s.sources.forEach((srcItem, sIdx) => {
                     if (srcItem && srcItem.source && srcItem.id) {
-                        const embedUrl = `https://embed.st/embed/${srcItem.source}/${srcItem.id}/1`;
                         const rawSrc = String(srcItem.source || '').trim();
+                        if (rawSrc.toLowerCase() === 'manual') return; // Skip non-existent manual CMS sources
+                        const embedUrl = `https://embed.st/embed/${srcItem.source}/${srcItem.id}/1`;
                         const isInternal = INTERNAL_SERVER_NAMES.test(rawSrc) || /^(?:hotel|alpha|beta|golf|admin|delta|echo|streamcorner)$/i.test(rawSrc);
                         const cleanLabel = isInternal ? (servers.length === 0 ? 'Main Server' : `Server ${servers.length + 1}`) : extractCleanServerLabel(rawSrc, embedUrl, servers.length);
                         addServer(cleanLabel, embedUrl);
@@ -2389,16 +2433,19 @@
                 });
             }
             if (servers.length === 0) {
-                if (mainEmbed) {
+                if (mainEmbed && !mainEmbed.includes('taifood-blog.asia')) {
                     const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
                     addServer(finalLabel, mainEmbed);
-                } else if (s.id) {
-                    addServer('Main Server', `https://embedindia.st/embed/${s.id}`);
                 }
             }
 
             // Clean, deduplicate against canonical keys, and re-index server names
             const cleanServers = sanitizeMatchServers({ servers: servers }).servers;
+
+            // Discard ghost match if it has NO valid servers and NO matched StreamCorner Alpha feed
+            if (cleanServers.length === 0 && !matchedAlphaId) {
+                return null;
+            }
 
             return {
                 id: `ppv-${s.id}`,
