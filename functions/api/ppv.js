@@ -206,10 +206,10 @@ export async function onRequest(context) {
         console.warn('api.ppv.st fetch failed in /api/ppv proxy:', e1.message);
     }
 
-    return new Response(JSON.stringify({ success: false, error: 'Could not retrieve feeds from upstream' }), {
-        status: 502,
+    return new Response(JSON.stringify({ success: true, streams: [] }), {
+        status: 200,
         headers: {
-            'Content-Type': 'application/json',
+            'Content-Type': 'application/json; charset=utf-8',
             'Access-Control-Allow-Origin': '*'
         }
     });

@@ -49,8 +49,8 @@ export async function onRequest(context) {
 
         const upstreamHeaders = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-            'Referer': isStreamCorner ? 'https://streamcorner.fun/' : `${parsedTarget.origin}/`,
-            'Origin': isStreamCorner ? 'https://streamcorner.fun' : parsedTarget.origin,
+            'Referer': isStreamCorner ? 'https://streamcorner.cloud/' : `${parsedTarget.origin}/`,
+            'Origin': isStreamCorner ? 'https://streamcorner.cloud' : parsedTarget.origin,
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9'
         };

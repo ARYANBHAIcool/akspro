@@ -2,7 +2,7 @@
  * Cloudflare Pages Function: Dynamic Self-Healing StreamCorner Core Engine
  * Route: /api/streamcorner-core
  * 
- * Automatically probes https://streamcorner.foo/ for the latest bundle,
+ * Automatically probes https://streamcorner.cloud/ for the latest bundle,
  * extracts the active crypto decryption worker/routine, patches window.StreamCornerCore,
  * and caches it on the edge.
  */
@@ -43,7 +43,7 @@ export async function onRequest(context) {
     }
 
     try {
-        const mirrors = ['https://streamcorner.fun', 'https://streamcorner.foo', 'https://streamcorner.st'];
+        const mirrors = ['https://streamcorner.cloud', 'https://streamcorner.cloud', 'https://streamcorner.st'];
         let html = '';
         let baseOrigin = mirrors[0];
 

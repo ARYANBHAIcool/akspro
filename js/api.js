@@ -1635,7 +1635,7 @@
          */
         async loadStreamCornerAlphaFeeds() {
             if (typeof window === 'undefined') return;
-            if (!window.StreamCornerCore || !window.StreamCornerCore.w || typeof window.StreamCornerCore.w[6] !== 'function') {
+            if (!window.StreamCornerCore || typeof window.StreamCornerCore.t !== 'function') {
                 if (!this._hasAttemptedAutoHeal) {
                     this._hasAttemptedAutoHeal = true;
                     console.warn('StreamCornerCore missing or outdated. Auto-healing core engine...');
@@ -1670,25 +1670,53 @@
                     return [];
                 };
 
-                const [alphaRes, adminRes, betaRes, nbaRes, ex3Res, ex4Res, cfRes, bbRes] = await Promise.allSettled([
+                const [alphaRes, adminRes, betaRes, nbaRes, mlbRes, nflRes, ex3Res, ex4Res, cfRes, bbRes, paramRes] = await Promise.allSettled([
                     fetchEndpoint('alpha'),
                     fetchEndpoint('admin'),
                     fetchEndpoint('beta'),
                     fetchEndpoint('nba'),
+                    fetchEndpoint('mlb'),
+                    fetchEndpoint('nfl'),
                     fetchEndpoint('extra003'),
                     fetchEndpoint('extra004'),
                     fetchEndpoint('001'),
-                    fetchEndpoint('003')
+                    fetchEndpoint('003'),
+                    fetchEndpoint('paramount_schedule')
                 ]);
 
                 const rawAlpha = (alphaRes.status === 'fulfilled' && Array.isArray(alphaRes.value)) ? alphaRes.value : [];
                 const rawAdmin = (adminRes.status === 'fulfilled' && Array.isArray(adminRes.value)) ? adminRes.value : [];
                 const rawBeta = (betaRes.status === 'fulfilled' && Array.isArray(betaRes.value)) ? betaRes.value : [];
                 const rawNba = (nbaRes.status === 'fulfilled' && Array.isArray(nbaRes.value)) ? nbaRes.value : [];
+                const rawMlb = (mlbRes.status === 'fulfilled' && Array.isArray(mlbRes.value)) ? mlbRes.value : [];
+                const rawNfl = (nflRes.status === 'fulfilled' && Array.isArray(nflRes.value)) ? nflRes.value : [];
                 const rawEx3 = (ex3Res.status === 'fulfilled' && Array.isArray(ex3Res.value)) ? ex3Res.value : [];
                 const rawEx4 = (ex4Res.status === 'fulfilled' && Array.isArray(ex4Res.value)) ? ex4Res.value : [];
                 const rawCf = (cfRes.status === 'fulfilled' && Array.isArray(cfRes.value)) ? cfRes.value : [];
                 const rawBb = (bbRes.status === 'fulfilled' && Array.isArray(bbRes.value)) ? bbRes.value : [];
+
+                const normParam = [];
+                if (paramRes && paramRes.status === 'fulfilled' && Array.isArray(paramRes.value)) {
+                    paramRes.value.forEach(cat => {
+                        if (cat && Array.isArray(cat.events)) {
+                            cat.events.forEach(ev => {
+                                if (ev && ev.stream_id && (ev.is_live || ev.is_listing_live || ev.media_type === 'Live')) {
+                                    normParam.push({
+                                        stream_id: ev.stream_id,
+                                        stream_type: 'paramount',
+                                        event_name: ev.title || ev.on_now_title,
+                                        category: 'FOOTBALL',
+                                        league: 'UEFA',
+                                        poster: ev.poster || ev.thumbnail || '',
+                                        timestamp: ev.start_timestamp ? Math.floor(ev.start_timestamp / 1000) : 0,
+                                        is_live: true,
+                                        isLive: true
+                                    });
+                                }
+                            });
+                        }
+                    });
+                }
 
                 if (rawAlpha.length === 0 && rawAdmin.length === 0 && rawBeta.length === 0 && rawNba.length === 0) {
                     if (typeof window !== 'undefined' && !this._hasAttemptedAutoHeal) {
@@ -1723,6 +1751,8 @@
                 const normAlpha = rawAlpha.map(a => ({ ...a, stream_type: a.stream_type || 'alpha' }));
                 const normAdmin = rawAdmin.map(a => ({ ...a, stream_type: a.stream_type || 'admin' }));
                 const normBeta = rawBeta.map(b => ({ ...b, stream_type: b.stream_type || 'beta' }));
+                const normMlb = rawMlb.map(m => ({ ...m, stream_type: m.stream_type || 'mlb', sport: 'BASEBALL' }));
+                const normNfl = rawNfl.map(n => ({ ...n, stream_type: n.stream_type || 'nfl', sport: 'AMERICAN FOOTBALL' }));
                 const normEx3 = rawEx3.map(a => ({ ...a, stream_type: a.stream_type || 'extra003' }));
                 const normEx4 = rawEx4.map(a => ({ ...a, stream_type: a.stream_type || 'extra004' }));
                 const normCf = rawCf.map(a => ({ ...a, stream_type: a.stream_type || '001' }));
@@ -1730,7 +1760,7 @@
 
                 const seenStreamIds = new Set();
                 const combinedCatalog = [];
-                for (const item of [...normAlpha, ...normAdmin, ...normBeta, ...normNba, ...normEx3, ...normEx4, ...normCf, ...normBb]) {
+                for (const item of [...normAlpha, ...normAdmin, ...normBeta, ...normNba, ...normMlb, ...normNfl, ...normEx3, ...normEx4, ...normCf, ...normBb, ...normParam]) {
                     if (item && item.stream_id && !seenStreamIds.has(item.stream_id)) {
                         seenStreamIds.add(item.stream_id);
                         combinedCatalog.push(item);
@@ -1993,7 +2023,9 @@
 
                     const fetchTarget = async (t) => {
                         let pType = t.type || 'alpha';
-                        if (t.id && String(t.id).startsWith('GRNT')) {
+                        if (pType === 'paramount') {
+                            pType = 'paramount_schedule';
+                        } else if (t.id && String(t.id).startsWith('GRNT')) {
                             pType = 'beta';
                         } else if (!pType) {
                             if (/^00\d+/.test(String(t.id)) || match.sport === 'BASKETBALL') {
@@ -2010,7 +2042,7 @@
                                     window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${t.id}`, false, match.title || 'corner detail')
                                         .then(res => {
                                             clearTimeout(timer);
-                                            const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0));
+                                            const hasStreams = res && ((Array.isArray(res.streams) && res.streams.length > 0) || (Array.isArray(res.live) && res.live.length > 0) || res.embed_url || res.stream_url);
                                             if (hasStreams) resolve(res);
                                             else reject(new Error('empty'));
                                         })
@@ -2035,7 +2067,10 @@
                     results.forEach(r => {
                         if (r.status === 'fulfilled' && r.value) {
                             const d = r.value;
-                            const list = Array.isArray(d.streams) ? d.streams : (Array.isArray(d.live) ? d.live : []);
+                            const list = Array.isArray(d.streams) ? [...d.streams] : (Array.isArray(d.live) ? [...d.live] : []);
+                            if (d.embed_url || d.stream_url) {
+                                list.push({ source_name: d.channel_name || 'Paramount+', embed_url: d.embed_url || d.stream_url });
+                            }
                             list.forEach(s => {
                                 const u = (s.embed_url || s.stream_url || '').trim();
                                 if (u && !seenRawUrls.has(u)) {

@@ -83,8 +83,8 @@ async function onRequest2(context) {
                            parsedTarget.origin.includes("streamcorner");
     const upstreamHeaders = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
-      "Referer": isStreamCorner ? "https://streamcorner.fun/" : `${parsedTarget.origin}/`,
-      "Origin": isStreamCorner ? "https://streamcorner.fun" : parsedTarget.origin,
+      "Referer": isStreamCorner ? "https://streamcorner.cloud/" : `${parsedTarget.origin}/`,
+      "Origin": isStreamCorner ? "https://streamcorner.cloud" : parsedTarget.origin,
       "Accept": "*/*",
       "Accept-Language": "en-US,en;q=0.9"
     };
@@ -321,8 +321,8 @@ async function onRequest3(context) {
   try {
     const parsedTarget = new URL(targetUrl);
     const reqHeaders = {
-      "Origin": "https://streamcorner.foo",
-      "Referer": "https://streamcorner.foo/",
+      "Origin": "https://streamcorner.cloud",
+      "Referer": "https://streamcorner.cloud/",
       "User-Agent": context.request.headers.get("User-Agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       "Accept": context.request.headers.get("Accept") || "*/*"
     };
@@ -568,8 +568,7 @@ async function onRequest4(context) {
   } catch (e1) {
     console.warn("api.ppv.st fetch failed in /api/ppv proxy:", e1.message);
   }
-  return new Response(JSON.stringify({ success: false, error: "Could not retrieve feeds from upstream" }), {
-    status: 502,
+  return new Response(JSON.stringify({ success: true, streams: [] }), { status: 200,
     headers: {
       "Content-Type": "application/json",
       "Access-Control-Allow-Origin": "*"
@@ -586,7 +585,7 @@ __name2222(onRequest4, "onRequest");
  * Cloudflare Pages Function: Dynamic Self-Healing StreamCorner Core Engine
  * Route: /api/streamcorner-core
  * 
- * Automatically probes https://streamcorner.foo/ for the latest bundle,
+ * Automatically probes https://streamcorner.cloud/ for the latest bundle,
  * extracts the active crypto decryption worker/routine, patches window.StreamCornerCore,
  * and caches it on the edge.
  */
@@ -627,7 +626,7 @@ async function onRequest5(context) {
     }
 
     try {
-        const mirrors = ['https://streamcorner.fun', 'https://streamcorner.foo', 'https://streamcorner.st'];
+        const mirrors = ['https://streamcorner.cloud', 'https://streamcorner.cloud', 'https://streamcorner.st'];
         let html = '';
         let baseOrigin = mirrors[0];
 
