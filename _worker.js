@@ -599,28 +599,837 @@ var memoryCache = {
 };
 
 async function onRequest5(context) {
+    if (context.request.method === 'OPTIONS') {
+        return new Response(null, {
+            status: 204,
+            headers: {
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Methods': 'GET, OPTIONS',
+                'Access-Control-Allow-Headers': '*'
+            }
+        });
+    }
+
+    const url = new URL(context.request.url);
+    const forceRefresh = url.searchParams.has('refresh') || url.searchParams.has('bust');
+    const now = Date.now();
+
+    // Serve from memory cache if fresh (within 3 hours) and refresh not forced
+    if (!forceRefresh && memoryCache.code && (now - memoryCache.timestamp < 10800000)) {
+        return new Response(memoryCache.code, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/javascript; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=3600'
+            }
+        });
+    }
+
+    try {
+        const mirrors = ['https://streamcorner.fun', 'https://streamcorner.foo', 'https://streamcorner.st'];
+        let html = '';
+        let baseOrigin = mirrors[0];
+
+        for (const mirror of mirrors) {
+            try {
+                const htmlRes = await fetch(mirror + '/', {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+                if (htmlRes.ok) {
+                    html = await htmlRes.text();
+                    baseOrigin = mirror;
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        if (!html) throw new Error('Failed to fetch StreamCorner mirrors');
+
+        const scriptMatches = [...new Set([...html.matchAll(/(?:href|src)=["'](\/assets\/[^"']+\.js)["']/gi)].map(m => m[1]))];
+
+        let workerPath = null;
+        for (const sPath of scriptMatches) {
+            try {
+                const sRes = await fetch(baseOrigin + sPath);
+                if (!sRes.ok) continue;
+                const code = await sRes.text();
+                const m = code.match(/["'](\/assets\/provider-data\.worker-[^"']+\.js)["']/);
+                if (m) {
+                    workerPath = m[1];
+                    break;
+                }
+            } catch (e) {}
+        }
+
+        let patchedCode = null;
+
+        if (workerPath) {
+            const workerRes = await fetch(baseOrigin + workerPath);
+            if (workerRes.ok) {
+                const workerCode = await workerRes.text();
+                const tailIdx = workerCode.indexOf('self.addEventListener');
+                const coreLogic = tailIdx !== -1 ? (workerCode.slice(0, tailIdx) + '\n})();\n') : workerCode;
+
+                let replacedLogic = coreLogic;
+                const fnMatch = coreLogic.match(/([a-zA-Z0-9_$]+)\[0\]\s*=\s*function/);
+                const varName = fnMatch ? fnMatch[1] : 'w';
+                const declRegex = new RegExp('(const|let|var)\\s+' + varName + '\\s*=\\s*\\[\\]');
+                if (declRegex.test(coreLogic)) {
+                    replacedLogic = coreLogic.replace(declRegex, (_m, p1) => `${p1} ${varName} = capturedW = []`);
+                } else {
+                    replacedLogic = coreLogic.replace('const w=[]', () => 'const w = capturedW = []');
+                }
+
+                patchedCode = `/**
+ * StreamCorner Core Engine - Auto-generated from latest production bundle
+ * Provides real-time token generation and stream decryption for Alpha, NBA, and Beta feeds
+ */
+(function(root) {
+    'use strict';
+    const scope = (typeof window !== 'undefined') ? window : ((typeof self !== 'undefined') ? self : root);
+    
+    let capturedW = null;
+` + replacedLogic + `
+
+    scope.StreamCornerCore = {
+        w: capturedW,
+        t: function(url, endpointOrM3u8, title) {
+            let endpoint = (typeof endpointOrM3u8 === 'string' && endpointOrM3u8.length > 0 && !endpointOrM3u8.startsWith('http')) 
+                ? endpointOrM3u8 
+                : '';
+            if (!endpoint) {
+                try {
+                    const parsed = new URL(url, 'https://data.gigav.workers.dev');
+                    endpoint = parsed.searchParams.get('p') || 'alpha';
+                } catch(e) {
+                    endpoint = 'alpha';
+                }
+            }
+            return capturedW[6](url, endpoint, title);
+        },
+        j: function(url, endpointOrM3u8, title) {
+            let endpoint = (typeof endpointOrM3u8 === 'string' && endpointOrM3u8.length > 0 && !endpointOrM3u8.startsWith('http')) 
+                ? endpointOrM3u8 
+                : '';
+            if (!endpoint) {
+                try {
+                    const parsed = new URL(url, 'https://data.gigav.workers.dev');
+                    endpoint = parsed.searchParams.get('p') || 'alpha';
+                } catch(e) {
+                    endpoint = 'alpha';
+                }
+            }
+            return capturedW[6](url, endpoint, title);
+        },
+        m: function(url, endpoint, title) {
+            return capturedW[6](url, endpoint || 'alpha', title);
+        },
+        fetch: function(url, endpoint, title) {
+            return capturedW[6](url, endpoint || 'alpha', title);
+        }
+    };
+    if (typeof window !== 'undefined') {
+        window.StreamCornerCore = scope.StreamCornerCore;
+    }
+})(typeof globalThis !== 'undefined' ? globalThis : this);
+`;
+            }
+        }
+
+        if (!patchedCode) {
+            patchedCode = FALLBACK_CORE;
+        }
+
+        memoryCache = {
+            code: patchedCode,
+            timestamp: now
+        };
+
+        return new Response(patchedCode, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/javascript; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'public, max-age=3600'
+            }
+        });
+    } catch (err) {
+        const fallback = memoryCache.code || FALLBACK_CORE;
+        return new Response(fallback, {
+            status: 200,
+            headers: {
+                'Content-Type': 'application/javascript; charset=utf-8',
+                'Access-Control-Allow-Origin': '*',
+                'Cache-Control': 'no-cache'
+            }
+        });
+    }
+}
+
+__name(onRequest5, "onRequest5");
+__name2(onRequest5, "onRequest5");
+__name22(onRequest5, "onRequest5");
+__name222(onRequest5, "onRequest5");
+async function onRequestBundleJw(context) {
+  try {
+    const res = await fetch("https://embedindia.st/js/bundle-jw.js", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Referer": "https://embedindia.st/"
+      }
+    });
+    const js = await res.text();
+    return new Response(js, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=3600"
+      }
+    });
+  } catch (e) {
+    return new Response('console.error("bundle-jw load error");', { status: 502, headers: { "Content-Type": "application/javascript" } });
+  }
+}
+__name(onRequestBundleJw, "onRequestBundleJw");
+
+async function onRequestBundleClappr(context) {
+  try {
+    const res = await fetch("https://embedindia.st/js/bundle.js", {
+      headers: {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+        "Referer": "https://embedindia.st/"
+      }
+    });
+    const js = await res.text();
+    return new Response(js, {
+      status: 200,
+      headers: {
+        "Content-Type": "application/javascript; charset=utf-8",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "public, max-age=3600"
+      }
+    });
+  } catch (e) {
+    return new Response('console.error("bundle load error");', { status: 502, headers: { "Content-Type": "application/javascript" } });
+  }
+}
+__name(onRequestBundleClappr, "onRequestBundleClappr");
+
+async function onRequestFetch(context) {
   if (context.request.method === "OPTIONS") {
     return new Response(null, {
       status: 204,
       headers: {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, OPTIONS",
-        "Access-Control-Allow-Headers": "*"
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "*",
+        "Access-Control-Expose-Headers": "*",
+        "Access-Control-Max-Age": "86400"
       }
     });
   }
   try {
-    const assetUrl = new URL("/js/paramount-core.js", context.request.url);
-    const assetRes = await context.env.ASSETS.fetch(new Request(assetUrl));
-    const resHeaders = new Headers(assetRes.headers);
+    const body = await context.request.arrayBuffer();
+    const clientHeaders = context.request.headers;
+    const forwardHeaders = {
+      "User-Agent": clientHeaders.get("User-Agent") || "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
+      "Referer": "https://embed.st/",
+      "Origin": "https://embed.st",
+      "Content-Type": clientHeaders.get("Content-Type") || "application/octet-stream",
+      "Accept": "*/*"
+    };
+    let upstream = await fetch("https://embed.st/fetch", {
+      method: "POST",
+      headers: forwardHeaders,
+      body: body
+    });
+    if (!upstream.ok) {
+      forwardHeaders["Referer"] = "https://embedindia.st/";
+      forwardHeaders["Origin"] = "https://embedindia.st";
+      upstream = await fetch("https://embedindia.st/fetch", {
+        method: "POST",
+        headers: forwardHeaders,
+        body: body
+      });
+    }
+    const resHeaders = new Headers(upstream.headers);
     resHeaders.set("Access-Control-Allow-Origin", "*");
-    resHeaders.set("Content-Type", "application/javascript; charset=utf-8");
-    return new Response(assetRes.body, {
-      status: assetRes.status,
+    resHeaders.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+    resHeaders.set("Access-Control-Allow-Headers", "*");
+    resHeaders.set("Access-Control-Expose-Headers", "*");
+    resHeaders.delete("Content-Security-Policy");
+    resHeaders.delete("X-Frame-Options");
+    return new Response(upstream.body, {
+      status: upstream.status,
+      statusText: upstream.statusText,
       headers: resHeaders
     });
   } catch (e) {
-    return new Response("/* core asset fetch error */", { status: 500 });
+    return new Response(JSON.stringify({ error: e.message }), {
+      status: 502,
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*"
+      }
+    });
   }
 }
+__name(onRequestFetch, "onRequestFetch");
 
+var routes = [
+  {
+    routePath: "/fetch",
+    mountPath: "/",
+    method: "",
+    middlewares: [],
+    modules: [onRequestFetch]
+  },
+  {
+    routePath: "/js/bundle-jw.js",
+    mountPath: "/js",
+    method: "",
+    middlewares: [],
+    modules: [onRequestBundleJw]
+  },
+  {
+    routePath: "/js/bundle.js",
+    mountPath: "/js",
+    method: "",
+    middlewares: [],
+    modules: [onRequestBundleClappr]
+  },
+  
+  {
+    routePath: "/api/embed",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest2]
+  },
+  {
+    routePath: "/api/nitro",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest3]
+  },
+  {
+    routePath: "/api/futbolx",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest4]
+  },
+  {
+    routePath: "/api/ppv",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest4]
+  },
+  {
+    routePath: "/api/streamcorner-core",
+    mountPath: "/api",
+    method: "",
+    middlewares: [],
+    modules: [onRequest5]
+  }
+];
+function lexer(str) {
+  var tokens = [];
+  var i = 0;
+  while (i < str.length) {
+    var char = str[i];
+    if (char === "*" || char === "+" || char === "?") {
+      tokens.push({ type: "MODIFIER", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === "\\") {
+      tokens.push({ type: "ESCAPED_CHAR", index: i++, value: str[i++] });
+      continue;
+    }
+    if (char === "{") {
+      tokens.push({ type: "OPEN", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === "}") {
+      tokens.push({ type: "CLOSE", index: i, value: str[i++] });
+      continue;
+    }
+    if (char === ":") {
+      var name = "";
+      var j = i + 1;
+      while (j < str.length) {
+        var code = str.charCodeAt(j);
+        if (
+          // `0-9`
+          code >= 48 && code <= 57 || // `A-Z`
+          code >= 65 && code <= 90 || // `a-z`
+          code >= 97 && code <= 122 || // `_`
+          code === 95
+        ) {
+          name += str[j++];
+          continue;
+        }
+        break;
+      }
+      if (!name)
+        throw new TypeError("Missing parameter name at ".concat(i));
+      tokens.push({ type: "NAME", index: i, value: name });
+      i = j;
+      continue;
+    }
+    if (char === "(") {
+      var count = 1;
+      var pattern = "";
+      var j = i + 1;
+      if (str[j] === "?") {
+        throw new TypeError('Pattern cannot start with "?" at '.concat(j));
+      }
+      while (j < str.length) {
+        if (str[j] === "\\") {
+          pattern += str[j++] + str[j++];
+          continue;
+        }
+        if (str[j] === ")") {
+          count--;
+          if (count === 0) {
+            j++;
+            break;
+          }
+        } else if (str[j] === "(") {
+          count++;
+          if (str[j + 1] !== "?") {
+            throw new TypeError("Capturing groups are not allowed at ".concat(j));
+          }
+        }
+        pattern += str[j++];
+      }
+      if (count)
+        throw new TypeError("Unbalanced pattern at ".concat(i));
+      if (!pattern)
+        throw new TypeError("Missing pattern at ".concat(i));
+      tokens.push({ type: "PATTERN", index: i, value: pattern });
+      i = j;
+      continue;
+    }
+    tokens.push({ type: "CHAR", index: i, value: str[i++] });
+  }
+  tokens.push({ type: "END", index: i, value: "" });
+  return tokens;
+}
+__name(lexer, "lexer");
+__name2(lexer, "lexer");
+__name22(lexer, "lexer");
+__name222(lexer, "lexer");
+__name2222(lexer, "lexer");
+function parse(str, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var tokens = lexer(str);
+  var _a = options.prefixes, prefixes = _a === void 0 ? "./" : _a, _b = options.delimiter, delimiter = _b === void 0 ? "/#?" : _b;
+  var result = [];
+  var key = 0;
+  var i = 0;
+  var path = "";
+  var tryConsume = /* @__PURE__ */ __name2222(function(type) {
+    if (i < tokens.length && tokens[i].type === type)
+      return tokens[i++].value;
+  }, "tryConsume");
+  var mustConsume = /* @__PURE__ */ __name2222(function(type) {
+    var value2 = tryConsume(type);
+    if (value2 !== void 0)
+      return value2;
+    var _a2 = tokens[i], nextType = _a2.type, index = _a2.index;
+    throw new TypeError("Unexpected ".concat(nextType, " at ").concat(index, ", expected ").concat(type));
+  }, "mustConsume");
+  var consumeText = /* @__PURE__ */ __name2222(function() {
+    var result2 = "";
+    var value2;
+    while (value2 = tryConsume("CHAR") || tryConsume("ESCAPED_CHAR")) {
+      result2 += value2;
+    }
+    return result2;
+  }, "consumeText");
+  var isSafe = /* @__PURE__ */ __name2222(function(value2) {
+    for (var _i = 0, delimiter_1 = delimiter; _i < delimiter_1.length; _i++) {
+      var char2 = delimiter_1[_i];
+      if (value2.indexOf(char2) > -1)
+        return true;
+    }
+    return false;
+  }, "isSafe");
+  var safePattern = /* @__PURE__ */ __name2222(function(prefix2) {
+    var prev = result[result.length - 1];
+    var prevText = prefix2 || (prev && typeof prev === "string" ? prev : "");
+    if (prev && !prevText) {
+      throw new TypeError('Must have text between two parameters, missing text after "'.concat(prev.name, '"'));
+    }
+    if (!prevText || isSafe(prevText))
+      return "[^".concat(escapeString(delimiter), "]+?");
+    return "(?:(?!".concat(escapeString(prevText), ")[^").concat(escapeString(delimiter), "])+?");
+  }, "safePattern");
+  while (i < tokens.length) {
+    var char = tryConsume("CHAR");
+    var name = tryConsume("NAME");
+    var pattern = tryConsume("PATTERN");
+    if (name || pattern) {
+      var prefix = char || "";
+      if (prefixes.indexOf(prefix) === -1) {
+        path += prefix;
+        prefix = "";
+      }
+      if (path) {
+        result.push(path);
+        path = "";
+      }
+      result.push({
+        name: name || key++,
+        prefix,
+        suffix: "",
+        pattern: pattern || safePattern(prefix),
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    var value = char || tryConsume("ESCAPED_CHAR");
+    if (value) {
+      path += value;
+      continue;
+    }
+    if (path) {
+      result.push(path);
+      path = "";
+    }
+    var open = tryConsume("OPEN");
+    if (open) {
+      var prefix = consumeText();
+      var name_1 = tryConsume("NAME") || "";
+      var pattern_1 = tryConsume("PATTERN") || "";
+      var suffix = consumeText();
+      mustConsume("CLOSE");
+      result.push({
+        name: name_1 || (pattern_1 ? key++ : ""),
+        pattern: name_1 && !pattern_1 ? safePattern(prefix) : pattern_1,
+        prefix,
+        suffix,
+        modifier: tryConsume("MODIFIER") || ""
+      });
+      continue;
+    }
+    mustConsume("END");
+  }
+  return result;
+}
+__name(parse, "parse");
+__name2(parse, "parse");
+__name22(parse, "parse");
+__name222(parse, "parse");
+__name2222(parse, "parse");
+function match(str, options) {
+  var keys = [];
+  var re = pathToRegexp(str, keys, options);
+  return regexpToFunction(re, keys, options);
+}
+__name(match, "match");
+__name2(match, "match");
+__name22(match, "match");
+__name222(match, "match");
+__name2222(match, "match");
+function regexpToFunction(re, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a = options.decode, decode = _a === void 0 ? function(x) {
+    return x;
+  } : _a;
+  return function(pathname) {
+    var m = re.exec(pathname);
+    if (!m)
+      return false;
+    var path = m[0], index = m.index;
+    var params = /* @__PURE__ */ Object.create(null);
+    var _loop_1 = /* @__PURE__ */ __name2222(function(i2) {
+      if (m[i2] === void 0)
+        return "continue";
+      var key = keys[i2 - 1];
+      if (key.modifier === "*" || key.modifier === "+") {
+        params[key.name] = m[i2].split(key.prefix + key.suffix).map(function(value) {
+          return decode(value, key);
+        });
+      } else {
+        params[key.name] = decode(m[i2], key);
+      }
+    }, "_loop_1");
+    for (var i = 1; i < m.length; i++) {
+      _loop_1(i);
+    }
+    return { path, index, params };
+  };
+}
+__name(regexpToFunction, "regexpToFunction");
+__name2(regexpToFunction, "regexpToFunction");
+__name22(regexpToFunction, "regexpToFunction");
+__name222(regexpToFunction, "regexpToFunction");
+__name2222(regexpToFunction, "regexpToFunction");
+function escapeString(str) {
+  return str.replace(/([.+*?=^!:${}()[\]|/\\])/g, "\\$1");
+}
+__name(escapeString, "escapeString");
+__name2(escapeString, "escapeString");
+__name22(escapeString, "escapeString");
+__name222(escapeString, "escapeString");
+__name2222(escapeString, "escapeString");
+function flags(options) {
+  return options && options.sensitive ? "" : "i";
+}
+__name(flags, "flags");
+__name2(flags, "flags");
+__name22(flags, "flags");
+__name222(flags, "flags");
+__name2222(flags, "flags");
+function regexpToRegexp(path, keys) {
+  if (!keys)
+    return path;
+  var groupsRegex = /\((?:\?<(.*?)>)?(?!\?)/g;
+  var index = 0;
+  var execResult = groupsRegex.exec(path.source);
+  while (execResult) {
+    keys.push({
+      // Use parenthesized substring match if available, index otherwise
+      name: execResult[1] || index++,
+      prefix: "",
+      suffix: "",
+      modifier: "",
+      pattern: ""
+    });
+    execResult = groupsRegex.exec(path.source);
+  }
+  return path;
+}
+__name(regexpToRegexp, "regexpToRegexp");
+__name2(regexpToRegexp, "regexpToRegexp");
+__name22(regexpToRegexp, "regexpToRegexp");
+__name222(regexpToRegexp, "regexpToRegexp");
+__name2222(regexpToRegexp, "regexpToRegexp");
+function arrayToRegexp(paths, keys, options) {
+  var parts = paths.map(function(path) {
+    return pathToRegexp(path, keys, options).source;
+  });
+  return new RegExp("(?:".concat(parts.join("|"), ")"), flags(options));
+}
+__name(arrayToRegexp, "arrayToRegexp");
+__name2(arrayToRegexp, "arrayToRegexp");
+__name22(arrayToRegexp, "arrayToRegexp");
+__name222(arrayToRegexp, "arrayToRegexp");
+__name2222(arrayToRegexp, "arrayToRegexp");
+function stringToRegexp(path, keys, options) {
+  return tokensToRegexp(parse(path, options), keys, options);
+}
+__name(stringToRegexp, "stringToRegexp");
+__name2(stringToRegexp, "stringToRegexp");
+__name22(stringToRegexp, "stringToRegexp");
+__name222(stringToRegexp, "stringToRegexp");
+__name2222(stringToRegexp, "stringToRegexp");
+function tokensToRegexp(tokens, keys, options) {
+  if (options === void 0) {
+    options = {};
+  }
+  var _a = options.strict, strict = _a === void 0 ? false : _a, _b = options.start, start = _b === void 0 ? true : _b, _c = options.end, end = _c === void 0 ? true : _c, _d = options.encode, encode = _d === void 0 ? function(x) {
+    return x;
+  } : _d, _e = options.delimiter, delimiter = _e === void 0 ? "/#?" : _e, _f = options.endsWith, endsWith = _f === void 0 ? "" : _f;
+  var endsWithRe = "[".concat(escapeString(endsWith), "]|$");
+  var delimiterRe = "[".concat(escapeString(delimiter), "]");
+  var route = start ? "^" : "";
+  for (var _i = 0, tokens_1 = tokens; _i < tokens_1.length; _i++) {
+    var token = tokens_1[_i];
+    if (typeof token === "string") {
+      route += escapeString(encode(token));
+    } else {
+      var prefix = escapeString(encode(token.prefix));
+      var suffix = escapeString(encode(token.suffix));
+      if (token.pattern) {
+        if (keys)
+          keys.push(token);
+        if (prefix || suffix) {
+          if (token.modifier === "+" || token.modifier === "*") {
+            var mod = token.modifier === "*" ? "?" : "";
+            route += "(?:".concat(prefix, "((?:").concat(token.pattern, ")(?:").concat(suffix).concat(prefix, "(?:").concat(token.pattern, "))*)").concat(suffix, ")").concat(mod);
+          } else {
+            route += "(?:".concat(prefix, "(").concat(token.pattern, ")").concat(suffix, ")").concat(token.modifier);
+          }
+        } else {
+          if (token.modifier === "+" || token.modifier === "*") {
+            throw new TypeError('Can not repeat "'.concat(token.name, '" without a prefix and suffix'));
+          }
+          route += "(".concat(token.pattern, ")").concat(token.modifier);
+        }
+      } else {
+        route += "(?:".concat(prefix).concat(suffix, ")").concat(token.modifier);
+      }
+    }
+  }
+  if (end) {
+    if (!strict)
+      route += "".concat(delimiterRe, "?");
+    route += !options.endsWith ? "$" : "(?=".concat(endsWithRe, ")");
+  } else {
+    var endToken = tokens[tokens.length - 1];
+    var isEndDelimited = typeof endToken === "string" ? delimiterRe.indexOf(endToken[endToken.length - 1]) > -1 : endToken === void 0;
+    if (!strict) {
+      route += "(?:".concat(delimiterRe, "(?=").concat(endsWithRe, "))?");
+    }
+    if (!isEndDelimited) {
+      route += "(?=".concat(delimiterRe, "|").concat(endsWithRe, ")");
+    }
+  }
+  return new RegExp(route, flags(options));
+}
+__name(tokensToRegexp, "tokensToRegexp");
+__name2(tokensToRegexp, "tokensToRegexp");
+__name22(tokensToRegexp, "tokensToRegexp");
+__name222(tokensToRegexp, "tokensToRegexp");
+__name2222(tokensToRegexp, "tokensToRegexp");
+function pathToRegexp(path, keys, options) {
+  if (path instanceof RegExp)
+    return regexpToRegexp(path, keys);
+  if (Array.isArray(path))
+    return arrayToRegexp(path, keys, options);
+  return stringToRegexp(path, keys, options);
+}
+__name(pathToRegexp, "pathToRegexp");
+__name2(pathToRegexp, "pathToRegexp");
+__name22(pathToRegexp, "pathToRegexp");
+__name222(pathToRegexp, "pathToRegexp");
+__name2222(pathToRegexp, "pathToRegexp");
+var escapeRegex = /[.+?^${}()|[\]\\]/g;
+function* executeRequest(request) {
+  const requestPath = new URL(request.url).pathname;
+  for (const route of [...routes].reverse()) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath);
+    const mountMatchResult = mountMatcher(requestPath);
+    if (matchResult && mountMatchResult) {
+      for (const handler of route.middlewares.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path: mountMatchResult.path
+        };
+      }
+    }
+  }
+  for (const route of routes) {
+    if (route.method && route.method !== request.method) {
+      continue;
+    }
+    const routeMatcher = match(route.routePath.replace(escapeRegex, "\\$&"), {
+      end: true
+    });
+    const mountMatcher = match(route.mountPath.replace(escapeRegex, "\\$&"), {
+      end: false
+    });
+    const matchResult = routeMatcher(requestPath);
+    const mountMatchResult = mountMatcher(requestPath);
+    if (matchResult && mountMatchResult && route.modules.length) {
+      for (const handler of route.modules.flat()) {
+        yield {
+          handler,
+          params: matchResult.params,
+          path: matchResult.path
+        };
+      }
+      break;
+    }
+  }
+}
+__name(executeRequest, "executeRequest");
+__name2(executeRequest, "executeRequest");
+__name22(executeRequest, "executeRequest");
+__name222(executeRequest, "executeRequest");
+__name2222(executeRequest, "executeRequest");
+var pages_template_worker_default = {
+  async fetch(originalRequest, env, workerContext) {
+    let request = originalRequest;
+    const handlerIterator = executeRequest(request);
+    let data = {};
+    let isFailOpen = false;
+    const next = /* @__PURE__ */ __name2222(async (input, init) => {
+      if (input !== void 0) {
+        let url = input;
+        if (typeof input === "string") {
+          url = new URL(input, request.url).toString();
+        }
+        request = new Request(url, init);
+      }
+      const result = handlerIterator.next();
+      if (result.done === false) {
+        const { handler, params, path } = result.value;
+        const context = {
+          request: new Request(request.clone()),
+          functionPath: path,
+          next,
+          params,
+          get data() {
+            return data;
+          },
+          set data(value) {
+            if (typeof value !== "object" || value === null) {
+              throw new Error("context.data must be an object");
+            }
+            data = value;
+          },
+          env,
+          waitUntil: workerContext.waitUntil.bind(workerContext),
+          passThroughOnException: /* @__PURE__ */ __name2222(() => {
+            isFailOpen = true;
+          }, "passThroughOnException")
+        };
+        const response = await handler(context);
+        if (!(response instanceof Response)) {
+          throw new Error("Your Pages function should return a Response");
+        }
+        return cloneResponse(response);
+      } else if ("ASSETS") {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      } else {
+        const response = await fetch(request);
+        return cloneResponse(response);
+      }
+    }, "next");
+    try {
+      return await next();
+    } catch (error) {
+      if (isFailOpen) {
+        const response = await env["ASSETS"].fetch(request);
+        return cloneResponse(response);
+      }
+      throw error;
+    }
+  }
+};
+var cloneResponse = /* @__PURE__ */ __name2222((response) => (
+  // https://fetch.spec.whatwg.org/#null-body-status
+  new Response(
+    [101, 204, 205, 304].includes(response.status) ? null : response.body,
+    response
+  )
+), "cloneResponse");
+export {
+  pages_template_worker_default as default
+};
