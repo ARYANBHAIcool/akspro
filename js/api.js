@@ -701,6 +701,9 @@
                 this.emitUpdate();
             }
 
+            // 0. Concurrently load channels catalog immediately for instant availability
+            const channelsPromise = this.loadChannelsCatalog();
+
             // 1. Load authoritative PPV fixtures first via Cloudflare edge proxy
             await this.loadPPVFeeds();
             this.isLoading = false;
@@ -713,7 +716,7 @@
             await Promise.allSettled([
                 this._alphaLoadingPromise,
                 this._futbolxLoadingPromise,
-                this.loadChannelsCatalog()
+                channelsPromise
             ]);
 
             this.sortMatches();
@@ -2901,8 +2904,9 @@
             // Never include future fixtures in Live Now unless explicitly live or within 15 min warmup
             if (!isExplicitLive && m.startTime && m.startTime > (now + 900000)) return true;
 
-            // Never include fixtures that ended more than 30 minutes ago
+            // Never include fixtures that ended more than 30 minutes ago or started > 4 hours ago
             if (m.endTime && now > (m.endTime + 1800000)) return true;
+            if (m.startTime && (now > m.startTime + 14400000)) return true;
 
             const t = (m.title || '').toLowerCase();
             const l = (m.league || '').toLowerCase();
