@@ -27,6 +27,10 @@ export async function onRequest(context) {
 
         if (streamUrl && !path) {
             try {
+                if (streamUrl.includes('shaka_player.html')) {
+                    const dummy = new URL(streamUrl, 'https://asppv.pages.dev');
+                    streamUrl = dummy.searchParams.get('hls') || dummy.searchParams.get('m3u8') || dummy.searchParams.get('url') || streamUrl;
+                }
                 const u = new URL(streamUrl);
                 path = u.pathname;
                 sourceHost = u.hostname;
@@ -95,8 +99,14 @@ export async function onRequest(context) {
                         if (group && Array.isArray(group.streams)) {
                             for (const ev of group.streams) {
                                 if (!ev || !ev.name) continue;
-                                const start = ev.starts_at ? new Date(ev.starts_at).getTime() : 0;
-                                const end = ev.ends_at ? new Date(ev.ends_at).getTime() : (start ? start + 10800000 : 0);
+                                const parseFxIso = (ts) => {
+                                    if (!ts) return 0;
+                                    const s = String(ts).trim();
+                                    const iso = (s.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(s)) ? s : s + '+03:00';
+                                    return new Date(iso).getTime() || 0;
+                                };
+                                const start = parseFxIso(ev.starts_at);
+                                const end = parseFxIso(ev.ends_at) || (start ? start + 10800000 : 0);
                                 // Filter out matches that ended more than 15 minutes ago
                                 if (end > 0 && now > (end + 900000) && !ev.always_live) continue;
 

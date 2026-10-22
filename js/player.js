@@ -70,6 +70,14 @@ window.AryanPlayerEngine = {
         }
 
         if (!rawUrl) return '';
+        if (rawUrl.includes('shaka_player.html')) {
+            try {
+                const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';
+                const u = new URL(rawUrl, dummy);
+                const target = u.searchParams.get('hls') || u.searchParams.get('m3u8') || u.searchParams.get('mpd') || u.searchParams.get('url');
+                if (target) rawUrl = target;
+            } catch (e) {}
+        }
         if (rawUrl.includes('shaka_player.html')) return rawUrl;
 
         // Route FutbolX match sources to Shaka Player engine
@@ -246,11 +254,7 @@ window.AryanPlayerEngine = {
         const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
-                      !serverUrl.includes('shaka_player.html') &&
-                      !currentServer.isFutbolX &&
-                      !serverUrl.includes('ryzn.pro') &&
-                      !serverUrl.includes('futbolx') &&
-                      !(currentServer.name && /^FX\s*\d*/i.test(currentServer.name));
+                      !serverUrl.includes('shaka_player.html');
 
         let html = '';
 
@@ -406,7 +410,13 @@ window.AryanPlayerEngine = {
                                     } else {
                                         hls.destroy();
                                         if (loader) loader.remove();
-                                        if (errorOverlay) errorOverlay.classList.remove('hidden');
+                                        if (servers.length > 1) {
+                                            const nextIdx = (this.activeServerIdx + 1) % servers.length;
+                                            console.warn('HLS network error, switching to next server:', nextIdx);
+                                            this.switchServer(nextIdx);
+                                        } else if (errorOverlay) {
+                                            errorOverlay.classList.remove('hidden');
+                                        }
                                     }
                                     break;
                                 case Hls.ErrorTypes.MEDIA_ERROR:
@@ -443,28 +453,36 @@ window.AryanPlayerEngine = {
             };
 
             // Flussonic token resolution for FutbolX streams (e.g. ryzn.pro)
-            if (serverUrl.includes('ryzn.pro') && !serverUrl.includes('token=')) {
+            let streamEndpoint = serverUrl;
+            if (streamEndpoint.includes('shaka_player.html')) {
                 try {
-                    const u = new URL(serverUrl);
+                    const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';
+                    const uDummy = new URL(streamEndpoint, dummy);
+                    streamEndpoint = uDummy.searchParams.get('hls') || uDummy.searchParams.get('m3u8') || uDummy.searchParams.get('url') || streamEndpoint;
+                } catch(e) {}
+            }
+            if (streamEndpoint.includes('ryzn.pro') && !streamEndpoint.includes('token=')) {
+                try {
+                    const u = new URL(streamEndpoint);
                     const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
                     fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(3500) })
                         .then(r => r.json())
                         .then(data => {
-                            const tokenized = (data && data.url) ? data.url : serverUrl;
+                            const tokenized = (data && data.url) ? data.url : streamEndpoint;
                             startPlayback(tokenized);
                         })
                         .catch(() => {
                             // Fallback to local edge token proxy
-                            fetch(`/api/futbolx?token=1&url=${encodeURIComponent(serverUrl)}`, { signal: AbortSignal.timeout(3000) })
+                            fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(3000) })
                                 .then(r => r.json())
-                                .then(d => startPlayback(d && d.url ? d.url : serverUrl))
-                                .catch(() => startPlayback(serverUrl));
+                                .then(d => startPlayback(d && d.url ? d.url : streamEndpoint))
+                                .catch(() => startPlayback(streamEndpoint));
                         });
                 } catch (e) {
-                    startPlayback(serverUrl);
+                    startPlayback(streamEndpoint);
                 }
             } else {
-                startPlayback(serverUrl);
+                startPlayback(streamEndpoint);
             }
         } else {
             const iframe = document.getElementById('global-iframe-element');

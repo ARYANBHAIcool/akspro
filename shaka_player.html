@@ -340,6 +340,12 @@
 
         async function initPlayer() {
             var activeStream = HLS_URL || MPD_URL;
+            if (activeStream && activeStream.includes('shaka_player.html')) {
+                try {
+                    var dummy = new URL(activeStream, window.location.origin);
+                    activeStream = dummy.searchParams.get('hls') || dummy.searchParams.get('m3u8') || dummy.searchParams.get('mpd') || dummy.searchParams.get('url') || activeStream;
+                } catch(e) {}
+            }
             var activeKid = KEY_ID;
             var activeKey = KEY;
             var activeCookie = COOKIE;
@@ -479,8 +485,7 @@
                     },
                     manifest: {
                         dash: {
-                            autoCorrectDrift: true,
-                            defaultPresentationDelay: 5
+                            autoCorrectDrift: true
                         },
                         retryParameters: {
                             maxAttempts: 5,
@@ -556,6 +561,11 @@
                             $video.play().catch(function() {});
                         });
                     }
+                }
+
+                if (isHlsStream) {
+                    startHlsFallback();
+                    return;
                 }
 
                 $video.addEventListener('playing', function() {

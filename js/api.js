@@ -315,16 +315,17 @@
         return url;
     }
 
-    function prioritizeFxServers(servers) {
+    function prioritizeFxServers(servers, isLive) {
         if (!Array.isArray(servers) || servers.length <= 1) return servers || [];
-        const isFx = (s) => Boolean(s && (s.isFutbolX || /^FX\s*\d*/i.test(s.name || '') || (s.url && s.url.includes('futbolx')) || (s.rawUrl && s.rawUrl.includes('futbolx')) || (s.url && s.url.includes('ryzn.pro')) || (s.rawUrl && s.rawUrl.includes('ryzn.pro'))));
+        const isFx = (s) => Boolean(s && (s.isFutbolX || /^FX\s*\d*/i.test(s.name || '') || (s.url && (s.url.includes('futbolx') || s.url.includes('ryzn.pro'))) || (s.rawUrl && (s.rawUrl.includes('futbolx') || s.rawUrl.includes('ryzn.pro')))));
         const fxList = [];
         const otherList = [];
         for (const s of servers) {
             if (isFx(s)) fxList.push(s);
             else otherList.push(s);
         }
-        return [...fxList, ...otherList];
+        if (otherList.length === 0) return fxList;
+        return [...otherList, ...fxList];
     }
 
     function sanitizeMatchServers(match) {
@@ -370,7 +371,7 @@
             }
         });
 
-        const sorted = prioritizeFxServers(clean);
+        const sorted = prioritizeFxServers(clean, match ? match.isLive : false);
         match.servers = sorted;
         match.sources = sorted;
         return match;
@@ -1194,14 +1195,20 @@
                 for (const fx of fxMatches) {
                     const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: `shaka_player.html?hls=${encodeURIComponent(s.url)}`,
+                        url: s.url,
                         rawUrl: s.url,
-                        type: 'iframe',
+                        type: 'video',
                         isFutbolX: true,
                         hd: true
                     }));
 
-                    const fxStart = fx.starts_at ? new Date(fx.starts_at).getTime() : 0;
+                    const parseFxDate = (d) => {
+                        if (!d) return 0;
+                        const str = String(d).trim();
+                        const iso = (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) ? str : str + '+03:00';
+                        return new Date(iso).getTime() || 0;
+                    };
+                    const fxStart = parseFxDate(fx.starts_at);
                     const fxToks = getTokens(fx.title || '');
                     let matchedFixture = null;
 
@@ -1304,8 +1311,14 @@
                 return null;
             }
 
-            const startTs = fx.starts_at ? new Date(fx.starts_at).getTime() : Date.now();
-            const endTs = fx.ends_at ? new Date(fx.ends_at).getTime() : (startTs ? startTs + 10800000 : 0);
+            const parseFxDate = (d) => {
+                if (!d) return 0;
+                const str = String(d).trim();
+                const iso = (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) ? str : str + '+03:00';
+                return new Date(iso).getTime() || 0;
+            };
+            const startTs = parseFxDate(fx.starts_at) || Date.now();
+            const endTs = parseFxDate(fx.ends_at) || (startTs ? startTs + 10800000 : 0);
             const now = Date.now();
 
             if (endTs > 0 && now > (endTs + 1800000)) return null;
@@ -2787,9 +2800,9 @@
                 if (fx) {
                     const fxStreams = (fx.streams || []).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: `shaka_player.html?hls=${encodeURIComponent(s.url)}`,
+                        url: s.url,
                         rawUrl: s.url,
-                        type: 'iframe',
+                        type: 'video',
                         isFutbolX: true,
                         hd: true
                     }));
