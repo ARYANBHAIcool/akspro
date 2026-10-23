@@ -377,16 +377,55 @@
         return match;
     }
 
+    function isUnwantedMatch(item) {
+        if (!item) return true;
+        const title = (item.title || item.name || item.event_name || '').toLowerCase().trim();
+        const home = (item.home_team || (item.team1 && item.team1.name) || '').toLowerCase().trim();
+        const away = (item.away_team || (item.team2 && item.team2.name) || '').toLowerCase().trim();
+        const id = String(item.id || item.rawId || item.stream_id || '').toLowerCase();
+
+        // 1. Phantom / Fake / Test fixtures (Diriyah, Pompey, Placeholder, Test)
+        if (title.includes('diriyah') || home.includes('diriyah') || away.includes('diriyah') || id.includes('diriyah')) return true;
+        if (title.includes('pompey') || home.includes('pompey') || away.includes('pompey')) return true;
+        if (title.includes('placeholder') || title.includes('test match') || title.includes('sample match') || title.includes('demo match')) return true;
+        if (id.startsWith('mm-own') || id.startsWith('mm-yl') || id.startsWith('mm-cric') || item.isManual || item.auto === 'own') return true;
+
+        // 2. Non-match studio broadcast talk shows (Morning Footy, Just Football, Box to Box, Attacking Third)
+        const studioShows = ['morning footy', 'just football', 'box to box', 'attacking third'];
+        if (studioShows.some(show => title === show || title.startsWith(show + ' ') || title.includes(show))) return true;
+
+        return false;
+    }
+
+    function isLinearChannel(item) {
+        if (!item) return true;
+        if (item.isAlwaysLive || item.always_live === 1) return true;
+        const tag = (item.tag || item.league || '').toLowerCase();
+        if (tag === '24/7 channel' || tag === '24/7 streams' || tag.includes('24/7')) return true;
+        const sport = (item.sport || item.category || '').toUpperCase();
+        if (sport === '24/7 STREAMS' || sport === 'CHANNELS') return true;
+
+        const title = (item.title || item.name || item.event_name || '').toLowerCase().trim();
+        const linearChannels = [
+            'sky sports golf', 'sky sports news', 'tennis channel', 'rally tv',
+            'nhl network', 'nfl network', 'fox footy', 'fox cricket', 'fox league',
+            'willow', 'red zone', 'redzone'
+        ];
+        if (linearChannels.some(ch => title === ch || title.startsWith(ch + ' '))) return true;
+        return false;
+    }
+
     const STATIC_SPORT_GROUPS = {
-        'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN', 'MLS', 'CPL', 'CANADIAN PREMIER LEAGUE', 'EFL', 'CHAMPIONSHIP'],
         'AMERICAN FOOTBALL': ['AMERICAN FOOTBALL', 'CFL', 'NFL', 'CFB', 'NCAA FOOTBALL'],
+        'AUSTRALIAN FOOTBALL': ['AUSTRALIAN FOOTBALL', 'AFL'],
+        'RUGBY': ['RUGBY', 'NRL', 'SUPER RUGBY', 'SIX NATIONS'],
+        'FOOTBALL': ['FOOTBALL', 'SOCCER', 'UEFA', 'FIFA', 'LALIGA', 'PREMIER', 'BUNDESLIGA', 'SERIE', 'LIGUE', 'EREDIVISIE', 'BRASILEIRÃO', 'BRASILEIRAO', 'LIGA', 'CHAMPIONS', 'UCL', 'AFCON', 'COPA', 'ASIAN', 'CONCACAF', 'WOMENS', 'WOMEN', 'MLS', 'CPL', 'CANADIAN PREMIER LEAGUE', 'EFL', 'CHAMPIONSHIP'],
         'CRICKET': ['CRICKET', 'ASIAN GAMES', 'CPL', 'IPL', 'T20', 'ODI', 'TEST', 'BBL', 'PSL', 'THE HUNDRED', 'WCL', 'WORLD CHAMPIONSHIP OF LEGENDS'],
         'COMBAT SPORTS': ['COMBAT SPORTS', 'UFC', 'MMA', 'BOXING', 'FIGHTS', 'FIGHTING', 'FIGHT', 'WWE', 'AEW', 'WRESTLING', 'BELLATOR', 'ONE FC', 'RIZIN', 'BKFC', 'JUDO', 'BJJ'],
         'MOTORSPORTS': ['MOTORSPORTS', 'MOTORSPORT', 'F1', 'MOTOGP', 'FORMULA', 'FORMULA 1', 'NASCAR', 'RALLY', 'RACING', 'WORLDSBK', 'WORLDSSP', 'SUPERBIKE', 'INDYCAR', 'LE MANS'],
         'BASEBALL': ['BASEBALL', 'MLB', 'NPB', 'KBO'],
         'BASKETBALL': ['BASKETBALL', 'NBA', 'WNBA', 'NBL', 'EUROLEAGUE', 'NCAA BASKETBALL'],
         'HOCKEY': ['HOCKEY', 'ICE HOCKEY', 'NHL', 'KHL', 'SHL', 'IIHF'],
-        'RUGBY': ['RUGBY', 'NRL', 'AFL', 'AUSTRALIAN FOOTBALL', 'SUPER RUGBY', 'SIX NATIONS'],
         'TENNIS': ['TENNIS', 'ATP', 'WTA', 'GRAND SLAM', 'WIMBLEDON', 'US OPEN', 'AUSTRALIAN OPEN', 'ROLAND GARROS', 'DAVIS CUP'],
         'CYCLING': ['CYCLING', 'BMX', 'CYCLO-CROSS', 'TOUR DE FRANCE', 'GIRO', 'VUELTA'],
         'SNOOKER': ['SNOOKER', 'POOL', 'DARTS'],
@@ -396,9 +435,15 @@
     function normalizeSport(str) {
         if (!str || typeof str !== 'string') return '';
         const sUpper = str.trim().toUpperCase();
+        // 1. Direct exact canonical or alias match
         for (const [canonical, aliases] of Object.entries(STATIC_SPORT_GROUPS)) {
-            if (sUpper === canonical || sUpper.includes(canonical)) return canonical;
-            if (aliases.some(a => sUpper === a || sUpper.includes(a) || a.includes(sUpper))) {
+            if (sUpper === canonical || aliases.includes(sUpper)) return canonical;
+        }
+        // 2. Exact word boundary match with priority for compound sports
+        for (const [canonical, aliases] of Object.entries(STATIC_SPORT_GROUPS)) {
+            const reCanonical = new RegExp('\\b' + canonical + '\\b', 'i');
+            if (reCanonical.test(sUpper)) return canonical;
+            if (aliases.some(a => new RegExp('\\b' + a + '\\b', 'i').test(sUpper))) {
                 return canonical;
             }
         }
@@ -414,7 +459,8 @@
         'hawks', 'tigers', 'wildcats', 'bulldogs', 'panthers', 'eagles', 'lions', 'bears',
         'cougars', 'warriors', 'knights', 'cardinals', 'rams', 'falcons', 'hornets', 'saxons',
         'vs', 'v', 'at', 'the', 'and', 'de', 'la', 'san', 'south', 'north', 'east', 'west',
-        'red', 'blue', 'green', 'white', 'black', 'gold', 'yellow'
+        'red', 'blue', 'green', 'white', 'black', 'gold', 'yellow',
+        'game', 'day', 'round', 'stage', 'session', 'practice', 'qualifying', 's1', 's2', 's3', 's4', 's5'
     ]);
 
     const TEAM_ALIASES = {
@@ -450,14 +496,32 @@
         'la clippers': 'los angeles clippers',
         'gs warriors': 'golden state warriors',
         'ny knicks': 'new york knicks',
-        'okc thunder': 'oklahoma city thunder'
+        'okc thunder': 'oklahoma city thunder',
+        'n.y.': 'new york',
+        'ny': 'new york',
+        'n y': 'new york',
+        'l.a.': 'los angeles',
+        'la': 'los angeles',
+        'l a': 'los angeles',
+        'd.c.': 'washington dc',
+        'dc': 'washington dc',
+        'd c': 'washington dc',
+        'okc': 'oklahoma city',
+        'kc': 'kansas city',
+        'tb': 'tampa bay',
+        'gb': 'green bay',
+        'ne': 'new england',
+        'no': 'new orleans',
+        'sf': 'san francisco',
+        'circuit of the americas': 'united states grand prix',
+        'cota': 'united states grand prix'
     };
 
     function normalizeTeamName(str) {
         if (!str) return '';
         let s = cleanMatchStr(str).replace(/[^a-z0-9]/g, ' ').replace(/\s+/g, ' ').trim();
         for (const [k, v] of Object.entries(TEAM_ALIASES)) {
-            const re = new RegExp('\\b' + k + '\\b', 'g');
+            const re = new RegExp('\\b' + k.replace(/\./g, '\\.') + '\\b', 'g');
             s = s.replace(re, v);
         }
         return s.trim();
@@ -483,6 +547,16 @@
         return toksA.some(a => toksB.includes(a));
     }
 
+    function areSportsCompatible(s1, s2) {
+        if (!s1 || !s2 || s1 === 'OTHERS' || s2 === 'OTHERS') return true;
+        if (s1 === s2) return true;
+        const combat = new Set(['COMBAT SPORTS', 'WRESTLING', 'MMA', 'BOXING', 'UFC']);
+        if (combat.has(s1) && combat.has(s2)) return true;
+        const motorsport = new Set(['MOTORSPORTS', 'F1', 'FORMULA 1', 'MOTOGP', 'RACING']);
+        if (motorsport.has(s1) && motorsport.has(s2)) return true;
+        return false;
+    }
+
     function isSameMatch(ppv, alpha) {
         if (!ppv || !alpha) return false;
 
@@ -490,8 +564,9 @@
         const aTitle = alpha.event_name || alpha.title || '';
 
         // Immediate direct clean string match
-        const cleanP = (pTitle.split(/[|\[]/)[0] || pTitle).trim();
-        const cleanA = (aTitle.split(/[|\[]/)[0] || aTitle).trim();
+        const cleanSuffix = (s) => (s || '').replace(/\|\s*(?:game\s*\d+|day\s*\d+\s*s\d+|leg\s*\d+)/gi, '').replace(/\|/g, ' ').replace(/\(.*?\)/g, '').replace(/\[.*?\]/g, '').trim();
+        const cleanP = cleanSuffix(pTitle);
+        const cleanA = cleanSuffix(aTitle);
         const cP = cleanMatchStr(cleanP).replace(/[^a-z0-9]/g, '');
         const cA = cleanMatchStr(cleanA).replace(/[^a-z0-9]/g, '');
         if (cP && cA && cP === cA) return true;
@@ -501,7 +576,8 @@
         const pSport = normalizeSport(ppv.sport || ppv.category || ppv.catName || ppv.league || '');
         const aSport = normalizeSport(alpha.sport || alpha.category || alpha.league || '');
 
-        if (pSport && aSport && pSport !== 'OTHERS' && aSport !== 'OTHERS' && pSport !== aSport) {
+        const isFootballCross = (pSport === 'FOOTBALL' && aSport === 'AMERICAN FOOTBALL') || (pSport === 'AMERICAN FOOTBALL' && aSport === 'FOOTBALL');
+        if (!areSportsCompatible(pSport, aSport) && !isFootballCross) {
             return false;
         }
 
@@ -513,8 +589,48 @@
             if (diffHours > 8) return false;
         }
 
-        const pParts = cleanP.split(/\s+(?:vs\.?|@|v\.?|-|x)\s+/i);
-        const aParts = cleanA.split(/\s+(?:vs\.?|@|v\.?|-|x)\s+/i);
+        // Single-entity events check FIRST before team splitting (Formula 1, MotoGP, UFC fight cards, WWE)
+        const isSingleEntity = /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship/i.test(cleanP) ||
+                               /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship/i.test(cleanA);
+        
+        if (isSingleEntity) {
+            // Disambiguate different sessions (e.g. Practice 1 vs Practice 2 vs Race)
+            const getSession = (s) => {
+                const m = (s || '').match(/\b(?:1st|2nd|3rd|\d(?:st|nd|rd)?)\s*practice\b|\bpractice\s*\d\b|\bqualifying\s*\d?\b|\bsprint\b|\brace\b/i);
+                if (!m) return null;
+                let str = m[0].toLowerCase().replace(/\s+/g, '');
+                if (str.includes('1stpractice') || str.includes('practice1')) return 'practice1';
+                if (str.includes('2ndpractice') || str.includes('practice2')) return 'practice2';
+                if (str.includes('3rdpractice') || str.includes('practice3')) return 'practice3';
+                return str;
+            };
+            const pSess = getSession(cleanP);
+            const aSess = getSession(cleanA);
+            if (pSess && aSess && pSess !== aSess) {
+                return false;
+            }
+
+            const pToks = getDistinctiveTokens(cleanP);
+            const aToks = getDistinctiveTokens(cleanA);
+            const common = aToks.filter(t => pToks.includes(t));
+            if (common.length >= 2) {
+                if (ppvTime && alphaTime) {
+                    const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+                    if (diffHours <= 4) return true;
+                } else {
+                    return true;
+                }
+            }
+            if (ppvTime && alphaTime && Math.abs(ppvTime - alphaTime) <= 3600000) {
+                if (common.length >= 1 && (pToks.includes('prix') || pToks.includes('grand') || pToks.includes('f1') || pToks.includes('formula') || pToks.includes('motogp') || pToks.includes('rally'))) {
+                    return true;
+                }
+            }
+        }
+
+        const teamSepRegex = /\s+(?:vs\.?|@|at|v\.?|x)\s+/i;
+        const pParts = cleanP.split(teamSepRegex);
+        const aParts = cleanA.split(teamSepRegex);
 
         let pHome = (ppv.team1 && ppv.team1.name) || (ppv.teams && ppv.teams.home && ppv.teams.home.name) || ppv.home_team || (pParts.length >= 2 ? pParts[0] : '');
         let pAway = (ppv.team2 && ppv.team2.name) || (ppv.teams && ppv.teams.away && ppv.teams.away.name) || ppv.away_team || (pParts.length >= 2 ? pParts[1] : '');
@@ -522,29 +638,28 @@
         let aHome = alpha.home_team || (alpha.team1 && alpha.team1.name) || (alpha.teams && alpha.teams.home && alpha.teams.home.name) || (aParts.length >= 2 ? aParts[0] : '');
         let aAway = alpha.away_team || (alpha.team2 && alpha.team2.name) || (alpha.teams && alpha.teams.away && alpha.teams.away.name) || (aParts.length >= 2 ? aParts[1] : '');
 
-        pHome = (pHome.split(/[|\[]/)[0] || pHome).trim();
-        pAway = (pAway.split(/[|\[]/)[0] || pAway).trim();
-        aHome = (aHome.split(/[|\[]/)[0] || aHome).trim();
-        aAway = (aAway.split(/[|\[]/)[0] || aAway).trim();
+        if ((!pHome || !pAway) && !isSingleEntity && cleanP.includes(' - ')) {
+            const dashParts = cleanP.split(/\s+-\s+/);
+            if (dashParts.length >= 2) { pHome = dashParts[0]; pAway = dashParts[1]; }
+        }
+        if ((!aHome || !aAway) && !isSingleEntity && cleanA.includes(' - ')) {
+            const dashParts = cleanA.split(/\s+-\s+/);
+            if (dashParts.length >= 2) { aHome = dashParts[0]; aAway = dashParts[1]; }
+        }
+
+        pHome = cleanSuffix(pHome).trim();
+        pAway = cleanSuffix(pAway).trim();
+        aHome = cleanSuffix(aHome).trim();
+        aAway = cleanSuffix(aAway).trim();
 
         // If BOTH fixtures have opposing teams, BOTH TEAMS MUST MATCH!
         if (pHome && pAway && aHome && aAway) {
             const homeHome = matchTeams(pHome, aHome);
             const awayAway = matchTeams(pAway, aAway);
-            const homeAway = matchTeams(pHome, aAway);
-            const awayHome = matchTeams(pAway, aHome);
-            if ((homeHome && awayAway) || (homeAway && awayHome)) return true;
+            const homeHome2 = matchTeams(pHome, aAway);
+            const awayHome2 = matchTeams(pAway, aHome);
+            if ((homeHome && awayAway) || (homeHome2 && awayHome2)) return true;
             return false;
-        }
-
-        // Only for non-team single-entity events (Formula 1, MotoGP, UFC fight cards)
-        const isSingleEntity = /grand\s*prix|qualifying|practice|race|ufc|bellator|fight\s*night|rally|motogp|nascar|marathon|tour\s*de/i.test(pTitle) ||
-                               /grand\s*prix|qualifying|practice|race|ufc|bellator|fight\s*night|rally|motogp|nascar|marathon|tour\s*de/i.test(aTitle);
-        if (isSingleEntity) {
-            const pToks = getDistinctiveTokens(pTitle);
-            const aToks = getDistinctiveTokens(aTitle);
-            const common = aToks.filter(t => pToks.includes(t));
-            if (common.length >= 2) return true;
         }
 
         return false;
@@ -627,9 +742,9 @@
         'asian games': 'CRICKET',
         'asian-games': 'CRICKET',
         'darts': 'DARTS',
-        'wrestling': 'WRESTLING',
-        'wwe': 'WRESTLING',
-        'aew': 'WRESTLING',
+        'wrestling': 'COMBAT SPORTS',
+        'wwe': 'COMBAT SPORTS',
+        'aew': 'COMBAT SPORTS',
         'nhl': 'HOCKEY',
         'icehockey': 'HOCKEY',
         'ice-hockey': 'HOCKEY',
@@ -1300,6 +1415,10 @@
 
         normalizeFutbolXMatch(fx, fxStreams) {
             if (!fx || !fx.title) return null;
+            if (isUnwantedMatch(fx) || isLinearChannel(fx)) {
+                return null;
+            }
+            if (!fx || !fx.title) return null;
             const fxTitleLower = (fx.title || fx.name || '').toLowerCase();
             if ((fxTitleLower.includes('wolves') || fxTitleLower.includes('wolverhampton')) && (fxTitleLower.includes('pompey') || fxTitleLower.includes('portsmouth'))) {
                 return null;
@@ -1326,7 +1445,7 @@
             const isExplicitLive = Boolean(fx.status === 'live' || fx.status === 'in_progress' || fx.isLive);
             const isLive = Boolean(isExplicitLive || (startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000))));
             const rawCat = (fx.category || 'football').toLowerCase();
-            const sport = SPORT_MAPPINGS[rawCat] || (fx.category ? fx.category.toUpperCase() : 'FOOTBALL');
+            const sport = normalizeSport(rawCat || fx.category || 'FOOTBALL');
 
             const parts = fx.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
             const team1Name = parts[0] ? parts[0].trim() : fx.title;
@@ -1781,6 +1900,7 @@
                 }
 
                 this.alphaCatalog = combinedCatalog;
+                this._hasAttemptedAutoHeal = false;
                 const matchedAlphaIds = new Set();
                 let addedIndependent = false;
 
@@ -2252,7 +2372,6 @@
                 const scriptEl = document.createElement('script');
                 scriptEl.textContent = scriptText;
                 document.head.appendChild(scriptEl);
-                this._hasAttemptedAutoHeal = false;
                 console.log('StreamCornerCore dynamically updated and auto-healed!');
                 return true;
             } catch (e) {
@@ -2291,6 +2410,10 @@
          * For independent fixtures (e.g. CPL, UFC, Formula 1, MotoGP, etc.)
          */
         normalizeAlphaMatch(alpha) {
+            if (!alpha) return null;
+            if (isUnwantedMatch(alpha) || isLinearChannel(alpha)) {
+                return null;
+            }
             if (!alpha) return null;
 
             const catUpper = (alpha.category || '').toUpperCase();
@@ -2341,7 +2464,7 @@
 
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
-            const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[league.toLowerCase()] || (alpha.category ? alpha.category.toUpperCase() : 'OTHERS');
+            const sport = normalizeSport(rawCat || league || alpha.category || 'OTHERS');
 
             const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ | x /i)[0] || rawTitle;
             const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ | x /i)[1] || '';
@@ -2383,6 +2506,32 @@
          * accurate timestamps, and clean server embeds.
          */
         normalizePPVStreamItem(s, catName, is247Cat) {
+            if (isUnwantedMatch(s)) {
+                return null;
+            }
+            if (isLinearChannel(s) || is247Cat) {
+                // Route linear channel to this.channels if it has sources
+                if (Array.isArray(s.sources) && s.sources.length > 0) {
+                    const chId = 'ch-' + s.id;
+                    const sName = s.name || s.title || '';
+                    if (!this.channels.some(c => c.id === chId || c.name.toLowerCase() === sName.toLowerCase())) {
+                        this.channels.push({
+                            id: chId,
+                            name: sName,
+                            category: '24/7 STREAMS',
+                            logo: sanitizeLogoUrl(s.poster || s.badge || ''),
+                            country: 'GLOBAL',
+                            servers: (s.sources || []).map((src, idx) => ({
+                                name: src.name || ('Server ' + (idx + 1)),
+                                url: src.source || src.url || '',
+                                type: (src.source || '').includes('.m3u8') ? 'video' : 'iframe',
+                                hd: true
+                            }))
+                        });
+                    }
+                }
+                return null;
+            }
             const startTs = (s.starts_at ? s.starts_at * 1000 : (s.date ? (typeof s.date === 'number' ? s.date : (new Date(s.date).getTime() || 0)) : 0));
             const endTs = (s.ends_at ? s.ends_at * 1000 : 0) || (startTs ? startTs + 10800000 : 0);
             const now = Date.now();
@@ -2568,6 +2717,7 @@
             for (let i = 0; i < this.matches.length; i++) {
                 const m = this.matches[i];
                 if (!m) continue;
+                if (isUnwantedMatch(m) || isLinearChannel(m)) continue;
                 if (m.id && seenIds.has(m.id)) continue;
 
                 let dup = null;
@@ -2584,7 +2734,7 @@
                 // 2. Distinctive token index lookup
                 if (!dup) {
                     const mToks = getDistinctiveTokens(m.title || '');
-                    if (mToks.length >= 2) {
+                    if (mToks.length >= 1) {
                         const candidates = new Set();
                         for (const t of mToks) {
                             const list = tokenMap.get(t);
@@ -2593,6 +2743,18 @@
                             }
                         }
                         for (const cand of candidates) {
+                            if (isSameMatch(cand, m)) {
+                                dup = cand;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                // Start time proximity candidate check (within 3.5 hours)
+                if (!dup && m.startTime) {
+                    for (const cand of unique) {
+                        if (cand.startTime && Math.abs(cand.startTime - m.startTime) <= 12600000) {
                             if (isSameMatch(cand, m)) {
                                 dup = cand;
                                 break;
@@ -2610,6 +2772,12 @@
                         if (!dup.uriName) dup.uriName = m.uriName;
                     }
                     if (m.isFutbolX) dup.isFutbolX = true;
+                    if (m.sport === 'AMERICAN FOOTBALL' || dup.sport === 'AMERICAN FOOTBALL') {
+                        dup.sport = 'AMERICAN FOOTBALL';
+                    }
+                    if (m.sport === 'COMBAT SPORTS' || dup.sport === 'COMBAT SPORTS') {
+                        dup.sport = 'COMBAT SPORTS';
+                    }
 
                     // Merge servers cleanly using canonical key deduplication
                     const combinedServers = [...(dup.servers || []), ...(m.servers || [])];
@@ -2730,9 +2898,10 @@
 
         updateLiveStatuses() {
             const now = Date.now();
-            // Strictly remove matches that ended more than 15 minutes ago or started > 4h ago
+            // Strictly remove matches that ended more than 15 minutes ago, started > 4h ago, or are unwanted/linear channels
             this.matches = this.matches.filter(m => {
-                if (m.isAlwaysLive || m.always_live === 1 || !m.endTime) return true;
+                if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
+                if (!m.endTime) return true;
                 if (m.startTime && now > (m.startTime + 14400000)) return false;
                 return now <= (m.endTime + 900000);
             });
@@ -2939,7 +3108,7 @@
 
         getAllMatches() {
             const now = Date.now();
-            return this.matches.filter(m => m.isAlwaysLive || !m.endTime || now <= (m.endTime + 900000));
+            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         isExcludedFromLiveNow(m) {
@@ -2988,7 +3157,7 @@
         getLiveMatches() {
             const now = Date.now();
             return this.matches.filter(m => {
-                if (this.isExcludedFromLiveNow(m)) return false;
+                if (isUnwantedMatch(m) || isLinearChannel(m) || this.isExcludedFromLiveNow(m)) return false;
                 const isExplicitLive = m.status === 'live' || m.status === 'in_progress';
                 const isInTimeWindow = (m.startTime && (m.startTime - 900000) <= now && (!m.endTime || now <= (m.endTime + 1800000)));
                 return Boolean(m.isLive || isExplicitLive || isInTimeWindow);
@@ -2997,7 +3166,7 @@
 
         getUpcomingMatches() {
             const now = Date.now();
-            return this.matches.filter(m => !m.isLive && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !m.isLive && (!m.endTime || now <= (m.endTime + 900000)));
         },
 
         getMatchesByCategory(cat) {
@@ -3007,11 +3176,12 @@
                 const todayMidnight = new Date().setHours(0, 0, 0, 0);
                 const tonightMidnight = todayMidnight + 86400000;
                 const now = Date.now();
-                return this.matches.filter(m => m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
+                return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
             }
             const cleanCat = cat.toUpperCase().trim();
             const now = Date.now();
             return this.matches.filter(m => {
+                if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
                 if (m.endTime && now > (m.endTime + 900000)) return false;
                 const sport = (m.sport || '').toUpperCase();
                 const league = (m.league || '').toUpperCase();
