@@ -513,19 +513,7 @@ window.AryanPlayerEngine = {
         }
     },
 
-    toggleTheater() {
-        this.isTheater = !this.isTheater;
-        const modalDialog = document.querySelector('#player-modal > div');
-        if (modalDialog) {
-            if (this.isTheater) {
-                modalDialog.classList.remove('max-w-5xl');
-                modalDialog.classList.add('max-w-[98vw]', 'h-[95vh]');
-            } else {
-                modalDialog.classList.remove('max-w-[98vw]', 'h-[95vh]');
-                modalDialog.classList.add('max-w-5xl');
-            }
-        }
-    },
+    toggleTheater() {},
 
     toggleFullscreen() {
         const viewport = document.getElementById('player-canvas-wrapper');
@@ -615,10 +603,7 @@ window.AryanPlayerEngine = {
                             Next Server
                         </button>
                         ` : ''}
-                        <button onclick="AryanPlayerEngine.toggleTheater()" title="Toggle Theater Mode" class="px-2.5 py-1 bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                            Theater
-                        </button>
+
                         <button onclick="AryanPlayerEngine.toggleFullscreen()" title="Fullscreen" class="px-2.5 py-1 bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h7v2H5v5H3V3zm18 0v7h-2V5h-5V3h7zM3 21v-7h2v5h5v2H3zm18 0h-7v-2h5v-5h2v7z"/></svg>
                         </button>
