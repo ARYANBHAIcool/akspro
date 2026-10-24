@@ -417,8 +417,8 @@
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=10.9.8"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.9"></script>
-    <script src="js/api.js?v=10.9.9"></script>
+    <script src="js/player.js?v=10.9.10"></script>
+    <script src="js/api.js?v=10.9.10"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -481,6 +481,7 @@
 
         let previousView = 'home';
         let currentWatchItem = null;
+        window.currentWatchItem = null;
 
         function switchView(viewName) {
             currentView = viewName;
@@ -998,6 +999,7 @@
                 previousView = currentView;
             }
             currentWatchItem = item;
+            window.currentWatchItem = item;
 
             window.scrollTo(0, 0);
 
@@ -1057,6 +1059,7 @@
                 currentWatchItem._locked = false;
             }
             currentWatchItem = null;
+            window.currentWatchItem = null;
             if (window.history && window.history.replaceState) {
                 try {
                     window.history.replaceState(null, '', `${window.location.origin}/`);

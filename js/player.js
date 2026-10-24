@@ -311,8 +311,8 @@ window.AryanPlayerEngine = {
             } catch (e) {}
         }
 
-        // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embed.st')) {
+        // Route any external iframe embeds through the Cloudflare Pages embed proxy
+        if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
             try {
                 const parsed = new URL(rawUrl);
                 const p = parsed.searchParams.get('p') || '';

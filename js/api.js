@@ -274,7 +274,7 @@
             }
             return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
         }
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embed.st')) {
+        if (rawUrl.startsWith('http://') || rawUrl.startsWith('https://')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -372,7 +372,7 @@
             else if (isFx(s)) fxList.push(s);
             else otherList.push(s);
         }
-        return [...taifoodList, ...fxList, ...otherList];
+        return [...fxList, ...otherList, ...taifoodList];
     }
 
     function sanitizeMatchServers(match) {
@@ -988,6 +988,12 @@
             this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
             const ppvPromise = this.loadPPVFeeds(true);
             const channelsPromise = this.loadChannelsCatalog();
+            this._alphaLoadingPromise = (async () => {
+                try {
+                    await this.loadStreamCornerAlphaFeeds();
+                    this.updateLiveStatuses();
+                } catch(e) {}
+            })();
 
             await Promise.allSettled([
                 ppvPromise,
@@ -999,14 +1005,6 @@
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
-
-            // 4. Background StreamCorner Alpha enrichment without blocking the UI thread
-            this._alphaLoadingPromise = (async () => {
-                try {
-                    await this.loadStreamCornerAlphaFeeds();
-                    this.updateLiveStatuses();
-                } catch(e) {}
-            })();
 
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
@@ -1561,23 +1559,24 @@
                         }
 
                         // Real-time update if user is currently viewing this fixture
-                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && addedServers.length > 0 &&
-                            (currentWatchItem.id === matchedFixture.id || 
-                             (currentWatchItem.canonicalSlug && matchedFixture.canonicalSlug && currentWatchItem.canonicalSlug === matchedFixture.canonicalSlug) ||
-                             (currentWatchItem.rawId && matchedFixture.rawId && currentWatchItem.rawId === matchedFixture.rawId) ||
-                             (currentWatchItem.uriName && matchedFixture.uriName && currentWatchItem.uriName === matchedFixture.uriName))) {
+                        const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
+                        if (activeWatch && addedServers.length > 0 &&
+                            (activeWatch.id === matchedFixture.id || 
+                             (activeWatch.canonicalSlug && matchedFixture.canonicalSlug && activeWatch.canonicalSlug === matchedFixture.canonicalSlug) ||
+                             (activeWatch.rawId && matchedFixture.rawId && activeWatch.rawId === matchedFixture.rawId) ||
+                             (activeWatch.uriName && matchedFixture.uriName && activeWatch.uriName === matchedFixture.uriName))) {
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                            const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
+                            const currentPlayingServer = activeWatch.servers && activeWatch.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
 
-                            currentWatchItem.servers = matchedFixture.servers;
-                            currentWatchItem.sources = matchedFixture.servers;
-                            currentWatchItem.isFutbolX = true;
+                            activeWatch.servers = matchedFixture.servers;
+                            activeWatch.sources = matchedFixture.servers;
+                            activeWatch.isFutbolX = true;
 
                             if (window.AryanPlayerEngine) {
-                                window.AryanPlayerEngine.currentStream = currentWatchItem;
+                                window.AryanPlayerEngine.currentStream = activeWatch;
                                 if (currentPlayingUrl) {
-                                    const matchIdx = currentWatchItem.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
+                                    const matchIdx = activeWatch.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
                                     if (matchIdx !== -1) {
                                         window.AryanPlayerEngine.activeServerIdx = matchIdx;
                                     }
@@ -1585,7 +1584,7 @@
                             }
                             if (typeof renderWatchSources === 'function') {
                                 const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                                renderWatchSources(currentWatchItem, activeIdx);
+                                renderWatchSources(activeWatch, activeIdx);
                             }
                         }
                     } else {
@@ -2217,15 +2216,16 @@
                 }
 
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
-                if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
-                    const matchedAlpha = currentWatchItem.alphaStreamId
-                        ? this.alphaCatalog.find(a => a.stream_id === currentWatchItem.alphaStreamId)
-                        : this.alphaCatalog.find(a => isSameMatch(currentWatchItem, a));
+                const activeWatchAlpha = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
+                if (activeWatchAlpha && !activeWatchAlpha._alphaResolved) {
+                    const matchedAlpha = activeWatchAlpha.alphaStreamId
+                        ? this.alphaCatalog.find(a => a.stream_id === activeWatchAlpha.alphaStreamId)
+                        : this.alphaCatalog.find(a => isSameMatch(activeWatchAlpha, a));
                     if (matchedAlpha) {
-                        currentWatchItem.alphaStreamId = matchedAlpha.stream_id;
-                        currentWatchItem.alphaStreamType = matchedAlpha.stream_type || 'alpha';
-                        currentWatchItem.alphaItem = matchedAlpha;
-                        this.resolveAlphaSourcesForMatch(currentWatchItem);
+                        activeWatchAlpha.alphaStreamId = matchedAlpha.stream_id;
+                        activeWatchAlpha.alphaStreamType = matchedAlpha.stream_type || 'alpha';
+                        activeWatchAlpha.alphaItem = matchedAlpha;
+                        this.resolveAlphaSourcesForMatch(activeWatchAlpha);
                     }
                 }
 
@@ -2250,12 +2250,15 @@
         async ensureAllSourcesForMatch(match) {
             if (!match) return false;
 
-            // 1. Await FutbolX feeds if loading
-            if (this._futbolxLoadingPromise) {
+            // 1. Ensure FutbolX feeds are started and awaited
+            if (!this._futbolxLoadingPromise) {
+                this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
+            }
+            if (!Array.isArray(this.futbolxCatalog) || this.futbolxCatalog.length === 0) {
                 try {
                     await Promise.race([
                         this._futbolxLoadingPromise,
-                        new Promise(resolve => setTimeout(resolve, 1500))
+                        new Promise(resolve => setTimeout(resolve, 2000))
                     ]);
                 } catch (e) {}
             }
@@ -2287,12 +2290,15 @@
                 }
             }
 
-            // 2. Await StreamCorner Alpha feeds if catalog not ready yet
-            if (this._alphaLoadingPromise && (!Array.isArray(this.alphaCatalog) || this.alphaCatalog.length === 0)) {
+            // 2. Ensure StreamCorner Alpha feeds are started and awaited
+            if (!this._alphaLoadingPromise) {
+                this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+            }
+            if (!Array.isArray(this.alphaCatalog) || this.alphaCatalog.length === 0) {
                 try {
                     await Promise.race([
                         this._alphaLoadingPromise,
-                        new Promise(resolve => setTimeout(resolve, 2200))
+                        new Promise(resolve => setTimeout(resolve, 3500))
                     ]);
                 } catch (e) {}
             }
@@ -2323,11 +2329,14 @@
 
             // 1. If not already paired or catalog still loading in background, await with a fast timeout
             const needsCatalog = (!Array.isArray(this.alphaCatalog) || this.alphaCatalog.length === 0) || (!match.alphaStreamId && (!match.streamCornerSources || match.streamCornerSources.length === 0));
-            if (needsCatalog && this._alphaLoadingPromise) {
+            if (needsCatalog) {
+                if (!this._alphaLoadingPromise) {
+                    this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+                }
                 try {
                     await Promise.race([
                         this._alphaLoadingPromise,
-                        new Promise(resolve => setTimeout(resolve, 2200))
+                        new Promise(resolve => setTimeout(resolve, 3000))
                     ]);
                 } catch (e) {}
             }
@@ -2335,9 +2344,14 @@
             // 2. Discover and link matching items in alphaCatalog only if not already paired
             match.streamCornerSources = match.streamCornerSources || [];
             if (match.streamCornerSources.length === 0 && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+                const matchSlug = match.canonicalSlug || generateUniversalMatchSlug(match.title || match.name);
                 for (const a of this.alphaCatalog) {
                     if (!a || !a.stream_id) continue;
-                    if (a.stream_id === match.alphaStreamId || isSameMatch(match, a)) {
+                    const aSlug = a.canonicalSlug || generateUniversalMatchSlug(a.event_name || a.title || '');
+                    const isMatched = (match.alphaStreamId && a.stream_id === match.alphaStreamId) || 
+                                      (matchSlug && aSlug && matchSlug === aSlug) || 
+                                      isSameMatch(match, a);
+                    if (isMatched) {
                         if (!match.streamCornerSources.some(sc => sc.id === a.stream_id)) {
                             match.streamCornerSources.push({
                                 id: a.stream_id,
@@ -2545,23 +2559,25 @@
                         match._alphaResolved = true;
 
                         // Real-time update if user is currently viewing this match
-                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && 
-                            (currentWatchItem.id === match.id || 
-                             (currentWatchItem.canonicalSlug && match.canonicalSlug && currentWatchItem.canonicalSlug === match.canonicalSlug) ||
-                             currentWatchItem.alphaStreamId === match.alphaStreamId || 
-                             (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => seenTargetIds.has(sc.id))))) {
+                        const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
+                        if (activeWatch && 
+                            (activeWatch.id === match.id || 
+                             (activeWatch.canonicalSlug && match.canonicalSlug && activeWatch.canonicalSlug === match.canonicalSlug) ||
+                             activeWatch.alphaStreamId === match.alphaStreamId || 
+                             (activeWatch.streamCornerSources && activeWatch.streamCornerSources.some(sc => seenTargetIds.has(sc.id))))) {
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                            const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
+                            const currentPlayingServer = activeWatch.servers && activeWatch.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
                             const wasUninitialized = !currentPlayingUrl || (baseServers.length === 0) || !window.AryanPlayerEngine || !window.AryanPlayerEngine.getServers().length;
 
-                            currentWatchItem.servers = match.servers;
-                            currentWatchItem.sources = match.servers;
-                            currentWatchItem._alphaResolved = true;
+                            activeWatch.servers = match.servers;
+                            activeWatch.sources = match.servers;
+                            activeWatch.streamCornerSources = match.streamCornerSources;
+                            activeWatch._alphaResolved = true;
 
                             let newActiveIdx = 0;
                             if (window.AryanPlayerEngine) {
-                                window.AryanPlayerEngine.currentStream = currentWatchItem;
+                                window.AryanPlayerEngine.currentStream = activeWatch;
                                 if (wasUninitialized) {
                                     newActiveIdx = 0;
                                     window.AryanPlayerEngine.activeServerIdx = 0;
@@ -2580,7 +2596,7 @@
                             }
 
                             if (typeof renderWatchSources === 'function') {
-                                renderWatchSources(currentWatchItem, newActiveIdx);
+                                renderWatchSources(activeWatch, newActiveIdx);
                             }
                         }
 

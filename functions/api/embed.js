@@ -47,11 +47,15 @@ export async function onRequest(context) {
         const isStreamCorner = parsedTarget.origin.includes('pandecocogaming') ||
                                parsedTarget.origin.includes('getsugatensho') ||
                                parsedTarget.origin.includes('streamcorner');
+        const isPPV = parsedTarget.origin.includes('taifood') ||
+                      parsedTarget.origin.includes('embedindia') ||
+                      parsedTarget.origin.includes('embed.st') ||
+                      parsedTarget.origin.includes('indianservers');
 
         const upstreamHeaders = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-            'Referer': isStreamCorner ? 'https://streamcorner.cloud/' : `${parsedTarget.origin}/`,
-            'Origin': isStreamCorner ? 'https://streamcorner.cloud' : parsedTarget.origin,
+            'Referer': isStreamCorner ? 'https://streamcorner.cloud/' : (isPPV ? 'https://ppv.st/' : `${parsedTarget.origin}/`),
+            'Origin': isStreamCorner ? 'https://streamcorner.cloud' : (isPPV ? 'https://ppv.st' : parsedTarget.origin),
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9'
         };
