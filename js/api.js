@@ -937,7 +937,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v41';
+            const CACHE_KEY = 'aryan_cached_matches_v42';
             // 1. Explicitly purge any bloated legacy caches (v1 through v35) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -986,7 +986,7 @@
 
             // 3. Ultra-fast initial render: Load authoritative core match schedule & 24/7 channels in parallel (<400ms)
             this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
-            const ppvPromise = this.loadPPVFeeds(true);
+            this._ppvLoadingPromise = this.loadPPVFeeds(true);
             const channelsPromise = this.loadChannelsCatalog();
             this._alphaLoadingPromise = (async () => {
                 try {
@@ -996,7 +996,7 @@
             })();
 
             await Promise.allSettled([
-                ppvPromise,
+                this._ppvLoadingPromise,
                 this._futbolxLoadingPromise,
                 channelsPromise
             ]);
@@ -1045,7 +1045,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds(isInitial = false) {
-            const CACHE_KEY = 'aryan_cached_matches_v41';
+            const CACHE_KEY = 'aryan_cached_matches_v42';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -1344,7 +1344,24 @@
                         if (Array.isArray(this.matches)) {
                             const existingFx = this.matches.filter(m => m && m.isFutbolX && !isExpiredMatch(m, now));
                             for (const fx of existingFx) {
-                                if (!cleanNewMatches.some(m => m.id === fx.id || (m.uriName && m.uriName === fx.uriName))) {
+                                const fxSlug = fx.canonicalSlug || generateUniversalMatchSlug(fx.title || fx.name || '');
+                                const matchedPpv = cleanNewMatches.find(m => {
+                                    if (m.id === fx.id || (m.uriName && fx.uriName && m.uriName === fx.uriName)) return true;
+                                    const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
+                                    if (fxSlug && mSlug && fxSlug === mSlug) return true;
+                                    return isSameMatch(m, fx);
+                                });
+                                if (matchedPpv) {
+                                    // Merge FX streams directly into canonical PPV match
+                                    const existingUrls = new Set((matchedPpv.servers || []).map(s => s.rawUrl || s.url));
+                                    const newServers = (fx.servers || []).filter(s => !existingUrls.has(s.rawUrl || s.url));
+                                    if (newServers.length > 0) {
+                                        matchedPpv.servers = prioritizeFxServers([...newServers, ...(matchedPpv.servers || [])]);
+                                        matchedPpv.sources = matchedPpv.servers;
+                                    }
+                                    matchedPpv.isFutbolX = true;
+                                    if (fx.uriName) matchedPpv.uriName = fx.uriName;
+                                } else {
                                     cleanNewMatches.push(fx);
                                 }
                             }
@@ -1504,6 +1521,14 @@
                         else if (fx.uri_name && this._matchById.has(fx.uri_name)) matchedFixture = this._matchById.get(fx.uri_name);
                         else if (fxSlug && this._matchById.has(fxSlug)) matchedFixture = this._matchById.get(fxSlug);
                     }
+                    if (!matchedFixture && fxSlug && Array.isArray(this.matches)) {
+                        matchedFixture = this.matches.find(m => {
+                            if (m.id === fx.id || (m.uriName && fx.uri_name && m.uriName === fx.uri_name)) return true;
+                            const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
+                            if (fxSlug && mSlug && fxSlug === mSlug) return true;
+                            return isSameMatch(m, fx);
+                        });
+                    }
 
                     if (!matchedFixture && fxToks.length > 0) {
                         const candidates = new Map();
@@ -1610,7 +1635,7 @@
                     this.sortMatches();
                     if (!this.isLoading && !isInitial) this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v41';
+                        const CACHE_KEY = 'aryan_cached_matches_v42';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                     } catch (e) {}
                 }
@@ -2120,6 +2145,7 @@
                     if (!m) continue;
                     if (m.id) matchById.set(m.id, m);
                     if (m.rawId) matchById.set(String(m.rawId), m);
+                    if (m.canonicalSlug) matchById.set(m.canonicalSlug, m);
                     if (m.alphaStreamId) matchById.set(m.alphaStreamId, m);
                     if (Array.isArray(m.streamCornerSources)) {
                         for (const sc of m.streamCornerSources) {
@@ -2138,6 +2164,13 @@
                 for (const alpha of this.alphaCatalog) {
                     if (!alpha || !alpha.stream_id) continue;
                     let matchedMatch = matchById.get(alpha.stream_id) || matchById.get(`alpha-${alpha.stream_id}`);
+                    if (!matchedMatch) {
+                        const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
+                        const aSlug = alpha.canonicalSlug || generateUniversalMatchSlug(aTitle);
+                        if (aSlug && matchById.has(aSlug)) {
+                            matchedMatch = matchById.get(aSlug);
+                        }
+                    }
                     if (!matchedMatch) {
                         const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
                         const aToks = getDistinctiveTokens(aTitle);
@@ -2210,7 +2243,7 @@
                     this.isLoading = false;
                     this.sortMatches();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v38';
+                        const CACHE_KEY = 'aryan_cached_matches_v42';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                     } catch (e) {}
                 }
@@ -2218,15 +2251,7 @@
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
                 const activeWatchAlpha = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
                 if (activeWatchAlpha && !activeWatchAlpha._alphaResolved) {
-                    const matchedAlpha = activeWatchAlpha.alphaStreamId
-                        ? this.alphaCatalog.find(a => a.stream_id === activeWatchAlpha.alphaStreamId)
-                        : this.alphaCatalog.find(a => isSameMatch(activeWatchAlpha, a));
-                    if (matchedAlpha) {
-                        activeWatchAlpha.alphaStreamId = matchedAlpha.stream_id;
-                        activeWatchAlpha.alphaStreamType = matchedAlpha.stream_type || 'alpha';
-                        activeWatchAlpha.alphaItem = matchedAlpha;
-                        this.resolveAlphaSourcesForMatch(activeWatchAlpha);
-                    }
+                    this.ensureAlphaSourcesForMatch(activeWatchAlpha);
                 }
 
                 // Alpha sources resolved on-demand per match without background CPU contention
@@ -2250,7 +2275,51 @@
         async ensureAllSourcesForMatch(match) {
             if (!match) return false;
 
-            // 1. Ensure FutbolX feeds are started and awaited
+            const matchSlug = match.canonicalSlug || generateUniversalMatchSlug(match.title || match.name || '');
+
+            // 1. Ensure PPV core schedule feeds are awaited if match has few or no servers
+            if (this._ppvLoadingPromise && (!match.servers || match.servers.length <= 1)) {
+                try {
+                    await Promise.race([
+                        this._ppvLoadingPromise,
+                        new Promise(resolve => setTimeout(resolve, 2500))
+                    ]);
+                } catch (e) {}
+            }
+
+            // If match is an isolated FutbolX or independent card, merge partner PPV fixture servers
+            if (Array.isArray(this.matches)) {
+                const partnerMatch = this.matches.find(m => {
+                    if (m === match) return false;
+                    if (m.id === match.id || (m.rawId && match.rawId && m.rawId === match.rawId)) return true;
+                    const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
+                    if (mSlug && matchSlug && mSlug === matchSlug) return true;
+                    return isSameMatch(m, match);
+                });
+                if (partnerMatch) {
+                    const existingUrls = new Set((match.servers || []).map(s => s.rawUrl || s.url));
+                    const newServers = (partnerMatch.servers || []).filter(s => !existingUrls.has(s.rawUrl || s.url));
+                    if (newServers.length > 0) {
+                        match.servers = prioritizeFxServers([...(match.servers || []), ...newServers]);
+                        match.sources = match.servers;
+                    }
+                    if (Array.isArray(partnerMatch.streamCornerSources) && partnerMatch.streamCornerSources.length > 0) {
+                        match.streamCornerSources = match.streamCornerSources || [];
+                        partnerMatch.streamCornerSources.forEach(sc => {
+                            if (!match.streamCornerSources.some(s => s.id === sc.id)) {
+                                match.streamCornerSources.push(sc);
+                            }
+                        });
+                    }
+                    if (partnerMatch.alphaStreamId && !match.alphaStreamId) {
+                        match.alphaStreamId = partnerMatch.alphaStreamId;
+                        match.alphaStreamType = partnerMatch.alphaStreamType;
+                        match.alphaItem = partnerMatch.alphaItem;
+                    }
+                }
+            }
+
+            // 2. Ensure FutbolX feeds are started and awaited
             if (!this._futbolxLoadingPromise) {
                 this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
             }
@@ -2265,7 +2334,6 @@
 
             // Merge FX sources if catalog available and match doesn't have them yet
             if (Array.isArray(this.futbolxCatalog) && this.futbolxCatalog.length > 0) {
-                const matchSlug = match.canonicalSlug || generateUniversalMatchSlug(match.title || match.name);
                 const fx = this.futbolxCatalog.find(f => {
                     if (f.id === match.id || f.uri_name === match.uriName) return true;
                     const fSlug = generateUniversalMatchSlug(f.title || '');
@@ -2290,7 +2358,7 @@
                 }
             }
 
-            // 2. Ensure StreamCorner Alpha feeds are started and awaited
+            // 3. Ensure StreamCorner Alpha feeds are started and awaited
             if (!this._alphaLoadingPromise) {
                 this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
             }
@@ -2303,10 +2371,23 @@
                 } catch (e) {}
             }
 
-            // 3. Resolve StreamCorner satellite sources
+            // 4. Resolve StreamCorner satellite sources
             try {
                 await this.ensureAlphaSourcesForMatch(match);
             } catch (e) {}
+
+            // Real-time update watch view UI if user is actively watching this match
+            const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
+            if (activeWatch && (activeWatch.id === match.id || (activeWatch.canonicalSlug && match.canonicalSlug && activeWatch.canonicalSlug === match.canonicalSlug))) {
+                activeWatch.servers = match.servers;
+                activeWatch.sources = match.servers;
+                activeWatch.streamCornerSources = match.streamCornerSources;
+                activeWatch._alphaResolved = true;
+                if (typeof renderWatchSources === 'function') {
+                    const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
+                    renderWatchSources(activeWatch, activeIdx);
+                }
+            }
 
             return true;
         },
@@ -2341,9 +2422,9 @@
                 } catch (e) {}
             }
 
-            // 2. Discover and link matching items in alphaCatalog only if not already paired
+            // 2. Discover and link matching items in alphaCatalog (both primary and multi-angle/multiview feeds)
             match.streamCornerSources = match.streamCornerSources || [];
-            if (match.streamCornerSources.length === 0 && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
+            if (Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const matchSlug = match.canonicalSlug || generateUniversalMatchSlug(match.title || match.name);
                 for (const a of this.alphaCatalog) {
                     if (!a || !a.stream_id) continue;
@@ -3362,7 +3443,7 @@
             // 4.5. Fallback: Search in localStorage cached matches
             if (!found && typeof localStorage !== 'undefined') {
                 try {
-                    const CACHE_KEY = 'aryan_cached_matches_v41';
+                    const CACHE_KEY = 'aryan_cached_matches_v42';
                     const raw = localStorage.getItem(CACHE_KEY);
                     if (raw) {
                         const parsed = JSON.parse(raw);

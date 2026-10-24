@@ -417,8 +417,8 @@
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=10.9.8"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.10"></script>
-    <script src="js/api.js?v=10.9.10"></script>
+    <script src="js/player.js?v=10.9.11"></script>
+    <script src="js/api.js?v=10.9.11"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -1033,9 +1033,6 @@
                 await window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item);
             }
 
-            // Lock sources so background tasks never shuffle sources while user is viewing!
-            item._locked = true;
-
             // 3. Render watch view with all sources complete and aligned with player (Source 1 plays and is highlighted!)
             renderWatchView(item);
 
@@ -1069,6 +1066,13 @@
 
             if (searchQuery) {
                 clearSearch();
+            }
+            const grid = document.getElementById('matches-grid');
+            if (grid) {
+                grid.dataset.renderedSig = '';
+            }
+            if (window.AryanGlobalAPI && window.AryanGlobalAPI.getAllMatches().length > 0) {
+                window.AryanGlobalAPI.isLoading = false;
             }
             switchView(previousView || 'home');
             if ((previousView || 'home') === 'home') {

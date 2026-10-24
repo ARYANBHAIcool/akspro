@@ -10,9 +10,11 @@ export async function onRequest(context) {
     let targetUrl = requestUrl.searchParams.get('url');
 
     // If 'url' parameter is missing, but 'p' parameter exists (e.g. on player engine reload or refresh),
-    // automatically reconstruct the full pandecocogaming target URL
+    // automatically reconstruct the full pandecocogaming target URL preserving any subpath
     if (!targetUrl && requestUrl.searchParams.has('p')) {
-        targetUrl = `https://amazon.com.pandecocogaming.sbs/${requestUrl.search}`;
+        const sub = requestUrl.searchParams.get('subpath') || '';
+        const targetFile = sub ? (sub.startsWith('/') ? sub : `/${sub}`) : '/';
+        targetUrl = `https://amazon.com.pandecocogaming.sbs${targetFile}${requestUrl.search}`;
     }
 
     if (!targetUrl || targetUrl.includes('example.com') || targetUrl.includes('example.org')) {
@@ -165,7 +167,7 @@ export async function onRequest(context) {
         var reqEngine = "${reqEngine || ''}";
         var curPath = window.location.pathname;
         if (pVal) {
-            var finalParams = new URLSearchParams();
+            var finalParams = new URLSearchParams(window.location.search);
             finalParams.set('p', pVal);
             if (reqEngine && reqEngine !== 'bitmovin') {
                 finalParams.set('player', reqEngine);
@@ -191,8 +193,10 @@ export async function onRequest(context) {
         for (var i = 0; i < vids.length; i++) {
             var v = vids[i];
             if (!v.paused && v.currentTime > 0) {
-                if (v.muted) v.muted = false;
-                if (v.volume === 0) v.volume = 1.0;
+                try {
+                    v.muted = false;
+                    v.volume = 1.0;
+                } catch(e) {}
             }
         }
         var mutedElements = document.querySelectorAll('.bmpui-ui-volumetogglebutton.bmpui-muted, button.bmpui-muted, .op-volume--muted');
@@ -203,7 +207,8 @@ export async function onRequest(context) {
 
     function ensurePlayback(v) {
         if (!v) return;
-        if (v.paused && v.readyState >= 2) {
+        if (v.paused) {
+            v.muted = true;
             var playPromise = v.play();
             if (playPromise !== undefined) {
                 playPromise.catch(function() {
@@ -214,10 +219,10 @@ export async function onRequest(context) {
         }
     }
 
+    // Audio unmuting is strictly triggered upon genuine user interaction
+    // (Never on autoplay 'play' or 'playing' which causes browsers to pause playback with a black screen!)
     document.addEventListener('click', syncAndUnmuteAudio, true);
     document.addEventListener('touchstart', syncAndUnmuteAudio, true);
-    document.addEventListener('play', syncAndUnmuteAudio, true);
-    document.addEventListener('playing', syncAndUnmuteAudio, true);
 
     // Force hide 'Loading up the stream...' overlay once video stream starts playback
     function hideStreamLoadingOverlay() {
@@ -254,11 +259,11 @@ export async function onRequest(context) {
         }
     }, 300);
 
-    // Safety fallback: auto-hide after 5 seconds once player initializes
+    // Safety fallback: auto-hide after 2 seconds once player initializes
     setTimeout(function() {
         var vids = document.querySelectorAll('video');
         if (vids.length > 0) hideStreamLoadingOverlay();
-    }, 5000);
+    }, 2000);
 })();
 </script>
 <style>
