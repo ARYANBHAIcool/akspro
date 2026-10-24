@@ -106,8 +106,6 @@
             background: rgba(127, 29, 29, 0.85); color: #fca5a5; border: 1px solid rgba(248, 113, 113, 0.3);
         }
     </style>
-    <!-- Popunder -->
-    <script data-cfasync="false" src="https://capitalhospitals.org/1/ec8caf215d92bd77dfa766d702a1ec0f"></script>
 </head>
 <body>
 
@@ -353,29 +351,25 @@
 
             // Auto-sign FutbolX Flussonic streams if needed
             if (activeStream && activeStream.includes('ryzn.pro') && !activeStream.includes('token=')) {
-                showToast('Authorizing FutbolX Stream...', 'info');
+                showToast('Connecting FutbolX Stream...', 'info');
                 try {
-                    var u = new URL(activeStream);
-                    var tParams = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
-                    var tRes = await fetch('https://www.futbol-x.xyz/api/token.js?' + tParams.toString());
-                    if (tRes.ok) {
-                        var tData = await tRes.json();
-                        if (tData && tData.url) activeStream = tData.url;
-                    } else {
-                        var edgeRes = await fetch('/api/futbolx?token=1&url=' + encodeURIComponent(activeStream));
-                        if (edgeRes.ok) {
-                            var edgeData = await edgeRes.json();
-                            if (edgeData && edgeData.url) activeStream = edgeData.url;
-                        }
+                    const edgeRes = await fetch('/api/futbolx?token=1&url=' + encodeURIComponent(activeStream), { signal: AbortSignal.timeout(4000) });
+                    if (edgeRes.ok) {
+                        const edgeData = await edgeRes.json();
+                        if (edgeData && edgeData.url) activeStream = edgeData.url;
                     }
-                } catch(e) {
+                } catch(e) {}
+
+                if (!activeStream.includes('token=')) {
                     try {
-                        var edgeRes2 = await fetch('/api/futbolx?token=1&url=' + encodeURIComponent(activeStream));
-                        if (edgeRes2.ok) {
-                            var edgeData2 = await edgeRes2.json();
-                            if (edgeData2 && edgeData2.url) activeStream = edgeData2.url;
+                        const u = new URL(activeStream);
+                        const tParams = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
+                        const tRes = await fetch('https://www.futbol-x.xyz/api/token.js?' + tParams.toString(), { signal: AbortSignal.timeout(4000) });
+                        if (tRes.ok) {
+                            const tData = await tRes.json();
+                            if (tData && tData.url) activeStream = tData.url;
                         }
-                    } catch(e2) {}
+                    } catch(e) {}
                 }
             }
 

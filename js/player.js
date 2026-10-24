@@ -111,25 +111,23 @@ window.AryanPlayerEngine = {
             }
         } catch(e) {}
 
-        // 3. Fast parallel network race with tight 1200ms timeout
+        // 3. Fast network token resolution (edge proxy priority + direct fallback)
         try {
-            const u = new URL(streamEndpoint);
-            const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
-            
-            const pDirect = fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(1200) })
+            const pEdge = fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(4000) })
                 .then(r => r.json())
                 .then(d => (d && d.url) ? d.url : null)
                 .catch(() => null);
 
-            const pEdge = fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(1200) })
-                .then(r => r.json())
-                .then(d => (d && d.url) ? d.url : null)
-                .catch(() => null);
+            let tokenized = await pEdge;
 
-            const tokenized = await Promise.race([
-                pDirect.then(res => res || pEdge),
-                pEdge.then(res => res || pDirect)
-            ]);
+            if (!tokenized) {
+                const u = new URL(streamEndpoint);
+                const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
+                tokenized = await fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(4000) })
+                    .then(r => r.json())
+                    .then(d => (d && d.url) ? d.url : null)
+                    .catch(() => null);
+            }
 
             if (tokenized) {
                 const val = { url: tokenized, expiresAt: Date.now() + 600000 };
@@ -280,7 +278,7 @@ window.AryanPlayerEngine = {
         // Route FutbolX match sources to Shaka Player engine
         const isFx = (typeof serverOrUrl === 'object' && serverOrUrl !== null && (serverOrUrl.isFutbolX || (serverOrUrl.name && /^FX\s*\d*/i.test(serverOrUrl.name)))) || rawUrl.includes('ryzn.pro') || rawUrl.includes('futbolx');
         if (isFx) {
-            return `shaka_player.html?hls=${encodeURIComponent(rawUrl)}`;
+            return `/shaka_player.html?hls=${encodeURIComponent(rawUrl)}`;
         }
 
         if (rawUrl.includes('.m3u8')) return rawUrl;
@@ -300,9 +298,9 @@ window.AryanPlayerEngine = {
                 if (mKey) key = mKey[1];
             }
             if (kid && key) {
-                return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}&kid=${encodeURIComponent(kid)}&key=${encodeURIComponent(key)}`;
+                return `/shaka_player.html?mpd=${encodeURIComponent(rawUrl)}&kid=${encodeURIComponent(kid)}&key=${encodeURIComponent(key)}`;
             }
-            return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
+            return `/shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
         }
 
         // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
@@ -318,7 +316,7 @@ window.AryanPlayerEngine = {
         }
 
         // Route any domains with frame-ancestors restrictions through the Cloudflare Pages embed proxy
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embed.st')) {
             try {
                 const parsed = new URL(rawUrl);
                 const p = parsed.searchParams.get('p') || '';

@@ -415,10 +415,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.9.4"></script>
+    <script src="js/ads.js?v=10.9.5"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.4"></script>
-    <script src="js/api.js?v=10.9.4"></script>
+    <script src="js/player.js?v=10.9.5"></script>
+    <script src="js/api.js?v=10.9.5"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -608,6 +608,12 @@
             // Update live counter badge
             const navLive = document.getElementById('nav-live-count');
             if (navLive) navLive.innerText = 'LIVE';
+
+            const sig = (currentFilter || 'ALL') + '::' + (searchQuery || '') + '::' + allMatches.length + '::' + (allMatches[0]?.id || '') + '::' + (allMatches[allMatches.length - 1]?.id || '');
+            if (grid.dataset.renderedSig === sig && grid.children.length > 0) {
+                return;
+            }
+            grid.dataset.renderedSig = sig;
 
             // 1. Search Active
             if (searchQuery && searchQuery.trim() !== '') {
@@ -1023,6 +1029,9 @@
                 await window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item);
             }
 
+            // Lock sources so background tasks never shuffle sources while user is viewing!
+            item._locked = true;
+
             // 3. Render watch view with all sources complete and aligned with player (Source 1 plays and is highlighted!)
             renderWatchView(item);
 
@@ -1041,6 +1050,9 @@
         function goBackFromWatch() {
             if (window.AryanPlayerEngine) {
                 window.AryanPlayerEngine.destroy();
+            }
+            if (currentWatchItem) {
+                currentWatchItem._locked = false;
             }
             currentWatchItem = null;
             if (window.history && window.history.replaceState) {

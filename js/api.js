@@ -914,8 +914,8 @@
             }
 
             // 3. Ultra-fast initial render: Load authoritative core match schedule & 24/7 channels in parallel (<400ms)
-            this._futbolxLoadingPromise = this.loadFutbolXFeeds();
-            const ppvPromise = this.loadPPVFeeds();
+            this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
+            const ppvPromise = this.loadPPVFeeds(true);
             const channelsPromise = this.loadChannelsCatalog();
 
             await Promise.allSettled([
@@ -941,17 +941,17 @@
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
             } catch (e) {}
 
-            // Auto-refresh match feeds, Alpha channels & statuses every 90 seconds
+            // Auto-refresh match feeds quietly every 3 minutes
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
-                    await this.loadPPVFeeds();
-                    this._futbolxLoadingPromise = this.loadFutbolXFeeds();
+                    await this.loadPPVFeeds(true);
+                    this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
                     await this._futbolxLoadingPromise;
-                    this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
-                    await this._alphaLoadingPromise;
                     this.updateLiveStatuses();
-                    this.emitUpdate();
-                }, 90000);
+                    if (typeof currentView !== 'undefined' && currentView === 'home' && typeof searchQuery !== 'undefined' && !searchQuery) {
+                        this.emitUpdate();
+                    }
+                }, 180000);
             }
         },
 
@@ -975,7 +975,7 @@
          * Combines live streams and upcoming fixtures across all sports (F1, MotoGP, Football, Cricket, NFL, etc.)
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
-        async loadPPVFeeds() {
+        async loadPPVFeeds(isInitial = false) {
             const CACHE_KEY = 'aryan_cached_matches_v41';
             try {
                 const rawItems = [];
@@ -1284,7 +1284,9 @@
                         this.matches = cleanNewMatches;
                         this.isLoading = false;
                         this.sortMatches();
-                        this.emitUpdate();
+                        if (!isInitial) {
+                            this.emitUpdate();
+                        }
                         try {
                             localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                         } catch (e) {}
@@ -1303,7 +1305,7 @@
          * Integrates channels into matching fixtures as "FX 1 - ...", "FX 2 - ..."
          * and adds exclusive FutbolX matches to the live schedule.
          */
-        async loadFutbolXFeeds() {
+        async loadFutbolXFeeds(isInitial = false) {
             try {
                 let fxMatches = [];
                 const endpoints = [
@@ -1502,7 +1504,7 @@
 
                 if (addedNew || fxMatches.length > 0) {
                     this.sortMatches();
-                    if (!this.isLoading) this.emitUpdate();
+                    if (!this.isLoading && !isInitial) this.emitUpdate();
                     try {
                         const CACHE_KEY = 'aryan_cached_matches_v41';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
@@ -2100,15 +2102,14 @@
                 if (addedIndependent || this.matches.length > 0) {
                     this.isLoading = false;
                     this.sortMatches();
-                    this.emitUpdate();
                     try {
                         const CACHE_KEY = 'aryan_cached_matches_v38';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                     } catch (e) {}
                 }
 
-                // If user is already in watch view, immediately resolve extra channels and update sources UI!
-                if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._alphaResolved) {
+                // If user is already in watch view and not locked, immediately resolve extra channels and update sources UI!
+                if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._locked && !currentWatchItem._alphaResolved) {
                     const matchedAlpha = currentWatchItem.alphaStreamId
                         ? this.alphaCatalog.find(a => a.stream_id === currentWatchItem.alphaStreamId)
                         : this.alphaCatalog.find(a => isSameMatch(currentWatchItem, a));
@@ -2373,8 +2374,8 @@
                         match.sources = combined;
                         match._alphaResolved = true;
 
-                        // Real-time update if user is currently viewing this match
-                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId || (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => seenTargetIds.has(sc.id))))) {
+                        // Real-time update if user is currently viewing this match and it is not locked
+                        if (typeof currentWatchItem !== 'undefined' && currentWatchItem && !currentWatchItem._locked && (currentWatchItem.id === match.id || currentWatchItem.alphaStreamId === match.alphaStreamId || (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => seenTargetIds.has(sc.id))))) {
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                             const currentPlayingServer = currentWatchItem.servers && currentWatchItem.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
