@@ -16,10 +16,11 @@ export async function onRequest(context) {
     }
 
     if (!targetUrl || targetUrl.includes('example.com') || targetUrl.includes('example.org')) {
-        return new Response('Invalid stream target parameter', {
-            status: 400,
+        const errorHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>body{margin:0;background:#060a12;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}.box{padding:24px;max-width:360px;border:1px solid #1e293b;border-radius:16px;background:#0c1322}.icon{font-size:32px;margin-bottom:8px}h3{color:#f8fafc;font-size:15px;margin:0 0 6px 0;font-weight:800}p{font-size:12px;margin:0;line-height:1.5;color:#64748b}</style></head><body><div class="box"><div class="icon">📡</div><h3>Broadcast Feed Unavailable</h3><p>Please switch to another server or reload the player.</p></div></body></html>`;
+        return new Response(errorHtml, {
+            status: 200,
             headers: {
-                'Content-Type': 'text/plain',
+                'Content-Type': 'text/html; charset=utf-8',
                 'Access-Control-Allow-Origin': '*'
             }
         });

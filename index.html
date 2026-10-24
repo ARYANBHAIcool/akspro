@@ -415,10 +415,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.9.2"></script>
+    <script src="js/ads.js?v=10.9.3"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.2"></script>
-    <script src="js/api.js?v=10.9.2"></script>
+    <script src="js/player.js?v=10.9.3"></script>
+    <script src="js/api.js?v=10.9.3"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -713,15 +713,24 @@
                 const slug = group.category.toLowerCase().replace(/[^a-z0-9]+/g, '-');
                 const prettyTitle = group.category.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase()).join(' ');
 
+                const displayMatches = matches.slice(0, 8);
                 html += `
                     <div id="cat-${slug}" class="space-y-3 pt-4">
                         <div class="flex items-center justify-between border-b border-gray-800/60 pb-2">
                             <h2 class="text-2xl font-bold text-white tracking-tight">${prettyTitle}</h2>
-                            <span class="text-xs text-gray-500 font-bold">${matches.length}</span>
+                            <span class="text-xs text-gray-500 font-bold">${matches.length} Matches</span>
                         </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
-                            ${matches.map(m => createMatchCard(m)).join('')}
+                            ${displayMatches.map(m => createMatchCard(m)).join('')}
                         </div>
+                        ${matches.length > 8 ? `
+                            <div class="pt-1 pb-2 flex justify-center">
+                                <button type="button" onclick="currentFilter='${escapeHtml(group.category)}'; renderMatchesGrid(); window.scrollTo({top: 0, behavior: 'smooth'});" class="px-5 py-2 rounded-xl bg-[#0f1726] hover:bg-gray-800 text-gray-300 hover:text-green-400 font-bold text-xs uppercase tracking-wider border border-gray-800 hover:border-gray-700 transition-all shadow-md flex items-center gap-2">
+                                    <span>View All ${matches.length} ${prettyTitle}</span>
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                                </button>
+                            </div>
+                        ` : ''}
                     </div>
                 `;
             });
@@ -792,6 +801,7 @@
                              class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 brightness-95" 
                              alt="${m.title}" 
                              loading="lazy" 
+                             decoding="async" 
                              onerror="this.style.display='none';">
                         <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/40 pointer-events-none"></div>
                     </div>
@@ -1207,9 +1217,6 @@
             } catch (err) {
                 console.warn('PlayerEngine init error:', err);
             }
-            if (window.AryanAds && typeof window.AryanAds.attachPlayerOverlay === 'function') {
-                window.AryanAds.attachPlayerOverlay('watch-player-container');
-            }
         }
 
         function renderWatchSources(item, activeIdx = 0) {
@@ -1333,7 +1340,6 @@
             const u = url.trim().toLowerCase();
             if (u === '' || u === 'about:blank' || u === 'undefined' || u === 'null') return true;
             if (u.includes('example.com') || u.includes('example.org') || u.includes('example.net')) return true;
-            if (u.includes('taifood-blog.asia') && !u.includes('substream')) return true;
             if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return true;
             return false;
         }

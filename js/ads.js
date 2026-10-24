@@ -59,10 +59,10 @@
         // Cooldown between direct link triggers in milliseconds (60 seconds)
         cooldownMs: 60000,
 
-        // Feature toggles
-        enabled: true,
-        enableDirectLinks: true,
-        enablePlayerOverlay: true,
+        // Feature toggles - ALL DISABLED per user request for pure speed and clean performance
+        enabled: false,
+        enableDirectLinks: false,
+        enablePlayerOverlay: false,
 
         // State tracking
         lastTriggerTime: 0,
@@ -70,100 +70,24 @@
         hasPlayedCurrentStream: false,
 
         /**
-         * Initialize ad systems
+         * Initialize ad systems (Disabled)
          */
         init() {
-            if (!this.enabled) return;
-            console.log('[AryanAds] Monetization engine ready (Clean Smartlink mode).');
+            console.log('[AryanAds] Ads disabled. Pure high-speed mode active.');
         },
 
         /**
-         * Trigger Direct Link Ad
-         * Must be invoked synchronously inside a genuine user click handler
-         * so modern browser popup blockers allow the new tab.
-         * 
-         * @param {string} source - Origin of the click ('player_play')
-         * @param {boolean} force - If true, ignores the cooldown window
-         * @returns {boolean} - True if ad opened, false otherwise
+         * Trigger Direct Link Ad (Disabled)
          */
         trigger(source = 'player_play', force = false) {
-            if (!this.enabled || !this.enableDirectLinks) return false;
-
-            const now = Date.now();
-            if (!force && (now - this.lastTriggerTime < this.cooldownMs)) {
-                return false;
-            }
-
-            this.lastTriggerTime = now;
-            this.clickCount++;
-
-            try {
-                // Open direct link in a new tab smoothly without freezing browser thread
-                const adWin = window.open(this.DIRECT_LINK, '_blank', 'noopener,noreferrer');
-                if (adWin) {
-                    console.log(`[AryanAds] Smartlink opened (${source}). Total clicks: ${this.clickCount}`);
-                    return true;
-                }
-            } catch (err) {
-                console.warn('[AryanAds] Direct link trigger exception:', err);
-            }
             return false;
         },
 
         /**
-         * Stream Player Click-to-Play Overlay
-         * Places a sleek interactive overlay over the player container.
-         * On first click: triggers the Smartlink ad in a new tab, removes the overlay,
-         * and unmutes/plays the video.
-         * 
-         * @param {string} containerId - DOM ID of player container ('watch-player-container')
+         * Stream Player Click-to-Play Overlay (Disabled)
          */
         attachPlayerOverlay(containerId = 'watch-player-container') {
-            if (!this.enabled || !this.enablePlayerOverlay) return;
-
-            const container = document.getElementById(containerId);
-            if (!container) return;
-
-            // Remove existing overlay if any
-            const existing = container.querySelector('#aryan-ad-player-overlay');
-            if (existing) existing.remove();
-
-            // If user already clicked to play this match stream, do not block them again
-            if (this.hasPlayedCurrentStream) {
-                return;
-            }
-
-            const overlay = document.createElement('div');
-            overlay.id = 'aryan-ad-player-overlay';
-            overlay.className = 'absolute inset-0 z-30 cursor-pointer flex items-center justify-center bg-black/45 hover:bg-black/30 backdrop-blur-[2px] transition-all select-none';
-            overlay.innerHTML = `
-                <div class="pointer-events-none px-6 py-3.5 rounded-2xl bg-black/85 backdrop-blur-md border border-green-500/50 text-white font-black text-xs sm:text-sm uppercase tracking-wider flex items-center gap-3 shadow-2xl group transform hover:scale-105 transition-transform">
-                    <span class="w-3.5 h-3.5 rounded-full bg-green-500 animate-ping"></span>
-                    <svg class="w-5 h-5 text-green-400" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                    <span>Click to Play Stream</span>
-                </div>
-            `;
-
-            overlay.addEventListener('click', (e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                overlay.remove();
-                this.hasPlayedCurrentStream = true;
-
-                // Trigger direct link ad cleanly once on genuine click
-                this.trigger('player_play', true);
-
-                // Unmute and play native video if HLS
-                const videoEl = document.getElementById('global-video-element');
-                if (videoEl) {
-                    videoEl.muted = false;
-                    videoEl.play().catch(() => {});
-                }
-            });
-
-            if (container && container.appendChild) {
-                container.appendChild(overlay);
-            }
+            return;
         },
 
         /**

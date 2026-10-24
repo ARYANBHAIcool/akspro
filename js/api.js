@@ -280,6 +280,18 @@
             .trim();
     }
 
+    function getMatchCanonicalKey(title) {
+        if (!title || typeof title !== 'string') return '';
+        const clean = cleanMatchStr(title);
+        const parts = clean.split(/\s+(?:vs\.?|@|-|x)\s+/i);
+        if (parts.length >= 2) {
+            const p1 = parts[0].replace(/[^a-z0-9]/g, '');
+            const p2 = parts[1].replace(/[^a-z0-9]/g, '');
+            return p1 < p2 ? `${p1}_vs_${p2}` : `${p2}_vs_${p1}`;
+        }
+        return clean.replace(/[^a-z0-9]/g, '');
+    }
+
     function sanitizePosterUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
@@ -321,17 +333,17 @@
         const isTaifood = (s) => Boolean(s && ((s.url || '').includes('taifood-blog.asia') || (s.rawUrl || '').includes('taifood-blog.asia')));
 
         const fxList = [];
-        const otherList = [];
         const taifoodList = [];
+        const otherList = [];
         for (const s of servers) {
-            if (isTaifood(s)) taifoodList.push(s);
-            else if (isFx(s)) fxList.push(s);
+            if (isFx(s)) fxList.push(s);
+            else if (isTaifood(s)) taifoodList.push(s);
             else otherList.push(s);
         }
         if (isLive) {
-            return [...fxList, ...otherList, ...taifoodList];
+            return [...fxList, ...taifoodList, ...otherList];
         }
-        return [...otherList, ...fxList, ...taifoodList];
+        return [...taifoodList, ...fxList, ...otherList];
     }
 
     function sanitizeMatchServers(match) {
@@ -904,16 +916,14 @@
                 this.emitUpdate();
             }
 
-            // 3. Concurrently load all authoritative feeds in parallel without intermediate drops or second delayed batch
+            // 3. Ultra-fast initial render: Load authoritative core match schedule & 24/7 channels in parallel (<400ms)
             this._futbolxLoadingPromise = this.loadFutbolXFeeds();
             const ppvPromise = this.loadPPVFeeds();
             const channelsPromise = this.loadChannelsCatalog();
-            this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
             await Promise.allSettled([
                 ppvPromise,
                 this._futbolxLoadingPromise,
-                this._alphaLoadingPromise,
                 channelsPromise
             ]);
 
@@ -921,6 +931,14 @@
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
+
+            // 4. Background StreamCorner Alpha enrichment without blocking the UI thread
+            this._alphaLoadingPromise = (async () => {
+                try {
+                    await this.loadStreamCornerAlphaFeeds();
+                    this.updateLiveStatuses();
+                } catch(e) {}
+            })();
 
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
@@ -930,12 +948,10 @@
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
                     await this.loadPPVFeeds();
-                    this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
                     this._futbolxLoadingPromise = this.loadFutbolXFeeds();
-                    await Promise.allSettled([
-                        this._alphaLoadingPromise,
-                        this._futbolxLoadingPromise
-                    ]);
+                    await this._futbolxLoadingPromise;
+                    this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
+                    await this._alphaLoadingPromise;
                     this.updateLiveStatuses();
                     this.emitUpdate();
                 }, 90000);
@@ -988,10 +1004,6 @@
                                     const is247 = cat.always_live || cName.toLowerCase().includes('24/7');
                                     (cat.streams || []).forEach(s => {
                                         if (s && s.id && !seenRawIds.has(s.id)) {
-                                            const mainIframe = s.iframe || s.embedUrl || '';
-                                            if (mainIframe.includes('taifood-blog.asia') && (!Array.isArray(s.substreams) || s.substreams.length === 0)) {
-                                                return; // Skip dead taifood ghost fixture
-                                            }
                                             seenRawIds.add(s.id);
                                             rawItems.push({ stream: s, category: cName, is247: is247 });
                                             addedAny = true;
@@ -1035,10 +1047,6 @@
                                         if (Array.isArray(s.sources) && s.sources.length === 1 && String(s.sources[0].source || '').toLowerCase() === 'manual') {
                                             return;
                                         }
-                                        const mainIframe = s.iframe || s.embedUrl || '';
-                                        if (mainIframe.includes('taifood-blog.asia') && (!Array.isArray(s.substreams) || s.substreams.length === 0) && (!Array.isArray(s.sources) || s.sources.length === 0)) {
-                                            return;
-                                        }
                                         seenRawIds.add(s.id);
                                         const cName = (s.category || 'Sports').trim();
                                         const is247 = s.always_live || cName.toLowerCase().includes('24/7');
@@ -1054,20 +1062,21 @@
                 if (rawItems.length > 0) {
                     const newMatches = [];
                     const newMatchesById = new Map();
+                    const newMatchesByCanonKey = new Map();
                     const existingMatchesById = new Map();
+                    const existingMatchesByCanonKey = new Map();
 
                     if (Array.isArray(this.matches)) {
                         for (let i = 0; i < this.matches.length; i++) {
                             const m = this.matches[i];
                             if (m.id) existingMatchesById.set(m.id, m);
                             if (m.rawId) existingMatchesById.set(m.rawId, m);
+                            const k = getMatchCanonicalKey(m.title || m.name);
+                            if (k) existingMatchesByCanonKey.set(k, m);
                         }
                     }
 
                     for (let i = 0; i < rawItems.length; i++) {
-                        if (i > 0 && i % 80 === 0) {
-                            await new Promise(r => setTimeout(r, 0));
-                        }
                         const item = rawItems[i];
                         const s = item.stream;
                         const catName = item.category;
@@ -1078,14 +1087,10 @@
                         const norm = this.normalizePPVStreamItem(s, catName, is247Cat);
                         if (!norm) continue;
 
-                        // 1. Check if this fixture already exists in newMatches (deduplicate PPV & Streamed.pk)
-                        let existingInNew = newMatchesById.get(norm.id) || (norm.rawId ? newMatchesById.get(norm.rawId) : null);
-                        if (!existingInNew) {
-                            existingInNew = newMatches.find(m => {
-                                if (m.sport && norm.sport && m.sport !== 'OTHERS' && norm.sport !== 'OTHERS' && m.sport !== norm.sport) return false;
-                                return isSameMatch(m, norm);
-                            });
-                        }
+                        const canonKey = getMatchCanonicalKey(norm.title);
+
+                        // 1. Instant O(1) deduplication check across PPV & Streamed.pk
+                        let existingInNew = newMatchesById.get(norm.id) || (norm.rawId ? newMatchesById.get(norm.rawId) : null) || (canonKey ? newMatchesByCanonKey.get(canonKey) : null);
                         if (existingInNew) {
                             // Merge authentic poster
                             if ((!existingInNew.poster || existingInNew.poster.includes('logo-icon.png')) && norm.poster && !norm.poster.includes('logo-icon.png')) {
@@ -1115,14 +1120,8 @@
                             continue;
                         }
 
-                        // 2. Check against previous matches state to preserve resolved alpha feeds
-                        let existing = existingMatchesById.get(norm.id) || (norm.rawId ? existingMatchesById.get(norm.rawId) : null);
-                        if (!existing) {
-                            existing = this.matches.find(m => {
-                                if (m.sport && norm.sport && m.sport !== 'OTHERS' && norm.sport !== 'OTHERS' && m.sport !== norm.sport) return false;
-                                return isSameMatch(m, norm);
-                            });
-                        }
+                        // 2. Instant O(1) check against previous matches state to preserve resolved alpha feeds
+                        let existing = existingMatchesById.get(norm.id) || (norm.rawId ? existingMatchesById.get(norm.rawId) : null) || (canonKey ? existingMatchesByCanonKey.get(canonKey) : null);
 
                         if (existing && existing._alphaResolved) {
                             norm.alphaStreamId = existing.alphaStreamId;
@@ -1192,6 +1191,7 @@
                         newMatches.push(norm);
                         newMatchesById.set(norm.id, norm);
                         if (norm.rawId) newMatchesById.set(norm.rawId, norm);
+                        if (canonKey) newMatchesByCanonKey.set(canonKey, norm);
                     }
 
                     if (newMatches.length > 0) {
@@ -1882,11 +1882,11 @@
             }
             try {
                 const fetchEndpoint = async (endpoint) => {
-                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5).slice(0, 4);
+                    const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5).slice(0, 2);
                     try {
                         const batchPromises = candidateWorkers.map(worker => {
                             return new Promise((resolve, reject) => {
-                                const timer = setTimeout(() => reject(new Error('timeout')), 2500);
+                                const timer = setTimeout(() => reject(new Error('timeout')), 1600);
                                 window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, `corner ${endpoint}`)
                                     .then(res => {
                                         clearTimeout(timer);
@@ -2675,7 +2675,7 @@
             const seenUrls = new Set();
             const addServer = (name, url, isHd = true) => {
                 if (!url || seenUrls.has(url)) return;
-                if (url.includes('taifood-blog.asia') || url.includes('/embed/manual/')) return;
+                if (url.includes('/embed/manual/')) return;
                 seenUrls.add(url);
                 servers.push({
                     name: name,
@@ -2702,7 +2702,16 @@
 
             // 1. Authenticate and build stream servers without artificial duplicate backups
             const mainEmbed = s.iframe || s.embedUrl || s.url || '';
-            const mainLabel = (s.source_tag || '').trim() || 'Main Feed';
+            let mainLabel = (s.source_tag || s.source || '').trim() || 'Main Feed';
+            if (s.locale && !mainLabel.toLowerCase().includes(s.locale.toLowerCase())) {
+                mainLabel += ` [${s.locale.toUpperCase()}]`;
+            }
+
+            // Always add primary official broadcast stream first if present
+            if (mainEmbed) {
+                const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
+                addServer(finalLabel, mainEmbed);
+            }
 
             if (Array.isArray(s.substreams) && s.substreams.length > 0) {
                 s.substreams.forEach((sub, sIdx) => {
@@ -2710,9 +2719,9 @@
                     if (subUrl) {
                         let label = (sub.source_tag || sub.source || sub.name || '').trim();
                         if (sub.locale && !label.toLowerCase().includes(sub.locale.toLowerCase())) {
-                            label += ` (${sub.locale.toUpperCase()})`;
+                            label += ` [${sub.locale.toUpperCase()}]`;
                         }
-                        const finalLabel = extractCleanServerLabel(label, subUrl, sIdx);
+                        const finalLabel = extractCleanServerLabel(label, subUrl, servers.length);
                         addServer(finalLabel, subUrl);
                     }
                 });
@@ -2728,12 +2737,6 @@
                         addServer(cleanLabel, embedUrl);
                     }
                 });
-            }
-            if (servers.length === 0) {
-                if (mainEmbed && !mainEmbed.includes('taifood-blog.asia')) {
-                    const finalLabel = extractCleanServerLabel(mainLabel, mainEmbed, 0);
-                    addServer(finalLabel, mainEmbed);
-                }
             }
 
             // Clean, deduplicate against canonical keys, and re-index server names
