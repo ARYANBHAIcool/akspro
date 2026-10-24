@@ -91,21 +91,37 @@ window.AryanPlayerEngine = {
         }
 
         if (!this._tokenCache) this._tokenCache = new Map();
+        
+        // 1. In-memory check (0ms)
         const cached = this._tokenCache.get(streamEndpoint);
         if (cached && cached.expiresAt > Date.now()) {
             return cached.url;
         }
 
+        // 2. SessionStorage check (0ms)
+        try {
+            const ssKey = 'fx_tok_' + btoa(streamEndpoint).slice(0, 32);
+            const rawSS = sessionStorage.getItem(ssKey);
+            if (rawSS) {
+                const parsed = JSON.parse(rawSS);
+                if (parsed && parsed.url && parsed.expiresAt > Date.now()) {
+                    this._tokenCache.set(streamEndpoint, parsed);
+                    return parsed.url;
+                }
+            }
+        } catch(e) {}
+
+        // 3. Fast parallel network race with tight 1200ms timeout
         try {
             const u = new URL(streamEndpoint);
             const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
             
-            const pDirect = fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(2000) })
+            const pDirect = fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(1200) })
                 .then(r => r.json())
                 .then(d => (d && d.url) ? d.url : null)
                 .catch(() => null);
 
-            const pEdge = fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(2000) })
+            const pEdge = fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(1200) })
                 .then(r => r.json())
                 .then(d => (d && d.url) ? d.url : null)
                 .catch(() => null);
@@ -116,7 +132,12 @@ window.AryanPlayerEngine = {
             ]);
 
             if (tokenized) {
-                this._tokenCache.set(streamEndpoint, { url: tokenized, expiresAt: Date.now() + 600000 });
+                const val = { url: tokenized, expiresAt: Date.now() + 600000 };
+                this._tokenCache.set(streamEndpoint, val);
+                try {
+                    const ssKey = 'fx_tok_' + btoa(streamEndpoint).slice(0, 32);
+                    sessionStorage.setItem(ssKey, JSON.stringify(val));
+                } catch(e) {}
                 return tokenized;
             }
         } catch (e) {}
@@ -284,7 +305,7 @@ window.AryanPlayerEngine = {
         const modalContainer = document.getElementById('player-viewport-container');
         const container = watchContainer || modalContainer;
 
-        if (canvas && container && canvas.parentElement === container) {
+        if (canvas && container && (canvas.parentElement === container || container.contains(canvas))) {
             this.switchMediaSource(targetServer, idx);
         } else if (container) {
             this.destroy();
@@ -376,23 +397,28 @@ window.AryanPlayerEngine = {
                 iframe.allowFullscreen = true;
                 iframe.setAttribute('allow', 'autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *');
                 canvas.appendChild(iframe);
+            } else {
+                // Immediately mute and blank old stream to eliminate sound overlap
+                iframe.src = 'about:blank';
             }
 
             const initialSrc = this.getProxiedUrl(targetServer, this.currentPlayerEngine);
             iframe.onload = () => {
                 if (loader) {
                     loader.style.opacity = '0';
-                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 200);
+                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 100);
                 }
             };
             setTimeout(() => {
                 if (loader) {
                     loader.style.opacity = '0';
-                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 200);
+                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 100);
                 }
-            }, 2000);
+            }, 800);
 
-            iframe.src = initialSrc;
+            requestAnimationFrame(() => {
+                iframe.src = initialSrc;
+            });
         }
 
         this.updateModalServerTabs();

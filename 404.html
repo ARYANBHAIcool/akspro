@@ -45,7 +45,11 @@
             touch-action: manipulation;
             content-visibility: auto;
             contain-intrinsic-size: 100px;
-            transform: translateZ(0);
+        }
+        a[href*="?match="]:active {
+            opacity: 0.85;
+            transform: scale(0.985);
+            transition: transform 0.05s ease;
         }
         body {
             background-color: #080c14;
@@ -317,7 +321,105 @@
 
         <!-- VIEW 4: STREAMCORNER MATCH WATCH INTERFACE VIEW -->
         <div id="view-watch" class="space-y-6 hidden">
-            <!-- Populated dynamically by renderWatchView(item) -->
+            <div class="max-w-5xl mx-auto space-y-4" id="watch-wrapper">
+                
+                <!-- Back Button & Share / Status Header -->
+                <div class="flex items-center justify-between gap-3">
+                    <button onclick="goBackFromWatch()" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors bg-[#0f1726] hover:bg-[#152035] border border-gray-800 px-3.5 py-2 rounded-xl shadow-lg group">
+                        <svg class="w-4 h-4 text-green-400 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+                        <span>Back to Matches</span>
+                    </button>
+
+                    <div class="flex items-center gap-2">
+                        <!-- Share Match Button -->
+                        <button onclick="shareCurrentMatch()" title="Share Match Link" class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-green-400 hover:text-white transition-colors bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 px-3 py-1.5 rounded-xl shadow-md group">
+                            <svg class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
+                            <span id="share-btn-text">Share Match</span>
+                        </button>
+
+                        <span id="watch-status-badge" class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-red-600 text-white animate-pulse shadow-md shadow-red-600/30">
+                            LIVE
+                        </span>
+                        <span id="watch-league-text" class="text-xs text-gray-400 font-extrabold uppercase hidden sm:inline"></span>
+                    </div>
+                </div>
+
+                <!-- Match Title & StreamCorner Green Accent Underline -->
+                <div class="pt-1 space-y-2">
+                    <div id="watch-teams-container" class="hidden items-center gap-2.5 py-1 flex-wrap">
+                        <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
+                            <img id="watch-team1-logo" src="" class="w-5 h-5 object-contain" alt="" onerror="this.style.display='none'">
+                            <span id="watch-team1-name" class="text-xs sm:text-sm font-bold text-white"></span>
+                        </div>
+                        <span class="text-xs font-black text-gray-500 uppercase px-1">VS</span>
+                        <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
+                            <img id="watch-team2-logo" src="" class="w-5 h-5 object-contain" alt="" onerror="this.style.display='none'">
+                            <span id="watch-team2-name" class="text-xs sm:text-sm font-bold text-white"></span>
+                        </div>
+                    </div>
+                    <h1 id="watch-match-title" class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight"></h1>
+                    <div class="h-1.5 w-24 bg-green-500 rounded-full mt-2.5 mb-5 shadow-lg shadow-green-500/50"></div>
+                </div>
+
+                <!-- Video Player Container (StreamCorner 16:9 Viewport) -->
+                <div id="watch-player-container" class="relative w-full aspect-video bg-black rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-800 shadow-2xl">
+                    <!-- Rendered by AryanPlayerEngine -->
+                </div>
+
+                <!-- CONTROLS Section (Exact StreamCorner Image 1 Format) -->
+                <div class="space-y-2 pt-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black uppercase tracking-widest text-gray-400">CONTROLS</span>
+                        <div class="flex-1 h-px bg-gray-800/80"></div>
+                    </div>
+                    
+                    <div class="bg-[#0f1726] border border-gray-800/90 rounded-2xl divide-y divide-gray-800/60 shadow-xl overflow-hidden">
+                        
+                        <!-- Control Row 1: Reload Player -->
+                        <div onclick="AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
+                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                <span>Reload Player</span>
+                            </div>
+                            <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Click to Reload</span>
+                        </div>
+
+                        <!-- Control Row 2: Theater Mode -->
+                        <div onclick="toggleWatchTheater()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
+                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
+                                <span id="watch-theater-label">Theater Mode</span>
+                            </div>
+                            <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Toggle Size</span>
+                        </div>
+
+                        <!-- Control Row 3: Stream Quality -->
+                        <div class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors group">
+                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                <span>Stream Quality</span>
+                            </div>
+                            <div id="player-quality-selector-container" class="flex items-center gap-1.5 flex-wrap">
+                                <span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+
+                <!-- AVAILABLE SOURCES Section -->
+                <div class="space-y-2 pt-2">
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs font-black uppercase tracking-widest text-gray-400">AVAILABLE SOURCES</span>
+                        <div class="flex-1 h-px bg-gray-800/80"></div>
+                    </div>
+
+                    <div id="watch-sources-container" class="space-y-2.5">
+                        <!-- Populated dynamically by renderWatchSources -->
+                    </div>
+                </div>
+
+            </div>
         </div>
 
     </main>
@@ -375,10 +477,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.3"></script>
+    <script src="js/ads.js?v=10.4"></script>
     <script src="js/paramount-core.js?v=10.0"></script>
-    <script src="js/player.js?v=10.3"></script>
-    <script src="js/api.js?v=10.3"></script>
+    <script src="js/player.js?v=10.4"></script>
+    <script src="js/api.js?v=10.4"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -423,8 +525,8 @@
                 checkUrlForMatch();
             });
 
-            // Start countdown interval to update match times every second
-            setInterval(updateCountdowns, 1000);
+            // Start countdown interval to update match times every 15 seconds
+            setInterval(updateCountdowns, 15000);
 
             // Immediate render if API data is already populated in memory
             if (window.AryanGlobalAPI && window.AryanGlobalAPI.getAllMatches().length > 0) {
@@ -482,7 +584,12 @@
             const activeView = document.getElementById('view-' + viewName);
             if (activeView) activeView.classList.remove('hidden');
 
-            if (viewName === 'home') renderMatchesGrid();
+            if (viewName === 'home') {
+                const grid = document.getElementById('matches-grid');
+                if (!grid || grid.children.length === 0) {
+                    renderMatchesGrid();
+                }
+            }
             if (viewName === 'channels') renderChannelsView();
             if (viewName === 'multiviewer') populateMultiviewerDropdowns();
         }
@@ -892,8 +999,8 @@
                             <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-ping"></span>
                             LIVE
                         </span>`;
-                } else {
-                    badge.innerText = text;
+                } else if (badge.textContent !== text) {
+                    badge.textContent = text;
                 }
             });
         }
@@ -971,6 +1078,9 @@
             }
             currentWatchItem = item;
 
+            // Instant scroll to top without laggy animation
+            window.scrollTo(0, 0);
+
             // Separate distinct shareable URL for this specific match
             const matchParam = encodeURIComponent(item.id || id);
             const targetUrl = `${window.location.origin}${window.location.pathname}?match=${matchParam}`;
@@ -984,21 +1094,18 @@
             }
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
-            // Preload stream tokens in background for instant 0ms switching
-            if (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.preloadMatchTokens === 'function') {
-                window.AryanPlayerEngine.preloadMatchTokens(item);
-            }
-
+            // Instant view switch & render in 0ms using static shell
             switchView('watch');
-            try {
-                renderWatchView(item);
-            } catch (e) {
-                console.warn('renderWatchView error:', e);
-            }
-            // Instant scroll without laggy smooth animation
-            window.scrollTo(0, 0);
+            renderWatchView(item);
 
-            // Ensure StreamCorner Alpha broadcast channels are resolved smoothly on click without freezing UI
+            // Preload stream tokens in background
+            if (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.preloadMatchTokens === 'function') {
+                setTimeout(() => {
+                    window.AryanPlayerEngine.preloadMatchTokens(item);
+                }, 50);
+            }
+
+            // Defer StreamCorner Alpha broadcast channels resolution to background AFTER player starts
             if (window.AryanGlobalAPI && !item._alphaResolved) {
                 setTimeout(() => {
                     window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
@@ -1011,14 +1118,9 @@
                             if (typeof renderWatchSources === 'function') {
                                 renderWatchSources(currentWatchItem, activeIdx);
                             }
-                            if (window.AryanPlayerEngine && !window.AryanPlayerEngine.getServers().length) {
-                                window.AryanPlayerEngine.currentStream = currentWatchItem;
-                                window.AryanPlayerEngine.activeServerIdx = 0;
-                                window.AryanPlayerEngine.reloadPlayer();
-                            }
                         }
                     }).catch(err => console.warn('ensureAlphaSources error:', err));
-                }, 80);
+                }, 1200); // Wait 1200ms so video player starts with ZERO CPU competition!
             }
         }
 
@@ -1172,115 +1274,45 @@
 
             const isLive = item.isLive;
 
-            container.innerHTML = `
-                <div class="max-w-5xl mx-auto space-y-4" id="watch-wrapper">
-                    
-                    <!-- Back Button & Share / Status Header -->
-                    <div class="flex items-center justify-between gap-3">
-                        <button onclick="goBackFromWatch()" class="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-gray-300 hover:text-white transition-colors bg-[#0f1726] hover:bg-[#152035] border border-gray-800 px-3.5 py-2 rounded-xl shadow-lg group">
-                            <svg class="w-4 h-4 text-green-400 group-hover:-translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
-                            <span>Back to Matches</span>
-                        </button>
+            // 1. Instant 0ms text and badge updates without DOM destruction
+            const titleEl = document.getElementById('watch-match-title');
+            if (titleEl) titleEl.textContent = item.title || item.name || '';
 
-                        <div class="flex items-center gap-2">
-                            <!-- Share Match Button -->
-                            <button onclick="shareCurrentMatch()" title="Share Match Link" class="inline-flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-green-400 hover:text-white transition-colors bg-green-500/10 hover:bg-green-500/20 border border-green-500/30 px-3 py-1.5 rounded-xl shadow-md group">
-                                <svg class="w-3.5 h-3.5 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"/></svg>
-                                <span id="share-btn-text">Share Match</span>
-                            </button>
+            const badgeEl = document.getElementById('watch-status-badge');
+            if (badgeEl) {
+                badgeEl.className = `px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isLive ? 'bg-red-600 text-white animate-pulse shadow-md shadow-red-600/30' : 'bg-amber-500 text-black'}`;
+                badgeEl.textContent = isLive ? 'LIVE' : 'UPCOMING';
+            }
 
-                            <span class="px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider ${isLive ? 'bg-red-600 text-white animate-pulse shadow-md shadow-red-600/30' : 'bg-amber-500 text-black'}">
-                                ${isLive ? 'LIVE' : 'UPCOMING'}
-                            </span>
-                            <span class="text-xs text-gray-400 font-extrabold uppercase hidden sm:inline">
-                                ${item.league || item.country || ''} ${item.sport ? '• ' + item.sport : ''}
-                            </span>
-                        </div>
-                    </div>
+            const leagueEl = document.getElementById('watch-league-text');
+            if (leagueEl) {
+                const lText = (item.league || item.country || '') + (item.sport ? ' • ' + item.sport : '');
+                leagueEl.textContent = lText;
+            }
 
-                    <!-- Match Title & StreamCorner Green Accent Underline (Exact Image 1 Header) -->
-                    <div class="pt-1 space-y-2">
-                        ${item.team1 && item.team1.logo && item.team2 && item.team2.logo ? `
-                        <div class="flex items-center gap-2.5 py-1 flex-wrap">
-                            <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
-                                <img src="${item.team1.logo}" class="w-5 h-5 object-contain" alt="${item.team1.name || ''}" onerror="this.style.display='none'">
-                                <span class="text-xs sm:text-sm font-bold text-white">${item.team1.name || ''}</span>
-                            </div>
-                            <span class="text-xs font-black text-gray-500 uppercase px-1">VS</span>
-                            <div class="flex items-center gap-2 bg-[#0c1322] border border-gray-800 rounded-xl px-3 py-1.5 shadow-md">
-                                <img src="${item.team2.logo}" class="w-5 h-5 object-contain" alt="${item.team2.name || ''}" onerror="this.style.display='none'">
-                                <span class="text-xs sm:text-sm font-bold text-white">${item.team2.name || ''}</span>
-                            </div>
-                        </div>
-                        ` : ''}
-                        <h1 class="text-2xl sm:text-3xl md:text-4xl font-black text-white uppercase tracking-tight leading-tight">
-                            ${item.title || item.name}
-                        </h1>
-                        <div class="h-1.5 w-24 bg-green-500 rounded-full mt-2.5 mb-5 shadow-lg shadow-green-500/50"></div>
-                    </div>
+            const teamsContainer = document.getElementById('watch-teams-container');
+            if (teamsContainer) {
+                if (item.team1 && item.team1.logo && item.team2 && item.team2.logo) {
+                    teamsContainer.classList.remove('hidden');
+                    teamsContainer.classList.add('flex');
+                    const t1Logo = document.getElementById('watch-team1-logo');
+                    const t1Name = document.getElementById('watch-team1-name');
+                    const t2Logo = document.getElementById('watch-team2-logo');
+                    const t2Name = document.getElementById('watch-team2-name');
+                    if (t1Logo) { t1Logo.src = item.team1.logo; t1Logo.style.display = 'block'; }
+                    if (t1Name) t1Name.textContent = item.team1.name || '';
+                    if (t2Logo) { t2Logo.src = item.team2.logo; t2Logo.style.display = 'block'; }
+                    if (t2Name) t2Name.textContent = item.team2.name || '';
+                } else {
+                    teamsContainer.classList.add('hidden');
+                    teamsContainer.classList.remove('flex');
+                }
+            }
 
-                    <!-- Video Player Container (StreamCorner 16:9 Viewport) -->
-                    <div id="watch-player-container" class="relative w-full aspect-video bg-black rounded-2xl sm:rounded-3xl overflow-hidden border border-gray-800 shadow-2xl">
-                        <!-- Rendered by AryanPlayerEngine -->
-                    </div>
-
-                    <!-- CONTROLS Section (Exact StreamCorner Image 1 Format) -->
-                    <div class="space-y-2 pt-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black uppercase tracking-widest text-gray-400">CONTROLS</span>
-                            <div class="flex-1 h-px bg-gray-800/80"></div>
-                        </div>
-                        
-                        <div class="bg-[#0f1726] border border-gray-800/90 rounded-2xl divide-y divide-gray-800/60 shadow-xl overflow-hidden">
-                            
-                            <!-- Control Row 1: Reload Player -->
-                            <div onclick="AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
-                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                    <span>Reload Player</span>
-                                </div>
-                                <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Click to Reload</span>
-                            </div>
-
-                            <!-- Control Row 2: Theater Mode -->
-                            <div onclick="toggleWatchTheater()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
-                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                                    <span id="watch-theater-label">Theater Mode</span>
-                                </div>
-                                <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Toggle Size</span>
-                            </div>
-
-                            <!-- Control Row 3: Stream Quality -->
-                            <div class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors group">
-                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                                    <span>Stream Quality</span>
-                                </div>
-                                <div id="player-quality-selector-container" class="flex items-center gap-1.5 flex-wrap">
-                                    <span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>
-                                </div>
-                            </div>
-
-                        </div>
-                    </div>
-
-                    <!-- AVAILABLE SOURCES Section (Exact StreamCorner Image 1 Format) -->
-                    <div class="space-y-2 pt-2">
-                        <div class="flex items-center gap-2">
-                            <span class="text-xs font-black uppercase tracking-widest text-gray-400">AVAILABLE SOURCES</span>
-                            <div class="flex-1 h-px bg-gray-800/80"></div>
-                        </div>
-
-                        <div id="watch-sources-container" class="space-y-2.5">
-                            <!-- Populated dynamically by renderWatchSources -->
-                        </div>
-                    </div>
-
-                </div>
-            `;
-
+            // 2. Render available sources
             renderWatchSources(item, 0);
+
+            // 3. Mount or switch player media cleanly
             try {
                 if (window.AryanPlayerEngine) {
                     window.AryanPlayerEngine.init('watch-player-container', item);
