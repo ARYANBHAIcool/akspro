@@ -196,7 +196,8 @@ window.AryanPlayerEngine = {
         if (watchQualityContainer) {
             const currentServer = (this.getServers() || [])[this.activeServerIdx];
             const srvUrl = currentServer ? (currentServer.url || currentServer.rawUrl || '') : '';
-            const isHls = (currentServer && currentServer.type === 'video') || (srvUrl && srvUrl.includes('.m3u8'));
+            const isFx = (typeof currentServer === 'object' && currentServer !== null && (currentServer.isFutbolX || (currentServer.name && /^FX\s*\d*/i.test(currentServer.name)))) || srvUrl.includes('ryzn.pro') || srvUrl.includes('futbolx');
+            const isHls = !isFx && ((currentServer && currentServer.type === 'video') || (srvUrl && srvUrl.includes('.m3u8')));
 
             if (!isHls) {
                 // Iframe stream: Quality is controlled natively inside the stream player
@@ -370,7 +371,8 @@ window.AryanPlayerEngine = {
         if (!canvas) return;
 
         const serverUrl = targetServer.url || targetServer.rawUrl || targetServer.embedUrl || '';
-        const isHls = (targetServer.type === 'video' || serverUrl.includes('.m3u8')) &&
+        const isFx = (typeof targetServer === 'object' && targetServer !== null && (targetServer.isFutbolX || (targetServer.name && /^FX\s*\d*/i.test(targetServer.name)))) || serverUrl.includes('ryzn.pro') || serverUrl.includes('futbolx');
+        const isHls = !isFx && (targetServer.type === 'video' || serverUrl.includes('.m3u8')) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
                       !serverUrl.includes('shaka_player.html');
@@ -568,7 +570,8 @@ window.AryanPlayerEngine = {
         }
 
         const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
-        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8')) &&
+        const isFx = (typeof currentServer === 'object' && currentServer !== null && (currentServer.isFutbolX || (currentServer.name && /^FX\s*\d*/i.test(currentServer.name)))) || serverUrl.includes('ryzn.pro') || serverUrl.includes('futbolx');
+        const isHls = !isFx && (currentServer.type === 'video' || serverUrl.includes('.m3u8')) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
                       !serverUrl.includes('shaka_player.html');

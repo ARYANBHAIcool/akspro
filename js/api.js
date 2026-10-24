@@ -336,12 +336,9 @@
         const taifoodList = [];
         const otherList = [];
         for (const s of servers) {
-            if (isFx(s)) fxList.push(s);
-            else if (isTaifood(s)) taifoodList.push(s);
+            if (isTaifood(s)) taifoodList.push(s);
+            else if (isFx(s)) fxList.push(s);
             else otherList.push(s);
-        }
-        if (isLive) {
-            return [...fxList, ...taifoodList, ...otherList];
         }
         return [...taifoodList, ...fxList, ...otherList];
     }
