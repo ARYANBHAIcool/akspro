@@ -310,6 +310,20 @@
         return clean.replace(/[^a-z0-9]/g, '');
     }
 
+    function generateUniversalMatchSlug(title) {
+        if (!title || typeof title !== 'string') return '';
+        let s = cleanMatchStr(title);
+        s = s.replace(/\|.*$/g, '');
+        s = s.replace(/\[.*?\]/g, '');
+        s = s.replace(/\(.*?\)/g, '');
+        s = s.replace(/\s+(?:vs\.?|@|x|v\.?)\s+/gi, ' vs ');
+        s = s.toLowerCase()
+            .replace(/['"’`]/g, '')
+            .replace(/[^a-z0-9]+/g, '-')
+            .replace(/^-+|-+$/g, '');
+        return s;
+    }
+
     function sanitizePosterUrl(url) {
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
@@ -1570,11 +1584,14 @@
             const parts = fx.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
             const team1Name = parts[0] ? parts[0].trim() : fx.title;
             const team2Name = parts[1] ? parts[1].trim() : '';
+            const universalSlug = generateUniversalMatchSlug(fx.title);
 
             return sanitizeMatchServers({
                 id: fx.id || `fx-${fx.uri_name}`,
                 rawId: fx.uri_name || fx.id,
                 uriName: fx.uri_name,
+                canonicalSlug: universalSlug,
+                slug: universalSlug,
                 title: fx.title,
                 name: fx.title,
                 sport: sport,
@@ -2576,10 +2593,13 @@
 
             const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ | x /i)[0] || rawTitle;
             const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ | x /i)[1] || '';
+            const universalSlug = generateUniversalMatchSlug(rawTitle);
 
             return {
                 id: `alpha-${alpha.stream_id}`,
                 rawId: alpha.stream_id,
+                canonicalSlug: universalSlug,
+                slug: universalSlug,
                 source: 'streamcorner',
                 title: rawTitle,
                 sport: sport,
@@ -2763,9 +2783,13 @@
                 return null;
             }
 
+            const universalSlug = generateUniversalMatchSlug(title);
+
             return {
                 id: `ppv-${s.id}`,
                 rawId: s.id,
+                canonicalSlug: universalSlug,
+                slug: universalSlug,
                 source: 'ppv',
                 title: title,
                 sport: sport,
@@ -2866,12 +2890,28 @@
                 }
 
                 if (dup) {
-                    if (m.id) seenIds.add(m.id);
-                    if (m.rawId) seenIds.add(String(m.rawId));
-                    if (m.alphaStreamId) seenIds.add(m.alphaStreamId);
+                    dup.mergedIds = dup.mergedIds || new Set();
+                    if (m.id) { seenIds.add(m.id); dup.mergedIds.add(m.id); }
+                    if (m.rawId) { seenIds.add(String(m.rawId)); dup.mergedIds.add(String(m.rawId)); }
+                    if (m.alphaStreamId) { seenIds.add(m.alphaStreamId); dup.mergedIds.add(m.alphaStreamId); }
                     if (m.uriName) {
                         seenIds.add(m.uriName);
+                        dup.mergedIds.add(m.uriName);
                         if (!dup.uriName) dup.uriName = m.uriName;
+                    }
+                    if (m.canonicalSlug) {
+                        dup.mergedIds.add(m.canonicalSlug);
+                        if (!dup.canonicalSlug) {
+                            dup.canonicalSlug = m.canonicalSlug;
+                            dup.slug = m.canonicalSlug;
+                        }
+                    }
+                    if (m.mergedIds && m.mergedIds.size > 0) {
+                        for (const mid of m.mergedIds) dup.mergedIds.add(mid);
+                    }
+                    if (!dup.canonicalSlug) {
+                        dup.canonicalSlug = generateUniversalMatchSlug(dup.title || dup.name || '');
+                        dup.slug = dup.canonicalSlug;
                     }
                     if (m.isFutbolX) dup.isFutbolX = true;
                     if (m.sport === 'AMERICAN FOOTBALL' || dup.sport === 'AMERICAN FOOTBALL') {
@@ -2954,27 +2994,63 @@
             const map = new Map();
             for (const m of this.matches) {
                 if (!m) continue;
-                if (m.id) map.set(m.id, m);
+                if (m.id) {
+                    map.set(m.id, m);
+                    map.set(m.id.toLowerCase(), m);
+                }
+                if (m.canonicalSlug) {
+                    map.set(m.canonicalSlug, m);
+                    map.set(m.canonicalSlug.toLowerCase(), m);
+                    if (m.canonicalSlug.includes('-vs-')) {
+                        const parts = m.canonicalSlug.split('-vs-');
+                        if (parts.length === 2 && parts[0] && parts[1]) {
+                            map.set(`${parts[1]}-vs-${parts[0]}`, m);
+                        }
+                    }
+                }
+                if (m.slug) {
+                    map.set(m.slug, m);
+                    map.set(m.slug.toLowerCase(), m);
+                }
+                const cKey = getMatchCanonicalKey(m.title || m.name);
+                if (cKey) {
+                    map.set(cKey, m);
+                    map.set(cKey.toLowerCase(), m);
+                }
                 if (m.rawId) {
                     const rawStr = String(m.rawId);
+                    const cleanRawStr = rawStr.replace(/^(ppv|fx|alpha|sc|dami)-/i, '');
                     map.set(rawStr, m);
-                    map.set(`ppv-${rawStr}`, m);
-                    map.set(`dami-${rawStr}`, m);
-                    map.set(`alpha-${rawStr}`, m);
+                    map.set(cleanRawStr, m);
+                    map.set(`ppv-${cleanRawStr}`, m);
+                    map.set(`dami-${cleanRawStr}`, m);
+                    map.set(`alpha-${cleanRawStr}`, m);
+                    map.set(`sc-${cleanRawStr}`, m);
+                    map.set(`fx-${cleanRawStr}`, m);
                 }
                 if (m.alphaStreamId) {
+                    const cleanAlphaId = String(m.alphaStreamId).replace(/^alpha-/i, '');
                     map.set(m.alphaStreamId, m);
-                    map.set(`alpha-${m.alphaStreamId}`, m);
+                    map.set(cleanAlphaId, m);
+                    map.set(`alpha-${cleanAlphaId}`, m);
+                    map.set(`sc-${cleanAlphaId}`, m);
                 }
                 if (m.uriName) {
                     map.set(m.uriName, m);
                     map.set(`fx-${m.uriName}`, m);
+                }
+                if (m.mergedIds && m.mergedIds.size > 0) {
+                    for (const mid of m.mergedIds) {
+                        map.set(mid, m);
+                        map.set(String(mid).toLowerCase(), m);
+                    }
                 }
                 if (Array.isArray(m.streamCornerSources)) {
                     for (const sc of m.streamCornerSources) {
                         if (sc && sc.id) {
                             map.set(sc.id, m);
                             map.set(`alpha-${sc.id}`, m);
+                            map.set(`sc-${sc.id}`, m);
                         }
                     }
                 }
@@ -3018,12 +3094,32 @@
             const decoded = decodeURIComponent(String(id)).trim();
 
             // 1. Instant O(1) indexed lookup
-            if (this._matchById && this._matchById.has(decoded)) {
-                return this._matchById.get(decoded);
+            if (this._matchById) {
+                if (this._matchById.has(decoded)) return this._matchById.get(decoded);
+                const lower = decoded.toLowerCase();
+                if (this._matchById.has(lower)) return this._matchById.get(lower);
             }
-            const stripped = decoded.replace(/^(ppv|dami|alpha|fx)-/i, '');
-            if (this._matchById && this._matchById.has(stripped)) {
-                return this._matchById.get(stripped);
+
+            const stripped = decoded.replace(/^(ppv|dami|alpha|fx|sc)-/i, '');
+            if (this._matchById) {
+                if (this._matchById.has(stripped)) return this._matchById.get(stripped);
+                if (this._matchById.has(stripped.toLowerCase())) return this._matchById.get(stripped.toLowerCase());
+            }
+
+            // Universal canonical slug lookup
+            const inputSlug = generateUniversalMatchSlug(decoded);
+            if (inputSlug && this._matchById) {
+                if (this._matchById.has(inputSlug)) return this._matchById.get(inputSlug);
+            }
+            const strippedSlug = generateUniversalMatchSlug(stripped);
+            if (strippedSlug && this._matchById) {
+                if (this._matchById.has(strippedSlug)) return this._matchById.get(strippedSlug);
+            }
+
+            // Canonical key lookup
+            const inputCanonKey = getMatchCanonicalKey(decoded);
+            if (inputCanonKey && this._matchById) {
+                if (this._matchById.has(inputCanonKey)) return this._matchById.get(inputCanonKey);
             }
 
             // 2. Hex stream ID or NBA game ID lookup
@@ -3036,12 +3132,14 @@
 
             const slug = decoded.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
 
-            // 3. Fallback search by ID, slug, and path tokens
+            // 3. Fallback search by ID, slug, canonical key, and path tokens
             let found = this.matches.find(m => {
                 if (m.id === decoded || m.id === stripped || m.rawId === decoded || m.rawId === stripped) return true;
-                if (m.slug && m.slug === slug) return true;
+                if (m.canonicalSlug && (m.canonicalSlug === inputSlug || m.canonicalSlug === strippedSlug || m.canonicalSlug === slug)) return true;
+                if (m.slug && (m.slug === inputSlug || m.slug === strippedSlug || m.slug === slug)) return true;
+                if (inputCanonKey && getMatchCanonicalKey(m.title || m.name) === inputCanonKey) return true;
                 const mSlug = (m.title || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
-                return mSlug && (mSlug === slug || mSlug.includes(slug) || (slug.length > 5 && slug.includes(mSlug)));
+                return mSlug && (mSlug === slug || (slug.length > 5 && (mSlug.includes(slug) || slug.includes(mSlug))));
             });
 
             if (!found) {
@@ -3055,6 +3153,17 @@
                     }
                     return false;
                 });
+            }
+
+            // 3.2. Fuzzy token overlap fallback
+            if (!found && inputSlug && inputSlug.length > 5) {
+                const queryTokens = inputSlug.split('-').filter(t => t.length > 2 && !['vs', 'the', 'and', 'live'].includes(t));
+                if (queryTokens.length >= 2) {
+                    found = this.matches.find(m => {
+                        const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
+                        return queryTokens.every(t => mSlug.includes(t));
+                    });
+                }
             }
 
             // 3.5. Search futbolxCatalog directly for independent FutbolX links
@@ -3072,11 +3181,7 @@
                     found = this.normalizeFutbolXMatch(fx, fxStreams);
                     if (found) {
                         this.matches.push(found);
-                        if (this._matchById) {
-                            this._matchById.set(found.id, found);
-                            if (found.rawId) this._matchById.set(String(found.rawId), found);
-                            if (found.uriName) this._matchById.set(found.uriName, found);
-                        }
+                        this.rebuildMatchIndex();
                     }
                 }
             }
@@ -3094,12 +3199,35 @@
                     found = this.normalizeAlphaMatch(alpha);
                     if (found) {
                         this.matches.push(found);
-                        if (this._matchById) {
-                            this._matchById.set(found.id, found);
-                            if (found.alphaStreamId) this._matchById.set(found.alphaStreamId, found);
-                        }
+                        this.rebuildMatchIndex();
                     }
                 }
+            }
+
+            // 4.5. Fallback: Search in localStorage cached matches
+            if (!found && typeof localStorage !== 'undefined') {
+                try {
+                    const CACHE_KEY = 'aryan_cached_matches_v41';
+                    const raw = localStorage.getItem(CACHE_KEY);
+                    if (raw) {
+                        const parsed = JSON.parse(raw);
+                        const list = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.matches) ? parsed.matches : []);
+                        const cached = list.find(c => {
+                            if (!c) return false;
+                            if (c.id === decoded || c.id === stripped || c.rawId === decoded || c.rawId === stripped) return true;
+                            if (c.canonicalSlug && (c.canonicalSlug === inputSlug || c.canonicalSlug === strippedSlug)) return true;
+                            if (c.slug && (c.slug === inputSlug || c.slug === strippedSlug)) return true;
+                            const cKey = getMatchCanonicalKey(c.title || c.name);
+                            if (cKey && (cKey === inputCanonKey || cKey === decoded || cKey === stripped)) return true;
+                            return false;
+                        });
+                        if (cached) {
+                            found = cached;
+                            this.matches.push(found);
+                            this.rebuildMatchIndex();
+                        }
+                    }
+                } catch (e) {}
             }
 
             if (!found && hexMatch) {

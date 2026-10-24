@@ -415,10 +415,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.9.6"></script>
+    <script src="js/ads.js?v=10.9.7"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.6"></script>
-    <script src="js/api.js?v=10.9.6"></script>
+    <script src="js/player.js?v=10.9.7"></script>
+    <script src="js/api.js?v=10.9.7"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -871,10 +871,11 @@
             const isLive = m.isLive;
             const countdownText = isLive ? 'LIVE' : window.AryanGlobalAPI.getCountdownText(m.startTime);
             const leagueDisplay = m.league || m.sport || 'Sports';
+            const matchSlug = m.canonicalSlug || m.slug || m.id;
 
             return `
-                <a href="?match=${encodeURIComponent(m.id)}" 
-                   onclick="event.preventDefault(); openWatchView('${m.id}')" 
+                <a href="?match=${encodeURIComponent(matchSlug)}" 
+                   onclick="event.preventDefault(); openWatchView('${matchSlug}')" 
                    class="group cursor-pointer rounded-2xl overflow-hidden bg-[#0c1322] border border-gray-800/80 hover:border-gray-700 hover:bg-[#10192c] transition-all flex flex-row items-stretch h-[96px] sm:h-[102px] shadow-lg no-underline block">
                     
                     ${renderCardThumbnail(m)}
@@ -981,7 +982,9 @@
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item) return;
 
-            if (currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.id === id) && currentView === 'watch') {
+            const canonicalId = item.canonicalSlug || item.slug || item.id || id;
+
+            if (currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.canonicalSlug === canonicalId || currentWatchItem.id === id) && currentView === 'watch') {
                 return;
             }
 
@@ -1000,13 +1003,12 @@
 
             window.scrollTo(0, 0);
 
-            const matchParam = encodeURIComponent(item.id || id);
-            const targetUrl = `${window.location.origin}${window.location.pathname}?match=${matchParam}`;
+            const targetUrl = `${window.location.origin}/?match=${encodeURIComponent(canonicalId)}`;
             if (window.history && window.history.pushState) {
                 try {
                     const currentParam = new URLSearchParams(window.location.search).get('match');
-                    if (currentParam !== (item.id || id)) {
-                        window.history.pushState({ view: 'watch', id: item.id || id }, '', targetUrl);
+                    if (currentParam !== canonicalId) {
+                        window.history.pushState({ view: 'watch', id: canonicalId }, '', targetUrl);
                     }
                 } catch (e) {}
             }
@@ -1057,7 +1059,7 @@
             currentWatchItem = null;
             if (window.history && window.history.replaceState) {
                 try {
-                    window.history.replaceState(null, '', window.location.pathname);
+                    window.history.replaceState(null, '', `${window.location.origin}/`);
                 } catch (e) {}
             }
             document.title = 'AryanStreams Global – Live Sports & Multi-Server Streaming';
@@ -1114,16 +1116,17 @@
 
             if (item) {
                 hasHandledInitialUrlMatch = true;
-                openWatchView(item.id || targetId);
-            } else if (checkUrlAttempts < 15) {
+                openWatchView(item.canonicalSlug || item.slug || item.id || targetId);
+            } else if (checkUrlAttempts < 30) {
                 checkUrlAttempts++;
-                setTimeout(checkUrlForMatch, 350);
+                setTimeout(checkUrlForMatch, 300);
             }
         }
 
         function shareCurrentMatch() {
             if (!currentWatchItem) return;
-            const shareUrl = `${window.location.origin}${window.location.pathname}?match=${encodeURIComponent(currentWatchItem.id)}`;
+            const matchSlug = currentWatchItem.canonicalSlug || currentWatchItem.slug || currentWatchItem.id;
+            const shareUrl = `${window.location.origin}/?match=${encodeURIComponent(matchSlug)}`;
             const shareTitle = `${currentWatchItem.title || currentWatchItem.name} – AryanStreams Global`;
             
             if (navigator.share) {
