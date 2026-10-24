@@ -152,9 +152,41 @@ window.AryanPlayerEngine = {
     setQuality(idx) {
         this.currentQuality = idx;
         if (this.hls) {
-            this.hls.currentLevel = idx;
+            this.hls.nextLevel = idx; // Smooth non-blocking transition without buffer flush or pause!
         }
         this.updateQualityUI();
+    },
+
+    showUnmutePrompt(video) {
+        const canvas = document.getElementById('player-canvas-wrapper');
+        if (!canvas) return;
+        const existing = document.getElementById('player-unmute-badge');
+        if (existing) existing.remove();
+
+        const badge = document.createElement('div');
+        badge.id = 'player-unmute-badge';
+        badge.className = 'absolute top-4 right-4 z-30 bg-green-500 hover:bg-green-400 text-black px-3.5 py-1.5 rounded-xl font-black text-xs uppercase tracking-wider flex items-center gap-2 shadow-2xl cursor-pointer animate-pulse select-none transition-all';
+        badge.innerHTML = `
+            <svg class="w-4 h-4 text-black" fill="currentColor" viewBox="0 0 24 24"><path d="M16.5 12c0-1.77-1.02-3.29-2.5-4.03v2.21l2.45 2.45c.03-.2.05-.41.05-.63zm2.5 0c0 .94-.2 1.82-.54 2.64l1.51 1.51C20.63 14.91 21 13.5 21 12c0-4.28-2.99-7.86-7-8.77v2.06c2.89.86 5 3.54 5 6.71zM4.27 3L3 4.27 7.73 9H3v6h4l5 5v-6.73l4.25 4.25c-.67.52-1.42.93-2.25 1.18v2.06c1.38-.31 2.63-.95 3.69-1.81L19.73 21 21 19.73l-9-9L4.27 3zM12 4L9.91 6.09 12 8.18V4z"/></svg>
+            <span>Tap to Unmute</span>
+        `;
+        badge.onclick = (e) => {
+            e.stopPropagation();
+            video.muted = false;
+            video.volume = 1.0;
+            badge.remove();
+        };
+        canvas.appendChild(badge);
+    },
+
+    unmuteVideo() {
+        const video = document.getElementById('global-video-element');
+        if (video) {
+            video.muted = false;
+            video.volume = 1.0;
+        }
+        const badge = document.getElementById('player-unmute-badge');
+        if (badge) badge.remove();
     },
 
     updateQualityUI() {
@@ -670,17 +702,31 @@ window.AryanPlayerEngine = {
     attachHlsPlayback(playableUrl, video, loader, errorOverlay) {
         if (!video) return;
 
+        // Auto-configure volume and sound
+        video.volume = 1.0;
+        video.muted = false;
+
         if (window.Hls && Hls.isSupported() && playableUrl.includes('.m3u8')) {
             const hls = new Hls({
                 enableWorker: true,
                 lowLatencyMode: false,
-                liveSyncDurationCount: 3,
-                liveMaxLatencyDurationCount: 8,
-                maxBufferLength: 30,
-                maxMaxBufferLength: 60,
-                backBufferLength: 30,
-                manifestLoadingTimeOut: 15000,
-                levelLoadingTimeOut: 15000
+                liveSyncDurationCount: 5,        // 5 segments buffer ahead = rock-solid, zero pause!
+                liveMaxLatencyDurationCount: 12, // High tolerance before drift
+                maxBufferLength: 60,             // Buffer up to 60s
+                maxMaxBufferLength: 120,         // Headroom up to 120s
+                backBufferLength: 60,
+                maxBufferHole: 0.8,              // Skip tiny audio/video drift holes
+                highBufferWatchdogPeriod: 2,
+                nudgeOffset: 0.2,
+                nudgeMaxRetry: 10,               // Nudge through tiny stutters instead of pausing!
+                maxFragLookUpTolerance: 0.3,
+                manifestLoadingTimeOut: 20000,
+                manifestLoadingMaxRetry: 5,
+                levelLoadingTimeOut: 20000,
+                levelLoadingMaxRetry: 5,
+                fragLoadingTimeOut: 20000,
+                fragLoadingMaxRetry: 6,
+                startLevel: -1
             });
             hls.loadSource(playableUrl);
             hls.attachMedia(video);
@@ -690,8 +736,10 @@ window.AryanPlayerEngine = {
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(() => {
+                        // If browser blocks unmuted autoplay, play muted and display quick tap-to-unmute badge
                         video.muted = true;
                         video.play().catch(() => {});
+                        this.showUnmutePrompt(video);
                     });
                 }
                 if (loader) {
@@ -724,6 +772,23 @@ window.AryanPlayerEngine = {
                 }
             });
 
+            // Auto-unmute when user clicks or touches anywhere on player canvas
+            const canvas = document.getElementById('player-canvas-wrapper');
+            if (canvas && !canvas._hasUnmuteListener) {
+                canvas._hasUnmuteListener = true;
+                const unmuteHandler = () => {
+                    const v = document.getElementById('global-video-element');
+                    if (v && v.muted) {
+                        v.muted = false;
+                        v.volume = 1.0;
+                        const badge = document.getElementById('player-unmute-badge');
+                        if (badge) badge.remove();
+                    }
+                };
+                canvas.addEventListener('click', unmuteHandler, { passive: true });
+                canvas.addEventListener('touchstart', unmuteHandler, { passive: true });
+            }
+
             hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
                 if (this.currentQuality === -1 && data && typeof data.level === 'number' && hls.levels) {
                     const activeLvl = hls.levels[data.level];
@@ -737,12 +802,43 @@ window.AryanPlayerEngine = {
             });
 
             let networkRetries = 0;
-            hls.on(Hls.Events.ERROR, (event, data) => {
+            hls.on(Hls.Events.ERROR, async (event, data) => {
+                // 1. Recover buffer stall automatically (prevents stream from stopping/pausing mid-match)
+                if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
+                    console.warn('[HLS] Buffer stall detected, auto-nudging playback...');
+                    if (video.paused && !video.ended) {
+                        video.play().catch(() => {});
+                    }
+                    return;
+                }
+
+                // 2. Token expiration recovery (HTTP 403 on ryzn.pro)
+                const isAuthError = data.response && (data.response.code === 403 || data.response.code === 401);
+                if (isAuthError && playableUrl.includes('ryzn.pro')) {
+                    console.warn('[HLS] Token expired, refreshing stream token in background...');
+                    const rawBase = playableUrl.split('?')[0];
+                    if (this._tokenCache) this._tokenCache.delete(rawBase);
+                    try {
+                        const ssKey = 'fx_tok_' + btoa(rawBase).slice(0, 32);
+                        sessionStorage.removeItem(ssKey);
+                    } catch(e) {}
+                    
+                    const refreshedUrl = await this.resolvePlayableStreamUrl(rawBase);
+                    if (refreshedUrl && refreshedUrl !== playableUrl) {
+                        const curTime = video.currentTime;
+                        hls.loadSource(refreshedUrl);
+                        video.currentTime = curTime;
+                        video.play().catch(() => {});
+                        return;
+                    }
+                }
+
                 if (data.fatal) {
                     switch (data.type) {
                         case Hls.ErrorTypes.NETWORK_ERROR:
                             networkRetries++;
-                            if (networkRetries <= 2) {
+                            if (networkRetries <= 3) {
+                                console.warn('[HLS] Network error retry:', networkRetries);
                                 hls.startLoad();
                             } else {
                                 hls.destroy();
@@ -758,7 +854,11 @@ window.AryanPlayerEngine = {
                             }
                             break;
                         case Hls.ErrorTypes.MEDIA_ERROR:
+                            console.warn('[HLS] Media error, recovering...');
                             hls.recoverMediaError();
+                            if (video.paused) {
+                                video.play().catch(() => {});
+                            }
                             break;
                         default:
                             hls.destroy();

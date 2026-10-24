@@ -477,10 +477,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.4"></script>
-    <script src="js/paramount-core.js?v=10.0"></script>
-    <script src="js/player.js?v=10.4"></script>
-    <script src="js/api.js?v=10.4"></script>
+    <script src="js/ads.js?v=10.5"></script>
+    <script src="js/paramount-core.js?v=10.0" defer></script>
+    <script src="js/player.js?v=10.5"></script>
+    <script src="js/api.js?v=10.5"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -835,18 +835,41 @@
         }
 
         function renderCardThumbnail(m) {
-            // Build rich fallback visual (Dual-team badges, category logo, or sport graphic)
+            // Fast Path: If genuine banner poster exists, render it immediately without wasting CPU on fallback computation
+            let rawPoster = (m.poster || '').trim();
+            if (rawPoster && !rawPoster.includes('logo-icon.png') && !rawPoster.includes('poocloud.in')) {
+                let directRaw = rawPoster;
+                if (directRaw.includes('wsrv.nl/?url=')) {
+                    try { directRaw = decodeURIComponent(directRaw.split('wsrv.nl/?url=')[1].split('&')[0]); } catch (e) {}
+                } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
+                    directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
+                }
+                const posterSrc = (rawPoster.includes('wsrv.nl/?url=') || rawPoster.includes('serveproxy.com')) ? rawPoster : (
+                    (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
+                        ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
+                        : rawPoster
+                );
+                return `
+                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
+                        <img src="${posterSrc}" 
+                             data-raw="${directRaw}"
+                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 brightness-95" 
+                             alt="${m.title}" 
+                             loading="lazy" 
+                             onerror="this.style.display='none';">
+                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/40 pointer-events-none"></div>
+                    </div>
+                `;
+            }
+
+            // Fallback visual (only computed if poster is absent!)
             const logo1 = resolveCardLogo(m.team1 && m.team1.logo);
             const logo2 = resolveCardLogo(m.team2 && m.team2.logo);
-
             let t1Name = (m.team1 && m.team1.name) || '';
             let t2Name = (m.team2 && m.team2.name) || '';
             if (!t1Name && !t2Name && m.title) {
                 const parts = m.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
-                if (parts.length >= 2) {
-                    t1Name = parts[0].trim();
-                    t2Name = parts[1].trim();
-                }
+                if (parts.length >= 2) { t1Name = parts[0].trim(); t2Name = parts[1].trim(); }
             }
 
             let fallbackInner = '';
@@ -879,64 +902,10 @@
             } else {
                 let singleLogo = resolveCardLogo(m.categoryLogo || (m.team1 && m.team1.logo) || (m.team2 && m.team2.logo));
                 if (singleLogo) {
-                    fallbackInner = `
-                        <img src="${singleLogo}" 
-                             class="max-w-[70%] max-h-[70%] object-contain drop-shadow group-hover:scale-105 transition-transform duration-300" 
-                             alt="${m.title}" 
-                             loading="lazy" 
-                             onerror="this.style.display='none';">
-                    `;
+                    fallbackInner = `<img src="${singleLogo}" class="max-w-[70%] max-h-[70%] object-contain drop-shadow" alt="${m.title}" loading="lazy" onerror="this.style.display='none';">`;
                 } else {
-                    const sport = (m.sport || m.league || 'SPORTS').toUpperCase();
-                    let sportIcon = '🏆';
-                    if (sport.includes('FOOTBALL') || sport.includes('SOCCER')) sportIcon = '⚽';
-                    else if (sport.includes('CRICKET')) sportIcon = '🏏';
-                    else if (sport.includes('BASKETBALL')) sportIcon = '🏀';
-                    else if (sport.includes('MOTOR') || sport.includes('F1') || sport.includes('RACING')) sportIcon = '🏎️';
-                    else if (sport.includes('COMBAT') || sport.includes('UFC') || sport.includes('BOXING') || sport.includes('MMA')) sportIcon = '🥊';
-                    else if (sport.includes('BASEBALL')) sportIcon = '⚾';
-                    else if (sport.includes('TENNIS')) sportIcon = '🎾';
-                    else if (sport.includes('HOCKEY')) sportIcon = '🏒';
-
-                    fallbackInner = `
-                        <div class="flex flex-col items-center justify-center p-2">
-                            <span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">${sportIcon}</span>
-                            <span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] text-gray-400">${m.league || m.sport || 'Sports'}</span>
-                        </div>
-                    `;
+                    fallbackInner = `<div class="flex flex-col items-center justify-center p-2"><span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">🏆</span><span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] text-gray-400">${m.league || m.sport || 'Sports'}</span></div>`;
                 }
-            }
-
-            // Case 1: Banner poster available
-            let rawPoster = (m.poster || '').trim();
-            if (rawPoster && !rawPoster.includes('logo-icon.png') && !rawPoster.includes('poocloud.in')) {
-                let directRaw = rawPoster;
-                if (directRaw.includes('wsrv.nl/?url=')) {
-                    try {
-                        directRaw = decodeURIComponent(directRaw.split('wsrv.nl/?url=')[1].split('&')[0]);
-                    } catch (e) {}
-                } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
-                    directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
-                }
-                const posterSrc = (rawPoster.includes('wsrv.nl/?url=') || rawPoster.includes('serveproxy.com')) ? rawPoster : (
-                    (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
-                        ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
-                        : rawPoster
-                );
-                return `
-                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
-                        <img src="${posterSrc}" 
-                             data-raw="${directRaw}"
-                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 brightness-95" 
-                             alt="${m.title}" 
-                             loading="lazy" 
-                             onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.classList.remove('hidden');">
-                        <div class="hidden absolute inset-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center">
-                            ${fallbackInner}
-                        </div>
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/40 pointer-events-none"></div>
-                    </div>
-                `;
             }
 
             return `
