@@ -143,9 +143,6 @@
                     <button onclick="switchView('channels')" id="nav-channels" class="hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors">
                         <span>24/7 CHANNELS</span>
                     </button>
-                    <button onclick="switchView('multiviewer')" id="nav-multiviewer" class="hover:text-green-400 text-gray-300 flex items-center gap-1.5 transition-colors">
-                        <span>MULTIVIEWER</span>
-                    </button>
                     <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" class="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-[#0088cc]/15 hover:bg-[#0088cc]/25 border border-[#0088cc]/40 text-[#38bdf8] hover:text-white transition-all shadow-sm">
                         <svg class="w-3.5 h-3.5 text-[#38bdf8]" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
                         <span>TELEGRAM</span>
@@ -188,9 +185,6 @@
                     </button>
                     <button onclick="toggleMobileMenu(); switchView('channels')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/80 text-white transition-colors text-left">
                         <span class="text-lg">📺</span> <span>24/7 Channels</span>
-                    </button>
-                    <button onclick="toggleMobileMenu(); switchView('multiviewer')" class="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-gray-800/80 text-white transition-colors text-left">
-                        <span class="text-lg">🎛️</span> <span>Multiviewer (4-Screen)</span>
                     </button>
                     <a href="https://t.me/aryanstreams" target="_blank" rel="noopener noreferrer" class="w-full flex items-center justify-between p-3.5 rounded-xl bg-gradient-to-r from-[#0088cc]/20 to-[#29b6f6]/10 border border-[#0088cc]/40 hover:border-[#0088cc] text-[#38bdf8] transition-all group shadow-md shadow-[#0088cc]/10">
                         <div class="flex items-center gap-3">
@@ -292,46 +286,6 @@
 
             <div id="channels-grid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3.5">
                 <!-- Dynamically populated -->
-            </div>
-        </div>
-
-        <!-- VIEW 3: MULTIVIEWER MODE -->
-        <div id="view-multiviewer" class="space-y-6 hidden">
-            <div class="flex items-center justify-between border-b border-gray-800/80 pb-3">
-                <div>
-                    <h2 class="text-xl font-black uppercase tracking-wider text-white">MULTIVIEWER (4-SCREEN GRID)</h2>
-                    <p class="text-xs text-gray-400">Watch up to 4 concurrent live matches or channels side-by-side</p>
-                </div>
-                <button onclick="switchView('home')" class="px-3 py-1.5 bg-gray-800 hover:bg-gray-700 text-xs text-gray-200 font-bold uppercase tracking-wider rounded-xl transition-colors">
-                    Close Multiviewer
-                </button>
-            </div>
-
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-[#121824] border border-gray-800 rounded-2xl p-2.5 space-y-2">
-                    <select onchange="loadMultiviewerStream(1, this.value)" id="mv-select-1" class="w-full bg-black/80 border border-gray-700 text-xs text-white rounded-lg px-2.5 py-2 focus:outline-none focus:border-green-500">
-                        <option value="">-- Select Screen 1 Stream --</option>
-                    </select>
-                    <div id="mv-viewport-1" class="aspect-video bg-black rounded-xl border border-gray-800/80 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">Screen 1 Ready</div>
-                </div>
-                <div class="bg-[#121824] border border-gray-800 rounded-2xl p-2.5 space-y-2">
-                    <select onchange="loadMultiviewerStream(2, this.value)" id="mv-select-2" class="w-full bg-black/80 border border-gray-700 text-xs text-white rounded-lg px-2.5 py-2 focus:outline-none focus:border-green-500">
-                        <option value="">-- Select Screen 2 Stream --</option>
-                    </select>
-                    <div id="mv-viewport-2" class="aspect-video bg-black rounded-xl border border-gray-800/80 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">Screen 2 Ready</div>
-                </div>
-                <div class="bg-[#121824] border border-gray-800 rounded-2xl p-2.5 space-y-2">
-                    <select onchange="loadMultiviewerStream(3, this.value)" id="mv-select-3" class="w-full bg-black/80 border border-gray-700 text-xs text-white rounded-lg px-2.5 py-2 focus:outline-none focus:border-green-500">
-                        <option value="">-- Select Screen 3 Stream --</option>
-                    </select>
-                    <div id="mv-viewport-3" class="aspect-video bg-black rounded-xl border border-gray-800/80 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">Screen 3 Ready</div>
-                </div>
-                <div class="bg-[#121824] border border-gray-800 rounded-2xl p-2.5 space-y-2">
-                    <select onchange="loadMultiviewerStream(4, this.value)" id="mv-select-4" class="w-full bg-black/80 border border-gray-700 text-xs text-white rounded-lg px-2.5 py-2 focus:outline-none focus:border-green-500">
-                        <option value="">-- Select Screen 4 Stream --</option>
-                    </select>
-                    <div id="mv-viewport-4" class="aspect-video bg-black rounded-xl border border-gray-800/80 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">Screen 4 Ready</div>
-                </div>
             </div>
         </div>
 
@@ -493,10 +447,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.7"></script>
+    <script src="js/ads.js?v=10.8"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.7"></script>
-    <script src="js/api.js?v=10.7"></script>
+    <script src="js/player.js?v=10.8"></script>
+    <script src="js/api.js?v=10.8"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -534,10 +488,7 @@
                 if (currentView === 'home') {
                     renderMatchesGrid();
                 } else if (currentView === 'channels') {
-                    renderChannelsView();
-                } else if (currentView === 'multiviewer') {
-                    populateMultiviewerDropdowns();
-                }
+                    renderChannelsView();}
                 checkUrlForMatch();
             });
 
@@ -554,8 +505,7 @@
                 if (navLive) navLive.innerText = 'LIVE';
                 if (currentView === 'home') renderMatchesGrid();
                 if (currentView === 'channels') renderChannelsView();
-                if (currentView === 'multiviewer') populateMultiviewerDropdowns();
-            }
+}
 
             // Check if user navigated directly to a match link
             checkUrlForMatch();
@@ -568,13 +518,12 @@
             currentView = viewName;
             document.getElementById('view-home').classList.add('hidden');
             document.getElementById('view-channels').classList.add('hidden');
-            document.getElementById('view-multiviewer').classList.add('hidden');
             const watchView = document.getElementById('view-watch');
             if (watchView) watchView.classList.add('hidden');
 
             const filterBar = document.getElementById('category-filter-bar');
             if (filterBar) {
-                if (viewName === 'watch' || viewName === 'multiviewer') { filterBar.classList.add('hidden');
+                if (viewName === 'watch') { filterBar.classList.add('hidden');
                 } else {
                     filterBar.classList.remove('hidden');
                 }
@@ -582,7 +531,7 @@
 
             const floatingSearch = document.getElementById('floating-search-bar');
             if (floatingSearch) {
-                if (viewName === 'watch' || viewName === 'multiviewer') floatingSearch.classList.add('hidden');
+                if (viewName === 'watch') floatingSearch.classList.add('hidden');
                 else floatingSearch.classList.remove('hidden');
             }
 
@@ -594,9 +543,6 @@
             if (navHome) navHome.className = viewName === 'home' ? 'text-green-400 flex items-center gap-1 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1 transition-colors';
             const navChannels = document.getElementById('nav-channels');
             if (navChannels) navChannels.className = viewName === 'channels' ? 'text-green-400 flex items-center gap-1 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1 transition-colors';
-            const navMv = document.getElementById('nav-multiviewer');
-            if (navMv) navMv.className = viewName === 'multiviewer' ? 'text-green-400 flex items-center gap-1 transition-colors' : 'hover:text-green-400 text-gray-300 flex items-center gap-1 transition-colors';
-
             const activeView = document.getElementById('view-' + viewName);
             if (activeView) activeView.classList.remove('hidden');
 
@@ -607,8 +553,7 @@
                 }
             }
             if (viewName === 'channels') renderChannelsView();
-            if (viewName === 'multiviewer') populateMultiviewerDropdowns();
-        }
+            }
 
         function toggleMobileMenu() {
             const menu = document.getElementById('mobile-menu');
@@ -1465,116 +1410,7 @@
             return false;
         }
 
-        function populateMultiviewerDropdowns() {
-            if (!window.AryanGlobalAPI) return;
-            const matches = window.AryanGlobalAPI.getAllMatches() || [];
-            const channels = window.AryanGlobalAPI.getChannels() || [];
-            if (matches.length === 0 && channels.length === 0) return;
-
-            // 1. Only include matches that are currently LIVE with verified streams
-            const liveMatches = matches.filter(m => m.isLive && !isDummyOrPlaceholderUrl(m.url || (m.servers && m.servers[0] && m.servers[0].url)));
-
-            // 2. Curate Top ~35 Premier Sports Channels (TNT Sports, Sky Sports, ESPN, Willow, Sony, Fox, NBC, CBS, etc.)
-            // Drops 700+ redundant regional non-sports channels so mobile dropdown remains featherlight and lag-free!
-            const PREMIER_KEYWORDS = ['tnt', 'sky sports', 'espn', 'willow', 'sony', 'star sports', 'fox', 'nbc', 'cbs', 'tsn', 'supersport', 'bein', 'dazn', 'optus', 'astro', 'premier'];
-            const topChannels = channels.filter(ch => {
-                if (!ch || !ch.name) return false;
-                const n = ch.name.toLowerCase();
-                if (ch.id && String(ch.id).startsWith('sc-')) return true; // Premier Zero-CF channels
-                return PREMIER_KEYWORDS.some(kw => n.includes(kw));
-            }).slice(0, 35);
-
-            for (let i = 1; i <= 4; i++) {
-                const sel = document.getElementById(`mv-select-${i}`);
-                if (!sel) continue;
-                const currentVal = sel.value;
-                let optHtml = `<option value="">-- Select Screen ${i} Stream --</option>`;
-                if (liveMatches.length > 0) {
-                    optHtml += `<optgroup label="🔴 Live Matches (${liveMatches.length})">` +
-                        liveMatches.map(m => `<option value="${escapeHtml(m.id)}">🔴 ${escapeHtml(m.title || m.name)}</option>`).join('') +
-                        `</optgroup>`;
-                }
-                if (topChannels.length > 0) {
-                    optHtml += `<optgroup label="📺 Top 24/7 Sports Channels (${topChannels.length})">` +
-                        topChannels.map(ch => `<option value="${escapeHtml(ch.id)}">📺 ${escapeHtml(ch.name)} (${escapeHtml(ch.country || 'Live')})</option>`).join('') +
-                        `</optgroup>`;
-                }
-                sel.innerHTML = optHtml;
-                if (currentVal) sel.value = currentVal;
-            }
-        }
-
-        async function loadMultiviewerStream(screenNum, id) {
-            const viewport = document.getElementById(`mv-viewport-${screenNum}`);
-            if (!viewport) return;
-            if (!id) {
-                viewport.innerHTML = `<span class="text-xs text-gray-500 font-bold uppercase tracking-wider">Screen ${screenNum} Ready</span>`;
-                return;
-            }
-
-            viewport.innerHTML = `
-                <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-black text-center text-xs text-gray-400 font-bold space-y-2">
-                    <div class="w-6 h-6 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
-                    <span>Connecting stream...</span>
-                </div>
-            `;
-
-            let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
-            if (!item) {
-                viewport.innerHTML = `
-                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
-                        <span class="text-xl">⚠️</span>
-                        <span class="text-white font-extrabold text-sm tracking-wide">Stream Feed Unavailable</span>
-                        <p class="text-[11px] text-gray-400 max-w-xs font-normal">Broadcast satellite listing not active. Select another channel.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            if ((!item.servers || item.servers.length === 0) && item.alphaStreamId && window.AryanGlobalAPI && typeof window.AryanGlobalAPI.ensureAlphaSourcesForMatch === 'function') {
-                await window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item);
-            }
-
-            const servers = (item.servers && item.servers.length > 0) ? item.servers : (item.sources || [item]);
-            const server = servers[0] || {};
-            let rawUrl = server.url || server.rawUrl || server.embedUrl || item.embedUrl || item.url || item.iframe || '';
-
-            // Detect dummy, empty or example.com URLs immediately
-            if (!rawUrl || isDummyOrPlaceholderUrl(rawUrl)) {
-                viewport.innerHTML = `
-                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
-                        <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-lg text-amber-400 border border-amber-500/20">
-                            📡
-                        </div>
-                        <span class="text-white font-extrabold text-sm tracking-wide">Broadcast Feed Unavailable</span>
-                        <p class="text-[11px] text-gray-400 max-w-xs font-normal">There is currently no live satellite stream for this listing. Please select another live match or 24/7 channel.</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const isHls = (server.type === 'video' || rawUrl.includes('.m3u8')) &&
-                          !rawUrl.includes('.mpd') &&
-                          !rawUrl.includes('cenc') &&
-                          !rawUrl.includes('shaka_player.html');
-
-            if (isHls) {
-                let playable = rawUrl;
-                if (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.resolvePlayableStreamUrl === 'function') {
-                    playable = await window.AryanPlayerEngine.resolvePlayableStreamUrl(rawUrl);
-                }
-                viewport.innerHTML = `<video id="mv-vid-${screenNum}" class="w-full h-full object-contain bg-black" controls autoplay playsinline muted></video>`;
-                const vid = document.getElementById(`mv-vid-${screenNum}`);
-                if (window.Hls && Hls.isSupported() && playable.includes('.m3u8')) {
-                    const hls = new Hls({ liveSyncDurationCount: 4, maxBufferLength: 30 });
-                    hls.loadSource(playable);
-                    hls.attachMedia(vid);
-                    vid.play().catch(() => {});
-                } else if (vid) {
-                    vid.src = playable;
-                    vid.play().catch(() => {});
-                }
-            } else {
+        else {
                 const finalUrl = (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.getProxiedUrl === 'function')
                     ? window.AryanPlayerEngine.getProxiedUrl(server, 'bitmovin')
                     : rawUrl;

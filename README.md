@@ -15,8 +15,6 @@ Standalone, automated live sports and 24/7 TV streaming web application modeled 
   - Controls: Theater Mode, Fullscreen, Reload Player, Next Server shortcut, and External Player link.
 - **800+ 24/7 Sports TV Channels**:
   - Dedicated TV directory pulling live channels with country flags, channel logos, and instant playback.
-- **4-Screen Multiviewer**:
-  - Watch up to 4 concurrent live games side-by-side.
 - **Cloudflare Pages Backend Proxy (`functions/api/damitv/`)**:
   - Serverless function proxy enabling seamless CORS handling on deployment.
 
