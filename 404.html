@@ -375,10 +375,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=7.0"></script>
+    <script src="js/ads.js?v=10.3"></script>
     <script src="js/paramount-core.js?v=10.0"></script>
-    <script src="js/player.js?v=10.2"></script>
-    <script src="js/api.js?v=10.2"></script>
+    <script src="js/player.js?v=10.3"></script>
+    <script src="js/api.js?v=10.3"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -527,6 +527,7 @@
             renderMatchesGrid();
         }
 
+        let searchDebounceTimer = null;
         function handleSearch(val) {
             searchQuery = val;
             const headerInput = document.getElementById('header-search');
@@ -539,7 +540,10 @@
                 else clearBtn.classList.add('hidden');
             }
             if (currentView !== 'home') switchView('home');
-            renderMatchesGrid();
+            clearTimeout(searchDebounceTimer);
+            searchDebounceTimer = setTimeout(() => {
+                renderMatchesGrid();
+            }, 60);
         }
 
         function clearSearch() {
@@ -980,13 +984,19 @@
             }
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
+            // Preload stream tokens in background for instant 0ms switching
+            if (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.preloadMatchTokens === 'function') {
+                window.AryanPlayerEngine.preloadMatchTokens(item);
+            }
+
             switchView('watch');
             try {
                 renderWatchView(item);
             } catch (e) {
                 console.warn('renderWatchView error:', e);
             }
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+            // Instant scroll without laggy smooth animation
+            window.scrollTo(0, 0);
 
             // Ensure StreamCorner Alpha broadcast channels are resolved smoothly on click without freezing UI
             if (window.AryanGlobalAPI && !item._alphaResolved) {
@@ -1037,7 +1047,8 @@
                 clearSearch();
             }
             switchView(previousView || 'home');
-            if ((previousView || 'home') === 'home') {
+            const grid = document.getElementById('matches-grid');
+            if ((previousView || 'home') === 'home' && (!grid || grid.children.length === 0)) {
                 renderMatchesGrid();
             }
         }
@@ -1301,19 +1312,19 @@
                 const srvName = (srv.name || `Server ${idx + 1}`).replace(/\s*\((?:HD|FHD|SD)\)/gi, '').trim();
 
                 return `
-                    <div onclick="switchWatchServer(${idx})" 
+                    <div id="watch-source-btn-${idx}" onclick="switchWatchServer(${idx})" data-source-idx="${idx}"
                          class="cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all ${
                              isActive
                                  ? 'border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15'
                                  : 'border border-gray-800 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]'
                          }">
                         <div class="flex items-center gap-3 overflow-hidden">
-                            <span class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-black text-xs ${
+                            <span id="source-badge-${idx}" class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-black text-xs ${
                                 isActive ? 'bg-green-500 text-black shadow' : 'bg-gray-800 text-gray-400'
                             }">
                                 ${idx + 1}
                             </span>
-                            <span class="${isActive ? 'text-green-400 font-black' : 'text-gray-500 font-bold'} text-xs flex-shrink-0">
+                            <span id="source-icon-${idx}" class="${isActive ? 'text-green-400 font-black' : 'text-gray-500 font-bold'} text-xs flex-shrink-0">
                                 ((o))
                             </span>
                             <div class="flex items-center gap-2.5 overflow-hidden flex-wrap">
@@ -1330,7 +1341,7 @@
                             </div>
                         </div>
 
-                        <div class="flex-shrink-0 flex items-center">
+                        <div id="source-action-${idx}" class="flex-shrink-0 flex items-center">
                             ${isActive ? `
                                 <div class="w-6 h-6 rounded-full bg-green-500 text-black flex items-center justify-center font-black text-xs shadow-md shadow-green-500/30">
                                     ✓
@@ -1361,13 +1372,45 @@
             container.innerHTML = serversHtml + searchingHtml;
         }
 
+        function highlightWatchSourceUI(activeIdx) {
+            const container = document.getElementById('watch-sources-container');
+            if (!container) return;
+            const items = container.querySelectorAll('[data-source-idx]');
+            items.forEach(el => {
+                const idx = parseInt(el.getAttribute('data-source-idx'), 10);
+                const isActive = idx === activeIdx;
+                if (isActive) {
+                    el.className = 'cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15';
+                } else {
+                    el.className = 'cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all border border-gray-800 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]';
+                }
+                const badge = el.querySelector('#source-badge-' + idx);
+                if (badge) {
+                    badge.className = 'w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-black text-xs ' + (isActive ? 'bg-green-500 text-black shadow' : 'bg-gray-800 text-gray-400');
+                }
+                const icon = el.querySelector('#source-icon-' + idx);
+                if (icon) {
+                    icon.className = (isActive ? 'text-green-400 font-black' : 'text-gray-500 font-bold') + ' text-xs flex-shrink-0';
+                }
+                const action = el.querySelector('#source-action-' + idx);
+                if (action) {
+                    action.innerHTML = isActive 
+                        ? '<div class="w-6 h-6 rounded-full bg-green-500 text-black flex items-center justify-center font-black text-xs shadow-md shadow-green-500/30">✓</div>'
+                        : '<span class="text-xs font-bold text-gray-500 uppercase tracking-wider hover:text-green-400">Select</span>';
+                }
+            });
+        }
+        window.highlightWatchSourceUI = highlightWatchSourceUI;
+
         function switchWatchServer(idx) {
             if (!currentWatchItem) return;
             if (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx === idx) {
                 return;
             }
-            window.AryanPlayerEngine.switchServer(idx);
-            renderWatchSources(currentWatchItem, idx);
+            highlightWatchSourceUI(idx);
+            if (window.AryanPlayerEngine) {
+                window.AryanPlayerEngine.switchServer(idx);
+            }
         }
 
         function closePlayerModal() {

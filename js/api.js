@@ -857,7 +857,7 @@
         _alphaLoadingPromise: null,
 
         async init() {
-            const CACHE_KEY = 'aryan_cached_matches_v39';
+            const CACHE_KEY = 'aryan_cached_matches_v41';
             // 1. Explicitly purge any bloated legacy caches (v1 through v35) dynamically
             try {
                 for (let i = localStorage.length - 1; i >= 0; i--) {
@@ -868,14 +868,18 @@
                 }
             } catch (e) {}
 
-            // 2. Immediately hydrate from fresh localStorage cache so fixtures appear with 0ms delay on reload/back
+            // 2. Immediately hydrate from fresh localStorage cache ONLY if under 5 minutes old
             try {
-                const cached = localStorage.getItem(CACHE_KEY);
-                if (cached) {
-                    const parsed = JSON.parse(cached);
-                    if (Array.isArray(parsed) && parsed.length > 0) {
-                        const now = Date.now();
-                        this.matches = parsed.filter(m => {
+                const cachedRaw = localStorage.getItem(CACHE_KEY);
+                if (cachedRaw) {
+                    const parsed = JSON.parse(cachedRaw);
+                    const now = Date.now();
+                    const cacheAge = parsed.savedAt ? (now - parsed.savedAt) : Infinity;
+                    const items = Array.isArray(parsed) ? parsed : (Array.isArray(parsed.matches) ? parsed.matches : []);
+                    
+                    // Discard stale cache from old sessions (> 5 min) to prevent ghost matches flickering
+                    if (cacheAge < 300000 && items.length > 0) {
+                        this.matches = items.filter(m => {
                             if (!m || !m.title) return false;
                             if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
                             if (isExpiredMatch(m, now)) return false;
@@ -919,7 +923,7 @@
             this.emitUpdate();
 
             try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+                localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
             } catch (e) {}
 
             // Auto-refresh match feeds, Alpha channels & statuses every 90 seconds
@@ -945,9 +949,12 @@
         },
 
         emitUpdate() {
-            for (const cb of this.listeners) {
-                try { cb(); } catch (e) { console.error('Listener error:', e); }
-            }
+            if (this._emitTimeout) clearTimeout(this._emitTimeout);
+            this._emitTimeout = setTimeout(() => {
+                for (const cb of this.listeners) {
+                    try { cb(); } catch (e) { console.error('Listener error:', e); }
+                }
+            }, 30);
         },
 
         /**
@@ -956,7 +963,7 @@
          * Guarantees 100% genuine authentic posters, zero duplicate stock photos, and full coverage.
          */
         async loadPPVFeeds() {
-            const CACHE_KEY = 'aryan_cached_matches_v39';
+            const CACHE_KEY = 'aryan_cached_matches_v41';
             try {
                 const rawItems = [];
                 const seenRawIds = new Set();
@@ -1280,7 +1287,7 @@
                         this.sortMatches();
                         this.emitUpdate();
                         try {
-                            localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+                            localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                         } catch (e) {}
                     }
                 }
@@ -1498,8 +1505,8 @@
                     this.sortMatches();
                     this.emitUpdate();
                     try {
-                        const CACHE_KEY = 'aryan_cached_matches_v39';
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+                        const CACHE_KEY = 'aryan_cached_matches_v41';
+                        localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                     } catch (e) {}
                 }
             } catch (err) {
@@ -2097,7 +2104,7 @@
                     this.emitUpdate();
                     try {
                         const CACHE_KEY = 'aryan_cached_matches_v38';
-                        localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+                        localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
                     } catch (e) {}
                 }
 
@@ -2535,30 +2542,19 @@
                 startTs = new Date(alpha.start_time).getTime() || 0;
             }
 
-            const now = Date.now();
-            const endTs = (alpha.end_time ? new Date(alpha.end_time).getTime() : 0) || (startTs ? startTs + 10800000 : 0);
-
-            // Filter out finished / expired matches
-            if (endTs > 0 && now > (endTs + 1800000)) {
-                return null;
-            }
-
-            const timeStr = (alpha.time || alpha.time_et || '').toLowerCase();
-            // Strictly match in-game quarter/half/set indicators without falsely matching "1st Round", "2nd Leg", "1st T20I"
-            const isExplicitLive = Boolean(
-                alpha.status === 'live' ||
-                alpha.status === 'in_progress' ||
-                alpha.isLive === true ||
-                /\b(?:live|ht|halftime|half-time|overtime|ot)\b/i.test(timeStr) ||
-                /\b(?:1st|2nd|3rd|4th)\s*(?:qtr|quarter|half|period|set)\b/i.test(timeStr) ||
-                /\b(?:q[1-4]|set\s*\d)\b/i.test(timeStr)
-            );
-            const isTimeLive = Boolean(startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000)));
-            const isLive = Boolean((isExplicitLive || isTimeLive) && (!endTs || now <= (endTs + 1800000)));
-
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
             const sport = normalizeSport(rawCat || league || alpha.category || 'OTHERS');
+            const duration = getEstimatedMatchDuration({ sport });
+            const now = Date.now();
+            const endTs = (alpha.end_time ? new Date(alpha.end_time).getTime() : 0) || (startTs ? startTs + duration : 0);
+
+            // Strict expiration check upfront to prevent finished ghost matches from flickering
+            if (isExpiredMatch({ startTime: startTs, endTime: endTs, status: alpha.status, time: alpha.time || alpha.time_et, sport, isAlwaysLive: false }, now)) {
+                return null;
+            }
+
+            const isLive = isMatchLive({ startTime: startTs, endTime: endTs, status: alpha.status, time: alpha.time || alpha.time_et, sport }, now);
 
             const team1Name = alpha.home_team || rawTitle.split(/ vs\.? | @ | x /i)[0] || rawTitle;
             const team2Name = alpha.away_team || rawTitle.split(/ vs\.? | @ | x /i)[1] || '';
@@ -2626,17 +2622,20 @@
                 }
                 return null;
             }
-            const startTs = (s.starts_at ? s.starts_at * 1000 : (s.date ? (typeof s.date === 'number' ? s.date : (new Date(s.date).getTime() || 0)) : 0));
-            const endTs = (s.ends_at ? s.ends_at * 1000 : 0) || (startTs ? startTs + 10800000 : 0);
-            const now = Date.now();
+            const title = (s.name || s.title || 'Live Event').trim();
+            const rawCat = (s.category || catName || '').toLowerCase().replace(/[\s_]+/g, '-');
+            const catKey = (catName || '').toLowerCase().replace(/[\s_]+/g, '-');
             const tag = (s.tag || s.league || catName || 'Sports').trim();
+            const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
+
+            const startTs = (s.starts_at ? s.starts_at * 1000 : (s.date ? (typeof s.date === 'number' ? s.date : (new Date(s.date).getTime() || 0)) : 0));
+            const duration = getEstimatedMatchDuration({ sport, category: catName, tag });
+            const endTs = (s.ends_at ? s.ends_at * 1000 : 0) || (startTs ? startTs + duration : 0);
+            const now = Date.now();
             const isAlwaysLive = Boolean(s.always_live || is247Cat || tag.toLowerCase().includes('24/7') || !startTs);
 
-            // Filter out finished / ended matches (ended more than 15 minutes ago)
-            if (!isAlwaysLive && endTs > 0 && now > (endTs + 1800000)) {
-                return null;
-            }
-            if (s.status === 'ended' || s.status === 'finished') {
+            // Strict expiration check upfront to prevent finished ghost matches from flickering
+            if (isExpiredMatch({ startTime: startTs, endTime: endTs, status: s.status, time: s.time, sport, isAlwaysLive }, now)) {
                 return null;
             }
 
@@ -2659,19 +2658,7 @@
                 return null;
             }
 
-            const isExplicitLive = Boolean(
-                s.status === 'live' ||
-                s.status === 'in_progress' ||
-                s.isLive === true ||
-                s.live === true ||
-                (typeof s.tag === 'string' && s.tag.toLowerCase().includes('live'))
-            );
-            const isLive = !isAlwaysLive && (isExplicitLive || (startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000))));
-
-            const title = (s.name || s.title || 'Live Event').trim();
-            const rawCat = (s.category || catName || '').toLowerCase().replace(/[\s_]+/g, '-');
-            const catKey = (catName || '').toLowerCase().replace(/[\s_]+/g, '-');
-            const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
+            const isLive = isMatchLive({ startTime: startTs, endTime: endTs, status: s.status, time: s.time, sport, isAlwaysLive }, now);
 
             const homeObj = s.teams && s.teams.home ? s.teams.home : null;
             const awayObj = s.teams && s.teams.away ? s.teams.away : null;
