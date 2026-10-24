@@ -336,45 +336,13 @@
                     <!-- Rendered by AryanPlayerEngine -->
                 </div>
 
-                <!-- CONTROLS Section (Exact StreamCorner Image 1 Format) -->
-                <div class="space-y-2 pt-2">
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs font-black uppercase tracking-widest text-gray-400">CONTROLS</span>
-                        <div class="flex-1 h-px bg-gray-800/80"></div>
-                    </div>
-                    
-                    <div class="bg-[#0f1726] border border-gray-800/90 rounded-2xl divide-y divide-gray-800/60 shadow-xl overflow-hidden">
-                        
-                        <!-- Control Row 1: Reload Player -->
-                        <div onclick="AryanPlayerEngine.reloadPlayer()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
-                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                <span>Reload Player</span>
-                            </div>
-                            <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Click to Reload</span>
-                        </div>
-
-                        <!-- Control Row 2: Theater Mode -->
-                        <div onclick="toggleWatchTheater()" class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 cursor-pointer hover:bg-white/5 transition-colors group">
-                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/></svg>
-                                <span id="watch-theater-label">Theater Mode</span>
-                            </div>
-                            <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Toggle Size</span>
-                        </div>
-
-                        <!-- Control Row 3: Stream Quality -->
-                        <div class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors group">
-                            <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
-                                <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
-                                <span>Stream Quality</span>
-                            </div>
-                            <div id="player-quality-selector-container" class="flex items-center gap-1.5 flex-wrap">
-                                <span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>
-                            </div>
-                        </div>
-
-                    </div>
+                <!-- Player Action Bar: Reload Player -->
+                <div class="flex items-center justify-between pt-1">
+                    <button type="button" onclick="AryanPlayerEngine.reloadPlayer()" aria-label="Reload player stream" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-[#0f1726] hover:bg-[#152035] border border-gray-800 text-xs font-bold text-gray-300 hover:text-white transition-all shadow-sm group">
+                        <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 group-hover:rotate-180 transition-all duration-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                        <span>Reload Player</span>
+                    </button>
+                    <span class="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Quality managed in-player</span>
                 </div>
 
                 <!-- AVAILABLE SOURCES Section -->
@@ -447,10 +415,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.8"></script>
+    <script src="js/ads.js?v=10.9"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.8"></script>
-    <script src="js/api.js?v=10.8"></script>
+    <script src="js/player.js?v=10.9"></script>
+    <script src="js/api.js?v=10.9"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -993,11 +961,10 @@
             grid.innerHTML = html;
         }
 
-        function openWatchView(id) {
+        async function openWatchView(id) {
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item) return;
 
-            // If already viewing this exact match, do not reload player
             if (currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.id === id) && currentView === 'watch') {
                 return;
             }
@@ -1015,10 +982,8 @@
             }
             currentWatchItem = item;
 
-            // Instant scroll to top without laggy animation
             window.scrollTo(0, 0);
 
-            // Separate distinct shareable URL for this specific match
             const matchParam = encodeURIComponent(item.id || id);
             const targetUrl = `${window.location.origin}${window.location.pathname}?match=${matchParam}`;
             if (window.history && window.history.pushState) {
@@ -1031,37 +996,34 @@
             }
             document.title = `${item.title || item.name} – AryanStreams Global`;
 
-            // Instant view switch & render in 0ms using static shell
+            // 1. Instantly switch to watch view shell
             switchView('watch');
+
+            // 2. Resolve all satellite sources immediately so ALL sources open together in ONE shot!
+            if (window.AryanGlobalAPI && !item._alphaResolved && (item.alphaStreamId || (item.streamCornerSources && item.streamCornerSources.length > 0))) {
+                const sourcesContainer = document.getElementById('watch-sources-container');
+                if (sourcesContainer && (!item.servers || item.servers.length === 0)) {
+                    sourcesContainer.innerHTML = `
+                        <div class="p-4 rounded-2xl bg-[#0f1726] border-2 border-gray-800 text-center text-xs text-gray-400 font-bold flex items-center justify-center gap-2">
+                            <div class="w-4 h-4 border-2 border-green-500 border-t-transparent rounded-full animate-spin"></div>
+                            <span>Connecting broadcast feeds...</span>
+                        </div>
+                    `;
+                }
+                await window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item);
+            }
+
+            // 3. Render watch view with all sources complete and aligned with player (Source 1 plays and is highlighted!)
             renderWatchView(item);
 
-            // Preload stream tokens in background
+            // 4. Preload tokens
             if (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.preloadMatchTokens === 'function') {
                 setTimeout(() => {
                     window.AryanPlayerEngine.preloadMatchTokens(item);
                 }, 50);
             }
-
-            // Defer StreamCorner Alpha broadcast channels resolution to background AFTER player starts
-            if (window.AryanGlobalAPI && !item._alphaResolved) {
-                setTimeout(() => {
-                    window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item).then((resolved) => {
-                        if (resolved && currentWatchItem && (currentWatchItem.id === item.id || currentWatchItem.alphaStreamId === item.alphaStreamId || (currentWatchItem.streamCornerSources && currentWatchItem.streamCornerSources.some(sc => sc.id === item.alphaStreamId)))) {
-                            currentWatchItem.servers = item.servers;
-                            currentWatchItem.sources = item.servers;
-                            currentWatchItem._alphaResolved = true;
-
-                            const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                            if (typeof renderWatchSources === 'function') {
-                                renderWatchSources(currentWatchItem, activeIdx);
-                            }
-                        }
-                    }).catch(err => console.warn('ensureAlphaSources error:', err));
-                }, 1200); // Wait 1200ms so video player starts with ZERO CPU competition!
-            }
         }
 
-        // Backward-compatible alias so existing clicks automatically open the exact StreamCorner match interface
         function openPlayerModal(id) {
             openWatchView(id);
         }
@@ -1188,23 +1150,6 @@
             }, 2500);
         }
 
-        let isWatchTheater = false;
-        function toggleWatchTheater() {
-            isWatchTheater = !isWatchTheater;
-            const wrapper = document.getElementById('watch-wrapper');
-            const label = document.getElementById('watch-theater-label');
-            if (!wrapper) return;
-            if (isWatchTheater) {
-                wrapper.classList.remove('max-w-5xl');
-                wrapper.classList.add('max-w-[98vw]');
-                if (label) label.innerText = 'Exit Theater';
-            } else {
-                wrapper.classList.remove('max-w-[98vw]');
-                wrapper.classList.add('max-w-5xl');
-                if (label) label.innerText = 'Theater Mode';
-            }
-        }
-
         function renderWatchView(item) {
             const container = document.getElementById('view-watch');
             if (!container || !item) return;
@@ -1277,7 +1222,7 @@
             const validServers = (item.servers || []).filter(s => s && (s.url || s.embedUrl));
             if (validServers.length === 0) {
                 container.innerHTML = `
-                    <div class="p-4 rounded-2xl bg-[#0f1726] border border-gray-800 text-center text-xs text-gray-400 font-bold animate-pulse">
+                    <div class="p-4 rounded-2xl bg-[#0f1726] border-2 border-gray-800 text-center text-xs text-gray-400 font-bold animate-pulse">
                         Connecting to broadcast channels...
                     </div>
                 `;
@@ -1293,10 +1238,10 @@
                     <button type="button" id="watch-source-btn-${idx}" onclick="switchWatchServer(${idx})" data-source-idx="${idx}"
                          aria-label="Switch to Server ${idx + 1}: ${srvName}"
                          aria-pressed="${isActive}"
-                         class="w-full text-left cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all ${
+                         class="w-full text-left cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-colors ${
                              isActive
                                  ? 'border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15'
-                                 : 'border border-gray-800 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]'
+                                 : 'border-2 border-gray-800/80 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]'
                          }">
                         <div class="flex items-center gap-3 overflow-hidden">
                             <span id="source-badge-${idx}" class="w-7 h-7 rounded-full flex-shrink-0 flex items-center justify-center font-black text-xs ${
@@ -1336,20 +1281,7 @@
                 `;
             }).join('');
 
-            const showSearching = !item._alphaResolved && item.id && !item.id.startsWith('dlhd-') && !item.id.startsWith('ch-') && !item.id.startsWith('prm-');
-            const searchingHtml = showSearching ? `
-                <div class="flex items-center justify-between px-4 py-2.5 rounded-2xl bg-[#0b1220]/60 border border-dashed border-gray-800/80 text-xs text-gray-400 select-none">
-                    <div class="flex items-center gap-2.5">
-                        <span class="relative flex h-2 w-2">
-                            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-                            <span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
-                        </span>
-                        <span class="text-[11px] font-medium text-gray-400">Searching additional broadcast feeds...</span>
-                    </div>
-                </div>
-            ` : '';
-
-            container.innerHTML = serversHtml + searchingHtml;
+            container.innerHTML = serversHtml;
         }
 
         function highlightWatchSourceUI(activeIdx) {
@@ -1360,9 +1292,9 @@
                 const idx = parseInt(el.getAttribute('data-source-idx'), 10);
                 const isActive = idx === activeIdx;
                 if (isActive) {
-                    el.className = 'cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15';
+                    el.className = 'w-full text-left cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-colors border-2 border-green-500 bg-green-500/10 text-white shadow-lg shadow-green-500/15';
                 } else {
-                    el.className = 'cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-all border border-gray-800 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]';
+                    el.className = 'w-full text-left cursor-pointer rounded-2xl p-3 sm:p-4 flex items-center justify-between gap-3 transition-colors border-2 border-gray-800/80 bg-[#0f1726] text-gray-300 hover:border-gray-700 hover:bg-[#141e30]';
                 }
                 const badge = el.querySelector('#source-badge-' + idx);
                 if (badge) {

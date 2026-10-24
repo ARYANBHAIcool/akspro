@@ -190,8 +190,9 @@ window.AryanPlayerEngine = {
     },
 
     updateQualityUI() {
-        // 1. Update watch view CONTROLS section container
+        // 1. Update watch view CONTROLS section container if present
         const watchQualityContainer = document.getElementById('player-quality-selector-container');
+        if (!watchQualityContainer) return;
         if (watchQualityContainer) {
             const currentServer = (this.getServers() || [])[this.activeServerIdx];
             const srvUrl = currentServer ? (currentServer.url || currentServer.rawUrl || '') : '';

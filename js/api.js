@@ -904,28 +904,23 @@
                 this.emitUpdate();
             }
 
-            // 3. Ultra-fast initial render: Load core match schedule first (under 400ms)
+            // 3. Concurrently load all authoritative feeds in parallel without intermediate drops or second delayed batch
             this._futbolxLoadingPromise = this.loadFutbolXFeeds();
             const ppvPromise = this.loadPPVFeeds();
+            const channelsPromise = this.loadChannelsCatalog();
+            this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
 
             await Promise.allSettled([
                 ppvPromise,
-                this._futbolxLoadingPromise
+                this._futbolxLoadingPromise,
+                this._alphaLoadingPromise,
+                channelsPromise
             ]);
 
             this.updateLiveStatuses();
             this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
-
-            // 4. Background Non-Blocking Enrichment (after UI is already 100% interactive and smooth)
-            setTimeout(async () => {
-                const channelsPromise = this.loadChannelsCatalog();
-                this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
-                await Promise.allSettled([this._alphaLoadingPromise, channelsPromise]);
-                this.updateLiveStatuses();
-                this.emitUpdate();
-            }, 800);
 
             try {
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
@@ -1508,7 +1503,7 @@
 
                 if (addedNew || fxMatches.length > 0) {
                     this.sortMatches();
-                    this.emitUpdate();
+                    if (!this.isLoading) this.emitUpdate();
                     try {
                         const CACHE_KEY = 'aryan_cached_matches_v41';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
