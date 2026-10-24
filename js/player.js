@@ -11,6 +11,8 @@ window.AryanPlayerEngine = {
     activeServerIdx: 0,
     hls: null,
     isTheater: false,
+    qualityLevels: [],
+    currentQuality: -1,
 
     init(containerId, streamItem) {
         const container = document.getElementById(containerId);
@@ -23,6 +25,9 @@ window.AryanPlayerEngine = {
     },
 
     destroy() {
+        this.qualityLevels = [];
+        this.currentQuality = -1;
+        this.updateQualityUI();
         if (this.hls) {
             try {
                 this.hls.destroy();
@@ -38,6 +43,59 @@ window.AryanPlayerEngine = {
         const iframe = document.getElementById('global-iframe-element');
         if (iframe) {
             iframe.src = 'about:blank';
+        }
+    },
+
+    getQualityLevels() {
+        return this.qualityLevels || [];
+    },
+
+    setQuality(idx) {
+        this.currentQuality = idx;
+        if (this.hls) {
+            this.hls.currentLevel = idx;
+        }
+        this.updateQualityUI();
+    },
+
+    updateQualityUI() {
+        // 1. Update watch view CONTROLS section container
+        const watchQualityContainer = document.getElementById('player-quality-selector-container');
+        if (watchQualityContainer) {
+            if (!this.qualityLevels || this.qualityLevels.length <= 1) {
+                watchQualityContainer.innerHTML = `<span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>`;
+            } else {
+                watchQualityContainer.innerHTML = this.qualityLevels.map(q => {
+                    const isSelected = this.currentQuality === q.id;
+                    return `
+                        <button type="button" data-quality="${q.id}" onclick="AryanPlayerEngine.setQuality(${q.id})"
+                                class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
+                                    isSelected
+                                        ? 'bg-green-500 text-black shadow-md shadow-green-500/20 ring-1 ring-green-400 font-extrabold'
+                                        : 'bg-gray-800/80 hover:bg-gray-700 text-gray-300 border border-gray-700/60'
+                                }">
+                            ${q.label}
+                        </button>
+                    `;
+                }).join('');
+            }
+        }
+
+        // 2. Update modal header quality selector if present
+        const modalQualityContainer = document.getElementById('modal-quality-selector');
+        if (modalQualityContainer) {
+            if (!this.qualityLevels || this.qualityLevels.length <= 1) {
+                modalQualityContainer.innerHTML = '';
+            } else {
+                modalQualityContainer.innerHTML = `
+                    <div class="flex items-center gap-1 bg-[#101728] border border-gray-800 px-2 py-0.5 rounded-lg">
+                        <span class="text-[10px] text-gray-400 font-bold uppercase">Quality:</span>
+                        <select onchange="AryanPlayerEngine.setQuality(parseInt(this.value, 10))" class="bg-transparent text-[11px] font-black text-green-400 border-0 focus:ring-0 cursor-pointer p-0">
+                            ${this.qualityLevels.map(q => `<option value="${q.id}" class="bg-[#0e131f] text-white" ${q.id === this.currentQuality ? 'selected' : ''}>${q.label}</option>`).join('')}
+                        </select>
+                    </div>
+                `;
+            }
         }
     },
 
@@ -273,6 +331,7 @@ window.AryanPlayerEngine = {
                         <span class="text-[10px] bg-green-500/10 text-green-400 border border-green-500/20 px-2 py-0.5 rounded font-bold uppercase">
                             ${isHls ? 'Direct HLS' : 'Secure Embed'}
                         </span>
+                        <div id="modal-quality-selector" class="flex items-center"></div>
                     </div>
                     <div class="flex items-center gap-1.5 flex-wrap">
                         <button onclick="AryanPlayerEngine.reloadPlayer()" title="Reload Player" class="px-2.5 py-1 bg-gray-800/90 hover:bg-gray-700 text-gray-200 text-[11px] font-bold uppercase tracking-wider rounded-lg transition-colors flex items-center gap-1">
@@ -385,7 +444,7 @@ window.AryanPlayerEngine = {
                     hls.attachMedia(video);
                     this.hls = hls;
 
-                    hls.on(Hls.Events.MANIFEST_PARSED, () => {
+                    hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
                         const playPromise = video.play();
                         if (playPromise !== undefined) {
                             playPromise.catch(() => {
@@ -396,6 +455,42 @@ window.AryanPlayerEngine = {
                         if (loader) {
                             loader.style.opacity = '0';
                             setTimeout(() => loader.remove(), 300);
+                        }
+
+                        // Quality levels discovery & registration
+                        try {
+                            const rawLevels = hls.levels || (data && data.levels) || [];
+                            if (Array.isArray(rawLevels) && rawLevels.length > 0) {
+                                const qLevels = [{ id: -1, label: 'Auto' }];
+                                rawLevels.forEach((lvl, idx) => {
+                                    const height = lvl.height || (lvl.attrs && lvl.attrs.RESOLUTION && lvl.attrs.RESOLUTION.height);
+                                    const label = height ? `${height}p` : `Level ${idx + 1}`;
+                                    qLevels.push({ id: idx, label: label, height: height || 0, bitrate: lvl.bitrate || 0 });
+                                });
+                                const autoOpt = qLevels[0];
+                                const manualOpts = qLevels.slice(1).sort((a, b) => (b.height || b.bitrate) - (a.height || a.bitrate));
+                                this.qualityLevels = [autoOpt, ...manualOpts];
+                                this.currentQuality = -1;
+                                this.updateQualityUI();
+                            } else {
+                                this.qualityLevels = [{ id: -1, label: 'Auto' }];
+                                this.currentQuality = -1;
+                                this.updateQualityUI();
+                            }
+                        } catch (qe) {
+                            console.warn('Quality parse error:', qe);
+                        }
+                    });
+
+                    hls.on(Hls.Events.LEVEL_SWITCHED, (event, data) => {
+                        if (this.currentQuality === -1 && data && typeof data.level === 'number' && hls.levels) {
+                            const activeLvl = hls.levels[data.level];
+                            if (activeLvl && activeLvl.height) {
+                                const autoBtn = document.querySelector('#player-quality-selector-container button[data-quality="-1"]');
+                                if (autoBtn) {
+                                    autoBtn.textContent = `Auto (${activeLvl.height}p)`;
+                                }
+                            }
                         }
                     });
 

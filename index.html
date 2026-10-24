@@ -377,8 +377,8 @@
     <!-- SCRIPTS -->
     <script src="js/ads.js?v=9.0"></script>
     <script src="js/paramount-core.js?v=10.0"></script>
-    <script src="js/player.js?v=9.0"></script>
-    <script src="js/api.js?v=10.1"></script>
+    <script src="js/player.js?v=10.2"></script>
+    <script src="js/api.js?v=10.2"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -1238,6 +1238,17 @@
                                     <span id="watch-theater-label">Theater Mode</span>
                                 </div>
                                 <span class="text-[10px] text-gray-500 font-bold uppercase group-hover:text-gray-300">Toggle Size</span>
+                            </div>
+
+                            <!-- Control Row 3: Stream Quality -->
+                            <div class="p-3 sm:px-4 sm:py-3.5 flex items-center justify-between gap-3 hover:bg-white/5 transition-colors group">
+                                <div class="flex items-center gap-2.5 text-xs font-bold text-gray-200 uppercase tracking-wider group-hover:text-green-400 transition-colors">
+                                    <svg class="w-4 h-4 text-gray-400 group-hover:text-green-400 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"/></svg>
+                                    <span>Stream Quality</span>
+                                </div>
+                                <div id="player-quality-selector-container" class="flex items-center gap-1.5 flex-wrap">
+                                    <span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>
+                                </div>
                             </div>
 
                         </div>

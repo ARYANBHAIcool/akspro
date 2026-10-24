@@ -318,14 +318,20 @@
     function prioritizeFxServers(servers, isLive) {
         if (!Array.isArray(servers) || servers.length <= 1) return servers || [];
         const isFx = (s) => Boolean(s && (s.isFutbolX || /^FX\s*\d*/i.test(s.name || '') || (s.url && (s.url.includes('futbolx') || s.url.includes('ryzn.pro'))) || (s.rawUrl && (s.rawUrl.includes('futbolx') || s.rawUrl.includes('ryzn.pro')))));
+        const isTaifood = (s) => Boolean(s && ((s.url || '').includes('taifood-blog.asia') || (s.rawUrl || '').includes('taifood-blog.asia')));
+
         const fxList = [];
         const otherList = [];
+        const taifoodList = [];
         for (const s of servers) {
-            if (isFx(s)) fxList.push(s);
+            if (isTaifood(s)) taifoodList.push(s);
+            else if (isFx(s)) fxList.push(s);
             else otherList.push(s);
         }
-        if (otherList.length === 0) return fxList;
-        return [...otherList, ...fxList];
+        if (isLive) {
+            return [...fxList, ...otherList, ...taifoodList];
+        }
+        return [...otherList, ...fxList, ...taifoodList];
     }
 
     function sanitizeMatchServers(match) {
@@ -412,6 +418,87 @@
             'willow', 'red zone', 'redzone'
         ];
         if (linearChannels.some(ch => title === ch || title.startsWith(ch + ' '))) return true;
+        return false;
+    }
+
+    function getEstimatedMatchDuration(m) {
+        if (!m) return 9000000;
+        const sport = normalizeSport(m.sport || m.category || m.rawCategory || m.league || '');
+        switch (sport) {
+            case 'BASKETBALL': return 8100000;   // 2h 15m (NBA, NCAA, EuroLeague)
+            case 'FOOTBALL': return 7800000;     // 2h 10m (Soccer)
+            case 'HOCKEY': return 9000000;       // 2h 30m (NHL, KHL)
+            case 'BASEBALL': return 10800000;    // 3h (MLB, NPB)
+            case 'AMERICAN FOOTBALL': return 12600000; // 3h 30m (NFL, CFB)
+            case 'MOTORSPORTS': return 7200000;  // 2h (F1, MotoGP, NASCAR)
+            case 'TENNIS': return 9000000;       // 2h 30m
+            case 'CRICKET': return 14400000;     // 4h (T20 / IPL / CPL)
+            case 'COMBAT SPORTS': return 14400000; // 4h (UFC, Boxing cards)
+            case 'DARTS': return 7200000;        // 2h
+            case 'RUGBY': return 7200000;        // 2h
+            case 'AUSTRALIAN FOOTBALL': return 10800000; // 3h
+            default: return 9000000;
+        }
+    }
+
+    function isExpiredMatch(m, now = Date.now()) {
+        if (!m) return true;
+        if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams') return false;
+
+        const status = String(m.status || '').toLowerCase().trim();
+        if (status === 'ended' || status === 'finished' || status === 'completed' || status === 'final' || status === 'ft' || status === 'postponed' || status === 'cancelled') {
+            return true;
+        }
+        const timeStr = String(m.time || '').toLowerCase().trim();
+        if (timeStr === 'final' || timeStr === 'ft' || timeStr === 'ended' || timeStr === 'completed') {
+            return true;
+        }
+
+        const start = m.startTime || (typeof m.date === 'number' ? m.date : (new Date(m.date || 0).getTime() || 0));
+        if (!start || start <= 0) return true;
+
+        const duration = getEstimatedMatchDuration(m);
+        const end = m.endTime || (start + duration);
+
+        // Expire if more than 10 minutes past end time
+        if (now > (end + 600000)) return true;
+
+        // Hard cap: If match started more than (duration + 30 min) ago and is not explicitly in_progress
+        if (now > (start + duration + 1800000) && status !== 'live' && status !== 'in_progress') {
+            return true;
+        }
+
+        return false;
+    }
+
+    function isMatchLive(m, now = Date.now()) {
+        if (!m) return false;
+        if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
+        if (isExpiredMatch(m, now)) return false;
+
+        const start = m.startTime || (typeof m.date === 'number' ? m.date : (new Date(m.date || 0).getTime() || 0));
+        if (!start || start <= 0) return false;
+
+        const duration = getEstimatedMatchDuration(m);
+        const end = m.endTime || (start + duration);
+
+        const status = String(m.status || '').toLowerCase().trim();
+        const isExplicitLive = status === 'live' || status === 'in_progress';
+
+        // Once past end time + 3 min buffer, it is no longer live
+        if (now > (end + 180000)) {
+            return false;
+        }
+
+        // Live window: starts 15 mins before scheduled time (warmup/pre-game) through end of match
+        if (now >= (start - 900000) && now <= (end + 180000)) {
+            return true;
+        }
+
+        if (isExplicitLive && now <= (end + 180000)) {
+            return true;
+        }
+
         return false;
     }
 
@@ -790,17 +877,13 @@
                         const now = Date.now();
                         this.matches = parsed.filter(m => {
                             if (!m || !m.title) return false;
-                            if (m.isAlwaysLive || m.always_live === 1 || m.sport === '24/7 STREAMS' || m.rawCategory === '24/7-streams' || m.tag === '24/7 channel' || m.tag === '24/7 streams') return false;
-                            if (m.title.toLowerCase().includes('family guy')) return false;
-                            // Expire games that started > 4 hours ago or ended > 15 minutes ago
-                            if (m.endTime && now > (m.endTime + 900000)) return false;
-                            if (m.startTime && now > (m.startTime + 14400000)) return false;
-                            // Must have valid startTime
-                            if (!m.startTime || m.startTime <= 0) return false;
+                            if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
+                            if (isExpiredMatch(m, now)) return false;
                             return true;
                         }).map(m => {
                             if (m.poster) m.poster = sanitizePosterUrl(m.poster);
-                            m.isLive = Boolean(m.startTime && m.startTime <= now && (!m.endTime || now <= m.endTime) && !this.isExcludedFromLiveNow(m));
+                            m.isLive = isMatchLive(m, now);
+                            m.status = m.isLive ? 'live' : 'upcoming';
                             return sanitizeMatchServers(m);
                         });
                         if (this.matches.length > 0) {
@@ -817,26 +900,27 @@
                 this.emitUpdate();
             }
 
-            // 0. Concurrently load channels catalog immediately for instant availability
+            // 3. Concurrently load all authoritative feeds in parallel without intermediate drops
             const channelsPromise = this.loadChannelsCatalog();
-
-            // 1. Load authoritative PPV fixtures first via Cloudflare edge proxy
-            await this.loadPPVFeeds();
-            this.isLoading = false;
-            this.sortMatches();
-            this.emitUpdate();
-
-            // 2. Concurrently enrich with StreamCorner feeds, FutbolX feeds, and channels
             this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
             this._futbolxLoadingPromise = this.loadFutbolXFeeds();
+            const ppvPromise = this.loadPPVFeeds();
+
             await Promise.allSettled([
+                ppvPromise,
                 this._alphaLoadingPromise,
                 this._futbolxLoadingPromise,
                 channelsPromise
             ]);
 
+            this.updateLiveStatuses();
+            this.isLoading = false;
             this.sortMatches();
             this.emitUpdate();
+
+            try {
+                localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
+            } catch (e) {}
 
             // Auto-refresh match feeds, Alpha channels & statuses every 90 seconds
             if (!this.refreshInterval) {
@@ -1180,11 +1264,21 @@
                             }
                         }
 
-                        this.matches = newMatches;
+                        const now = Date.now();
+                        const cleanNewMatches = newMatches.filter(m => !isExpiredMatch(m, now) && !isUnwantedMatch(m) && !isLinearChannel(m));
+                        if (Array.isArray(this.matches)) {
+                            const existingFx = this.matches.filter(m => m && m.isFutbolX && !isExpiredMatch(m, now));
+                            for (const fx of existingFx) {
+                                if (!cleanNewMatches.some(m => m.id === fx.id || (m.uriName && m.uriName === fx.uriName))) {
+                                    cleanNewMatches.push(fx);
+                                }
+                            }
+                        }
+
+                        this.matches = cleanNewMatches;
                         this.isLoading = false;
                         this.sortMatches();
                         this.emitUpdate();
-                        // Alpha sources resolved on-demand per match without freezing UI
                         try {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(this.matches.slice(0, MATCH_CACHE_LIMIT)));
                         } catch (e) {}
@@ -1437,15 +1531,15 @@
                 return new Date(iso).getTime() || 0;
             };
             const startTs = parseFxDate(fx.starts_at) || Date.now();
-            const endTs = parseFxDate(fx.ends_at) || (startTs ? startTs + 10800000 : 0);
-            const now = Date.now();
-
-            if (endTs > 0 && now > (endTs + 1800000)) return null;
-
-            const isExplicitLive = Boolean(fx.status === 'live' || fx.status === 'in_progress' || fx.isLive);
-            const isLive = Boolean(isExplicitLive || (startTs > 0 && (startTs - 900000) <= now && (!endTs || now <= (endTs + 1800000))));
             const rawCat = (fx.category || 'football').toLowerCase();
             const sport = normalizeSport(rawCat || fx.category || 'FOOTBALL');
+            const defaultDuration = getEstimatedMatchDuration({ sport });
+            const endTs = parseFxDate(fx.ends_at) || (startTs ? startTs + defaultDuration : 0);
+            const now = Date.now();
+
+            if (endTs > 0 && now > (endTs + 600000)) return null;
+
+            const isLive = isMatchLive({ status: fx.status, startTime: startTs, endTime: endTs, sport }, now);
 
             const parts = fx.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
             const team1Name = parts[0] ? parts[0].trim() : fx.title;
@@ -2898,21 +2992,13 @@
 
         updateLiveStatuses() {
             const now = Date.now();
-            // Strictly remove matches that ended more than 15 minutes ago, started > 4h ago, or are unwanted/linear channels
-            this.matches = this.matches.filter(m => {
-                if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
-                if (!m.endTime) return true;
-                if (m.startTime && now > (m.startTime + 14400000)) return false;
-                return now <= (m.endTime + 900000);
-            });
+            this.matches = this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !isExpiredMatch(m, now));
             this.matches.forEach(m => {
                 if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams' || !m.startTime || this.isExcludedFromLiveNow(m)) {
                     m.isLive = false;
                     m.status = 'live_tv';
                 } else {
-                    const isExplicitLive = m.status === 'live' || m.status === 'in_progress';
-                    const isInTimeWindow = (m.startTime - 900000) <= now && (!m.endTime || now <= (m.endTime + 1800000));
-                    m.isLive = Boolean(isExplicitLive || isInTimeWindow);
+                    m.isLive = isMatchLive(m, now);
                     m.status = m.isLive ? 'live' : 'upcoming';
                 }
             });
@@ -3108,7 +3194,7 @@
 
         getAllMatches() {
             const now = Date.now();
-            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !isExpiredMatch(m, now));
         },
 
         isExcludedFromLiveNow(m) {
@@ -3117,13 +3203,9 @@
             if (m.tag === '24/7 channel' || m.tag === '24/7 streams') return true;
             if (!m.startTime || m.startTime <= 0) return true;
             const now = Date.now();
-            const isExplicitLive = m.status === 'live' || m.status === 'in_progress' || Boolean(m.isLive);
-            // Never include future fixtures in Live Now unless explicitly live or within 15 min warmup
-            if (!isExplicitLive && m.startTime && m.startTime > (now + 900000)) return true;
 
-            // Never include fixtures that ended more than 30 minutes ago or started > 4 hours ago
-            if (m.endTime && now > (m.endTime + 1800000)) return true;
-            if (m.startTime && (now > m.startTime + 14400000)) return true;
+            if (isExpiredMatch(m, now)) return true;
+            if (!isMatchLive(m, now)) return true;
 
             const t = (m.title || '').toLowerCase();
             const l = (m.league || '').toLowerCase();
@@ -3158,15 +3240,13 @@
             const now = Date.now();
             return this.matches.filter(m => {
                 if (isUnwantedMatch(m) || isLinearChannel(m) || this.isExcludedFromLiveNow(m)) return false;
-                const isExplicitLive = m.status === 'live' || m.status === 'in_progress';
-                const isInTimeWindow = (m.startTime && (m.startTime - 900000) <= now && (!m.endTime || now <= (m.endTime + 1800000)));
-                return Boolean(m.isLive || isExplicitLive || isInTimeWindow);
+                return isMatchLive(m, now);
             });
         },
 
         getUpcomingMatches() {
             const now = Date.now();
-            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !m.isLive && (!m.endTime || now <= (m.endTime + 900000)));
+            return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !isExpiredMatch(m, now) && !isMatchLive(m, now) && (!m.startTime || m.startTime > (now - 900000)));
         },
 
         getMatchesByCategory(cat) {
@@ -3176,13 +3256,12 @@
                 const todayMidnight = new Date().setHours(0, 0, 0, 0);
                 const tonightMidnight = todayMidnight + 86400000;
                 const now = Date.now();
-                return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && m.startTime >= todayMidnight && m.startTime < tonightMidnight && (!m.endTime || now <= (m.endTime + 900000)));
+                return this.matches.filter(m => !isUnwantedMatch(m) && !isLinearChannel(m) && !isExpiredMatch(m, now) && m.startTime >= todayMidnight && m.startTime < tonightMidnight);
             }
             const cleanCat = cat.toUpperCase().trim();
             const now = Date.now();
             return this.matches.filter(m => {
-                if (isUnwantedMatch(m) || isLinearChannel(m)) return false;
-                if (m.endTime && now > (m.endTime + 900000)) return false;
+                if (isUnwantedMatch(m) || isLinearChannel(m) || isExpiredMatch(m, now)) return false;
                 const sport = (m.sport || '').toUpperCase();
                 const league = (m.league || '').toUpperCase();
                 const rawCat = (m.rawCategory || '').toUpperCase();
@@ -3275,9 +3354,7 @@
             const now = Date.now();
             this.matches.forEach(m => {
                 // Strictly exclude 24/7 linear channels from scheduled sport match categories
-                if (m.isAlwaysLive || m.tag === '24/7 channel' || m.tag === '24/7 streams') return;
-                // Strictly exclude matches that have already ended
-                if (m.endTime && now > (m.endTime + 900000)) return;
+                if (isUnwantedMatch(m) || isLinearChannel(m) || isExpiredMatch(m, now)) return;
 
                 const sport = m.sport || 'OTHERS';
                 if (!grouped[sport]) grouped[sport] = [];
