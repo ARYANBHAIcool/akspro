@@ -195,7 +195,7 @@ window.AryanPlayerEngine = {
             const currentServer = (this.getServers() || [])[this.activeServerIdx];
             const srvUrl = currentServer ? (currentServer.url || currentServer.rawUrl || '') : '';
             const isFx = (typeof currentServer === 'object' && currentServer !== null && (currentServer.isFutbolX || (currentServer.name && /^FX\s*\d*/i.test(currentServer.name)))) || srvUrl.includes('ryzn.pro') || srvUrl.includes('futbolx');
-            const isHls = !isFx && ((currentServer && currentServer.type === 'video') || (srvUrl && srvUrl.includes('.m3u8')));
+            const isHls = (currentServer && currentServer.type === 'video') || (srvUrl && srvUrl.includes('.m3u8')) || isFx;
 
             if (!isHls) {
                 // Iframe stream: Quality is controlled natively inside the stream player
@@ -275,13 +275,9 @@ window.AryanPlayerEngine = {
         }
         if (rawUrl.includes('shaka_player.html')) return rawUrl;
 
-        // Route FutbolX match sources to Shaka Player engine
+        // Direct HLS / FutbolX match sources play natively via AryanPlayerEngine Hls.js
         const isFx = (typeof serverOrUrl === 'object' && serverOrUrl !== null && (serverOrUrl.isFutbolX || (serverOrUrl.name && /^FX\s*\d*/i.test(serverOrUrl.name)))) || rawUrl.includes('ryzn.pro') || rawUrl.includes('futbolx');
-        if (isFx) {
-            return `/shaka_player.html?hls=${encodeURIComponent(rawUrl)}`;
-        }
-
-        if (rawUrl.includes('.m3u8')) return rawUrl;
+        if (rawUrl.includes('.m3u8') || isFx) return rawUrl;
 
         // Direct DASH stream with keys should use local static shaka_player with 0 Cloudflare requests
         if (rawUrl.includes('.mpd')) {
@@ -370,7 +366,7 @@ window.AryanPlayerEngine = {
 
         const serverUrl = targetServer.url || targetServer.rawUrl || targetServer.embedUrl || '';
         const isFx = (typeof targetServer === 'object' && targetServer !== null && (targetServer.isFutbolX || (targetServer.name && /^FX\s*\d*/i.test(targetServer.name)))) || serverUrl.includes('ryzn.pro') || serverUrl.includes('futbolx');
-        const isHls = !isFx && (targetServer.type === 'video' || serverUrl.includes('.m3u8')) &&
+        const isHls = (targetServer.type === 'video' || serverUrl.includes('.m3u8') || isFx) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
                       !serverUrl.includes('shaka_player.html');
@@ -569,7 +565,7 @@ window.AryanPlayerEngine = {
 
         const serverUrl = currentServer.url || currentServer.rawUrl || currentServer.embedUrl || '';
         const isFx = (typeof currentServer === 'object' && currentServer !== null && (currentServer.isFutbolX || (currentServer.name && /^FX\s*\d*/i.test(currentServer.name)))) || serverUrl.includes('ryzn.pro') || serverUrl.includes('futbolx');
-        const isHls = !isFx && (currentServer.type === 'video' || serverUrl.includes('.m3u8')) &&
+        const isHls = (currentServer.type === 'video' || serverUrl.includes('.m3u8') || isFx) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
                       !serverUrl.includes('shaka_player.html');

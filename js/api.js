@@ -84,15 +84,29 @@
             return name.trim();
         }
         let label = '';
+        let langSuffix = '';
         if (name) {
             const bracketMatch = name.match(/\[(.*?)\]/);
             if (bracketMatch && bracketMatch[1]) {
-                label = bracketMatch[1].trim();
-            } else {
-                label = name.replace(/^server\s*\d*\s*[-:]*\s*/i, '')
-                            .replace(/^stream\s*\d*\s*[-:]*\s*/i, '')
-                            .replace(/^feed\s*\d*\s*[-:]*\s*/i, '')
-                            .trim();
+                const bLower = bracketMatch[1].trim().toLowerCase();
+                if (bLower === 'en' || bLower === 'eng' || bLower === 'english' || bLower === 'en-gb' || bLower === 'en-us') langSuffix = ' (English)';
+                else if (bLower === 'es' || bLower === 'esp' || bLower === 'español' || bLower === 'spanish') langSuffix = ' (Español)';
+                else if (bLower === 'pt' || bLower === 'por' || bLower === 'português' || bLower === 'portuguese') langSuffix = ' (Português)';
+                else if (bLower === 'fr' || bLower === 'fra' || bLower === 'french') langSuffix = ' (Français)';
+                else if (bLower === 'de' || bLower === 'ger' || bLower === 'german') langSuffix = ' (Deutsch)';
+                else if (bLower === 'it' || bLower === 'ita' || bLower === 'italian') langSuffix = ' (Italiano)';
+                else if (bLower === 'hi' || bLower === 'hin' || bLower === 'hindi') langSuffix = ' (Hindi)';
+                else if (bLower === 'sv' || bLower === 'swe') langSuffix = ' (Svenska)';
+                else langSuffix = ` (${bracketMatch[1].trim().toUpperCase()})`;
+            }
+            label = name.replace(/\[.*?\]/g, '')
+                        .replace(/^server\s*\d*\s*[-:]*\s*/i, '')
+                        .replace(/^stream\s*\d*\s*[-:]*\s*/i, '')
+                        .replace(/^feed\s*\d*\s*[-:]*\s*/i, '')
+                        .trim();
+            if (!label && langSuffix) {
+                label = langSuffix.replace(/^[ \(\[]+|[ \)\/\]]+$/g, '');
+                langSuffix = '';
             }
         }
 
@@ -230,6 +244,10 @@
             else label = `Server ${idx + 1}`;
         }
 
+        if (langSuffix && !label.includes(langSuffix) && !label.toLowerCase().includes(langSuffix.toLowerCase().replace(/[()]/g, '').trim())) {
+            label = `${label} ${langSuffix}`.trim();
+        }
+
         return label;
     }
 
@@ -256,7 +274,7 @@
             }
             return `shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
         }
-        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.')) {
+        if (rawUrl.includes('pandecocogaming.sbs') || rawUrl.includes('getsugatensho.sbs') || rawUrl.includes('sportsembed.') || rawUrl.includes('embed.st')) {
             try {
                 const u = new URL(rawUrl);
                 const p = u.searchParams.get('p');
@@ -442,7 +460,7 @@
             case 'MOTORSPORTS': return 7200000;  // 2h (F1, MotoGP, NASCAR)
             case 'TENNIS': return 9000000;       // 2h 30m
             case 'CRICKET': return 14400000;     // 4h (T20 / IPL / CPL)
-            case 'COMBAT SPORTS': return 14400000; // 4h (UFC, Boxing cards)
+            case 'COMBAT SPORTS': return 12600000; // 3.5h (UFC, Boxing cards)
             case 'DARTS': return 7200000;        // 2h
             case 'RUGBY': return 7200000;        // 2h
             case 'AUSTRALIAN FOOTBALL': return 10800000; // 3h
@@ -467,13 +485,13 @@
         if (!start || start <= 0) return true;
 
         const duration = getEstimatedMatchDuration(m);
-        const end = m.endTime || (start + duration);
+        const end = (m.endTime && m.endTime <= start + duration + 3600000) ? m.endTime : (start + duration);
 
         // Expire if more than 10 minutes past end time
         if (now > (end + 600000)) return true;
 
-        // Hard cap: If match started more than (duration + 30 min) ago and is not explicitly in_progress
-        if (now > (start + duration + 1800000) && status !== 'live' && status !== 'in_progress') {
+        // Hard cap: If match started more than (duration + 20 min) ago and is not explicitly in_progress
+        if (now > (start + duration + 1200000) && status !== 'live' && status !== 'in_progress') {
             return true;
         }
 
@@ -489,7 +507,7 @@
         if (!start || start <= 0) return false;
 
         const duration = getEstimatedMatchDuration(m);
-        const end = m.endTime || (start + duration);
+        const end = (m.endTime && m.endTime <= start + duration + 3600000) ? m.endTime : (start + duration);
 
         const status = String(m.status || '').toLowerCase().trim();
         const isExplicitLive = status === 'live' || status === 'in_progress';

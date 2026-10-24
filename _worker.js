@@ -81,7 +81,8 @@ async function onRequest2(context) {
     }
     const isStreamCorner = parsedTarget.origin.includes("pandecocogaming") ||
                            parsedTarget.origin.includes("getsugatensho") ||
-                           parsedTarget.origin.includes("streamcorner");
+                           parsedTarget.origin.includes("streamcorner") ||
+                           parsedTarget.origin.includes("embed.st");
     const upstreamHeaders = {
       "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36",
       "Referer": isStreamCorner ? "https://streamcorner.cloud/" : `${parsedTarget.origin}/`,
