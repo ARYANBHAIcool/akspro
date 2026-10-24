@@ -434,7 +434,7 @@
         // 1. Phantom / Fake / Test fixtures (Diriyah, Pompey, Placeholder, Test)
         if (title.includes('diriyah') || home.includes('diriyah') || away.includes('diriyah') || id.includes('diriyah')) return true;
         if (title.includes('pompey') || home.includes('pompey') || away.includes('pompey')) return true;
-        if (title.includes('placeholder') || title.includes('test match') || title.includes('sample match') || title.includes('demo match')) return true;
+        if (title.includes('placeholder') || (title.includes('test match') && !title.includes('cricket') && !(item.sport && item.sport.includes('CRICKET'))) || title.includes('sample match') || title.includes('demo match')) return true;
         if (id.startsWith('mm-own') || id.startsWith('mm-yl') || id.startsWith('mm-cric') || item.isManual || item.auto === 'own') return true;
 
         // 2. Non-match studio broadcast talk shows (Morning Footy, Just Football, Box to Box, Attacking Third)
@@ -463,22 +463,44 @@
     }
 
     function getEstimatedMatchDuration(m) {
-        if (!m) return 9000000;
+        if (!m) return 14400000;
+        const titleLower = String(m.title || m.name || '').toLowerCase();
         const sport = normalizeSport(m.sport || m.category || m.rawCategory || m.league || '');
+
+        // Title-based keyword detection (detects major event types regardless of generic provider category)
+        if (titleLower.includes('ufc') || titleLower.includes('mma') || titleLower.includes('boxing') ||
+            titleLower.includes('wrestlemania') || titleLower.includes('wwe') || titleLower.includes('aew') ||
+            titleLower.includes('bellator') || titleLower.includes('pfl') || titleLower.includes('bkfc') ||
+            titleLower.includes('fight night') || titleLower.includes('main card') || titleLower.includes('prelims') ||
+            titleLower.includes('volkanovski') || titleLower.includes('evloev')) {
+            return 28800000; // 8 hours for combat sports & wrestling PPV cards (Early Prelims + Prelims + Main Card)
+        }
+        if (titleLower.includes('test match') || titleLower.includes('odi') || titleLower.includes('ipl') || titleLower.includes('cricket')) {
+            return 28800000; // 8 hours for full cricket matches / test sessions
+        }
+        if (titleLower.includes('24h') || titleLower.includes('24 hours') || titleLower.includes('lemans') || titleLower.includes('daytona')) {
+            return 90000000; // 25 hours for endurance racing
+        }
+        if (titleLower.includes('grand prix') || titleLower.includes('f1') || titleLower.includes('formula 1') || titleLower.includes('motogp')) {
+            return 14400000; // 4 hours for race + pre-race + post-race podium
+        }
+
         switch (sport) {
-            case 'BASKETBALL': return 8100000;   // 2h 15m (NBA, NCAA, EuroLeague)
-            case 'FOOTBALL': return 7800000;     // 2h 10m (Soccer)
-            case 'HOCKEY': return 9000000;       // 2h 30m (NHL, KHL)
-            case 'BASEBALL': return 10800000;    // 3h (MLB, NPB)
-            case 'AMERICAN FOOTBALL': return 12600000; // 3h 30m (NFL, CFB)
-            case 'MOTORSPORTS': return 7200000;  // 2h (F1, MotoGP, NASCAR)
-            case 'TENNIS': return 9000000;       // 2h 30m
-            case 'CRICKET': return 14400000;     // 4h (T20 / IPL / CPL)
-            case 'COMBAT SPORTS': return 12600000; // 3.5h (UFC, Boxing cards)
-            case 'DARTS': return 7200000;        // 2h
-            case 'RUGBY': return 7200000;        // 2h
-            case 'AUSTRALIAN FOOTBALL': return 10800000; // 3h
-            default: return 9000000;
+            case 'COMBAT SPORTS':
+            case 'WRESTLING': return 28800000;          // 8h (UFC, Boxing, WWE/AEW PPVs)
+            case 'CRICKET': return 28800000;            // 8h (T20/ODI/Test matches)
+            case 'GOLF': return 32400000;               // 9h (Full tournament rounds)
+            case 'MOTORSPORTS': return 14400000;        // 4h (Races)
+            case 'BASEBALL': return 14400000;           // 4h (MLB + extra innings)
+            case 'AMERICAN FOOTBALL': return 14400000;  // 4h (NFL, CFB + overtime)
+            case 'TENNIS': return 18000000;             // 5h (Grand Slam 5-setters)
+            case 'BASKETBALL': return 12600000;         // 3.5h (NBA, NCAA + overtime)
+            case 'HOCKEY': return 10800000;             // 3h (NHL, KHL + OT/shootout)
+            case 'FOOTBALL': return 10800000;           // 3h (Soccer + extra time + penalties)
+            case 'RUGBY': return 9000000;               // 2.5h
+            case 'AUSTRALIAN FOOTBALL': return 12600000;// 3.5h
+            case 'DARTS': return 10800000;              // 3h
+            default: return 14400000;                   // 4h default safe buffer
         }
     }
 
@@ -486,27 +508,38 @@
         if (!m) return true;
         if (m.isAlwaysLive || m.always_live === 1 || m.tag === '24/7 channel' || m.tag === '24/7 streams') return false;
 
-        const status = String(m.status || '').toLowerCase().trim();
-        if (status === 'ended' || status === 'finished' || status === 'completed' || status === 'final' || status === 'ft' || status === 'postponed' || status === 'cancelled') {
-            return true;
-        }
-        const timeStr = String(m.time || '').toLowerCase().trim();
-        if (timeStr === 'final' || timeStr === 'ft' || timeStr === 'ended' || timeStr === 'completed') {
-            return true;
-        }
-
         const start = m.startTime || (typeof m.date === 'number' ? m.date : (new Date(m.date || 0).getTime() || 0));
-        if (!start || start <= 0) return true;
+        if (!start || start <= 0) {
+            return !(Array.isArray(m.servers) && m.servers.length > 0);
+        }
 
         const duration = getEstimatedMatchDuration(m);
-        const end = (m.endTime && m.endTime <= start + duration + 3600000) ? m.endTime : (start + duration);
+        const titleLower = String(m.title || m.name || '').toLowerCase();
+        const sport = normalizeSport(m.sport || m.category || m.rawCategory || m.league || '');
+        const isCombat = sport === 'COMBAT SPORTS' || titleLower.includes('ufc') || titleLower.includes('boxing') || titleLower.includes('mma') || titleLower.includes('fight');
 
-        // Expire if more than 10 minutes past end time
-        if (now > (end + 600000)) return true;
+        // Generous post-event retention buffer:
+        // Combat sports / UFC / Boxing / PPVs stay accessible for at least 16 hours total
+        // Other sports stay accessible for at least 6 hours past estimated duration
+        const retentionBuffer = isCombat ? 28800000 : 21600000; // 8h combat buffer, 6h other
+        const totalLifecycle = duration + retentionBuffer;
 
-        // Hard cap: If match started more than (duration + 20 min) ago and is not explicitly in_progress
-        if (now > (start + duration + 1200000) && status !== 'live' && status !== 'in_progress') {
+        // Hard upper boundary: event started more than totalLifecycle ago
+        if (now > (start + totalLifecycle)) {
             return true;
+        }
+
+        const status = String(m.status || '').toLowerCase().trim();
+        const timeStr = String(m.time || '').toLowerCase().trim();
+        const isExplicitFinished = ['ended', 'finished', 'completed', 'final', 'ft', 'postponed', 'cancelled'].includes(status) ||
+                                   ['final', 'ft', 'ended', 'completed'].includes(timeStr);
+
+        // Retain finished events for 6h (combat) or 3h (others) so users can watch post-fight / replay / see results
+        if (isExplicitFinished) {
+            const finishedRetention = isCombat ? 21600000 : 10800000;
+            if (now > (start + duration) && (now - (start + duration) > finishedRetention)) {
+                return true;
+            }
         }
 
         return false;
@@ -521,22 +554,23 @@
         if (!start || start <= 0) return false;
 
         const duration = getEstimatedMatchDuration(m);
-        const end = (m.endTime && m.endTime <= start + duration + 3600000) ? m.endTime : (start + duration);
+        const end = (m.endTime && m.endTime > start && m.endTime <= start + duration + 7200000) ? m.endTime : (start + duration);
 
         const status = String(m.status || '').toLowerCase().trim();
+        const timeStr = String(m.time || '').toLowerCase().trim();
+        const isExplicitFinished = ['ended', 'finished', 'completed', 'final', 'ft', 'postponed', 'cancelled'].includes(status) ||
+                                   ['final', 'ft', 'ended', 'completed'].includes(timeStr);
+
+        if (isExplicitFinished) return false;
+
         const isExplicitLive = status === 'live' || status === 'in_progress';
 
-        // Once past end time + 3 min buffer, it is no longer live
-        if (now > (end + 180000)) {
-            return false;
-        }
-
-        // Live window: starts 15 mins before scheduled time (warmup/pre-game) through end of match
-        if (now >= (start - 900000) && now <= (end + 180000)) {
+        // Live window: starts 30 mins before scheduled start through end of match + 15 min buffer
+        if (now >= (start - 1800000) && now <= (end + 900000)) {
             return true;
         }
 
-        if (isExplicitLive && now <= (end + 180000)) {
+        if (isExplicitLive && now <= (end + 1800000)) {
             return true;
         }
 
@@ -1573,11 +1607,11 @@
             const startTs = parseFxDate(fx.starts_at) || Date.now();
             const rawCat = (fx.category || 'football').toLowerCase();
             const sport = normalizeSport(rawCat || fx.category || 'FOOTBALL');
-            const defaultDuration = getEstimatedMatchDuration({ sport });
+            const defaultDuration = getEstimatedMatchDuration({ title: fx.title, name: fx.title, sport, category: fx.category, tag: fx.tag });
             const endTs = parseFxDate(fx.ends_at) || (startTs ? startTs + defaultDuration : 0);
             const now = Date.now();
 
-            if (endTs > 0 && now > (endTs + 600000)) return null;
+            if (isExpiredMatch({ startTime: startTs, endTime: endTs, status: fx.status, sport }, now)) return null;
 
             const isLive = isMatchLive({ status: fx.status, startTime: startTs, endTime: endTs, sport }, now);
 
@@ -2580,7 +2614,7 @@
             const rawCat = (alpha.category || '').toLowerCase().replace(/[\s_]+/g, '-');
             const league = (alpha.league || alpha.category || 'Sports').trim();
             const sport = normalizeSport(rawCat || league || alpha.category || 'OTHERS');
-            const duration = getEstimatedMatchDuration({ sport });
+            const duration = getEstimatedMatchDuration({ title: rawTitle, name: rawTitle, sport, category: alpha.category, league });
             const now = Date.now();
             const endTs = (alpha.end_time ? new Date(alpha.end_time).getTime() : 0) || (startTs ? startTs + duration : 0);
 
@@ -2667,7 +2701,7 @@
             const sport = SPORT_MAPPINGS[rawCat] || SPORT_MAPPINGS[catKey] || SPORT_MAPPINGS[tag.toLowerCase()] || (catName ? catName.toUpperCase() : 'OTHERS');
 
             const startTs = (s.starts_at ? s.starts_at * 1000 : (s.date ? (typeof s.date === 'number' ? s.date : (new Date(s.date).getTime() || 0)) : 0));
-            const duration = getEstimatedMatchDuration({ sport, category: catName, tag });
+            const duration = getEstimatedMatchDuration({ title, name: title, sport, category: catName, tag });
             const endTs = (s.ends_at ? s.ends_at * 1000 : 0) || (startTs ? startTs + duration : 0);
             const now = Date.now();
             const isAlwaysLive = Boolean(s.always_live || is247Cat || tag.toLowerCase().includes('24/7') || !startTs);
