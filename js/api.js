@@ -3065,6 +3065,11 @@
                 }
             }
 
+            // 3.8. Search 24/7 channels catalog
+            if (!found && Array.isArray(this.channels)) {
+                found = this.channels.find(c => c && (c.id === decoded || c.id === stripped || c.channelId === decoded || c.channelId === stripped || (c.name && c.name.toLowerCase() === decoded.toLowerCase())));
+            }
+
             // 4. Search alphaCatalog directly for independent stream links
             if (!found && Array.isArray(this.alphaCatalog) && this.alphaCatalog.length > 0) {
                 const targetId = streamId || stripped || decoded;
@@ -3272,7 +3277,7 @@
                     return sport === 'FOOTBALL';
                 }
                 if (cleanCat === 'CRICKET') {
-                    return sport === 'CRICKET';
+                    return sport === 'CRICKET' || league.includes('CRICKET') || rawCat.includes('CRICKET') || title.includes('CRICKET') || league.includes('IPL') || league.includes('T20') || league.includes('ODI') || league.includes('TEST');
                 }
                 if (cleanCat === 'HOCKEY') {
                     return sport === 'HOCKEY';

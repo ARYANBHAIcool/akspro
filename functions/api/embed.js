@@ -86,6 +86,58 @@ export async function onRequest(context) {
         const injectScript = `<script>
 (function() {
 
+    // 1. Bitmovin & DOM removeChild / insertBefore protective wrapper
+    try {
+        var origRemoveChild = Node.prototype.removeChild;
+        Node.prototype.removeChild = function(child) {
+            if (!child) return child;
+            if (child.parentNode !== this) {
+                return child;
+            }
+            try {
+                return origRemoveChild.call(this, child);
+            } catch(e) {
+                return child;
+            }
+        };
+
+        var origInsertBefore = Node.prototype.insertBefore;
+        Node.prototype.insertBefore = function(newNode, referenceNode) {
+            if (!newNode) return newNode;
+            try {
+                return origInsertBefore.call(this, newNode, referenceNode);
+            } catch(e) {
+                return newNode;
+            }
+        };
+    } catch (e) {}
+
+    // 2. Third-party script error silencer for null.appendChild / removeChild
+    window.addEventListener('error', function(e) {
+        if (e.message && (e.message.indexOf('appendChild') !== -1 || e.message.indexOf('removeChild') !== -1 || e.message.indexOf('insertBefore') !== -1)) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            return true;
+        }
+    }, true);
+
+    // 3. Purge third-party VPN promotional popups and ad overlays
+    function purgePromoOverlays() {
+        var elements = document.querySelectorAll('div, section, aside, a, p, span');
+        for (var i = 0; i < elements.length; i++) {
+            var el = elements[i];
+            if (el.id === 'loading-overlay' || el.id === 'loading-message' || el.closest('#loading-overlay') || el.closest('.bmpui-ui-container')) continue;
+            var text = (el.innerText || el.textContent || '').trim().toLowerCase();
+            if (text.includes('vpn') && (text.includes('learn more') || text.includes('hide') || text.includes('protect your privacy') || text.includes('recommended'))) {
+                el.style.setProperty('display', 'none', 'important');
+                el.style.setProperty('visibility', 'hidden', 'important');
+                el.style.setProperty('pointer-events', 'none', 'important');
+                try { el.remove(); } catch(err) {}
+            }
+        }
+    }
+    setInterval(purgePromoOverlays, 300);
+
     // Only polyfill storage if running in a restricted sandbox where access throws SecurityError
     try {
         window.localStorage.getItem('_test');
@@ -205,6 +257,18 @@ export async function onRequest(context) {
 })();
 </script>
 <style>
+/* Block third-party VPN promotional popups, ad overlays, and intrusive modals */
+[class*="vpn"], [id*="vpn"],
+[class*="popup"], [id*="popup"]:not(#player-modal),
+[class*="promo"], [id*="promo"],
+[class*="banner-ad"], [id*="banner-ad"],
+.ad-overlay, .advertisement {
+    display: none !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
 #loading-overlay.hidden,
 #loading-overlay.force-hide,
 #loading-overlay[style*="display: none"] {

@@ -24,6 +24,32 @@
         };
     }
 
+    // Global protection against Bitmovin and third-party player NotFoundError on removeChild
+    if (typeof window !== 'undefined' && typeof Node !== 'undefined' && Node.prototype) {
+        const _origRemoveChild = Node.prototype.removeChild;
+        Node.prototype.removeChild = function (child) {
+            if (!child) return child;
+            if (child.parentNode !== this) {
+                return child;
+            }
+            try {
+                return _origRemoveChild.call(this, child);
+            } catch (e) {
+                return child;
+            }
+        };
+
+        const _origInsertBefore = Node.prototype.insertBefore;
+        Node.prototype.insertBefore = function (newNode, refNode) {
+            if (!newNode) return newNode;
+            try {
+                return _origInsertBefore.call(this, newNode, refNode);
+            } catch (e) {
+                return newNode;
+            }
+        };
+    }
+
     const AryanAds = {
         // ==========================================
         // ⚙️ AD CONFIGURATION

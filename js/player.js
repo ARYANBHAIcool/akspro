@@ -193,13 +193,32 @@ window.AryanPlayerEngine = {
         // 1. Update watch view CONTROLS section container
         const watchQualityContainer = document.getElementById('player-quality-selector-container');
         if (watchQualityContainer) {
-            if (!this.qualityLevels || this.qualityLevels.length <= 1) {
-                watchQualityContainer.innerHTML = `<span class="text-[10px] text-gray-500 font-bold uppercase">Auto (Adaptive)</span>`;
+            const currentServer = (this.getServers() || [])[this.activeServerIdx];
+            const srvUrl = currentServer ? (currentServer.url || currentServer.rawUrl || '') : '';
+            const isHls = (currentServer && currentServer.type === 'video') || (srvUrl && srvUrl.includes('.m3u8'));
+
+            if (!isHls) {
+                // Iframe stream: Quality is controlled natively inside the stream player
+                watchQualityContainer.innerHTML = `
+                    <div class="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-[#111a2e] border border-gray-800 text-[10px] text-gray-400 font-bold" title="Resolution is managed natively inside the stream player">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        <span>Auto HD (In-Player)</span>
+                    </div>
+                `;
+            } else if (!this.qualityLevels || this.qualityLevels.length <= 1) {
+                watchQualityContainer.innerHTML = `
+                    <button type="button" aria-label="Stream Quality Auto Adaptive" class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/30 flex items-center gap-1.5 cursor-default">
+                        <span class="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse"></span>
+                        <span>Auto (Adaptive HD)</span>
+                    </button>
+                `;
             } else {
                 watchQualityContainer.innerHTML = this.qualityLevels.map(q => {
                     const isSelected = this.currentQuality === q.id;
                     return `
                         <button type="button" data-quality="${q.id}" onclick="AryanPlayerEngine.setQuality(${q.id})"
+                                aria-label="Set stream quality to ${q.label}"
+                                aria-pressed="${isSelected}"
                                 class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider transition-all ${
                                     isSelected
                                         ? 'bg-green-500 text-black shadow-md shadow-green-500/20 ring-1 ring-green-400 font-extrabold'
@@ -421,18 +440,19 @@ window.AryanPlayerEngine = {
                 oldVideo.remove();
             }
 
-            let iframe = document.getElementById('global-iframe-element');
-            if (!iframe) {
-                iframe = document.createElement('iframe');
-                iframe.id = 'global-iframe-element';
-                iframe.className = 'w-full h-full border-0';
-                iframe.allowFullscreen = true;
-                iframe.setAttribute('allow', 'autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *');
-                canvas.appendChild(iframe);
-            } else {
-                // Immediately mute and blank old stream to eliminate sound overlap
-                iframe.src = 'about:blank';
+            // Cleanly replace iframe to guarantee zero Bitmovin unmount / removeChild race conditions
+            const oldIframe = document.getElementById('global-iframe-element');
+            if (oldIframe) {
+                try { oldIframe.src = 'about:blank'; } catch(e) {}
+                try { oldIframe.remove(); } catch(e) {}
             }
+
+            const iframe = document.createElement('iframe');
+            iframe.id = 'global-iframe-element';
+            iframe.className = 'w-full h-full border-0';
+            iframe.allowFullscreen = true;
+            iframe.setAttribute('allow', 'autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *');
+            canvas.appendChild(iframe);
 
             const initialSrc = this.getProxiedUrl(targetServer, this.currentPlayerEngine);
             iframe.onload = () => {
@@ -448,9 +468,7 @@ window.AryanPlayerEngine = {
                 }
             }, 800);
 
-            requestAnimationFrame(() => {
-                iframe.src = initialSrc;
-            });
+            iframe.src = initialSrc;
         }
 
         this.updateModalServerTabs();
