@@ -132,7 +132,7 @@
             <div class="flex items-center gap-3">
                 <div class="hidden sm:flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-gray-300 bg-[#101728] border border-gray-800 px-3 py-1.5 rounded-xl">
                     <span class="w-2 h-2 rounded-full bg-green-400 animate-pulse"></span>
-                    <span id="api-status-text" class="text-gray-300 text-[11px]">LIVE NETWORK</span>
+                    <span id="api-status-text" class="text-gray-300 text-[11px] font-bold tracking-wider uppercase">BROADCAST NETWORK LIVE</span>
                 </div>
 
                 <!-- Desktop Nav Links -->
@@ -493,10 +493,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.6"></script>
+    <script src="js/ads.js?v=10.7"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.6"></script>
-    <script src="js/api.js?v=10.6"></script>
+    <script src="js/player.js?v=10.7"></script>
+    <script src="js/api.js?v=10.7"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -524,11 +524,11 @@
                 const totalCount = window.AryanGlobalAPI.getAllMatches().length;
 
                 if (statusEl) {
-                    statusEl.innerText = `${liveCount} Live Matches (${totalCount} Total)`;
+                    statusEl.innerText = 'BROADCAST NETWORK LIVE';
                 }
                 const navLive = document.getElementById('nav-live-count');
                 if (navLive) {
-                    navLive.innerText = `LIVE (${liveCount})`;
+                    navLive.innerText = 'LIVE';
                 }
 
                 if (currentView === 'home') {
@@ -549,9 +549,9 @@
                 const statusEl = document.getElementById('api-status-text');
                 const liveCount = window.AryanGlobalAPI.getLiveMatches().length;
                 const totalCount = window.AryanGlobalAPI.getAllMatches().length;
-                if (statusEl) statusEl.innerText = `${liveCount} Live Matches (${totalCount} Total)`;
+                if (statusEl) statusEl.innerText = 'BROADCAST NETWORK LIVE';
                 const navLive = document.getElementById('nav-live-count');
-                if (navLive) navLive.innerText = `LIVE (${liveCount})`;
+                if (navLive) navLive.innerText = 'LIVE';
                 if (currentView === 'home') renderMatchesGrid();
                 if (currentView === 'channels') renderChannelsView();
                 if (currentView === 'multiviewer') populateMultiviewerDropdowns();
@@ -694,7 +694,7 @@
 
             // Update live counter badge
             const navLive = document.getElementById('nav-live-count');
-            if (navLive) navLive.innerText = liveMatches.length > 0 ? `LIVE (${liveMatches.length})` : 'LIVE';
+            if (navLive) navLive.innerText = 'LIVE';
 
             // 1. Search Active
             if (searchQuery && searchQuery.trim() !== '') {
@@ -726,7 +726,7 @@
                     <div class="space-y-4 pt-2">
                         <div class="flex items-center justify-between border-b border-gray-800/80 pb-3">
                             <h2 class="text-2xl font-bold text-white uppercase tracking-tight">${currentFilter}</h2>
-                            <span class="text-xs text-gray-400 font-bold">(${items.length} Matches)</span>
+                            <span class="text-xs text-gray-400 font-bold uppercase tracking-wider">Active Fixtures</span>
                         </div>
                         ${items.length === 0 ? `
                             <div class="py-16 flex flex-col items-center justify-center text-center p-8 bg-[#0c1322]/80 rounded-3xl border border-gray-800/80 shadow-xl">
@@ -1455,14 +1455,34 @@
             if (container) container.innerHTML = '';
         }
 
+                function isDummyOrPlaceholderUrl(url) {
+            if (!url || typeof url !== 'string') return true;
+            const u = url.trim().toLowerCase();
+            if (u === '' || u === 'about:blank' || u === 'undefined' || u === 'null') return true;
+            if (u.includes('example.com') || u.includes('example.org') || u.includes('example.net')) return true;
+            if (u.includes('taifood-blog.asia') && !u.includes('substream')) return true;
+            if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return true;
+            return false;
+        }
+
         function populateMultiviewerDropdowns() {
             if (!window.AryanGlobalAPI) return;
             const matches = window.AryanGlobalAPI.getAllMatches() || [];
             const channels = window.AryanGlobalAPI.getChannels() || [];
             if (matches.length === 0 && channels.length === 0) return;
 
-            const liveMatches = matches.filter(m => m.isLive);
-            const upcomingMatches = matches.filter(m => !m.isLive);
+            // 1. Only include matches that are currently LIVE with verified streams
+            const liveMatches = matches.filter(m => m.isLive && !isDummyOrPlaceholderUrl(m.url || (m.servers && m.servers[0] && m.servers[0].url)));
+
+            // 2. Curate Top ~35 Premier Sports Channels (TNT Sports, Sky Sports, ESPN, Willow, Sony, Fox, NBC, CBS, etc.)
+            // Drops 700+ redundant regional non-sports channels so mobile dropdown remains featherlight and lag-free!
+            const PREMIER_KEYWORDS = ['tnt', 'sky sports', 'espn', 'willow', 'sony', 'star sports', 'fox', 'nbc', 'cbs', 'tsn', 'supersport', 'bein', 'dazn', 'optus', 'astro', 'premier'];
+            const topChannels = channels.filter(ch => {
+                if (!ch || !ch.name) return false;
+                const n = ch.name.toLowerCase();
+                if (ch.id && String(ch.id).startsWith('sc-')) return true; // Premier Zero-CF channels
+                return PREMIER_KEYWORDS.some(kw => n.includes(kw));
+            }).slice(0, 35);
 
             for (let i = 1; i <= 4; i++) {
                 const sel = document.getElementById(`mv-select-${i}`);
@@ -1474,14 +1494,9 @@
                         liveMatches.map(m => `<option value="${escapeHtml(m.id)}">🔴 ${escapeHtml(m.title || m.name)}</option>`).join('') +
                         `</optgroup>`;
                 }
-                if (upcomingMatches.length > 0) {
-                    optHtml += `<optgroup label="📅 Upcoming Matches (${upcomingMatches.length})">` +
-                        upcomingMatches.map(m => `<option value="${escapeHtml(m.id)}">📅 ${escapeHtml(m.title || m.name)}</option>`).join('') +
-                        `</optgroup>`;
-                }
-                if (channels.length > 0) {
-                    optHtml += `<optgroup label="📺 24/7 TV Channels (${channels.length})">` +
-                        channels.map(ch => `<option value="${escapeHtml(ch.id)}">📺 ${escapeHtml(ch.name)} (${escapeHtml(ch.country || 'Live')})</option>`).join('') +
+                if (topChannels.length > 0) {
+                    optHtml += `<optgroup label="📺 Top 24/7 Sports Channels (${topChannels.length})">` +
+                        topChannels.map(ch => `<option value="${escapeHtml(ch.id)}">📺 ${escapeHtml(ch.name)} (${escapeHtml(ch.country || 'Live')})</option>`).join('') +
                         `</optgroup>`;
                 }
                 sel.innerHTML = optHtml;
@@ -1507,9 +1522,10 @@
             let item = window.AryanGlobalAPI ? window.AryanGlobalAPI.getItemById(id) : null;
             if (!item) {
                 viewport.innerHTML = `
-                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-black text-center text-xs text-amber-400 font-bold space-y-1">
+                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
                         <span class="text-xl">⚠️</span>
-                        <span>Feed Not Found</span>
+                        <span class="text-white font-extrabold text-sm tracking-wide">Stream Feed Unavailable</span>
+                        <p class="text-[11px] text-gray-400 max-w-xs font-normal">Broadcast satellite listing not active. Select another channel.</p>
                     </div>
                 `;
                 return;
@@ -1523,12 +1539,15 @@
             const server = servers[0] || {};
             let rawUrl = server.url || server.rawUrl || server.embedUrl || item.embedUrl || item.url || item.iframe || '';
 
-            if (!rawUrl) {
+            // Detect dummy, empty or example.com URLs immediately
+            if (!rawUrl || isDummyOrPlaceholderUrl(rawUrl)) {
                 viewport.innerHTML = `
-                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-black text-center text-xs text-amber-400 font-bold space-y-1">
-                        <span class="text-xl">⚠️</span>
-                        <span>Stream Feed Unavailable</span>
-                        <span class="text-[10px] text-gray-500">Select another channel or fixture</span>
+                    <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
+                        <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-lg text-amber-400 border border-amber-500/20">
+                            📡
+                        </div>
+                        <span class="text-white font-extrabold text-sm tracking-wide">Broadcast Feed Unavailable</span>
+                        <p class="text-[11px] text-gray-400 max-w-xs font-normal">There is currently no live satellite stream for this listing. Please select another live match or 24/7 channel.</p>
                     </div>
                 `;
                 return;
@@ -1559,6 +1578,19 @@
                 const finalUrl = (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.getProxiedUrl === 'function')
                     ? window.AryanPlayerEngine.getProxiedUrl(server, 'bitmovin')
                     : rawUrl;
+                
+                if (!finalUrl || isDummyOrPlaceholderUrl(finalUrl)) {
+                    viewport.innerHTML = `
+                        <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
+                            <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-lg text-amber-400 border border-amber-500/20">
+                                📡
+                            </div>
+                            <span class="text-white font-extrabold text-sm tracking-wide">Broadcast Feed Unavailable</span>
+                            <p class="text-[11px] text-gray-400 max-w-xs font-normal">There is currently no live satellite stream for this listing. Please select another live match or 24/7 channel.</p>
+                        </div>
+                    `;
+                    return;
+                }
                 viewport.innerHTML = `<iframe src="${finalUrl}" class="w-full h-full border-0 bg-black" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *"></iframe>`;
             }
         }

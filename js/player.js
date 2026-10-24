@@ -264,7 +264,7 @@ window.AryanPlayerEngine = {
             rawUrl = String(serverOrUrl);
         }
 
-        if (!rawUrl) return '';
+        if (!rawUrl || rawUrl.includes('example.com') || rawUrl.includes('example.org')) return '';
         if (rawUrl.includes('shaka_player.html')) {
             try {
                 const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';

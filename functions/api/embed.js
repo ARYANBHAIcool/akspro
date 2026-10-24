@@ -15,8 +15,8 @@ export async function onRequest(context) {
         targetUrl = `https://amazon.com.pandecocogaming.sbs/${requestUrl.search}`;
     }
 
-    if (!targetUrl) {
-        return new Response('Missing target url parameter', {
+    if (!targetUrl || targetUrl.includes('example.com') || targetUrl.includes('example.org')) {
+        return new Response('Invalid stream target parameter', {
             status: 400,
             headers: {
                 'Content-Type': 'text/plain',
