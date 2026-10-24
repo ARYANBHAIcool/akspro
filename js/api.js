@@ -981,7 +981,8 @@
                         });
                         if (res.ok) {
                             const json = await res.json();
-                            if (json && json.success !== false && Array.isArray(json.streams)) {
+                            if (json && json.success !== false && Array.isArray(json.streams) && json.streams.length > 0) {
+                                let addedAny = false;
                                 json.streams.forEach(cat => {
                                     const cName = (cat.category || 'Sports').trim();
                                     const is247 = cat.always_live || cName.toLowerCase().includes('24/7');
@@ -993,10 +994,11 @@
                                             }
                                             seenRawIds.add(s.id);
                                             rawItems.push({ stream: s, category: cName, is247: is247 });
+                                            addedAny = true;
                                         }
                                     });
                                 });
-                                break;
+                                if (addedAny) break;
                             }
                         }
                     } catch (e) {}

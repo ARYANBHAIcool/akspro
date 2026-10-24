@@ -415,10 +415,10 @@
     </a>
 
     <!-- SCRIPTS -->
-    <script src="js/ads.js?v=10.9.1"></script>
+    <script src="js/ads.js?v=10.9.2"></script>
     <script src="js/paramount-core.js?v=10.0" defer></script>
-    <script src="js/player.js?v=10.9.1"></script>
-    <script src="js/api.js?v=10.9.1"></script>
+    <script src="js/player.js?v=10.9.2"></script>
+    <script src="js/api.js?v=10.9.2"></script>
 
     <!-- RENDER & CONTROLLER LOGIC -->
     <script>
@@ -1328,7 +1328,7 @@
             if (container) container.innerHTML = '';
         }
 
-                function isDummyOrPlaceholderUrl(url) {
+        function isDummyOrPlaceholderUrl(url) {
             if (!url || typeof url !== 'string') return true;
             const u = url.trim().toLowerCase();
             if (u === '' || u === 'about:blank' || u === 'undefined' || u === 'null') return true;
@@ -1336,27 +1336,6 @@
             if (u.includes('taifood-blog.asia') && !u.includes('substream')) return true;
             if (u.startsWith('http://localhost') || u.startsWith('http://127.0.0.1')) return true;
             return false;
-        }
-
-        else {
-                const finalUrl = (window.AryanPlayerEngine && typeof window.AryanPlayerEngine.getProxiedUrl === 'function')
-                    ? window.AryanPlayerEngine.getProxiedUrl(server, 'bitmovin')
-                    : rawUrl;
-                
-                if (!finalUrl || isDummyOrPlaceholderUrl(finalUrl)) {
-                    viewport.innerHTML = `
-                        <div class="w-full h-full flex flex-col items-center justify-center p-4 bg-[#0a0f1d] text-center text-xs text-amber-400 font-bold space-y-2 border border-gray-800">
-                            <div class="w-10 h-10 rounded-full bg-amber-500/10 flex items-center justify-center text-lg text-amber-400 border border-amber-500/20">
-                                📡
-                            </div>
-                            <span class="text-white font-extrabold text-sm tracking-wide">Broadcast Feed Unavailable</span>
-                            <p class="text-[11px] text-gray-400 max-w-xs font-normal">There is currently no live satellite stream for this listing. Please select another live match or 24/7 channel.</p>
-                        </div>
-                    `;
-                    return;
-                }
-                viewport.innerHTML = `<iframe src="${finalUrl}" class="w-full h-full border-0 bg-black" allowfullscreen allow="autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *"></iframe>`;
-            }
         }
     </script>
 </body>
