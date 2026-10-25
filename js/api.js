@@ -3308,10 +3308,32 @@
                             map.set(`${parts[1]}-vs-${parts[0]}`, m);
                         }
                     }
+                    const stripPrefixes = (str) => {
+                        return str.split('-vs-').map(side => {
+                            return side.replace(/^(?:sc|fc|afc|cf|ac|as|rcd|sv|vfl|vfb|rb|sk)-/i, '')
+                                       .replace(/-(?:fc|sc|cf|afc)$/i, '');
+                        }).join('-vs-');
+                    };
+                    const simplified = stripPrefixes(m.canonicalSlug);
+                    if (simplified && simplified !== m.canonicalSlug) {
+                        map.set(simplified, m);
+                        map.set(simplified.toLowerCase(), m);
+                    }
                 }
                 if (m.slug) {
                     map.set(m.slug, m);
                     map.set(m.slug.toLowerCase(), m);
+                    const stripPrefixes = (str) => {
+                        return str.split('-vs-').map(side => {
+                            return side.replace(/^(?:sc|fc|afc|cf|ac|as|rcd|sv|vfl|vfb|rb|sk)-/i, '')
+                                       .replace(/-(?:fc|sc|cf|afc)$/i, '');
+                        }).join('-vs-');
+                    };
+                    const simplified = stripPrefixes(m.slug);
+                    if (simplified && simplified !== m.slug) {
+                        map.set(simplified, m);
+                        map.set(simplified.toLowerCase(), m);
+                    }
                 }
                 const cKey = getMatchCanonicalKey(m.title || m.name);
                 if (cKey) {
@@ -3401,10 +3423,26 @@
                 if (this._matchById.has(lower)) return this._matchById.get(lower);
             }
 
-            const stripped = decoded.replace(/^(ppv|dami|alpha|fx|sc)-/i, '');
+            const stripped = (decoded.startsWith('ppv-') || decoded.startsWith('dami-') || decoded.startsWith('alpha-') || decoded.startsWith('fx-') || (decoded.startsWith('sc-') && decoded.length === 35))
+                ? decoded.replace(/^(ppv|dami|alpha|fx|sc)-/i, '')
+                : decoded;
             if (this._matchById) {
                 if (this._matchById.has(stripped)) return this._matchById.get(stripped);
                 if (this._matchById.has(stripped.toLowerCase())) return this._matchById.get(stripped.toLowerCase());
+            }
+
+            // Club prefix normalization on input slug (e.g. sc-freiburg-vs-bayern-munich <-> freiburg-vs-bayern-munich)
+            if (decoded.includes('-vs-') && this._matchById) {
+                const stripPrefixes = (str) => {
+                    return str.split('-vs-').map(side => {
+                        return side.replace(/^(?:sc|fc|afc|cf|ac|as|rcd|sv|vfl|vfb|rb|sk)-/i, '')
+                                   .replace(/-(?:fc|sc|cf|afc)$/i, '');
+                    }).join('-vs-');
+                };
+                const simplifiedInput = stripPrefixes(decoded.toLowerCase());
+                if (simplifiedInput && this._matchById.has(simplifiedInput)) {
+                    return this._matchById.get(simplifiedInput);
+                }
             }
 
             // Universal canonical slug lookup
