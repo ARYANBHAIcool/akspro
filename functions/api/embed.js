@@ -607,6 +607,8 @@ export async function onRequest(context) {
         // Neutralize domain checks and anti-iframe checks on StreamCorner / Getsugatensho feeds
         html = html.replace(/function\s+e\s*\(\)\s*\{var\s+e,t;/g, 'function e(){return;var e,t;');
         html = html.replace(/function\s+m\s*\(\)\s*\{/g, 'function m(){ return; ');
+        html = html.replace(/function\s+w\s*\(\)\s*\{/g, 'function w(){ return true; ');
+        html = html.replace(/if\s*\(\s*!\s*w\s*\(\s*\)\s*\)\s*\{/g, 'if(false){');
         html = html.replace(/\}catch\(e\)\{t=!__p_[a-zA-Z0-9_$]+_dlrArray\[0x0\]\}/g, '}catch(e){}t=true;');
         html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
         html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+_dlrArray\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');

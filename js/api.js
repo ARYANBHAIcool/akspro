@@ -217,6 +217,20 @@
             label = 'Hotstar';
         } else if (lLower.includes('fandango')) {
             label = 'Fandango';
+        } else if (lLower.includes('eleven')) {
+            const num = label.match(/\d+/);
+            label = num ? `Eleven Sports ${num[0]}` : 'Eleven Sports';
+        } else if (/^br\s*\d*/i.test(label) || lLower.includes('bandsports')) {
+            const num = label.match(/\d+/);
+            label = num ? `BandSports ${num[0]}` : 'BandSports';
+        }
+
+        if (/^\d+$/.test(label)) {
+            if (rawUrl && (rawUrl.includes('sportsonnline') || rawUrl.includes('sportsonline'))) {
+                label = `SportsOnline ${label}`;
+            } else {
+                label = `Feed ${label}`;
+            }
         }
 
         const u = (rawUrl || '').toLowerCase();
@@ -450,6 +464,10 @@
             const targetUrl = s.rawUrl || s.url || s.embedUrl;
             // Drop any unwanted broadcast TV channel dumps (embedindia.st/embed/<numeric_id>)
             if (/embedindia\.st\/embed\/\d+$/i.test(targetUrl) && !targetUrl.includes('backup=')) {
+                continue;
+            }
+            // Drop dead legacy StreamCorner /alpha?p= feeds which fail token validation and show black screens
+            if (targetUrl.includes('/alpha?p=') || targetUrl.includes('/alpha?') || /\/alpha\b/i.test(new URL(targetUrl, 'https://dummy.com').pathname)) {
                 continue;
             }
             // Eliminate duplicate original, ?backup=1, and proxied variants
@@ -781,11 +799,60 @@
         return false;
     }
 
+    function extractEventTimestamp(item) {
+        if (!item) return 0;
+        if (typeof item.timestamp === 'number' && item.timestamp > 0) {
+            return item.timestamp > 1e11 ? item.timestamp : item.timestamp * 1000;
+        }
+        if (typeof item.startTime === 'number' && item.startTime > 0) {
+            return item.startTime > 1e11 ? item.startTime : item.startTime * 1000;
+        }
+        if (item.time_utc && typeof item.time_utc === 'string') {
+            const rawStr = item.time_utc.trim();
+            const isoStr = rawStr.includes('T') ? rawStr : rawStr.replace(' ', 'T') + (rawStr.endsWith('Z') ? '' : 'Z');
+            const t = Date.parse(isoStr);
+            if (!isNaN(t)) return t;
+        }
+        if (item.time_et && typeof item.time_et === 'string') {
+            try {
+                const cleaned = item.time_et.replace(/\s*ET\s*/i, '').trim();
+                const parts = cleaned.split(' ');
+                if (parts.length >= 1) {
+                    const dateParts = parts[0].split('/');
+                    if (dateParts.length === 3) {
+                        let m = parseInt(dateParts[0], 10) - 1;
+                        let d = parseInt(dateParts[1], 10);
+                        let y = parseInt(dateParts[2], 10);
+                        if (y < 100) y += 2000;
+                        const dateObj = new Date(Date.UTC(y, m, d));
+                        if (!isNaN(dateObj.getTime())) return dateObj.getTime();
+                    }
+                }
+            } catch (e) {}
+        }
+        if (item.date) {
+            if (typeof item.date === 'number' && item.date > 0) return item.date > 1e11 ? item.date : item.date * 1000;
+            if (typeof item.date === 'string') {
+                const t = Date.parse(item.date);
+                if (!isNaN(t)) return t;
+            }
+        }
+        return 0;
+    }
+
     function isSameMatch(ppv, alpha) {
         if (!ppv || !alpha) return false;
 
         const pTitle = ppv.title || ppv.name || '';
         const aTitle = alpha.event_name || alpha.title || '';
+
+        // Prevent cross-matching fixtures scheduled on different dates/weeks
+        const ppvTime = extractEventTimestamp(ppv);
+        const alphaTime = extractEventTimestamp(alpha);
+        if (ppvTime && alphaTime) {
+            const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+            if (diffHours > 18) return false;
+        }
 
         // Immediate canonical slug match
         const ppvSlug = ppv.canonicalSlug || generateUniversalMatchSlug(pTitle);
@@ -810,9 +877,7 @@
             return false;
         }
 
-        // 2. Start time proximity check (within 8 hours)
-        const ppvTime = ppv.startTime || (typeof ppv.date === 'number' ? ppv.date : (new Date(ppv.date).getTime() || 0));
-        const alphaTime = (alpha.timestamp ? alpha.timestamp * 1000 : 0) || alpha.startTime || (typeof alpha.date === 'number' ? alpha.date : (new Date(alpha.date).getTime() || 0));
+        // 2. Start time proximity check (within 8 hours if exact times present)
         if (ppvTime && alphaTime) {
             const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
             if (diffHours > 8) return false;
@@ -2231,7 +2296,10 @@
                         const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
                         const aSlug = alpha.canonicalSlug || generateUniversalMatchSlug(aTitle);
                         if (aSlug && matchById.has(aSlug)) {
-                            matchedMatch = matchById.get(aSlug);
+                            const cand = matchById.get(aSlug);
+                            if (cand && isSameMatch(cand, alpha)) {
+                                matchedMatch = cand;
+                            }
                         }
                     }
                     if (!matchedMatch) {
@@ -2264,10 +2332,10 @@
                                 item: alpha
                             });
                         }
-                        // Prioritize primary alphaStreamId
-                        if (!matchedMatch.alphaStreamId || alpha.stream_type === 'alpha' || alpha.stream_type === 'admin') {
+                        // Prioritize primary alphaStreamId (prefer admin and beta over unverified alpha)
+                        if (!matchedMatch.alphaStreamId || alpha.stream_type === 'admin' || alpha.stream_type === 'beta') {
                             matchedMatch.alphaStreamId = alpha.stream_id;
-                            matchedMatch.alphaStreamType = alpha.stream_type || 'alpha';
+                            matchedMatch.alphaStreamType = alpha.stream_type || 'admin';
                             matchedMatch.alphaItem = alpha;
                         }
                         if (alpha.home_team_logo && (!matchedMatch.team1 || !matchedMatch.team1.logo || matchedMatch.team1.logo.includes('logo-icon.png'))) {
@@ -2505,9 +2573,7 @@
                 const matchSlug = match.canonicalSlug || generateUniversalMatchSlug(match.title || match.name);
                 for (const a of this.alphaCatalog) {
                     if (!a || !a.stream_id) continue;
-                    const aSlug = a.canonicalSlug || generateUniversalMatchSlug(a.event_name || a.title || '');
                     const isMatched = (match.alphaStreamId && a.stream_id === match.alphaStreamId) || 
-                                      (matchSlug && aSlug && matchSlug === aSlug) || 
                                       isSameMatch(match, a);
                     if (isMatched) {
                         if (!match.streamCornerSources.some(sc => sc.id === a.stream_id)) {
@@ -2517,9 +2583,9 @@
                                 item: a
                             });
                         }
-                        if (!match.alphaStreamId || a.stream_type === 'alpha' || a.stream_type === 'admin') {
+                        if (!match.alphaStreamId || a.stream_type === 'admin' || a.stream_type === 'beta') {
                             match.alphaStreamId = a.stream_id;
-                            match.alphaStreamType = a.stream_type || 'alpha';
+                            match.alphaStreamType = a.stream_type || 'admin';
                             match.alphaItem = a;
                         }
                     }
@@ -2551,10 +2617,13 @@
                 if (cachedRaw) {
                     const parsed = JSON.parse(cachedRaw);
                     if (parsed && Array.isArray(parsed.servers) && parsed.servers.length > 0 && (Date.now() - (parsed.ts || 0) < 1800000)) {
-                        match.servers = parsed.servers;
-                        match.sources = parsed.servers;
-                        match._alphaResolved = true;
-                        return true;
+                        const sanitizedCached = sanitizeMatchServers({ servers: parsed.servers }).servers;
+                        if (sanitizedCached && sanitizedCached.length > 0) {
+                            match.servers = sanitizedCached;
+                            match.sources = sanitizedCached;
+                            match._alphaResolved = true;
+                            return true;
+                        }
                     }
                 }
             } catch (e) {}
@@ -2593,6 +2662,20 @@
                     }
 
                     if (targets.length === 0) return false;
+
+                    // Prioritize active, working feeds (admin, beta) ahead of secondary/legacy feeds
+                    targets.sort((a, b) => {
+                        const rank = (type) => {
+                            if (type === 'admin') return 1;
+                            if (type === 'beta') return 2;
+                            if (type === 'paramount' || type === 'paramount_schedule') return 3;
+                            if (type === 'nba') return 4;
+                            if (type === 'extra003') return 5;
+                            if (type === 'alpha') return 6;
+                            return 10;
+                        };
+                        return rank(a.type) - rank(b.type);
+                    });
 
                     // Query at most 2 candidate workers with tight 2500ms timeout
                     const candidateWorkers = [...ALPHA_WORKER_NODES].sort(() => Math.random() - 0.5).slice(0, 2);
@@ -2685,6 +2768,11 @@
                         rawStreams.forEach((s) => {
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
                             if (!rawUrl) return;
+
+                            // Drop dead legacy StreamCorner /alpha?p= feeds which fail token validation and show black screens
+                            if (rawUrl.includes('/alpha?p=') || rawUrl.includes('/alpha?') || /\/alpha\b/i.test(new URL(rawUrl, 'https://dummy.com').pathname)) {
+                                return;
+                            }
 
                             let label = (s.source_name || s.name || 'Feed').trim().replace(/\s*-\s*$/, '');
 
