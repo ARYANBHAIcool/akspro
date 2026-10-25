@@ -7,20 +7,33 @@
 export async function onRequest(context) {
     try {
         const subpath = Array.isArray(context.params.path) ? context.params.path.join('/') : (context.params.path || '');
-        const targetUrl = `https://embedindia.st/js/wasm/${subpath}`;
-        
-        const res = await fetch(targetUrl, {
-            method: context.request.method,
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-                'Referer': 'https://embedindia.st/',
-                'Origin': 'https://embedindia.st',
-                'Accept': '*/*'
-            }
-        });
+        const mirrors = [
+            `https://embedindia.st/js/wasm/${subpath}`,
+            `https://embed.st/js/wasm/${subpath}`,
+            `https://indianservers.st/js/wasm/${subpath}`
+        ];
 
-        if (!res.ok) {
-            return new Response(`Upstream returned ${res.status}`, { status: res.status });
+        let res = null;
+        for (const mirror of mirrors) {
+            try {
+                const r = await fetch(mirror, {
+                    method: context.request.method,
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                        'Referer': 'https://embedindia.st/',
+                        'Origin': 'https://embedindia.st',
+                        'Accept': '*/*'
+                    }
+                });
+                if (r.ok) {
+                    res = r;
+                    break;
+                }
+            } catch (err) {}
+        }
+
+        if (!res) {
+            return new Response(`Upstream WASM asset unavailable: ${subpath}`, { status: 404 });
         }
 
         const isWasm = subpath.endsWith('.wasm');

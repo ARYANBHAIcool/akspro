@@ -93,6 +93,38 @@ export async function onRequest(context) {
         const injectScript = `<script>
 (function() {
 
+    // 0. Disable DevTool traps & neutralize console inspection
+    try {
+        var dummyDevtool = function() {};
+        dummyDevtool.isSuspend = true;
+        dummyDevtool.isRunning = false;
+        dummyDevtool.md5 = function() { return ''; };
+        try {
+            Object.defineProperty(window, 'DisableDevtool', { value: dummyDevtool, writable: false, configurable: true });
+            Object.defineProperty(window, 'disableDevtool', { value: dummyDevtool, writable: false, configurable: true });
+        } catch(e) {}
+        console.clear = function() {};
+        console.table = function() {};
+    } catch(e) {}
+
+    // Location guard: permanently prevent redirects to about:blank
+    try {
+        var origReplace = window.location.replace;
+        window.location.replace = function(url) {
+            if (!url || url === 'about:blank' || (typeof url === 'string' && url.includes('about:blank'))) {
+                return;
+            }
+            return origReplace.call(window.location, url);
+        };
+        var origAssign = window.location.assign;
+        window.location.assign = function(url) {
+            if (!url || url === 'about:blank' || (typeof url === 'string' && url.includes('about:blank'))) {
+                return;
+            }
+            return origAssign.call(window.location, url);
+        };
+    } catch(e) {}
+
     // 1. Bitmovin & DOM removeChild / insertBefore protective wrapper
     try {
         var origRemoveChild = Node.prototype.removeChild;
@@ -192,12 +224,16 @@ export async function onRequest(context) {
         var vids = document.querySelectorAll('video');
         for (var i = 0; i < vids.length; i++) {
             var v = vids[i];
-            if (!v.paused && v.currentTime > 0) {
-                try {
-                    v.muted = false;
-                    v.volume = 1.0;
-                } catch(e) {}
-            }
+            try {
+                v.muted = false;
+                v.volume = 1.0;
+                if (v.paused) {
+                    v.play().catch(function() {
+                        v.muted = true;
+                        v.play().catch(function() {});
+                    });
+                }
+            } catch(e) {}
         }
         var mutedElements = document.querySelectorAll('.bmpui-ui-volumetogglebutton.bmpui-muted, button.bmpui-muted, .op-volume--muted');
         for (var j = 0; j < mutedElements.length; j++) {
@@ -299,7 +335,19 @@ export async function onRequest(context) {
 
         // Neutralize annoying popup and anti-devtool scripts
         html = html.replace(/aclib\.runPop\([^)]*\)/g, '/* ad popup removed */');
+        html = html.replace(/<script[^>]*popa[^>]*><\/script>/gi, '<!-- ad popup removed -->');
+        html = html.replace(/<script[^>]*cdn4ads[^>]*><\/script>/gi, '<!-- ad popup removed -->');
         html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, '<!-- devtool disabled -->');
+
+        // Neutralize domain checks and anti-iframe checks on StreamCorner / Getsugatensho feeds
+        html = html.replace(/function\s+e\s*\(\)\s*\{var\s+e,t;/g, 'function e(){return;var e,t;');
+        html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
+        html = html.replace(/if\s*\(\s*!\s*g\s*\|\|\s*!\s*C\s*\)\s*\{/g, 'if(false){');
+
+        // Neutralize any residual obfuscated location.replace("about:blank") calls
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x236[^)]*\)\)/g, ']&&(()=>{})');
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x214[^)]*\)\)/g, ']&&(()=>{})');
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x409[^)]*\)\)/g, ']&&(()=>{})');
 
         // Neutralize Cloudflare Turnstile / Challenge platform script which blocks sandboxed iframes
         html = html.replace(/<script[^>]*__CF\$cv\$params[\s\S]*?<\/script>/gi, '<!-- cf challenge removed -->');

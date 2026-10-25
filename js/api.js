@@ -2250,8 +2250,22 @@
 
                 // If user is already in watch view, immediately resolve extra channels and update sources UI!
                 const activeWatchAlpha = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
-                if (activeWatchAlpha && !activeWatchAlpha._alphaResolved) {
-                    this.ensureAlphaSourcesForMatch(activeWatchAlpha);
+                if (activeWatchAlpha) {
+                    const updated = this.getItemById(activeWatchAlpha.canonicalSlug || activeWatchAlpha.slug || activeWatchAlpha.id);
+                    if (updated && updated !== activeWatchAlpha) {
+                        if (Array.isArray(updated.streamCornerSources) && updated.streamCornerSources.length > 0) {
+                            activeWatchAlpha.streamCornerSources = updated.streamCornerSources;
+                        }
+                        if (updated.alphaStreamId) {
+                            activeWatchAlpha.alphaStreamId = updated.alphaStreamId;
+                            activeWatchAlpha.alphaStreamType = updated.alphaStreamType;
+                            activeWatchAlpha.alphaItem = updated.alphaItem;
+                        }
+                    }
+                    if (activeWatchAlpha.alphaStreamId || (activeWatchAlpha.streamCornerSources && activeWatchAlpha.streamCornerSources.length > 0)) {
+                        activeWatchAlpha._alphaResolved = false;
+                        this.ensureAlphaSourcesForMatch(activeWatchAlpha);
+                    }
                 }
 
                 // Alpha sources resolved on-demand per match without background CPU contention
