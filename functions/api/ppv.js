@@ -179,7 +179,7 @@ export async function onRequest(context) {
 
         if (ppvResp.ok) {
             const json = await ppvResp.json();
-            if (json && json.success !== false && Array.isArray(json.streams)) {
+            if (json && json.success !== false && Array.isArray(json.streams) && json.streams.length > 0) {
                 const nowSec = Math.floor(Date.now() / 1000);
                 const activeStreams = json.streams.map(cat => ({
                     ...cat,
@@ -192,18 +192,72 @@ export async function onRequest(context) {
                     })
                 })).filter(cat => cat.streams.length > 0);
 
-                return new Response(JSON.stringify({ success: true, streams: activeStreams }), {
-                    status: 200,
-                    headers: {
-                        'Content-Type': 'application/json; charset=utf-8',
-                        'Access-Control-Allow-Origin': '*',
-                        'Cache-Control': 'public, max-age=300, s-maxage=300'
-                    }
-                });
+                if (activeStreams.length > 0) {
+                    return new Response(JSON.stringify({ success: true, streams: activeStreams }), {
+                        status: 200,
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8',
+                            'Access-Control-Allow-Origin': '*',
+                            'Cache-Control': 'public, max-age=300, s-maxage=300'
+                        }
+                    });
+                }
             }
         }
     } catch (e1) {
         console.warn('api.ppv.st fetch failed in /api/ppv proxy:', e1.message);
+    }
+
+    // Priority 2: Fallback to streamed.pk/api/matches/all converted into category stream groups
+    try {
+        const stResp = await fetch('https://streamed.pk/api/matches/all', {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
+                'Accept': 'application/json'
+            }
+        });
+        if (stResp.ok) {
+            const matches = await stResp.json();
+            if (Array.isArray(matches) && matches.length > 0) {
+                const catMap = new Map();
+                for (const m of matches) {
+                    if (!m || !m.id) continue;
+                    const cat = (m.category || 'Sports').trim();
+                    if (!catMap.has(cat)) catMap.set(cat, []);
+                    catMap.get(cat).push({
+                        id: m.id,
+                        name: m.title || m.name,
+                        title: m.title || m.name,
+                        poster: m.poster || '',
+                        starts_at: Math.floor((m.date || 0) / 1000),
+                        ends_at: Math.floor(((m.date || 0) + 10800000) / 1000),
+                        always_live: m.always_live || 0,
+                        sources: m.sources || []
+                    });
+                }
+
+                const categories = [];
+                for (const [catName, streamList] of catMap.entries()) {
+                    categories.push({
+                        category: catName.charAt(0).toUpperCase() + catName.slice(1),
+                        streams: streamList
+                    });
+                }
+
+                if (categories.length > 0) {
+                    return new Response(JSON.stringify({ success: true, streams: categories }), {
+                        status: 200,
+                        headers: {
+                            'Content-Type': 'application/json; charset=utf-8',
+                            'Access-Control-Allow-Origin': '*',
+                            'Cache-Control': 'public, max-age=180, s-maxage=180'
+                        }
+                    });
+                }
+            }
+        }
+    } catch (e2) {
+        console.warn('streamed.pk fallback failed in /api/ppv proxy:', e2.message);
     }
 
     return new Response(JSON.stringify({ success: true, streams: [] }), {

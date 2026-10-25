@@ -2017,7 +2017,7 @@
                     try {
                         const batchPromises = candidateWorkers.map(worker => {
                             return new Promise((resolve, reject) => {
-                                const timer = setTimeout(() => reject(new Error('timeout')), 1600);
+                                const timer = setTimeout(() => reject(new Error('timeout')), 4000);
                                 window.StreamCornerCore.t(`https://${worker}/corner?p=${endpoint}`, false, `corner ${endpoint}`)
                                     .then(res => {
                                         clearTimeout(timer);
@@ -2551,7 +2551,7 @@
                         for (const worker of candidateWorkers) {
                             try {
                                 const fetchPromise = new Promise((resolve, reject) => {
-                                    const timer = setTimeout(() => reject(new Error('timeout')), 2500);
+                                    const timer = setTimeout(() => reject(new Error('timeout')), 4000);
                                     window.StreamCornerCore.t(`https://${worker}/corner?p=${pType}&id=${t.id}`, false, match.title || 'corner detail')
                                         .then(res => {
                                             clearTimeout(timer);
