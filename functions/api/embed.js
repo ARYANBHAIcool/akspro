@@ -122,22 +122,52 @@ export async function onRequest(context) {
         console.table = function() {};
     } catch(e) {}
 
-    // Location guard: permanently prevent redirects to about:blank
+    // Location guard: permanently prevent redirects to about:blank across all prototypes & frames
     try {
+        var guardUrl = function(u) { return !u || u === 'about:blank' || (typeof u === 'string' && u.includes('about:blank')); };
         var origReplace = window.location.replace;
         window.location.replace = function(url) {
-            if (!url || url === 'about:blank' || (typeof url === 'string' && url.includes('about:blank'))) {
-                return;
-            }
+            if (guardUrl(url)) return;
             return origReplace.call(window.location, url);
         };
         var origAssign = window.location.assign;
         window.location.assign = function(url) {
-            if (!url || url === 'about:blank' || (typeof url === 'string' && url.includes('about:blank'))) {
-                return;
-            }
+            if (guardUrl(url)) return;
             return origAssign.call(window.location, url);
         };
+        if (typeof Location !== 'undefined' && Location.prototype) {
+            var origProtoReplace = Location.prototype.replace;
+            Location.prototype.replace = function(url) {
+                if (guardUrl(url)) return;
+                return origProtoReplace.call(this, url);
+            };
+            var origProtoAssign = Location.prototype.assign;
+            Location.prototype.assign = function(url) {
+                if (guardUrl(url)) return;
+                return origProtoAssign.call(this, url);
+            };
+            var hrefDesc = Object.getOwnPropertyDescriptor(Location.prototype, 'href');
+            if (hrefDesc && hrefDesc.set) {
+                var origHrefSet = hrefDesc.set;
+                Object.defineProperty(Location.prototype, 'href', {
+                    set: function(val) {
+                        if (guardUrl(val)) return;
+                        return origHrefSet.call(this, val);
+                    }
+                });
+            }
+        }
+        // Protect body against wipeout
+        var origBodyDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+        if (origBodyDesc && origBodyDesc.set && typeof HTMLBodyElement !== 'undefined') {
+            var origInnerHTMLSet = origBodyDesc.set;
+            Object.defineProperty(HTMLBodyElement.prototype, 'innerHTML', {
+                set: function(val) {
+                    if (val === "" && this.children && this.children.length > 0) return;
+                    return origInnerHTMLSet.call(this, val);
+                }
+            });
+        }
     } catch(e) {}
 
     // Proxy any WASM fetch calls through /api/embed seamlessly
@@ -373,12 +403,13 @@ export async function onRequest(context) {
         // Neutralize domain checks and anti-iframe checks on StreamCorner / Getsugatensho feeds
         html = html.replace(/function\s+e\s*\(\)\s*\{var\s+e,t;/g, 'function e(){return;var e,t;');
         html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
+        html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+_dlrArray\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
         html = html.replace(/if\s*\(\s*!\s*g\s*\|\|\s*!\s*C\s*\)\s*\{/g, 'if(false){');
 
         // Neutralize any residual obfuscated location.replace("about:blank") calls
-        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x236[^)]*\)\)/g, ']&&(()=>{})');
-        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x214[^)]*\)\)/g, ']&&(()=>{})');
-        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x409[^)]*\)\)/g, ']&&(()=>{})');
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x236[^)]*\)\)/g, '](null)');
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x214[^)]*\)\)/g, '](null)');
+        html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x409[^)]*\)\)/g, '](null)');
 
         // Neutralize Cloudflare Turnstile / Challenge platform script which blocks sandboxed iframes
         html = html.replace(/<script[^>]*__CF\$cv\$params[\s\S]*?<\/script>/gi, '<!-- cf challenge removed -->');

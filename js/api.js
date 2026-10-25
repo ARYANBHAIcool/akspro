@@ -1408,8 +1408,9 @@
                         });
                         if (res.ok) {
                             const json = await res.json();
-                            if (json && Array.isArray(json.matches) && json.matches.length > 0) {
-                                fxMatches = json.matches;
+                            const list = (json && (json.events || json.matches || (Array.isArray(json) ? json : null))) || [];
+                            if (Array.isArray(list) && list.length > 0) {
+                                fxMatches = list;
                                 break;
                             }
                         }
