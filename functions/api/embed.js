@@ -271,17 +271,16 @@ export async function onRequest(context) {
                 });
             }
         }
-        // Protect body against wipeout
-        var origBodyDesc = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
-        if (origBodyDesc && origBodyDesc.set && typeof HTMLBodyElement !== 'undefined') {
-            var origInnerHTMLSet = origBodyDesc.set;
-            Object.defineProperty(HTMLBodyElement.prototype, 'innerHTML', {
-                set: function(val) {
-                    if (val === "" && this.children && this.children.length > 0) return;
-                    return origInnerHTMLSet.call(this, val);
-                }
-            });
-        }
+        // KeyGuard universal safety proxy
+        try {
+            if (!window.KeyGuard) {
+                window.KeyGuard = new Proxy({}, {
+                    get: function(target, prop) {
+                        return function() { return true; };
+                    }
+                });
+            }
+        } catch(e) {}
     } catch(e) {}
 
     // Universal CORS and stream proxy for WASM, IndianServers media streams, and root-relative endpoints
@@ -607,11 +606,17 @@ export async function onRequest(context) {
 
         // Neutralize domain checks and anti-iframe checks on StreamCorner / Getsugatensho feeds
         html = html.replace(/function\s+e\s*\(\)\s*\{var\s+e,t;/g, 'function e(){return;var e,t;');
+        html = html.replace(/function\s+m\s*\(\)\s*\{/g, 'function m(){ return; ');
+        html = html.replace(/\}catch\(e\)\{t=!__p_[a-zA-Z0-9_$]+_dlrArray\[0x0\]\}/g, '}catch(e){}t=true;');
         html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
         html = html.replace(/if\s*\(\s*-\s*__p_[a-zA-Z0-9_$]+_dlrArray\[0x1\]\s*===\s*\[/g, 'if(false&&-1===[');
-        html = html.replace(/if\s*\(\s*!\s*g\s*\|\|\s*!\s*C\s*\)\s*\{/g, 'if(false){');
+        html = html.replace(/if\s*\(\s*!\s*[a-zA-Z0-9_$]+\s*\|\|\s*!\s*[a-zA-Z0-9_$]+\s*\)\s*\{/g, 'if(false){');
+        html = html.replace(/!window\[__p_[a-zA-Z0-9_$]+_MAIN_STR\([^)]*\)\]\s*\|\|\s*!KeyGuard\[/g, 'false&&!KeyGuard[');
+        html = html.replace(/throw\s+new\s+Error\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x474[^)]*\)\)/g, '/* blocked error */');
 
-        // Neutralize any residual obfuscated location.replace("about:blank") calls
+        // Neutralize all obfuscated location.replace("about:blank") calls
+        html = html.replace(/window\[__p_[a-zA-Z0-9_$]+_STR_\d+\([^)]*\)\]\[__p_[a-zA-Z0-9_$]+_STR_\d+\([^)]*\)\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\([^)]*\)\)/g, '/* blocked about:blank */ (null)');
+        html = html.replace(/document\[__p_[a-zA-Z0-9_$]+_STR_\d+\([^)]*\)\]\[__p_[a-zA-Z0-9_$]+_STR_\d+\([^)]*\)\]\s*=\s*["']["']/g, '/* blocked clear body */ ("")');
         html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x236[^)]*\)\)/g, '](null)');
         html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x214[^)]*\)\)/g, '](null)');
         html = html.replace(/\]\(__p_[a-zA-Z0-9_$]+_STR_\d+\(0x409[^)]*\)\)/g, '](null)');
