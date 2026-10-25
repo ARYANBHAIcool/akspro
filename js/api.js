@@ -303,8 +303,12 @@
         const clean = cleanMatchStr(title);
         const parts = clean.split(/\s+(?:vs\.?|@|-|x)\s+/i);
         if (parts.length >= 2) {
-            const p1 = parts[0].replace(/[^a-z0-9]/g, '');
-            const p2 = parts[1].replace(/[^a-z0-9]/g, '');
+            const stripPrefix = (str) => {
+                return str.replace(/^(?:sc|fc|afc|cf|ac|as|rcd|sv|vfl|vfb|rb|sk)/i, '')
+                          .replace(/(?:fc|sc|cf|afc)$/i, '');
+            };
+            const p1 = stripPrefix(parts[0].replace(/[^a-z0-9]/g, ''));
+            const p2 = stripPrefix(parts[1].replace(/[^a-z0-9]/g, ''));
             return p1 < p2 ? `${p1}_vs_${p2}` : `${p2}_vs_${p1}`;
         }
         return clean.replace(/[^a-z0-9]/g, '');
@@ -321,6 +325,14 @@
             .replace(/['"’`]/g, '')
             .replace(/[^a-z0-9]+/g, '-')
             .replace(/^-+|-+$/g, '');
+
+        // Normalize club prefixes so there is only ONE 100% universal canonical slug
+        if (s.includes('-vs-')) {
+            s = s.split('-vs-').map(side => {
+                return side.replace(/^(?:sc|fc|afc|cf|ac|as|rcd|sv|vfl|vfb|rb|sk)-/i, '')
+                           .replace(/-(?:fc|sc|cf|afc)$/i, '');
+            }).join('-vs-');
+        }
         return s;
     }
 

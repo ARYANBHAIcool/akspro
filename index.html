@@ -1012,19 +1012,13 @@
 
             window.scrollTo(0, 0);
 
-            const currentParam = new URLSearchParams(window.location.search).get('match') || new URLSearchParams(window.location.search).get('m');
-            const isCurrentParamMatched = currentParam && (
-                (window.AryanGlobalAPI && window.AryanGlobalAPI.getItemById(currentParam) === item) ||
-                currentParam.toLowerCase() === (item.canonicalSlug || '').toLowerCase() ||
-                currentParam.toLowerCase() === (item.slug || '').toLowerCase() ||
-                currentParam.toLowerCase() === String(item.id || '').toLowerCase()
-            );
-            const activeId = isCurrentParamMatched ? currentParam : canonicalId;
-            const targetUrl = `${window.location.origin}/?match=${encodeURIComponent(activeId)}`;
-            if (window.history && window.history.pushState) {
+            const universalSlug = item.canonicalSlug || item.slug || canonicalId;
+            const targetUrl = `${window.location.origin}/?match=${encodeURIComponent(universalSlug)}`;
+            if (window.history && window.history.replaceState) {
                 try {
-                    if (currentParam !== activeId) {
-                        window.history.pushState({ view: 'watch', id: activeId }, '', targetUrl);
+                    const currentParam = new URLSearchParams(window.location.search).get('match') || new URLSearchParams(window.location.search).get('m');
+                    if (currentParam !== universalSlug) {
+                        window.history.replaceState({ view: 'watch', id: universalSlug }, '', targetUrl);
                     }
                 } catch (e) {}
             }
@@ -1147,15 +1141,8 @@
 
         function shareCurrentMatch() {
             if (!currentWatchItem) return;
-            const currentParam = new URLSearchParams(window.location.search).get('match') || new URLSearchParams(window.location.search).get('m');
-            const isCurrentParamMatched = currentParam && (
-                (window.AryanGlobalAPI && window.AryanGlobalAPI.getItemById(currentParam) === currentWatchItem) ||
-                currentParam.toLowerCase() === (currentWatchItem.canonicalSlug || '').toLowerCase() ||
-                currentParam.toLowerCase() === (currentWatchItem.slug || '').toLowerCase() ||
-                currentParam.toLowerCase() === String(currentWatchItem.id || '').toLowerCase()
-            );
-            const matchSlug = isCurrentParamMatched ? currentParam : (currentWatchItem.canonicalSlug || currentWatchItem.slug || currentWatchItem.id);
-            const shareUrl = `${window.location.origin}/?match=${encodeURIComponent(matchSlug)}`;
+            const universalSlug = currentWatchItem.canonicalSlug || currentWatchItem.slug || currentWatchItem.id;
+            const shareUrl = `${window.location.origin}/?match=${encodeURIComponent(universalSlug)}`;
             const shareTitle = `${currentWatchItem.title || currentWatchItem.name} – AryanStreams Global`;
             
             if (navigator.share) {
