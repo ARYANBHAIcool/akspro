@@ -361,18 +361,68 @@
 
     function prioritizeFxServers(servers, isLive) {
         if (!Array.isArray(servers) || servers.length <= 1) return servers || [];
-        const isFx = (s) => Boolean(s && (s.isFutbolX || /^FX\s*\d*/i.test(s.name || '') || (s.url && (s.url.includes('futbolx') || s.url.includes('ryzn.pro'))) || (s.rawUrl && (s.rawUrl.includes('futbolx') || s.rawUrl.includes('ryzn.pro')))));
-        const isTaifood = (s) => Boolean(s && ((s.url || '').includes('taifood-blog.asia') || (s.rawUrl || '').includes('taifood-blog.asia')));
+
+        const isFx = (s) => {
+            if (!s) return false;
+            if (s.isFutbolX) return true;
+            const n = s.name || '';
+            if (/^FX\s*\d*/i.test(n)) return true;
+            const u = (s.rawUrl || s.url || '').toLowerCase();
+            return u.includes('futbolx') || u.includes('ryzn.pro');
+        };
+
+        const isPPV = (s) => {
+            if (!s) return false;
+            if (isFx(s)) return false;
+            const u = (s.rawUrl || s.url || '').toLowerCase();
+            if (u.includes('embed.st/embed/') || u.includes('embedindia.st/embed/') || u.includes('/hotel/') || u.includes('/golf/') || u.includes('/admin/')) {
+                return true;
+            }
+            const n = (s.name || '').trim();
+            if (/^(?:main\s+server|server\s*\d+|source\s*\d+|feed\s*\d+|ppv\s*\d*)$/i.test(n) && !u.includes('taifood') && !u.includes('streamcorner') && !u.includes('getsugatensho')) {
+                return true;
+            }
+            return false;
+        };
+
+        const isStreamCorner = (s) => {
+            if (!s) return false;
+            if (isFx(s)) return false;
+            if (s.source === 'streamcorner' || s.isStreamCorner) return true;
+            const u = (s.rawUrl || s.url || '').toLowerCase();
+            if (u.includes('taifood') || u.includes('getsugatensho') || u.includes('pandecocogaming') || u.includes('streamcorner')) {
+                return true;
+            }
+            return !isPPV(s);
+        };
 
         const fxList = [];
-        const taifoodList = [];
-        const otherList = [];
+        const scList = [];
+        const ppvList = [];
+
         for (const s of servers) {
-            if (isTaifood(s)) taifoodList.push(s);
-            else if (isFx(s)) fxList.push(s);
-            else otherList.push(s);
+            if (isFx(s)) {
+                fxList.push(s);
+            } else if (isStreamCorner(s)) {
+                scList.push(s);
+            } else {
+                ppvList.push(s);
+            }
         }
-        return [...fxList, ...otherList, ...taifoodList];
+
+        // Re-number generic PPV servers cleanly starting from 1 (or Server 1)
+        let ppvIndex = 0;
+        ppvList.forEach(s => {
+            const raw = s.rawUrl || s.url || '';
+            const n = (s.name || '').trim();
+            if (/^(?:main\s+server|server\s*\d+|source\s*\d+|feed\s*\d+|ppv\s*\d*)$/i.test(n) || INTERNAL_SERVER_NAMES.test(n)) {
+                ppvIndex++;
+                s.name = ppvIndex === 1 ? 'Server 1' : `Server ${ppvIndex}`;
+            }
+        });
+
+        // 1st: FX sources, 2nd: StreamCorner sources (upper), 3rd: PPV sources (below them)
+        return [...fxList, ...scList, ...ppvList];
     }
 
     function sanitizeMatchServers(match) {

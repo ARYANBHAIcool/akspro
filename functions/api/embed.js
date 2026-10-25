@@ -97,7 +97,50 @@ export async function onRequest(context) {
                     'Content-Type': 'application/wasm',
                     'Access-Control-Allow-Origin': '*',
                     'Cache-Control': 'public, max-age=86400',
-                    'X-Embed-Version': '10.9.13'
+                    'X-Embed-Version': '10.9.14'
+                }
+            });
+        }
+
+        // If target is an HLS playlist (.m3u8), proxy with Apple MPEGURL MIME type and rewrite relative chunks
+        if (parsedTarget.pathname.endsWith('.m3u8') || targetUrl.includes('.m3u8')) {
+            let m3u8Text = await upstreamResponse.text();
+            const baseUrl = parsedTarget.href.substring(0, parsedTarget.href.lastIndexOf('/') + 1);
+            m3u8Text = m3u8Text.split('\n').map(line => {
+                const trimmed = line.trim();
+                if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+                    const absUrl = new URL(trimmed, baseUrl).href;
+                    return `/api/embed?url=${encodeURIComponent(absUrl)}`;
+                } else if (trimmed && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
+                    return `/api/embed?url=${encodeURIComponent(trimmed)}`;
+                }
+                return line;
+            }).join('\n');
+
+            return new Response(m3u8Text, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/vnd.apple.mpegurl; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+                    'Cache-Control': 'no-cache',
+                    'X-Embed-Version': '10.9.14'
+                }
+            });
+        }
+
+        // If target is a media segment (.ts, .m4s, .key), stream binary directly with full CORS
+        if (parsedTarget.pathname.endsWith('.ts') || targetUrl.includes('.ts') ||
+            parsedTarget.pathname.endsWith('.m4s') || targetUrl.includes('.m4s') ||
+            parsedTarget.pathname.endsWith('.key') || targetUrl.includes('.key')) {
+            return new Response(upstreamResponse.body, {
+                status: 200,
+                headers: {
+                    'Content-Type': upstreamResponse.headers.get('content-type') || 'application/octet-stream',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
+                    'Cache-Control': 'public, max-age=86400',
+                    'X-Embed-Version': '10.9.14'
                 }
             });
         }
@@ -170,17 +213,34 @@ export async function onRequest(context) {
         }
     } catch(e) {}
 
-    // Proxy any WASM fetch calls through /api/embed seamlessly
+    // Universal CORS and stream proxy for WASM & IndianServers media streams
     try {
         var origFetch = window.fetch;
         window.fetch = function(input, init) {
             var urlStr = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
-            if (urlStr && (urlStr.includes('/js/wasm/') || urlStr.includes('js/wasm/'))) {
-                var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
-                var proxiedWasm = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent('https://embedindia.st/js/wasm/' + wasmFile);
-                return origFetch.call(this, proxiedWasm, init);
+            if (urlStr) {
+                if (urlStr.includes('indianservers.st') && !urlStr.includes('/api/embed')) {
+                    var proxied = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(urlStr);
+                    return origFetch.call(this, proxied, init);
+                } else if ((urlStr.includes('/js/wasm/') || urlStr.includes('js/wasm/')) && !urlStr.includes('/api/embed')) {
+                    var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
+                    var localWasm = (window.location.origin || '') + '/js/wasm/' + wasmFile;
+                    return origFetch.call(this, localWasm, init);
+                }
             }
             return origFetch.apply(this, arguments);
+        };
+
+        var origXhrOpen = XMLHttpRequest.prototype.open;
+        XMLHttpRequest.prototype.open = function(method, url) {
+            var urlStr = String(url || '');
+            if (urlStr.includes('indianservers.st') && !urlStr.includes('/api/embed')) {
+                arguments[1] = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(urlStr);
+            } else if ((urlStr.includes('/js/wasm/') || urlStr.includes('js/wasm/')) && !urlStr.includes('/api/embed')) {
+                var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
+                arguments[1] = (window.location.origin || '') + '/js/wasm/' + wasmFile;
+            }
+            return origXhrOpen.apply(this, arguments);
         };
     } catch(e) {}
 
