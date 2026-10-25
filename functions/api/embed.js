@@ -18,12 +18,13 @@ export async function onRequest(context) {
     }
 
     if (!targetUrl || targetUrl.includes('example.com') || targetUrl.includes('example.org')) {
-        const errorHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><style>body{margin:0;background:#060a12;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}.box{padding:24px;max-width:360px;border:1px solid #1e293b;border-radius:16px;background:#0c1322}.icon{font-size:32px;margin-bottom:8px}h3{color:#f8fafc;font-size:15px;margin:0 0 6px 0;font-weight:800}p{font-size:12px;margin:0;line-height:1.5;color:#64748b}</style></head><body><div class="box"><div class="icon">📡</div><h3>Broadcast Feed Unavailable</h3><p>Please switch to another server or reload the player.</p></div></body></html>`;
+        const errorHtml = `<!DOCTYPE html><html lang="en"><!-- embed-v10.9.12 --><head><meta charset="utf-8"><style>body{margin:0;background:#060a12;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center}.box{padding:24px;max-width:360px;border:1px solid #1e293b;border-radius:16px;background:#0c1322}.icon{font-size:32px;margin-bottom:8px}h3{color:#f8fafc;font-size:15px;margin:0 0 6px 0;font-weight:800}p{font-size:12px;margin:0;line-height:1.5;color:#64748b}</style></head><body><div class="box"><div class="icon">📡</div><h3>Broadcast Feed Unavailable</h3><p>Please switch to another server or reload the player.</p></div></body></html>`;
         return new Response(errorHtml, {
             status: 200,
             headers: {
                 'Content-Type': 'text/html; charset=utf-8',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': '*',
+                'X-Embed-Version': '10.9.12'
             }
         });
     }
@@ -82,7 +83,21 @@ export async function onRequest(context) {
                 headers: {
                     'Content-Type': 'application/javascript; charset=utf-8',
                     'Access-Control-Allow-Origin': '*',
-                    'Cache-Control': 'public, max-age=3600'
+                    'Cache-Control': 'public, max-age=3600',
+                    'X-Embed-Version': '10.9.12'
+                }
+            });
+        }
+
+        // If target is a WebAssembly binary, return with application/wasm
+        if (parsedTarget.pathname.endsWith('.wasm') || targetUrl.includes('.wasm')) {
+            return new Response(upstreamResponse.body, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/wasm',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=86400',
+                    'X-Embed-Version': '10.9.12'
                 }
             });
         }
@@ -122,6 +137,20 @@ export async function onRequest(context) {
                 return;
             }
             return origAssign.call(window.location, url);
+        };
+    } catch(e) {}
+
+    // Proxy any WASM fetch calls through /api/embed seamlessly
+    try {
+        var origFetch = window.fetch;
+        window.fetch = function(input, init) {
+            var urlStr = (typeof input === 'string') ? input : (input && input.url ? input.url : '');
+            if (urlStr && (urlStr.includes('/js/wasm/') || urlStr.includes('js/wasm/'))) {
+                var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
+                var proxiedWasm = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent('https://embedindia.st/js/wasm/' + wasmFile);
+                return origFetch.call(this, proxiedWasm, init);
+            }
+            return origFetch.apply(this, arguments);
         };
     } catch(e) {}
 
@@ -370,6 +399,7 @@ export async function onRequest(context) {
         responseHeaders.set('Access-Control-Allow-Origin', '*');
         responseHeaders.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
         responseHeaders.set('Cache-Control', 'public, max-age=60');
+        responseHeaders.set('X-Embed-Version', '10.9.12');
 
         return new Response(html, {
             status: 200,
