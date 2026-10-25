@@ -48,6 +48,9 @@ export async function onRequest(context) {
                 });
                 if (tResp.ok) {
                     const data = await tResp.json();
+                    if (!data.url && streamUrl) {
+                        data.url = streamUrl;
+                    }
                     return new Response(JSON.stringify(data), {
                         status: 200,
                         headers: {

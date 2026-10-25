@@ -513,8 +513,14 @@
                 else floatingSearch.classList.remove('hidden');
             }
 
-            if (viewName !== 'watch' && window.AryanPlayerEngine) {
-                window.AryanPlayerEngine.destroy();
+            if (viewName !== 'watch') {
+                if (window.AryanPlayerEngine) {
+                    window.AryanPlayerEngine.destroy();
+                }
+                const watchContainer = document.getElementById('watch-player-container');
+                if (watchContainer) watchContainer.innerHTML = '';
+                const modalContainer = document.getElementById('player-viewport-container');
+                if (modalContainer) modalContainer.innerHTML = '';
             }
 
             const navHome = document.getElementById('nav-home');
@@ -1038,7 +1044,12 @@
                         </div>
                     `;
                 }
-                await window.AryanGlobalAPI.ensureAllSourcesForMatch(item);
+                item._inInitialOpen = true;
+                try {
+                    await window.AryanGlobalAPI.ensureAllSourcesForMatch(item);
+                } finally {
+                    item._inInitialOpen = false;
+                }
             } else if (window.AryanGlobalAPI && !item._alphaResolved && (item.alphaStreamId || (item.streamCornerSources && item.streamCornerSources.length > 0))) {
                 await window.AryanGlobalAPI.ensureAlphaSourcesForMatch(item);
             }
@@ -1062,6 +1073,10 @@
             if (window.AryanPlayerEngine) {
                 window.AryanPlayerEngine.destroy();
             }
+            const watchContainer = document.getElementById('watch-player-container');
+            if (watchContainer) watchContainer.innerHTML = '';
+            const modalContainer = document.getElementById('player-viewport-container');
+            if (modalContainer) modalContainer.innerHTML = '';
             if (currentWatchItem) {
                 currentWatchItem._locked = false;
             }
@@ -1364,6 +1379,8 @@
             if (window.AryanPlayerEngine) window.AryanPlayerEngine.destroy();
             const container = document.getElementById('player-viewport-container');
             if (container) container.innerHTML = '';
+            const watchContainer = document.getElementById('watch-player-container');
+            if (watchContainer) watchContainer.innerHTML = '';
         }
 
         function isDummyOrPlaceholderUrl(url) {

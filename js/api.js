@@ -461,7 +461,8 @@
         const seenKeys = new Set();
         for (const s of match.servers) {
             if (!s || (!s.url && !s.rawUrl && !s.embedUrl)) continue;
-            const targetUrl = s.rawUrl || s.url || s.embedUrl;
+            const targetUrl = String(s.rawUrl || s.url || s.embedUrl || '').trim();
+            if (targetUrl.length === 0 || targetUrl === 'about:blank') continue;
             // Drop any unwanted broadcast TV channel dumps (embedindia.st/embed/<numeric_id>)
             if (/embedindia\.st\/embed\/\d+$/i.test(targetUrl) && !targetUrl.includes('backup=')) {
                 continue;
@@ -2824,7 +2825,7 @@
                             let newActiveIdx = 0;
                             if (window.AryanPlayerEngine) {
                                 window.AryanPlayerEngine.currentStream = activeWatch;
-                                if (wasUninitialized) {
+                                if (wasUninitialized && !activeWatch._inInitialOpen) {
                                     newActiveIdx = 0;
                                     window.AryanPlayerEngine.activeServerIdx = 0;
                                     if (typeof window.AryanPlayerEngine.reloadPlayer === 'function') {
@@ -3609,7 +3610,7 @@
             if (!found && Array.isArray(this.futbolxCatalog) && this.futbolxCatalog.length > 0) {
                 const fx = this.futbolxCatalog.find(f => f.uri_name === stripped || f.uri_name === decoded || f.id === decoded || f.id === ('fx-' + stripped));
                 if (fx) {
-                    const fxStreams = (fx.streams || []).map((s, idx) => ({
+                    const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
                         name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
                         url: s.url,
                         rawUrl: s.url,
@@ -3617,10 +3618,12 @@
                         isFutbolX: true,
                         hd: true
                     }));
-                    found = this.normalizeFutbolXMatch(fx, fxStreams);
-                    if (found) {
-                        this.matches.push(found);
-                        this.rebuildMatchIndex();
+                    if (fxStreams.length > 0) {
+                        found = this.normalizeFutbolXMatch(fx, fxStreams);
+                        if (found) {
+                            this.matches.push(found);
+                            this.rebuildMatchIndex();
+                        }
                     }
                 }
             }

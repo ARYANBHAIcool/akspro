@@ -17,6 +17,7 @@ window.AryanPlayerEngine = {
     currentQuality: -1,
     currentPlayerEngine: 'bitmovin',
     _tokenCache: new Map(),
+    _switchReqId: 0,
 
     init(containerId, streamItem) {
         const container = document.getElementById(containerId);
@@ -30,6 +31,7 @@ window.AryanPlayerEngine = {
     },
 
     destroy() {
+        this._switchReqId = (this._switchReqId || 0) + 1; // Invalidate any pending token fetches or server switches!
         this.qualityLevels = [];
         this.currentQuality = -1;
         this.updateQualityUI();
@@ -41,25 +43,41 @@ window.AryanPlayerEngine = {
             } catch (e) {}
             this.hls = null;
         }
-        const video = document.getElementById('global-video-element');
-        if (video) {
-            video.pause();
-            video.removeAttribute('src');
-            video.load();
-        }
-        const iframe = document.getElementById('global-iframe-element');
-        if (iframe) {
-            iframe.src = 'about:blank';
-        }
+
+        // 1. Immediately pause, unload, and remove all video and audio elements anywhere in document
+        const mediaElements = document.querySelectorAll('video, audio');
+        mediaElements.forEach(media => {
+            try {
+                media.pause();
+                media.removeAttribute('src');
+                media.load();
+                media.remove();
+            } catch (e) {}
+        });
+
+        // 2. Immediately stop, unmount, and remove all player iframe elements
+        const iframes = document.querySelectorAll('#player-canvas-wrapper iframe, #watch-player-container iframe, #player-viewport-container iframe, iframe#global-iframe-element');
+        iframes.forEach(iframe => {
+            try {
+                iframe.src = 'about:blank';
+                iframe.removeAttribute('src');
+                iframe.remove();
+            } catch (e) {}
+        });
+
+        // 3. Remove unmute badges
+        const badge = document.getElementById('player-unmute-badge');
+        if (badge) badge.remove();
     },
 
     getServers() {
         if (!this.currentStream) return [];
         const list = this.currentStream.servers || this.currentStream.sources || [];
-        const validList = Array.isArray(list) ? list.filter(s => s && (s.url || s.embedUrl || s.rawUrl)) : [];
+        const validList = Array.isArray(list) ? list.filter(s => s && (s.url || s.embedUrl || s.rawUrl) && String(s.url || s.embedUrl || s.rawUrl).trim().length > 0) : [];
         if (validList.length > 0) return validList;
         if (this.currentStream.url || this.currentStream.embedUrl || this.currentStream.rawUrl) {
-            return [this.currentStream];
+            const u = this.currentStream.url || this.currentStream.embedUrl || this.currentStream.rawUrl;
+            if (String(u).trim().length > 0) return [this.currentStream];
         }
         return [];
     },
@@ -78,6 +96,7 @@ window.AryanPlayerEngine = {
 
     async resolvePlayableStreamUrl(serverOrUrl) {
         let streamEndpoint = typeof serverOrUrl === 'object' ? (serverOrUrl.url || serverOrUrl.rawUrl || '') : String(serverOrUrl);
+        if (!streamEndpoint) return '';
         if (streamEndpoint.includes('shaka_player.html')) {
             try {
                 const dummy = (typeof window !== 'undefined' && window.location && window.location.origin) ? window.location.origin : 'https://asppv.pages.dev';
@@ -115,7 +134,13 @@ window.AryanPlayerEngine = {
         try {
             const pEdge = fetch(`/api/futbolx?token=1&url=${encodeURIComponent(streamEndpoint)}`, { signal: AbortSignal.timeout(4000) })
                 .then(r => r.json())
-                .then(d => (d && d.url) ? d.url : null)
+                .then(d => {
+                    if (d) {
+                        if (d.url) return d.url;
+                        if (d.tokenRequired === false) return streamEndpoint;
+                    }
+                    return null;
+                })
                 .catch(() => null);
 
             let tokenized = await pEdge;
@@ -125,7 +150,13 @@ window.AryanPlayerEngine = {
                 const params = new URLSearchParams({ path: u.pathname, sourceHost: u.hostname, expires: '900' });
                 tokenized = await fetch(`https://www.futbol-x.xyz/api/token.js?${params.toString()}`, { signal: AbortSignal.timeout(4000) })
                     .then(r => r.json())
-                    .then(d => (d && d.url) ? d.url : null)
+                    .then(d => {
+                        if (d) {
+                            if (d.url) return d.url;
+                            if (d.tokenRequired === false) return streamEndpoint;
+                        }
+                        return null;
+                    })
                     .catch(() => null);
             }
 
@@ -364,6 +395,10 @@ window.AryanPlayerEngine = {
         const canvas = document.getElementById('player-canvas-wrapper');
         if (!canvas) return;
 
+        // Sequence token to cancel any older in-flight stream transitions
+        this._switchReqId = (this._switchReqId || 0) + 1;
+        const currentReqId = this._switchReqId;
+
         const serverUrl = targetServer.url || targetServer.rawUrl || targetServer.embedUrl || '';
         const isFx = (typeof targetServer === 'object' && targetServer !== null && (targetServer.isFutbolX || (targetServer.name && /^FX\s*\d*/i.test(targetServer.name)))) || serverUrl.includes('ryzn.pro') || serverUrl.includes('futbolx');
         const isHls = (targetServer.type === 'video' || serverUrl.includes('.m3u8') || isFx) &&
@@ -387,12 +422,37 @@ window.AryanPlayerEngine = {
         this.currentQuality = -1;
         this.updateQualityUI();
 
+        // Remove any lingering unmute badge
+        const oldBadge = document.getElementById('player-unmute-badge');
+        if (oldBadge) oldBadge.remove();
+
+        // 1. CRITICAL: Immediately pause and stop prior media BEFORE any async work!
+        if (this.hls) {
+            try {
+                this.hls.stopLoad();
+                this.hls.detachMedia();
+                this.hls.destroy();
+            } catch(e) {}
+            this.hls = null;
+        }
+
+        const existingVideos = document.querySelectorAll('video, audio');
+        existingVideos.forEach(v => {
+            try {
+                v.pause();
+                v.removeAttribute('src');
+                v.load();
+            } catch(e) {}
+        });
+
         if (isHls) {
             // Remove iframe if present
             const oldIframe = document.getElementById('global-iframe-element');
             if (oldIframe) {
-                oldIframe.src = 'about:blank';
-                oldIframe.remove();
+                try {
+                    oldIframe.src = 'about:blank';
+                    oldIframe.remove();
+                } catch(e) {}
             }
 
             let video = document.getElementById('global-video-element');
@@ -406,35 +466,23 @@ window.AryanPlayerEngine = {
                 canvas.appendChild(video);
             }
 
-            // Tear down old HLS instance cleanly
-            if (this.hls) {
-                try {
-                    this.hls.stopLoad();
-                    this.hls.detachMedia();
-                    this.hls.destroy();
-                } catch(e) {}
-                this.hls = null;
-            }
-
             // High-speed token resolution (cached in memory)
             const playableUrl = await this.resolvePlayableStreamUrl(serverUrl);
-            this.attachHlsPlayback(playableUrl, video, loader, errorOverlay);
+
+            // Abort if switch changed or destroyed in the meantime
+            if (this._switchReqId !== currentReqId) return;
+
+            this.attachHlsPlayback(playableUrl, video, loader, errorOverlay, currentReqId);
         } else {
             // Teardown HLS and video
-            if (this.hls) {
-                try {
-                    this.hls.stopLoad();
-                    this.hls.detachMedia();
-                    this.hls.destroy();
-                } catch(e) {}
-                this.hls = null;
-            }
             const oldVideo = document.getElementById('global-video-element');
             if (oldVideo) {
-                oldVideo.pause();
-                oldVideo.removeAttribute('src');
-                oldVideo.load();
-                oldVideo.remove();
+                try {
+                    oldVideo.pause();
+                    oldVideo.removeAttribute('src');
+                    oldVideo.load();
+                    oldVideo.remove();
+                } catch(e) {}
             }
 
             // Cleanly replace iframe to guarantee zero Bitmovin unmount / removeChild race conditions
@@ -674,11 +722,15 @@ window.AryanPlayerEngine = {
         const loader = document.getElementById('player-loading-overlay');
         const errorOverlay = document.getElementById('player-error-overlay');
 
+        this._switchReqId = (this._switchReqId || 0) + 1;
+        const currentReqId = this._switchReqId;
+
         if (isHls) {
             const video = document.getElementById('global-video-element');
             if (video) {
                 this.resolvePlayableStreamUrl(serverUrl).then(playableUrl => {
-                    this.attachHlsPlayback(playableUrl, video, loader, errorOverlay);
+                    if (this._switchReqId !== currentReqId) return;
+                    this.attachHlsPlayback(playableUrl, video, loader, errorOverlay, currentReqId);
                 });
             }
         } else {
@@ -700,12 +752,20 @@ window.AryanPlayerEngine = {
         }
     },
 
-    attachHlsPlayback(playableUrl, video, loader, errorOverlay) {
+    attachHlsPlayback(playableUrl, video, loader, errorOverlay, reqId) {
         if (!video) return;
+        if (reqId && this._switchReqId !== reqId) return;
 
-        // Auto-configure volume and sound
+        if (!playableUrl || playableUrl.trim() === '') {
+            console.warn('[AryanPlayerEngine] Empty playable stream URL');
+            if (loader) { loader.style.opacity = '0'; loader.style.display = 'none'; }
+            if (errorOverlay) errorOverlay.classList.remove('hidden');
+            return;
+        }
+
+        // Configure audio
         video.volume = 1.0;
-        video.muted = false;
+        video.muted = true; // Start muted to guarantee 100% compliant autoplay across all modern browsers
 
         if (window.Hls && Hls.isSupported() && playableUrl.includes('.m3u8')) {
             const hls = new Hls({
@@ -734,10 +794,16 @@ window.AryanPlayerEngine = {
             this.hls = hls;
 
             hls.on(Hls.Events.MANIFEST_PARSED, (event, data) => {
+                if (reqId && this._switchReqId !== reqId) {
+                    try { hls.destroy(); } catch(e) {}
+                    return;
+                }
+
+                // Attempt unmuted playback, fallback to muted if browser autoplay blocks it
+                video.muted = false;
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(() => {
-                        // If browser blocks unmuted autoplay, play muted and display quick tap-to-unmute badge
                         video.muted = true;
                         video.play().catch(() => {});
                         this.showUnmutePrompt(video);
@@ -804,6 +870,8 @@ window.AryanPlayerEngine = {
 
             let networkRetries = 0;
             hls.on(Hls.Events.ERROR, async (event, data) => {
+                if (reqId && this._switchReqId !== reqId) return;
+
                 // 1. Recover buffer stall automatically (prevents stream from stopping/pausing mid-match)
                 if (data.details === Hls.ErrorDetails.BUFFER_STALLED_ERROR) {
                     console.warn('[HLS] Buffer stall detected, auto-nudging playback...');
@@ -825,6 +893,7 @@ window.AryanPlayerEngine = {
                     } catch(e) {}
                     
                     const refreshedUrl = await this.resolvePlayableStreamUrl(rawBase);
+                    if (this._switchReqId !== reqId) return;
                     if (refreshedUrl && refreshedUrl !== playableUrl) {
                         const curTime = video.currentTime;
                         hls.loadSource(refreshedUrl);
@@ -869,14 +938,39 @@ window.AryanPlayerEngine = {
                     }
                 }
             });
-        } else if (playableUrl) {
+        } else if (video.canPlayType && video.canPlayType('application/vnd.apple.mpegurl')) {
+            // Native Safari HLS
             video.src = playableUrl;
-            video.onloadeddata = () => {
+            video.addEventListener('loadedmetadata', () => {
+                if (reqId && this._switchReqId !== reqId) return;
+                video.muted = false;
                 const playPromise = video.play();
                 if (playPromise !== undefined) {
                     playPromise.catch(() => {
                         video.muted = true;
                         video.play().catch(() => {});
+                        this.showUnmutePrompt(video);
+                    });
+                }
+                if (loader) {
+                    loader.style.opacity = '0';
+                    setTimeout(() => { if (loader) loader.style.display = 'none'; }, 200);
+                }
+            }, { once: true });
+            video.addEventListener('error', () => {
+                if (loader) { loader.style.opacity = '0'; loader.style.display = 'none'; }
+                if (errorOverlay) errorOverlay.classList.remove('hidden');
+            }, { once: true });
+        } else if (playableUrl) {
+            video.src = playableUrl;
+            video.onloadeddata = () => {
+                if (reqId && this._switchReqId !== reqId) return;
+                const playPromise = video.play();
+                if (playPromise !== undefined) {
+                    playPromise.catch(() => {
+                        video.muted = true;
+                        video.play().catch(() => {});
+                        this.showUnmutePrompt(video);
                     });
                 }
                 if (loader) {
