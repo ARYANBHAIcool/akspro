@@ -54,19 +54,46 @@ export async function onRequest(context) {
                       parsedTarget.origin.includes('embedindia') ||
                       parsedTarget.origin.includes('embed.st') ||
                       parsedTarget.origin.includes('indianservers');
+        const isSportsonline = parsedTarget.origin.includes('dynmeadow') ||
+                               parsedTarget.origin.includes('sportsonline') ||
+                               parsedTarget.origin.includes('sportsonnline');
+        const isRocky = parsedTarget.origin.includes('rockyembed');
+
+        let upstreamReferer = `${parsedTarget.origin}/`;
+        let upstreamOrigin = parsedTarget.origin;
+
+        if (isSportsonline) {
+            upstreamReferer = 'https://ww1.sportsonnline.click/';
+            upstreamOrigin = 'https://ww1.sportsonnline.click';
+        } else if (isRocky) {
+            upstreamReferer = 'https://embed.st/';
+            upstreamOrigin = 'https://embed.st';
+        } else if (isStreamCorner) {
+            upstreamReferer = 'https://streamcorner.cloud/';
+            upstreamOrigin = 'https://streamcorner.cloud';
+        } else if (isPPV) {
+            upstreamReferer = 'https://ppv.st/';
+            upstreamOrigin = 'https://ppv.st';
+        }
 
         const upstreamHeaders = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/128.0.0.0 Safari/537.36',
-            'Referer': isStreamCorner ? 'https://streamcorner.cloud/' : (isPPV ? 'https://ppv.st/' : `${parsedTarget.origin}/`),
-            'Origin': isStreamCorner ? 'https://streamcorner.cloud' : (isPPV ? 'https://ppv.st' : parsedTarget.origin),
+            'Referer': upstreamReferer,
+            'Origin': upstreamOrigin,
             'Accept': '*/*',
             'Accept-Language': 'en-US,en;q=0.9'
         };
 
-        const upstreamResponse = await fetch(parsedTarget.toString(), {
+        const fetchInit = {
             method: context.request.method,
             headers: upstreamHeaders
-        });
+        };
+        if (context.request.method !== 'GET' && context.request.method !== 'HEAD') {
+            fetchInit.body = context.request.body;
+            fetchInit.duplex = 'half';
+        }
+
+        const upstreamResponse = await fetch(parsedTarget.toString(), fetchInit);
 
         if (!upstreamResponse.ok) {
             return new Response(`Upstream returned ${upstreamResponse.status}`, {
@@ -75,8 +102,8 @@ export async function onRequest(context) {
             });
         }
 
-        // If target is a JavaScript file, return with application/javascript
-        if (parsedTarget.pathname.endsWith('.js') || targetUrl.includes('.js')) {
+        // If target is a JavaScript file or provider plugin, return with application/javascript
+        if (parsedTarget.pathname.endsWith('.js') || targetUrl.includes('.js') || parsedTarget.pathname.includes('/jwp/')) {
             const jsText = await upstreamResponse.text();
             return new Response(jsText, {
                 status: 200,
@@ -84,7 +111,51 @@ export async function onRequest(context) {
                     'Content-Type': 'application/javascript; charset=utf-8',
                     'Access-Control-Allow-Origin': '*',
                     'Cache-Control': 'public, max-age=3600',
-                    'X-Embed-Version': '10.9.13'
+                    'X-Embed-Version': '10.9.15'
+                }
+            });
+        }
+
+        // If target is a CSS stylesheet, return with text/css
+        if (parsedTarget.pathname.endsWith('.css') || targetUrl.includes('.css')) {
+            const cssText = await upstreamResponse.text();
+            return new Response(cssText, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'text/css; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=86400',
+                    'X-Embed-Version': '10.9.15'
+                }
+            });
+        }
+
+        const upstreamContentType = upstreamResponse.headers.get('content-type') || '';
+
+        // If target is an API response or JSON, return application/json
+        if (upstreamContentType.includes('application/json') || parsedTarget.pathname.endsWith('.json') || parsedTarget.pathname.endsWith('/fetch')) {
+            const jsonText = await upstreamResponse.text();
+            return new Response(jsonText, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'application/json; charset=utf-8',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'no-cache',
+                    'X-Embed-Version': '10.9.15'
+                }
+            });
+        }
+
+        // If target is an image or font asset, stream binary with full CORS
+        if (upstreamContentType.includes('image/') || upstreamContentType.includes('font/') ||
+            parsedTarget.pathname.match(/\.(woff2?|ttf|eot|png|jpe?g|gif|svg|ico)$/i)) {
+            return new Response(upstreamResponse.body, {
+                status: 200,
+                headers: {
+                    'Content-Type': upstreamContentType || 'application/octet-stream',
+                    'Access-Control-Allow-Origin': '*',
+                    'Cache-Control': 'public, max-age=86400',
+                    'X-Embed-Version': '10.9.15'
                 }
             });
         }
@@ -110,9 +181,9 @@ export async function onRequest(context) {
                 const trimmed = line.trim();
                 if (trimmed && !trimmed.startsWith('#') && !trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
                     const absUrl = new URL(trimmed, baseUrl).href;
-                    return `/api/embed?url=${encodeURIComponent(absUrl)}`;
+                    return `${requestUrl.origin}/api/embed?url=${encodeURIComponent(absUrl)}`;
                 } else if (trimmed && (trimmed.startsWith('http://') || trimmed.startsWith('https://'))) {
-                    return `/api/embed?url=${encodeURIComponent(trimmed)}`;
+                    return `${requestUrl.origin}/api/embed?url=${encodeURIComponent(trimmed)}`;
                 }
                 return line;
             }).join('\n');
@@ -124,7 +195,7 @@ export async function onRequest(context) {
                     'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
                     'Cache-Control': 'no-cache',
-                    'X-Embed-Version': '10.9.14'
+                    'X-Embed-Version': '10.9.15'
                 }
             });
         }
@@ -213,7 +284,7 @@ export async function onRequest(context) {
         }
     } catch(e) {}
 
-    // Universal CORS and stream proxy for WASM & IndianServers media streams
+    // Universal CORS and stream proxy for WASM, IndianServers media streams, and root-relative endpoints
     try {
         var origFetch = window.fetch;
         window.fetch = function(input, init) {
@@ -226,21 +297,52 @@ export async function onRequest(context) {
                     var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
                     var localWasm = (window.location.origin || '') + '/js/wasm/' + wasmFile;
                     return origFetch.call(this, localWasm, init);
+                } else if (urlStr.startsWith('/') && !urlStr.startsWith('/api/embed') && !urlStr.startsWith('/js/wasm/')) {
+                    var proxied = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent("${parsedTarget.origin}" + urlStr);
+                    return origFetch.call(this, proxied, init);
                 }
             }
             return origFetch.apply(this, arguments);
         };
 
         var origXhrOpen = XMLHttpRequest.prototype.open;
-        XMLHttpRequest.prototype.open = function(method, url) {
-            var urlStr = String(url || '');
-            if (urlStr.includes('indianservers.st') && !urlStr.includes('/api/embed')) {
-                arguments[1] = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(urlStr);
-            } else if ((urlStr.includes('/js/wasm/') || urlStr.includes('js/wasm/')) && !urlStr.includes('/api/embed')) {
-                var wasmFile = urlStr.split('/js/wasm/').pop().split('?')[0];
-                arguments[1] = (window.location.origin || '') + '/js/wasm/' + wasmFile;
+        XMLHttpRequest.prototype.open = function(method, url, async, user, password) {
+            var target = String(url || '');
+            if (target.includes('indianservers.st') && !target.includes('/api/embed')) {
+                target = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(target);
+            } else if ((target.includes('/js/wasm/') || target.includes('js/wasm/')) && !target.includes('/api/embed')) {
+                var wasmFile = target.split('/js/wasm/').pop().split('?')[0];
+                target = (window.location.origin || '') + '/js/wasm/' + wasmFile;
+            } else if (target.startsWith('/') && !target.startsWith('/api/embed') && !target.startsWith('/js/wasm/')) {
+                target = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent("${parsedTarget.origin}" + target);
             }
-            return origXhrOpen.apply(this, arguments);
+            return origXhrOpen.call(this, method, target, async !== false, user, password);
+        };
+    } catch(e) {}
+
+    // Dynamic nested iframe interception (e.g. dynmeadow or rockyembed)
+    try {
+        var origIframeSrc = Object.getOwnPropertyDescriptor(HTMLIFrameElement.prototype, 'src');
+        if (origIframeSrc && origIframeSrc.set) {
+            Object.defineProperty(HTMLIFrameElement.prototype, 'src', {
+                set: function(val) {
+                    if (val && typeof val === 'string' && !val.includes('/api/embed') && (val.startsWith('http://') || val.startsWith('https://'))) {
+                        val = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(val);
+                    }
+                    return origIframeSrc.set.call(this, val);
+                },
+                get: origIframeSrc.get,
+                configurable: true
+            });
+        }
+        var origSetAttr = Element.prototype.setAttribute;
+        Element.prototype.setAttribute = function(name, val) {
+            if (this instanceof HTMLIFrameElement && String(name).toLowerCase() === 'src') {
+                if (val && typeof val === 'string' && !val.includes('/api/embed') && (val.startsWith('http://') || val.startsWith('https://'))) {
+                    val = (window.location.origin || '') + '/api/embed?url=' + encodeURIComponent(val);
+                }
+            }
+            return origSetAttr.call(this, name, val);
         };
     } catch(e) {}
 
@@ -314,18 +416,36 @@ export async function onRequest(context) {
     }
 
     try {
+        var spoofPath = "${parsedTarget.pathname || '/'}";
+        var spoofSearch = "${parsedTarget.search || ''}";
         var pVal = "${parsedTarget.searchParams.get('p') || requestUrl.searchParams.get('p') || ''}";
         var reqEngine = "${reqEngine || ''}";
-        var curPath = window.location.pathname;
-        if (pVal) {
-            var finalParams = new URLSearchParams(window.location.search);
-            finalParams.set('p', pVal);
-            if (reqEngine && reqEngine !== 'bitmovin') {
-                finalParams.set('player', reqEngine);
+
+        try {
+            var targetSearch = window.location.search;
+            if (pVal) {
+                var finalParams = new URLSearchParams(targetSearch);
+                finalParams.set('p', pVal);
+                if (reqEngine && reqEngine !== 'bitmovin') finalParams.set('player', reqEngine);
+                targetSearch = '?' + finalParams.toString();
             }
-            var targetQuery = '?' + finalParams.toString();
-            if (window.location.search !== targetQuery) {
-                window.history.replaceState(null, '', curPath + targetQuery);
+            if (window.location.pathname !== spoofPath && typeof history.replaceState === 'function') {
+                history.replaceState(null, '', spoofPath + (spoofSearch || targetSearch || ''));
+            }
+        } catch(e) {}
+
+        if (typeof Location !== 'undefined' && Location.prototype) {
+            var origPathDesc = Object.getOwnPropertyDescriptor(Location.prototype, 'pathname');
+            if (origPathDesc && origPathDesc.configurable) {
+                Object.defineProperty(Location.prototype, 'pathname', {
+                    get: function() {
+                        var cur = origPathDesc.get ? origPathDesc.get.call(this) : window.location.pathname;
+                        if (cur === '/api/embed' || cur === '/' || !cur) return spoofPath;
+                        return cur;
+                    },
+                    set: origPathDesc.set,
+                    configurable: true
+                });
             }
         }
     } catch (e) {}
@@ -427,6 +547,7 @@ export async function onRequest(context) {
 [class*="popup"], [id*="popup"]:not(#player-modal),
 [class*="promo"], [id*="promo"],
 [class*="banner-ad"], [id*="banner-ad"],
+#html1, #button1, [id*="html1"], [id*="button1"],
 .ad-overlay, .advertisement {
     display: none !important;
     opacity: 0 !important;
@@ -459,6 +580,30 @@ export async function onRequest(context) {
         html = html.replace(/<script[^>]*disable-devtool[^>]*><\/script>/gi, '<!-- devtool disabled -->');
         html = html.replace(/<iframe[^>]*src=["'][^"']*ad\.html[^"']*["'][^>]*><\/iframe>/gi, '<!-- ad iframe removed -->');
         html = html.replace(/<iframe[^>]*src=["'][^"']*ad\.html[^"']*["'][^>]*>/gi, '<!-- ad iframe removed -->');
+
+        // Neutralize sportsonnline ad overlays
+        html = html.replace(/<div[^>]*id=["']html1["'][\s\S]*?<\/div>/gi, '');
+        html = html.replace(/<div[^>]*id=["']button1["'][\s\S]*?<\/div>/gi, '');
+
+        // Rewrite static nested iframes (such as dynmeadow.net in sportsonnline or rockyembed.st in embed.st)
+        html = html.replace(/<iframe([^>]*?)src=["'](https?:\/\/[^"']+)["']([^>]*)>/gi, (match, before, srcUrl, after) => {
+            if (srcUrl.includes('ad.html')) return '<!-- ad iframe removed -->';
+            return `<iframe${before}src="${requestUrl.origin}/api/embed?url=${encodeURIComponent(srcUrl)}"${after}>`;
+        });
+
+        // Rewrite root-relative scripts and stylesheets (e.g. dynmeadow.net /assets/stream.js) through /api/embed with full CORS
+        html = html.replace(/<script([^>]*?)src=["'](\/[^"']+)["']([^>]*)>/gi, (match, before, srcPath, after) => {
+            if (srcPath.startsWith('//')) {
+                return `<script${before}src="https:${srcPath}"${after}>`;
+            }
+            return `<script${before}src="${requestUrl.origin}/api/embed?url=${encodeURIComponent(parsedTarget.origin + srcPath)}"${after}>`;
+        });
+        html = html.replace(/<link([^>]*?)href=["'](\/[^"']+)["']([^>]*)>/gi, (match, before, hrefPath, after) => {
+            if (hrefPath.startsWith('//')) {
+                return `<link${before}href="https:${hrefPath}"${after}>`;
+            }
+            return `<link${before}href="${requestUrl.origin}/api/embed?url=${encodeURIComponent(parsedTarget.origin + hrefPath)}"${after}>`;
+        });
 
         // Neutralize domain checks and anti-iframe checks on StreamCorner / Getsugatensho feeds
         html = html.replace(/function\s+e\s*\(\)\s*\{var\s+e,t;/g, 'function e(){return;var e,t;');
