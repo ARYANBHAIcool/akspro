@@ -783,52 +783,41 @@
             if (!url || typeof url !== 'string') return '';
             url = url.trim();
             if (!url || url.includes('logo-icon.png') || url.includes('poocloud.in')) return '';
-            if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
-            if (url.includes('sofascore.com')) {
-                return `https://serveproxy.com/?url=${encodeURIComponent(url)}`;
+            if (url.includes('serveproxy.com/?url=')) {
+                try { url = decodeURIComponent(url.split('serveproxy.com/?url=')[1].split('&')[0]); } catch (e) {}
             }
-            
+            if (url.includes('wsrv.nl/?url=')) return url;
             if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
             } else if (/^[a-zA-Z0-9_\-=+]{20,}$/.test(url)) {
                 url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
             }
-            if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
+            if (url.includes('static.ppvservices.st')) {
+                return url;
+            }
+            if (url.includes('streamed.pk')) {
                 return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&output=webp`;
             }
             return url;
         }
 
         function renderCardThumbnail(m) {
-            // Fast Path: If genuine banner poster exists, render it immediately without wasting CPU on fallback computation
             let rawPoster = (m.poster || '').trim();
-            if (rawPoster && !rawPoster.includes('logo-icon.png') && !rawPoster.includes('poocloud.in')) {
-                let directRaw = rawPoster;
-                if (directRaw.includes('wsrv.nl/?url=')) {
-                    try { directRaw = decodeURIComponent(directRaw.split('wsrv.nl/?url=')[1].split('&')[0]); } catch (e) {}
-                } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
-                    directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
-                }
-                const posterSrc = (rawPoster.includes('wsrv.nl/?url=') || rawPoster.includes('serveproxy.com')) ? rawPoster : (
-                    (rawPoster.includes('static.ppvservices.st') || rawPoster.includes('streamed.pk'))
-                        ? `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`
-                        : rawPoster
-                );
-                return `
-                    <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-[#060a12] flex items-center justify-center">
-                        <img src="${posterSrc}" 
-                             data-raw="${directRaw}"
-                             class="w-full h-full object-cover object-center group-hover:scale-105 transition-transform duration-300 brightness-95" 
-                             alt="${m.title}" 
-                             loading="lazy" 
-                             decoding="async" 
-                             onerror="this.style.display='none';">
-                        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/40 pointer-events-none"></div>
-                    </div>
-                `;
+            if (rawPoster.includes('serveproxy.com/?url=')) {
+                try { rawPoster = decodeURIComponent(rawPoster.split('serveproxy.com/?url=')[1].split('&')[0]); } catch (e) {}
+            }
+            if (rawPoster.includes('logo-icon.png') || rawPoster.includes('poocloud.in')) {
+                rawPoster = '';
             }
 
-            // Fallback visual (only computed if poster is absent!)
+            let directRaw = rawPoster;
+            if (directRaw.includes('wsrv.nl/?url=')) {
+                try { directRaw = decodeURIComponent(directRaw.split('wsrv.nl/?url=')[1].split('&')[0]); } catch (e) {}
+            } else if (directRaw.startsWith('/api/images') || directRaw.startsWith('/images') || directRaw.startsWith('api/images')) {
+                directRaw = 'https://streamed.pk/' + directRaw.replace(/^\/+/, '');
+            }
+
+            // Fallback visual (rendered underneath poster or as primary if poster absent)
             const logo1 = resolveCardLogo(m.team1 && m.team1.logo);
             const logo2 = resolveCardLogo(m.team2 && m.team2.logo);
             let t1Name = (m.team1 && m.team1.name) || '';
@@ -844,12 +833,12 @@
                 const t2Init = (t2Name.replace(/[^a-zA-Z0-9]/g, '').slice(0, 3) || 'T2').toUpperCase();
 
                 const t1Badge = logo1
-                    ? `<img src="${logo1}" class="max-w-full max-h-full object-contain" alt="${t1Name}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                    ? `<img src="${logo1}" class="max-w-full max-h-full object-contain" alt="${escapeHtml(t1Name)}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                        <span class="hidden w-full h-full text-[10px] font-black text-blue-400 items-center justify-center uppercase tracking-wider">${t1Init}</span>`
                     : `<span class="w-full h-full text-[10px] font-black text-blue-400 flex items-center justify-center uppercase tracking-wider">${t1Init}</span>`;
 
                 const t2Badge = logo2
-                    ? `<img src="${logo2}" class="max-w-full max-h-full object-contain" alt="${t2Name}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
+                    ? `<img src="${logo2}" class="max-w-full max-h-full object-contain" alt="${escapeHtml(t2Name)}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';">
                        <span class="hidden w-full h-full text-[10px] font-black text-red-400 items-center justify-center uppercase tracking-wider">${t2Init}</span>`
                     : `<span class="w-full h-full text-[10px] font-black text-red-400 flex items-center justify-center uppercase tracking-wider">${t2Init}</span>`;
 
@@ -868,15 +857,38 @@
             } else {
                 let singleLogo = resolveCardLogo(m.categoryLogo || (m.team1 && m.team1.logo) || (m.team2 && m.team2.logo));
                 if (singleLogo) {
-                    fallbackInner = `<img src="${singleLogo}" class="max-w-[70%] max-h-[70%] object-contain drop-shadow" alt="${m.title}" loading="lazy" onerror="this.style.display='none';">`;
+                    fallbackInner = `<img src="${singleLogo}" class="max-w-[70%] max-h-[70%] object-contain drop-shadow" alt="${escapeHtml(m.title)}" loading="lazy" onerror="this.style.display='none'; if(this.nextElementSibling) this.nextElementSibling.style.display='flex';"><div class="hidden flex-col items-center justify-center p-2"><span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">🏆</span><span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] text-gray-400">${escapeHtml(m.league || m.sport || 'Sports')}</span></div>`;
                 } else {
-                    fallbackInner = `<div class="flex flex-col items-center justify-center p-2"><span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">🏆</span><span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] text-gray-400">${m.league || m.sport || 'Sports'}</span></div>`;
+                    fallbackInner = `<div class="flex flex-col items-center justify-center p-2"><span class="text-2xl sm:text-3xl mb-1 filter drop-shadow">🏆</span><span class="text-[9px] font-extrabold uppercase tracking-wider truncate max-w-[90%] text-gray-400">${escapeHtml(m.league || m.sport || 'Sports')}</span></div>`;
+                }
+            }
+
+            let posterSrc = '';
+            if (rawPoster) {
+                if (rawPoster.includes('static.ppvservices.st')) {
+                    posterSrc = rawPoster;
+                } else if (rawPoster.includes('streamed.pk')) {
+                    posterSrc = `https://wsrv.nl/?url=${encodeURIComponent(rawPoster)}&w=480&output=webp`;
+                } else {
+                    posterSrc = rawPoster;
                 }
             }
 
             return `
                 <div class="h-full aspect-video relative overflow-hidden flex-shrink-0 bg-gradient-to-br from-[#0c1424] via-[#09101d] to-[#060a12] flex items-center justify-center">
-                    ${fallbackInner}
+                    <div class="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        ${fallbackInner}
+                    </div>
+                    ${posterSrc ? `
+                        <img src="${posterSrc}" 
+                             data-raw="${directRaw}"
+                             class="w-full h-full object-cover object-center relative z-10 group-hover:scale-105 transition-transform duration-300 brightness-95" 
+                             alt="${escapeHtml(m.title)}" 
+                             loading="lazy" 
+                             decoding="async" 
+                             onerror="if (this.dataset.raw && this.src !== this.dataset.raw) { this.src = this.dataset.raw; } else { this.remove(); }">
+                    ` : ''}
+                    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-transparent to-[#0c1322]/40 pointer-events-none z-20"></div>
                 </div>
             `;
         }

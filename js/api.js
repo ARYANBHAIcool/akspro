@@ -40,7 +40,13 @@
         'data.daniellemarsh444.workers.dev'
     ];
 
-    const KNOWN_ALPHA_STREAMS = {};
+    const KNOWN_ALPHA_STREAMS = {
+        'ppv-31244': 'b9ef47121cc7b4f4b34c4f1293061914',
+        '31244': 'b9ef47121cc7b4f4b34c4f1293061914',
+        'ppv-2026-ballon-dor-ceremony-31244': 'b9ef47121cc7b4f4b34c4f1293061914',
+        '2026-ballon-dor-ceremony': 'b9ef47121cc7b4f4b34c4f1293061914',
+        '2026-ballon-d-or-ceremony': 'b9ef47121cc7b4f4b34c4f1293061914'
+    };
 
     const MATCH_CACHE_LIMIT = 200;
 
@@ -378,11 +384,17 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url || url.includes('logo-icon.png') || url.includes('poocloud.in')) return '';
-        if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
+        if (url.includes('serveproxy.com/?url=')) {
+            try { url = decodeURIComponent(url.split('serveproxy.com/?url=')[1].split('&')[0]); } catch (e) {}
+        }
+        if (url.includes('wsrv.nl/?url=')) return url;
         if (url.startsWith('/api/images') || url.startsWith('/images') || url.startsWith('api/images')) {
             url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
         }
-        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
+        if (url.includes('static.ppvservices.st')) {
+            return url;
+        }
+        if (url.includes('streamed.pk')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=480&output=webp`;
         }
         return url;
@@ -392,10 +404,10 @@
         if (!url || typeof url !== 'string') return '';
         url = url.trim();
         if (!url || url.includes('logo-icon.png') || url.includes('poocloud.in')) return '';
-        if (url.includes('serveproxy.com') || url.includes('wsrv.nl/?url=')) return url;
-        if (url.includes('sofascore.com')) {
-            return `https://serveproxy.com/?url=${encodeURIComponent(url)}`;
+        if (url.includes('serveproxy.com/?url=')) {
+            try { url = decodeURIComponent(url.split('serveproxy.com/?url=')[1].split('&')[0]); } catch (e) {}
         }
+        if (url.includes('wsrv.nl/?url=')) return url;
         if (!url.startsWith('http://') && !url.startsWith('https://') && !url.startsWith('//') && !url.startsWith('assets/')) {
             if (url.startsWith('/api/images') || url.startsWith('/images')) {
                 url = 'https://streamed.pk/' + url.replace(/^\/+/, '');
@@ -403,7 +415,10 @@
                 url = `https://streamed.pk/api/images/proxy/${encodeURIComponent(url)}.webp`;
             }
         }
-        if (url.includes('streamed.pk') || url.includes('static.ppvservices.st')) {
+        if (url.includes('static.ppvservices.st')) {
+            return url;
+        }
+        if (url.includes('streamed.pk')) {
             return `https://wsrv.nl/?url=${encodeURIComponent(url)}&w=140&output=webp`;
         }
         return url;
@@ -480,10 +495,6 @@
             if (targetUrl.length === 0 || targetUrl === 'about:blank') continue;
             // Drop any unwanted broadcast TV channel dumps (embedindia.st/embed/<numeric_id>)
             if (/embedindia\.st\/embed\/\d+$/i.test(targetUrl) && !targetUrl.includes('backup=')) {
-                continue;
-            }
-            // Drop dead legacy StreamCorner /alpha?p= feeds which fail token validation and show black screens
-            if (targetUrl.includes('/alpha?p=') || targetUrl.includes('/alpha?') || /\/alpha\b/i.test(new URL(targetUrl, 'https://dummy.com').pathname)) {
                 continue;
             }
             // Eliminate duplicate original, ?backup=1, and proxied variants
@@ -899,11 +910,21 @@
             if (diffHours > 8) return false;
         }
 
-        // Single-entity events check FIRST before team splitting (Formula 1, MotoGP, UFC fight cards, WWE)
-        const isSingleEntity = /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship/i.test(cleanP) ||
-                               /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship/i.test(cleanA);
+        // Single-entity events check FIRST before team splitting (Formula 1, MotoGP, UFC fight cards, WWE, ceremonies, awards)
+        const isSingleEntity = /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship|ceremony|gala|awards|draft|show|special|ballon|draw|presentation/i.test(cleanP) ||
+                               /grand\s*prix|qualifying|practice|race|circuit|ufc|bellator|fight\s*night|smackdown|raw|collision|wrestlemania|rally|motogp|nascar|marathon|tour\s*de|darts|championship|ceremony|gala|awards|draft|show|special|ballon|draw|presentation/i.test(cleanA);
         
         if (isSingleEntity) {
+            // Instant match for marquee events like Ballon d'Or
+            if (cleanP.includes('ballon') && cleanA.includes('ballon')) {
+                if (ppvTime && alphaTime) {
+                    const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+                    if (diffHours <= 12) return true;
+                } else {
+                    return true;
+                }
+            }
+
             // Disambiguate different sessions (e.g. Practice 1 vs Practice 2 vs Race)
             const getSession = (s) => {
                 const m = (s || '').match(/\b(?:1st|2nd|3rd|\d(?:st|nd|rd)?)\s*practice\b|\bpractice\s*\d\b|\bqualifying\s*\d?\b|\bsprint\b|\brace\b/i);
@@ -931,9 +952,15 @@
                     return true;
                 }
             }
-            if (ppvTime && alphaTime && Math.abs(ppvTime - alphaTime) <= 3600000) {
-                if (common.length >= 1 && (pToks.includes('prix') || pToks.includes('grand') || pToks.includes('f1') || pToks.includes('formula') || pToks.includes('motogp') || pToks.includes('rally'))) {
-                    return true;
+            if (common.length >= 1) {
+                const highValueTokens = ['ballon', 'prix', 'grand', 'f1', 'formula', 'motogp', 'rally', 'ufc', 'boxing', 'wrestlemania', 'summerslam', 'smackdown', 'raw', 'ceremony', 'awards', 'draft'];
+                if (highValueTokens.some(k => common.includes(k) || pToks.includes(k))) {
+                    if (ppvTime && alphaTime) {
+                        const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+                        if (diffHours <= 12) return true;
+                    } else {
+                        return true;
+                    }
                 }
             }
         }
@@ -970,6 +997,25 @@
             const awayHome2 = matchTeams(pAway, aHome);
             if ((homeHome && awayAway) || (homeHome2 && awayHome2)) return true;
             return false;
+        }
+
+        // Fallback for non-team fixtures (ceremonies, awards, galas, single matches)
+        if ((!pHome || !pAway) && (!aHome || !aAway)) {
+            if (cleanP.includes('ballon') && cleanA.includes('ballon')) return true;
+            const pToks = getDistinctiveTokens(cleanP);
+            const aToks = getDistinctiveTokens(cleanA);
+            const common = aToks.filter(t => pToks.includes(t));
+            if (common.length >= 2) {
+                if (ppvTime && alphaTime) {
+                    const diffHours = Math.abs(ppvTime - alphaTime) / (1000 * 60 * 60);
+                    if (diffHours <= 8) return true;
+                } else {
+                    return true;
+                }
+            }
+            if (common.length >= 1 && (common.includes('ballon') || common.includes('ceremony') || common.includes('awards') || common.includes('draft') || common.includes('gala'))) {
+                return true;
+            }
         }
 
         return false;
@@ -1155,13 +1201,19 @@
             // Auto-refresh match feeds dynamically every 45s so site updates instantly with new StreamCorner sources
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
+                    const prevCount = this.matches ? this.matches.length : 0;
+                    const prevLiveCount = this.matches ? this.matches.filter(m => m.isLive).length : 0;
                     await Promise.allSettled([
                         this.loadPPVFeeds(true),
                         this.loadStreamCornerAlphaFeeds()
                     ]);
                     this.updateLiveStatuses();
-                    if (typeof currentView !== 'undefined' && currentView === 'home' && typeof searchQuery !== 'undefined' && !searchQuery) {
-                        this.emitUpdate();
+                    const newCount = this.matches ? this.matches.length : 0;
+                    const newLiveCount = this.matches ? this.matches.filter(m => m.isLive).length : 0;
+                    if (prevCount !== newCount || prevLiveCount !== newLiveCount) {
+                        if (typeof currentView !== 'undefined' && currentView === 'home' && typeof searchQuery !== 'undefined' && !searchQuery) {
+                            this.emitUpdate();
+                        }
                     }
                     // Real-time sync for active watch view when StreamCorner updates with new feeds
                     const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
@@ -1437,7 +1489,7 @@
                                 if (!matched) {
                                     const aTitle = alpha.event_name || (alpha.home_team && alpha.away_team ? `${alpha.home_team} vs. ${alpha.away_team}` : alpha.home_team || '');
                                     const aToks = getDistinctiveTokens(aTitle);
-                                    if (aToks.length >= 2) {
+                                    if (aToks.length >= 1) {
                                         const cands = new Set();
                                         for (const t of aToks) {
                                             const l = ppvByTok.get(t);
@@ -2404,11 +2456,6 @@
                         rawStreams.forEach((s) => {
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
                             if (!rawUrl) return;
-
-                            // Drop dead legacy StreamCorner /alpha?p= feeds which fail token validation and show black screens
-                            if (rawUrl.includes('/alpha?p=') || rawUrl.includes('/alpha?') || /\/alpha\b/i.test(new URL(rawUrl, 'https://dummy.com').pathname)) {
-                                return;
-                            }
 
                             let label = (s.source_name || s.name || 'Feed').trim().replace(/\s*-\s*$/, '');
 
