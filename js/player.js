@@ -536,6 +536,17 @@ window.AryanPlayerEngine = {
     },
 
     reloadPlayer() {
+        if (this.currentStream) {
+            this.currentStream._alphaResolved = false;
+            this.currentStream._forceRefresh = true;
+            try {
+                const targetKey = this.currentStream.alphaStreamId || (this.currentStream.streamCornerSources && this.currentStream.streamCornerSources[0] && this.currentStream.streamCornerSources[0].id) || this.currentStream.id;
+                localStorage.removeItem('sc_enriched_' + targetKey);
+            } catch(e) {}
+            if (window.AryanStreams && typeof window.AryanStreams.ensureAllSourcesForMatch === 'function') {
+                window.AryanStreams.ensureAllSourcesForMatch(this.currentStream);
+            }
+        }
         const watchContainer = document.getElementById('watch-player-container');
         if (watchContainer && (typeof currentView !== 'undefined' && currentView === 'watch')) {
             this.destroy();

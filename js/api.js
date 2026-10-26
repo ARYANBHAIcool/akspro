@@ -62,16 +62,40 @@
         }
         try {
             const parsed = new URL(u);
+            const host = parsed.hostname.toLowerCase();
+
+            // 1. StreamCorner pandecocogaming / getsugatensho feeds
             const p = parsed.searchParams.get('p');
             if (p) {
                 return `pandeco:${p}`;
             }
+
+            // 2. PPV.st mirrors: embedindia.st, embed.st, ppv.st, rockyembed.st, embedstream.me
+            if (host.includes('embedindia') || host.includes('embed.st') || host.includes('ppv.st') || host.includes('rockyembed') || host.includes('embedstream')) {
+                // Strip subpaths like hotel/, golf/, admin/, beta/, alpha/
+                const match = parsed.pathname.match(/\/(?:embed\/)?(?:(?:hotel|golf|admin|beta|alpha)\/)?([a-zA-Z0-9_-]+)/i);
+                if (match && match[1]) {
+                    return `ppv:${match[1].toLowerCase()}`;
+                }
+            }
+
+            // 3. Taifood NBA LeaguePass & IndianServers
+            if (host.includes('taifood') || host.includes('indianservers')) {
+                const match = parsed.pathname.match(/(?:embed\/nba\/[^/]+\/([a-zA-Z0-9_-]+)|nba_([a-zA-Z0-9_-]+))/i);
+                if (match) {
+                    const teamKey = (match[1] || match[2] || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+                    if (teamKey) return `nba:${teamKey}`;
+                }
+                let cleanPath = parsed.pathname.replace(/\/+$/, '').toLowerCase();
+                return `taifood:${cleanPath}`;
+            }
+
             parsed.searchParams.delete('backup');
             parsed.searchParams.delete('bk');
             parsed.searchParams.delete('b');
             parsed.searchParams.delete('player');
             let path = parsed.pathname.replace(/\/+$/, '');
-            return `${parsed.hostname.toLowerCase()}${path}${parsed.search ? parsed.search : ''}`;
+            return `${host}${path}${parsed.search ? parsed.search : ''}`.toLowerCase();
         } catch (e) {
             return u.replace(/[?&](?:backup|bk|b|player)=[^&]*/gi, '').replace(/\/+$/, '').toLowerCase();
         }
@@ -388,50 +412,39 @@
     function prioritizeFxServers(servers, isLive) {
         if (!Array.isArray(servers) || servers.length <= 1) return servers || [];
 
-        const isFx = (s) => {
-            if (!s) return false;
-            if (s.isFutbolX) return true;
-            const n = s.name || '';
-            if (/^FX\s*\d*/i.test(n)) return true;
-            const u = (s.rawUrl || s.url || '').toLowerCase();
-            return u.includes('futbolx') || u.includes('ryzn.pro');
-        };
-
-        const isPPV = (s) => {
-            if (!s) return false;
-            if (isFx(s)) return false;
-            const u = (s.rawUrl || s.url || '').toLowerCase();
-            if (u.includes('embed.st/embed/') || u.includes('embedindia.st/embed/') || u.includes('/hotel/') || u.includes('/golf/') || u.includes('/admin/')) {
-                return true;
-            }
-            const n = (s.name || '').trim();
-            if (/^(?:main\s+server|server\s*\d+|source\s*\d+|feed\s*\d+|ppv\s*\d*)$/i.test(n) && !u.includes('taifood') && !u.includes('streamcorner') && !u.includes('getsugatensho')) {
-                return true;
-            }
-            return false;
-        };
-
         const isStreamCorner = (s) => {
             if (!s) return false;
-            if (isFx(s)) return false;
             if (s.source === 'streamcorner' || s.isStreamCorner) return true;
             const u = (s.rawUrl || s.url || '').toLowerCase();
             if (u.includes('taifood') || u.includes('getsugatensho') || u.includes('pandecocogaming') || u.includes('streamcorner')) {
                 return true;
             }
-            return !isPPV(s);
+            return false;
         };
 
-        const fxList = [];
         const scList = [];
         const ppvList = [];
+        const seenKeys = new Set();
 
+        // 1. Collect StreamCorner sources first (genuine broadcaster channels & feeds)
         for (const s of servers) {
-            if (isFx(s)) {
-                fxList.push(s);
-            } else if (isStreamCorner(s)) {
+            if (isStreamCorner(s)) {
+                const k = getCanonicalServerKey(s.rawUrl || s.url);
+                if (k && seenKeys.has(k)) continue;
+                if (k) seenKeys.add(k);
                 scList.push(s);
-            } else {
+            }
+        }
+
+        // 2. Collect PPV.st sources (only unique feeds NOT already covered by StreamCorner)
+        for (const s of servers) {
+            if (!isStreamCorner(s)) {
+                const u = (s.rawUrl || s.url || '').toLowerCase();
+                // Filter out non-PPV / non-StreamCorner external feeds
+                if (u.includes('futbolx') || u.includes('ryzn.pro')) continue;
+                const k = getCanonicalServerKey(s.rawUrl || s.url);
+                if (k && seenKeys.has(k)) continue; // Drop duplicate PPV feed already in StreamCorner
+                if (k) seenKeys.add(k);
                 ppvList.push(s);
             }
         }
@@ -439,7 +452,6 @@
         // Re-number generic PPV servers cleanly starting from 1 (or Server 1)
         let ppvIndex = 0;
         ppvList.forEach(s => {
-            const raw = s.rawUrl || s.url || '';
             const n = (s.name || '').trim();
             if (/^(?:main\s+server|server\s*\d+|source\s*\d+|feed\s*\d+|ppv\s*\d*)$/i.test(n) || INTERNAL_SERVER_NAMES.test(n)) {
                 ppvIndex++;
@@ -447,12 +459,11 @@
             }
         });
 
-        // 1st: FX sources, 2nd: StreamCorner sources (upper), 3rd: PPV sources (below them)
         // If match is NOT live, prioritize PPV base servers (with official countdown cards) ahead of inactive feeds
         if (isLive === false) {
-            return [...fxList, ...ppvList, ...scList];
+            return [...ppvList, ...scList];
         }
-        return [...fxList, ...scList, ...ppvList];
+        return [...scList, ...ppvList];
     }
 
     function sanitizeMatchServers(match) {
@@ -1117,7 +1128,6 @@
             }
 
             // 3. Ultra-fast initial render: Load authoritative core match schedule & 24/7 channels in parallel (<400ms)
-            this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
             this._ppvLoadingPromise = this.loadPPVFeeds(true);
             const channelsPromise = this.loadChannelsCatalog();
             this._alphaLoadingPromise = (async () => {
@@ -1129,7 +1139,7 @@
 
             await Promise.allSettled([
                 this._ppvLoadingPromise,
-                this._futbolxLoadingPromise,
+                this._alphaLoadingPromise,
                 channelsPromise
             ]);
 
@@ -1142,17 +1152,24 @@
                 localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
             } catch (e) {}
 
-            // Auto-refresh match feeds quietly every 3 minutes
+            // Auto-refresh match feeds dynamically every 45s so site updates instantly with new StreamCorner sources
             if (!this.refreshInterval) {
                 this.refreshInterval = setInterval(async () => {
-                    await this.loadPPVFeeds(true);
-                    this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
-                    await this._futbolxLoadingPromise;
+                    await Promise.allSettled([
+                        this.loadPPVFeeds(true),
+                        this.loadStreamCornerAlphaFeeds()
+                    ]);
                     this.updateLiveStatuses();
                     if (typeof currentView !== 'undefined' && currentView === 'home' && typeof searchQuery !== 'undefined' && !searchQuery) {
                         this.emitUpdate();
                     }
-                }, 180000);
+                    // Real-time sync for active watch view when StreamCorner updates with new feeds
+                    const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
+                    if (activeWatch && (activeWatch.alphaStreamId || (activeWatch.streamCornerSources && activeWatch.streamCornerSources.length > 0))) {
+                        activeWatch._alphaResolved = false;
+                        this.ensureAlphaSourcesForMatch(activeWatch);
+                    }
+                }, 45000);
             }
         },
 
@@ -1473,32 +1490,6 @@
 
                         const now = Date.now();
                         const cleanNewMatches = newMatches.filter(m => !isExpiredMatch(m, now) && !isUnwantedMatch(m) && !isLinearChannel(m));
-                        if (Array.isArray(this.matches)) {
-                            const existingFx = this.matches.filter(m => m && m.isFutbolX && !isExpiredMatch(m, now));
-                            for (const fx of existingFx) {
-                                const fxSlug = fx.canonicalSlug || generateUniversalMatchSlug(fx.title || fx.name || '');
-                                const matchedPpv = cleanNewMatches.find(m => {
-                                    if (m.id === fx.id || (m.uriName && fx.uriName && m.uriName === fx.uriName)) return true;
-                                    const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
-                                    if (fxSlug && mSlug && fxSlug === mSlug) return true;
-                                    return isSameMatch(m, fx);
-                                });
-                                if (matchedPpv) {
-                                    // Merge FX streams directly into canonical PPV match
-                                    const existingUrls = new Set((matchedPpv.servers || []).map(s => s.rawUrl || s.url));
-                                    const newServers = (fx.servers || []).filter(s => !existingUrls.has(s.rawUrl || s.url));
-                                    if (newServers.length > 0) {
-                                        matchedPpv.servers = prioritizeFxServers([...newServers, ...(matchedPpv.servers || [])]);
-                                        matchedPpv.sources = matchedPpv.servers;
-                                    }
-                                    matchedPpv.isFutbolX = true;
-                                    if (fx.uriName) matchedPpv.uriName = fx.uriName;
-                                } else {
-                                    cleanNewMatches.push(fx);
-                                }
-                            }
-                        }
-
                         this.matches = cleanNewMatches;
                         this.isLoading = false;
                         this.sortMatches();
@@ -1523,325 +1514,12 @@
          * Integrates channels into matching fixtures as "FX 1 - ...", "FX 2 - ..."
          * and adds exclusive FutbolX matches to the live schedule.
          */
-        async loadFutbolXFeeds(isInitial = false) {
-            try {
-                let fxMatches = [];
-                const endpoints = [
-                    '/api/futbolx?endpoint=futbolx',
-                    '/api/futbolx',
-                    '/api/ppv?endpoint=futbolx'
-                ];
-
-                for (const ep of endpoints) {
-                    try {
-                        const res = await fetch(ep, {
-                            signal: AbortSignal.timeout(6000),
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        if (res.ok) {
-                            const json = await res.json();
-                            const list = (json && (json.events || json.matches || (Array.isArray(json) ? json : null))) || [];
-                            if (Array.isArray(list) && list.length > 0) {
-                                fxMatches = list;
-                                break;
-                            }
-                        }
-                    } catch (e) {}
-                }
-
-                // Client-side fallback directly to FutbolX public API if edge proxy was unavailable
-                if (fxMatches.length === 0 && typeof window !== 'undefined') {
-                    try {
-                        const streamRes = await fetch('https://www.futbol-x.xyz/api/stream', {
-                            signal: AbortSignal.timeout(5000),
-                            headers: { 'Accept': 'application/json' }
-                        });
-                        if (streamRes.ok) {
-                            const { categories } = await streamRes.json();
-                            const validCats = Array.isArray(categories) ? categories.filter(c => typeof c === 'string' && c.trim().length > 0) : [];
-                            const now = Date.now();
-                            const promises = validCats.map(async cat => {
-                                try {
-                                    const cRes = await fetch(`https://www.futbol-x.xyz/api/${cat}.json`, {
-                                        signal: AbortSignal.timeout(4000),
-                                        headers: { 'Accept': 'application/json' }
-                                    });
-                                    if (!cRes.ok) return [];
-                                    const cData = await cRes.json();
-                                    const events = [];
-                                    if (cData && Array.isArray(cData.streams)) {
-                                        for (const g of cData.streams) {
-                                            if (g && Array.isArray(g.streams)) {
-                                                for (const ev of g.streams) {
-                                                    if (!ev || !ev.name) continue;
-                                                    const start = ev.starts_at ? new Date(ev.starts_at).getTime() : 0;
-                                                    const end = ev.ends_at ? new Date(ev.ends_at).getTime() : (start ? start + 10800000 : 0);
-                                                    if (end > 0 && now > (end + 900000) && !ev.always_live) continue;
-
-                                                    const activeStreams = (ev.streams || []).filter(s => s && s.url && s.url.trim().length > 0);
-                                                    events.push({
-                                                        id: `fx-${ev.uri_name || Math.random().toString(36).slice(2, 8)}`,
-                                                        uri_name: ev.uri_name,
-                                                        title: (ev.name || '').trim(),
-                                                        tag: (ev.tag || '').trim(),
-                                                        category: cat,
-                                                        poster: ev.poster || '',
-                                                        starts_at: ev.starts_at || '',
-                                                        ends_at: ev.ends_at || '',
-                                                        always_live: ev.always_live || 0,
-                                                        streams: activeStreams
-                                                    });
-                                                }
-                                            }
-                                        }
-                                    }
-                                    return events;
-                                } catch (e) { return []; }
-                            });
-                            const results = await Promise.all(promises);
-                            fxMatches = results.flat();
-                        }
-                    } catch (e) {}
-                }
-
-                if (fxMatches.length === 0) return;
-                this.futbolxCatalog = fxMatches;
-
-                const getTokens = (str) => {
-                    if (!str) return [];
-                    return str.toLowerCase()
-                        .replace(/[^a-z0-9\s]/g, ' ')
-                        .split(/\s+/)
-                        .filter(w => w.length >= 3 && !['vs', 'the', 'and', 'live', 'game', 'cup'].includes(w));
-                };
-
-                const matchByTok = new Map();
-                for (const m of this.matches) {
-                    const toks = getTokens(m.title || '');
-                    for (const t of toks) {
-                        let l = matchByTok.get(t);
-                        if (!l) { l = []; matchByTok.set(t, l); }
-                        l.push(m);
-                    }
-                }
-
-                let addedNew = false;
-                const now = Date.now();
-
-                for (const fx of fxMatches) {
-                    const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
-                        name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: s.url,
-                        rawUrl: s.url,
-                        type: 'video',
-                        isFutbolX: true,
-                        hd: true
-                    }));
-
-                    const parseFxDate = (d) => {
-                        if (!d) return 0;
-                        const str = String(d).trim();
-                        const iso = (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) ? str : str + '+03:00';
-                        return new Date(iso).getTime() || 0;
-                    };
-                    const fxStart = parseFxDate(fx.starts_at);
-                    const fxToks = getTokens(fx.title || '');
-                    const fxSlug = generateUniversalMatchSlug(fx.title || '');
-                    let matchedFixture = null;
-
-                    if (this._matchById) {
-                        if (fx.id && this._matchById.has(fx.id)) matchedFixture = this._matchById.get(fx.id);
-                        else if (fx.uri_name && this._matchById.has(fx.uri_name)) matchedFixture = this._matchById.get(fx.uri_name);
-                        else if (fxSlug && this._matchById.has(fxSlug)) matchedFixture = this._matchById.get(fxSlug);
-                    }
-                    if (!matchedFixture && fxSlug && Array.isArray(this.matches)) {
-                        matchedFixture = this.matches.find(m => {
-                            if (m.id === fx.id || (m.uriName && fx.uri_name && m.uriName === fx.uri_name)) return true;
-                            const mSlug = m.canonicalSlug || generateUniversalMatchSlug(m.title || m.name || '');
-                            if (fxSlug && mSlug && fxSlug === mSlug) return true;
-                            return isSameMatch(m, fx);
-                        });
-                    }
-
-                    if (!matchedFixture && fxToks.length > 0) {
-                        const candidates = new Map();
-                        for (const t of fxToks) {
-                            const list = matchByTok.get(t);
-                            if (list) {
-                                for (const cand of list) {
-                                    candidates.set(cand, (candidates.get(cand) || 0) + 1);
-                                }
-                            }
-                        }
-                        for (const [cand, count] of candidates.entries()) {
-                            const fxCatUpper = (SPORT_MAPPINGS[(fx.category || '').toLowerCase()] || (fx.category || '').toUpperCase());
-                            if (cand.sport && fxCatUpper && cand.sport !== 'OTHERS' && fxCatUpper !== 'OTHERS' && cand.sport !== fxCatUpper) {
-                                continue;
-                            }
-                            if (cand.startTime && fxStart && Math.abs(cand.startTime - fxStart) > 43200000) {
-                                continue;
-                            }
-                            if (count >= 2 || (fxToks.length === 1 && count >= 1)) {
-                                matchedFixture = cand;
-                                break;
-                            }
-                        }
-                    }
-
-                    if (matchedFixture) {
-                        // Attach FX streams to existing fixture at the very top
-                        let addedServers = [];
-                        if (fxStreams.length > 0) {
-                            const existingUrls = new Set((matchedFixture.servers || []).map(srv => srv.rawUrl || srv.url));
-                            const newFxServers = fxStreams.filter(s => !existingUrls.has(s.rawUrl || s.url));
-                            if (newFxServers.length > 0) {
-                                matchedFixture.servers = prioritizeFxServers([...newFxServers, ...(matchedFixture.servers || [])]);
-                                matchedFixture.sources = matchedFixture.servers;
-                                addedServers = newFxServers;
-                            }
-                        }
-                        matchedFixture.isFutbolX = true;
-                        if (fx.uri_name) {
-                            matchedFixture.uriName = fx.uri_name;
-                            if (this._matchById) {
-                                this._matchById.set(fx.uri_name, matchedFixture);
-                                this._matchById.set(`fx-${fx.uri_name}`, matchedFixture);
-                            }
-                        }
-                        if (fx.poster && (!matchedFixture.poster || matchedFixture.poster.includes('logo-icon.png'))) {
-                            matchedFixture.poster = sanitizePosterUrl(fx.poster);
-                        }
-                        if (!matchedFixture.isLive && matchedFixture.startTime && matchedFixture.startTime <= now && (!matchedFixture.endTime || now <= matchedFixture.endTime) && fxStreams.length > 0) {
-                            matchedFixture.isLive = true;
-                            matchedFixture.status = 'live';
-                        }
-
-                        // Real-time update if user is currently viewing this fixture
-                        const activeWatch = window.currentWatchItem || (typeof currentWatchItem !== 'undefined' ? currentWatchItem : null);
-                        if (activeWatch && addedServers.length > 0 &&
-                            (activeWatch.id === matchedFixture.id || 
-                             (activeWatch.canonicalSlug && matchedFixture.canonicalSlug && activeWatch.canonicalSlug === matchedFixture.canonicalSlug) ||
-                             (activeWatch.rawId && matchedFixture.rawId && activeWatch.rawId === matchedFixture.rawId) ||
-                             (activeWatch.uriName && matchedFixture.uriName && activeWatch.uriName === matchedFixture.uriName))) {
-                            const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                            const currentPlayingServer = activeWatch.servers && activeWatch.servers[prevActiveIdx];
-                            const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
-
-                            activeWatch.servers = matchedFixture.servers;
-                            activeWatch.sources = matchedFixture.servers;
-                            activeWatch.isFutbolX = true;
-
-                            if (window.AryanPlayerEngine) {
-                                window.AryanPlayerEngine.currentStream = activeWatch;
-                                if (currentPlayingUrl) {
-                                    const matchIdx = activeWatch.servers.findIndex(srv => (srv.rawUrl || srv.url) === currentPlayingUrl);
-                                    if (matchIdx !== -1) {
-                                        window.AryanPlayerEngine.activeServerIdx = matchIdx;
-                                    }
-                                }
-                            }
-                            if (typeof renderWatchSources === 'function') {
-                                const activeIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
-                                renderWatchSources(activeWatch, activeIdx);
-                            }
-                        }
-                    } else {
-                        // Exclusive FutbolX match (both live and upcoming future events!)
-                        if (!Array.isArray(fxStreams) || fxStreams.length === 0) continue;
-                        const newMatch = this.normalizeFutbolXMatch(fx, fxStreams);
-                        if (newMatch) {
-                            this.matches.push(newMatch);
-                            addedNew = true;
-                            if (this._matchById) {
-                                this._matchById.set(newMatch.id, newMatch);
-                                if (newMatch.rawId) this._matchById.set(String(newMatch.rawId), newMatch);
-                                if (newMatch.uriName) {
-                                    this._matchById.set(newMatch.uriName, newMatch);
-                                    this._matchById.set(`fx-${newMatch.uriName}`, newMatch);
-                                }
-                            }
-                        }
-                    }
-                }
-
-                if (addedNew || fxMatches.length > 0) {
-                    this.sortMatches();
-                    if (!this.isLoading && !isInitial) this.emitUpdate();
-                    try {
-                        const CACHE_KEY = 'aryan_cached_matches_v42';
-                        localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
-                    } catch (e) {}
-                }
-            } catch (err) {
-                console.warn('loadFutbolXFeeds error:', err);
-            }
+        async loadFutbolXFeeds() {
+            this.futbolxCatalog = [];
+            return [];
         },
-
-        normalizeFutbolXMatch(fx, fxStreams) {
-            if (!fx || !fx.title) return null;
-            if (isUnwantedMatch(fx) || isLinearChannel(fx)) {
-                return null;
-            }
-            if (!fx || !fx.title) return null;
-            const fxTitleLower = (fx.title || fx.name || '').toLowerCase();
-            if ((fxTitleLower.includes('wolves') || fxTitleLower.includes('wolverhampton')) && (fxTitleLower.includes('pompey') || fxTitleLower.includes('portsmouth'))) {
-                return null;
-            }
-            if (fxTitleLower.includes('diriyah') && fxTitleLower.includes('riyadh')) {
-                return null;
-            }
-            if (!Array.isArray(fxStreams) || fxStreams.length === 0) {
-                return null;
-            }
-
-            const parseFxDate = (d) => {
-                if (!d) return 0;
-                const str = String(d).trim();
-                const iso = (str.endsWith('Z') || /[+-]\d{2}:\d{2}$/.test(str)) ? str : str + '+03:00';
-                return new Date(iso).getTime() || 0;
-            };
-            const startTs = parseFxDate(fx.starts_at) || Date.now();
-            const rawCat = (fx.category || 'football').toLowerCase();
-            const sport = normalizeSport(rawCat || fx.category || 'FOOTBALL');
-            const defaultDuration = getEstimatedMatchDuration({ title: fx.title, name: fx.title, sport, category: fx.category, tag: fx.tag });
-            const endTs = parseFxDate(fx.ends_at) || (startTs ? startTs + defaultDuration : 0);
-            const now = Date.now();
-
-            if (isExpiredMatch({ startTime: startTs, endTime: endTs, status: fx.status, sport }, now)) return null;
-
-            const isLive = isMatchLive({ status: fx.status, startTime: startTs, endTime: endTs, sport }, now);
-
-            const parts = fx.title.split(/\s+(?:vs\.?|@|-|x)\s+/i);
-            const team1Name = parts[0] ? parts[0].trim() : fx.title;
-            const team2Name = parts[1] ? parts[1].trim() : '';
-            const universalSlug = generateUniversalMatchSlug(fx.title);
-
-            return sanitizeMatchServers({
-                id: fx.id || `fx-${fx.uri_name}`,
-                rawId: fx.uri_name || fx.id,
-                uriName: fx.uri_name,
-                canonicalSlug: universalSlug,
-                slug: universalSlug,
-                title: fx.title,
-                name: fx.title,
-                sport: sport,
-                league: fx.tag || sport,
-                tag: fx.tag || 'Live Match',
-                status: isLive ? 'live' : 'upcoming',
-                isLive: isLive,
-                startTime: startTs,
-                endTime: endTs,
-                time: fx.starts_at ? new Date(fx.starts_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Live',
-                poster: sanitizePosterUrl(fx.poster || ''),
-                categoryLogo: '',
-                colors: [],
-                team1: { name: team1Name, logo: '' },
-                team2: { name: team2Name, logo: '' },
-                rawCategory: rawCat,
-                servers: fxStreams || [],
-                sources: fxStreams || [],
-                isFutbolX: true
-            });
+        normalizeFutbolXMatch() {
+            return null;
         },
 
         async loadChannelsCatalog() {
@@ -2378,6 +2056,7 @@
                 if (addedIndependent || this.matches.length > 0) {
                     this.isLoading = false;
                     this.sortMatches();
+                    this.emitUpdate();
                     try {
                         const CACHE_KEY = 'aryan_cached_matches_v42';
                         localStorage.setItem(CACHE_KEY, JSON.stringify({ savedAt: Date.now(), matches: this.matches.slice(0, MATCH_CACHE_LIMIT) }));
@@ -2470,47 +2149,7 @@
                 }
             }
 
-            // 2. Ensure FutbolX feeds are started and awaited
-            if (!this._futbolxLoadingPromise) {
-                this._futbolxLoadingPromise = this.loadFutbolXFeeds(true);
-            }
-            if (!Array.isArray(this.futbolxCatalog) || this.futbolxCatalog.length === 0) {
-                try {
-                    await Promise.race([
-                        this._futbolxLoadingPromise,
-                        new Promise(resolve => setTimeout(resolve, 2000))
-                    ]);
-                } catch (e) {}
-            }
-
-            // Merge FX sources if catalog available and match doesn't have them yet
-            if (Array.isArray(this.futbolxCatalog) && this.futbolxCatalog.length > 0) {
-                const fx = this.futbolxCatalog.find(f => {
-                    if (f.id === match.id || f.uri_name === match.uriName) return true;
-                    const fSlug = generateUniversalMatchSlug(f.title || '');
-                    return fSlug && matchSlug && fSlug === matchSlug;
-                });
-                if (fx && Array.isArray(fx.streams) && fx.streams.length > 0) {
-                    const fxStreams = fx.streams.filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
-                        name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: s.url,
-                        rawUrl: s.url,
-                        type: 'video',
-                        isFutbolX: true,
-                        hd: true
-                    }));
-                    const existingUrls = new Set((match.servers || []).map(srv => srv.rawUrl || srv.url));
-                    const newFxServers = fxStreams.filter(s => !existingUrls.has(s.rawUrl || s.url));
-                    if (newFxServers.length > 0) {
-                        const isMatchLive = match && (match.isLive || (match.timestamp && (Date.now() >= (match.timestamp * 1000 - 600000))));
-                        match.servers = prioritizeFxServers([...newFxServers, ...(match.servers || [])], isMatchLive);
-                        match.sources = match.servers;
-                        match.isFutbolX = true;
-                    }
-                }
-            }
-
-            // 3. Ensure StreamCorner Alpha feeds are started and awaited
+            // 2. Ensure StreamCorner Alpha feeds are started and awaited
             if (!this._alphaLoadingPromise) {
                 this._alphaLoadingPromise = this.loadStreamCornerAlphaFeeds();
             }
@@ -2617,19 +2256,21 @@
             if (match._alphaPromise) return await match._alphaPromise;
             if (typeof window === 'undefined') return false;
 
-            // Instant 0ms Cache Check: check localStorage for previously decrypted streams
+            // Instant Cache Check: check localStorage for recently queried streams (max 45s TTL for fresh StreamCorner sync)
             const targetKey = match.alphaStreamId || (match.streamCornerSources && match.streamCornerSources[0] && match.streamCornerSources[0].id) || match.id;
             try {
-                const cachedRaw = localStorage.getItem('sc_enriched_' + targetKey);
-                if (cachedRaw) {
-                    const parsed = JSON.parse(cachedRaw);
-                    if (parsed && Array.isArray(parsed.servers) && parsed.servers.length > 0 && (Date.now() - (parsed.ts || 0) < 1800000)) {
-                        const sanitizedCached = sanitizeMatchServers({ servers: parsed.servers }).servers;
-                        if (sanitizedCached && sanitizedCached.length > 0) {
-                            match.servers = sanitizedCached;
-                            match.sources = sanitizedCached;
-                            match._alphaResolved = true;
-                            return true;
+                if (!match._forceRefresh) {
+                    const cachedRaw = localStorage.getItem('sc_enriched_' + targetKey);
+                    if (cachedRaw) {
+                        const parsed = JSON.parse(cachedRaw);
+                        if (parsed && Array.isArray(parsed.servers) && parsed.servers.length > 0 && (Date.now() - (parsed.ts || 0) < 45000)) {
+                            const sanitizedCached = sanitizeMatchServers({ servers: parsed.servers }).servers;
+                            if (sanitizedCached && sanitizedCached.length > 0) {
+                                match.servers = sanitizedCached;
+                                match.sources = sanitizedCached;
+                                match._alphaResolved = true;
+                                return true;
+                            }
                         }
                     }
                 }
@@ -2756,21 +2397,9 @@
                     }
 
                     if (rawStreams.length > 0) {
-                        // 1. Keep base PPV servers, filtering out any stray or duplicate channels
-                        const baseServers = (match.servers || []).filter(s => {
-                            const u = s.url || '';
-                            if (/embedindia\.st\/embed\/\d+$/i.test(u) && !u.includes('backup=')) return false;
-                            if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho')) return false;
-                            return true;
-                        });
-
+                        // 1. Process StreamCorner streams first, recording canonical keys
                         const seenKeys = new Set();
-                        baseServers.forEach(s => {
-                            const k = getCanonicalServerKey(s.rawUrl || s.url);
-                            if (k) seenKeys.add(k);
-                        });
-
-                        const newServers = [];
+                        const scServers = [];
 
                         rawStreams.forEach((s) => {
                             const rawUrl = (s.embed_url || s.stream_url || '').trim();
@@ -2783,9 +2412,8 @@
 
                             let label = (s.source_name || s.name || 'Feed').trim().replace(/\s*-\s*$/, '');
 
-                            // Drop generic unwanted branding
+                            // Drop generic unwanted internal branding
                             if (/streamcorner/i.test(label) || /streamcorner/i.test(rawUrl)) return;
-                            if (/embedindia|ppv/i.test(rawUrl) || /embedindia|ppv/i.test(label)) return;
 
                             const key = getCanonicalServerKey(rawUrl);
                             if (key && seenKeys.has(key)) return;
@@ -2793,20 +2421,34 @@
 
                             const isDirectHls = !rawUrl.includes('.mpd') && !rawUrl.includes('cenc') && rawUrl.includes('.m3u8');
                             const srvUrl = isDirectHls ? rawUrl : toProxiedEmbedUrl(rawUrl);
-                            const cleanLabel = extractCleanServerLabel(label, rawUrl, newServers.length);
+                            const cleanLabel = extractCleanServerLabel(label, rawUrl, scServers.length);
 
-                            newServers.push({
+                            scServers.push({
                                 name: cleanLabel,
                                 url: srvUrl,
                                 rawUrl: rawUrl,
                                 type: isDirectHls ? 'video' : 'iframe',
+                                isStreamCorner: true,
                                 hd: true
                             });
                         });
 
+                        // 2. Base PPV servers - strictly omit any stream already provided by StreamCorner (Zero duplicates!)
+                        const ppvServers = [];
+                        (match.servers || []).forEach(s => {
+                            const u = s.rawUrl || s.url || '';
+                            if (!u || u === 'about:blank') return;
+                            if (u.includes('pandecocogaming') || u.includes('/api/embed') || u.includes('getsugatensho')) return;
+                            if (/embedindia\.st\/embed\/\d+$/i.test(u) && !u.includes('backup=')) return;
+                            const k = getCanonicalServerKey(u);
+                            if (k && seenKeys.has(k)) return; // Duplicate PPV source already included via StreamCorner!
+                            if (k) seenKeys.add(k);
+                            ppvServers.push(s);
+                        });
+
                         // Place StreamCorner feeds first (if live), followed by base PPV feeds, and sanitize
                         const isMatchLive = match && (match.isLive || (match.timestamp && (Date.now() >= (match.timestamp * 1000 - 600000))));
-                        const combined = prioritizeFxServers(sanitizeMatchServers({ servers: [...newServers, ...baseServers] }).servers, isMatchLive);
+                        const combined = prioritizeFxServers(sanitizeMatchServers({ servers: [...scServers, ...ppvServers] }).servers, isMatchLive);
 
                         match.servers = combined;
                         match.sources = combined;
@@ -2822,7 +2464,7 @@
                             const prevActiveIdx = (window.AryanPlayerEngine && window.AryanPlayerEngine.activeServerIdx) || 0;
                             const currentPlayingServer = activeWatch.servers && activeWatch.servers[prevActiveIdx];
                             const currentPlayingUrl = currentPlayingServer ? (currentPlayingServer.rawUrl || currentPlayingServer.url) : null;
-                            const wasUninitialized = !currentPlayingUrl || (baseServers.length === 0) || !window.AryanPlayerEngine || !window.AryanPlayerEngine.getServers().length;
+                            const wasUninitialized = !currentPlayingUrl || (ppvServers.length === 0) || !window.AryanPlayerEngine || !window.AryanPlayerEngine.getServers().length;
 
                             activeWatch.servers = match.servers;
                             activeWatch.sources = match.servers;
@@ -3613,27 +3255,7 @@
                 }
             }
 
-            // 3.5. Search futbolxCatalog directly for independent FutbolX links
-            if (!found && Array.isArray(this.futbolxCatalog) && this.futbolxCatalog.length > 0) {
-                const fx = this.futbolxCatalog.find(f => f.uri_name === stripped || f.uri_name === decoded || f.id === decoded || f.id === ('fx-' + stripped));
-                if (fx) {
-                    const fxStreams = (fx.streams || []).filter(s => s && s.url && s.url.trim().length > 0).map((s, idx) => ({
-                        name: `FX ${idx + 1} - ${s.title || 'Feed'}`,
-                        url: s.url,
-                        rawUrl: s.url,
-                        type: 'video',
-                        isFutbolX: true,
-                        hd: true
-                    }));
-                    if (fxStreams.length > 0) {
-                        found = this.normalizeFutbolXMatch(fx, fxStreams);
-                        if (found) {
-                            this.matches.push(found);
-                            this.rebuildMatchIndex();
-                        }
-                    }
-                }
-            }
+
 
             // 3.8. Search 24/7 channels catalog
             if (!found && Array.isArray(this.channels)) {
