@@ -1173,8 +1173,9 @@
                 this.emitUpdate();
             }
 
-            // 3. Ultra-fast initial render: Load authoritative core match schedule & 24/7 channels in parallel (<400ms)
+            // 3. Ultra-fast initial render: Load authoritative core match schedule, BINTV feeds & 24/7 channels in parallel (<400ms)
             this._ppvLoadingPromise = this.loadPPVFeeds(true);
+            const bintvPromise = this.loadBintvFeeds();
             const channelsPromise = this.loadChannelsCatalog();
             this._alphaLoadingPromise = (async () => {
                 try {
@@ -1185,6 +1186,7 @@
 
             await Promise.allSettled([
                 this._ppvLoadingPromise,
+                bintvPromise,
                 this._alphaLoadingPromise,
                 channelsPromise
             ]);
@@ -1205,6 +1207,7 @@
                     const prevLiveCount = this.matches ? this.matches.filter(m => m.isLive).length : 0;
                     await Promise.allSettled([
                         this.loadPPVFeeds(true),
+                        this.loadBintvFeeds(),
                         this.loadStreamCornerAlphaFeeds()
                     ]);
                     this.updateLiveStatuses();
@@ -1855,6 +1858,132 @@
                         ]
                     }
                 ];
+            }
+        },
+
+        /**
+         * Load BINTV Unified JSON Feed
+         * High-speed Cloudflare-backed sports matches and 217+ 24/7 channels
+         * Zero latency, zero delay, direct embed streams
+         */
+        async loadBintvFeeds() {
+            try {
+                const res = await fetch('https://bintvjson.lovable.app/api/public/bintvjson', {
+                    signal: AbortSignal.timeout(6000),
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!res.ok) return;
+                const json = await res.json();
+                if (!json) return;
+
+                // 1. Process 24/7 Channels
+                const bintvChannels = Array.isArray(json['24/7 Channels']) ? json['24/7 Channels'] : [];
+                if (bintvChannels.length > 0) {
+                    const normBintvChannels = bintvChannels.map((ch, idx) => {
+                        const name = (ch.name || ch.title || '').trim();
+                        const poster = ch.poster || '';
+                        const rawStreams = Array.isArray(ch.streams) ? ch.streams : [];
+                        const servers = rawStreams.map((s, sIdx) => ({
+                            name: s.name ? `${s.name} [HD]` : `Server ${sIdx + 1} [HD]`,
+                            url: s.url,
+                            rawUrl: s.url,
+                            type: 'iframe',
+                            hd: true
+                        }));
+                        return {
+                            id: ch.id || `bintv-${idx}`,
+                            channelId: ch.id || `bintv-${idx}`,
+                            name: name,
+                            logo: poster || 'assets/img/logo-icon.png',
+                            poster: poster,
+                            country: 'GLOBAL',
+                            category: '24/7 STREAMS',
+                            servers: servers
+                        };
+                    }).filter(c => c.name && c.servers.length > 0);
+
+                    // Add unique channels to this.channels
+                    const existingChannelNames = new Set((this.channels || []).map(c => (c.name || '').toLowerCase().trim()));
+                    const newChannels = normBintvChannels.filter(c => !existingChannelNames.has(c.name.toLowerCase().trim()));
+                    this.channels = [...(this.channels || []), ...newChannels];
+                }
+
+                // 2. Process Live & Upcoming Events
+                const liveList = Array.isArray(json['Live Events']) ? json['Live Events'] : [];
+                const upcomingList = Array.isArray(json['Upcoming Events']) ? json['Upcoming Events'] : [];
+                const allEvents = [...liveList, ...upcomingList];
+
+                for (const evt of allEvents) {
+                    if (!evt || !evt.name) continue;
+                    const evtTitle = String(evt.name).trim();
+                    const isLive = String(evt.status || '').toLowerCase() === 'live';
+                    const cat = evt.category || 'Sports';
+                    const poster = evt.poster || '';
+                    const rawStreams = Array.isArray(evt.streams) ? evt.streams : [];
+                    const servers = rawStreams.map((s, sIdx) => ({
+                        name: s.name ? `${s.name} [BINTV HD]` : `Server ${sIdx + 1} [BINTV]`,
+                        url: s.url,
+                        rawUrl: s.url,
+                        type: 'iframe',
+                        hd: true
+                    }));
+                    if (servers.length === 0) continue;
+
+                    // Match against existing events in this.matches
+                    const evtToks = getDistinctiveTokens(evtTitle);
+                    let matchedEvent = null;
+                    if (evtToks.length > 0) {
+                        for (const m of (this.matches || [])) {
+                            if (!m || !m.title) continue;
+                            const mToks = getDistinctiveTokens(m.title);
+                            if (mToks.length > 0) {
+                                const overlap = evtToks.filter(t => mToks.includes(t));
+                                if (overlap.length >= 2 || (overlap.length === 1 && (evtToks.length === 1 || mToks.length === 1))) {
+                                    matchedEvent = m;
+                                    break;
+                                }
+                            }
+                        }
+                    }
+
+                    if (matchedEvent) {
+                        // Merge servers into existing event
+                        matchedEvent.servers = matchedEvent.servers || [];
+                        const existingUrls = new Set(matchedEvent.servers.map(s => s.url || s.rawUrl));
+                        servers.forEach(srv => {
+                            if (!existingUrls.has(srv.url)) {
+                                matchedEvent.servers.push(srv);
+                                existingUrls.add(srv.url);
+                            }
+                        });
+                        if (isLive) matchedEvent.isLive = true;
+                        if (!matchedEvent.poster && poster) matchedEvent.poster = poster;
+                    } else {
+                        // Add as a new standalone live/upcoming match
+                        let dateVal = Date.now();
+                        if (evt.date) {
+                            const parsed = (typeof evt.date === 'number') ? (evt.date < 1e12 ? evt.date * 1000 : evt.date) : Date.parse(evt.date);
+                            if (!Number.isNaN(parsed)) dateVal = parsed;
+                        } else if (!isLive) {
+                            dateVal = Date.now() + 3600000;
+                        }
+
+                        const newMatch = {
+                            id: evt.id || `bintv-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+                            title: evtTitle,
+                            category: cat,
+                            poster: poster,
+                            isLive: isLive,
+                            date: dateVal,
+                            servers: servers,
+                            sources: servers,
+                            isBintv: true
+                        };
+                        this.matches.push(newMatch);
+                    }
+                }
+            } catch (err) {
+                console.warn('BINTV feed load error:', err);
             }
         },
 

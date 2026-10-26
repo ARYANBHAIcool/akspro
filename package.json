@@ -1,9 +1,9 @@
 {
-  "name": "aryanstreams-global",
+  "name": "akspro",
   "version": "1.0.0",
-  "description": "AryanStreams Global - Standalone Live Sports & StreamCorner Multi-Server Streaming Web App",
+  "description": "AKSPro (AryanStreams Global Pro) - High-Speed Live Sports & 24/7 Multi-Server Streaming Platform",
   "private": true,
   "scripts": {
-    "deploy": "wrangler pages deploy . --project-name=aryanstreams-global"
+    "deploy": "wrangler pages deploy . --project-name=akspro"
   }
 }

@@ -330,6 +330,11 @@ window.AryanPlayerEngine = {
             return `/shaka_player.html?mpd=${encodeURIComponent(rawUrl)}`;
         }
 
+        // BINTV sandboxed sources and direct embeds run without proxy to preserve token & origin headers
+        if (rawUrl.includes('bintv-sources.pages.dev') || rawUrl.includes('bintvcc.pages.dev') || rawUrl.includes('ehgembxe')) {
+            return rawUrl;
+        }
+
         // If rawUrl is already wrapped in /api/embed, unwrap it to get clean upstream URL
         if (rawUrl.includes('/api/embed')) {
             try {
@@ -404,7 +409,9 @@ window.AryanPlayerEngine = {
         const isHls = (targetServer.type === 'video' || serverUrl.includes('.m3u8') || isFx) &&
                       !serverUrl.includes('.mpd') &&
                       !serverUrl.includes('cenc') &&
-                      !serverUrl.includes('shaka_player.html');
+                      !serverUrl.includes('shaka_player.html') &&
+                      !serverUrl.includes('bintv-sources.pages.dev') &&
+                      !serverUrl.includes('bintv');
 
         // Show loading spinner
         const loader = document.getElementById('player-loading-overlay');
@@ -497,6 +504,7 @@ window.AryanPlayerEngine = {
             iframe.className = 'w-full h-full border-0';
             iframe.allowFullscreen = true;
             iframe.setAttribute('allow', 'autoplay *; encrypted-media *; picture-in-picture *; fullscreen *; display-capture *');
+            iframe.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
             canvas.appendChild(iframe);
 
             const initialSrc = this.getProxiedUrl(targetServer, this.currentPlayerEngine);
