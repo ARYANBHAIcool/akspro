@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Stream Player</title>
+<style>
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#000}
+#player{display:block;width:100%;height:100%;border:0;margin:0;padding:0}
+#msg{display:none;color:#fff;font:16px Arial;text-align:center;padding-top:40px}
+</style>
+</head>
+<body>
+<iframe id="player" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+<div id="msg"></div>
+<script>
+(function(){
+  var player = document.getElementById('player');
+  var msg = document.getElementById('msg');
+  function decodeBase64Url(value){
+    try{
+      var b = value.replace(/-/g,'+').replace(/_/g,'/');
+      while(b.length % 4) b += '=';
+      var bytes = Uint8Array.from(atob(b), function(c){ return c.charCodeAt(0); });
+      return new TextDecoder().decode(bytes);
+    }catch(e){ return null; }
+  }
+  var encoded = new URLSearchParams(location.search).get('id');
+  var url = encoded ? decodeBase64Url(encoded) : null;
+  if(url && /^https?:\/\//i.test(url)){
+    player.src = url;
+  }else{
+    player.remove();
+    msg.style.display = 'block';
+    msg.innerHTML = 'Invalid or missing <code>?id=</code> parameter.';
+  }
+})();
+</script>
+</body>
+</html>

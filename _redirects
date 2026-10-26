@@ -1,2 +1,3 @@
-/match/* /index.html 200
-/watch/* /index.html 200
+/watch    /watch/    301
+/match    /match/    301
+/embed    /embed/    301

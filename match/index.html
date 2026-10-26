@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+  <title>Watch — BINTV</title>
+  <link rel="icon" type="image/png" href="../logo.png" />
+  <link rel="preconnect" href="https://bintvjson.lovable.app" crossorigin />
+  <link rel="preconnect" href="https://bintv-sources.pages.dev" crossorigin />
+  <style>
+
+
+:root{--bg:#07090e;--text:#f2f4f8;--muted:#9aa3b4;--red:#e50914;--radius:12px;--nav-h:52px;
+  --gutter:max(56px,calc((100vw - 1600px)/2 + 56px));--img-w:min(56vw,820px)}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Poppins',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+a{color:inherit}
+.bottom-fade{position:fixed;left:0;right:0;bottom:0;height:40px;z-index:1;pointer-events:none;background:linear-gradient(180deg,transparent 0%,#000 100%)}
+
+/* India-only notice */
+.in-notice{display:none;align-items:center;justify-content:center;gap:12px;background:#1a0d0d;border-bottom:1px solid rgba(229,9,20,.4);color:var(--text);font-size:13px;font-weight:600;line-height:1.5;padding:10px 16px;text-align:center;position:relative;z-index:60}
+.in-notice.show{display:flex}
+.in-notice strong{color:#ffd166;font-weight:700}
+.in-notice button{border:0;background:rgba(255,255,255,.12);color:#fff;border-radius:50%;width:20px;height:20px;flex-shrink:0;cursor:pointer;font-size:11px;line-height:1}
+
+/* NAV — compact, glass-like transparency */
+.nav{position:sticky;top:0;z-index:50;height:var(--nav-h);display:flex;align-items:center;gap:16px;padding:0 var(--gutter);
+  background:linear-gradient(180deg,rgba(7,9,14,.85) 0%,rgba(7,9,14,0) 100%)}
+.nav.solid,.nav.searching{background:rgba(7,9,14,.94);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.nav-brand{display:flex;align-items:center;gap:8px;text-decoration:none;flex-shrink:0}
+.nav-logo{width:28px;height:28px;border-radius:50%;object-fit:cover}
+.nav-name{font-weight:800;font-size:18px;color:#fff}
+.nav-links{display:flex;gap:2px}
+.nav-link{border:0;background:transparent;color:#d0d6e2;font-family:inherit;font-size:13px;font-weight:600;padding:6px 12px;border-radius:999px;cursor:pointer}
+.nav-link:hover{color:#fff;background:rgba(255,255,255,.1)}
+.search-wrap{margin-left:auto;display:flex;align-items:center;gap:8px;background:rgba(13,17,24,.6);border:1px solid rgba(255,255,255,.16);border-radius:999px;padding:2px 3px 2px 12px;width:min(300px,100%)}
+.search-icon{width:16px;height:16px;color:#aab2c2;flex-shrink:0}
+.search-wrap input{flex:1;min-width:0;border:0;outline:0;background:transparent;font-family:inherit;font-size:13px;color:#fff;padding:6px 0}
+.search-wrap input::placeholder{color:#8f97a8}
+.clear-btn,.search-close{border:0;background:rgba(255,255,255,.16);color:#fff;border-radius:50%;width:22px;height:22px;font-size:11px;cursor:pointer;flex-shrink:0}
+.search-close{display:none}
+.search-toggle{display:none;margin-left:auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.16);background:rgba(13,17,24,.6);color:#fff;cursor:pointer;align-items:center;justify-content:center;flex-shrink:0}
+.search-toggle svg{width:16px;height:16px}
+
+/* FEATURED HERO — full-bleed image, light crossfade, bottom shadow blends into the page */
+.hero{position:relative;margin-top:calc(var(--nav-h) * -1);height:clamp(520px,80vh,760px);margin-bottom:36px;background:#000;overflow:hidden}
+.f-slide{position:absolute;inset:0;opacity:0;visibility:hidden;transition:opacity 0s linear .7s,visibility 0s linear .7s}
+.f-slide.active{opacity:1;visibility:visible;z-index:1;transition:opacity .7s ease,visibility 0s}
+.f-slide::before{content:'';position:absolute;inset:0;z-index:1;pointer-events:none;
+  background:linear-gradient(90deg,rgba(0,0,0,.88) 0%,rgba(0,0,0,.55) 30%,rgba(0,0,0,.15) 58%,transparent 75%)}
+.f-slide::after{content:'';position:absolute;left:0;right:0;bottom:-1px;height:62%;z-index:1;pointer-events:none;
+  background:linear-gradient(180deg,rgba(7,9,14,0) 0%,rgba(7,9,14,.55) 45%,rgba(7,9,14,.92) 80%,var(--bg) 100%)}
+.f-img{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:center 25%}
+.f-img.contain{object-fit:contain;background:#000}
+.f-content{position:absolute;z-index:2;left:var(--gutter);bottom:72px;width:calc(100% - var(--gutter) * 2);max-width:520px;display:flex;flex-direction:column;align-items:flex-start;gap:9px;
+  opacity:0;transition:opacity .2s ease}
+.f-slide.active .f-content{opacity:1;transition:opacity .5s ease .2s}
+.f-meta{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.f-live,.f-time,.f-cat{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;letter-spacing:.5px;padding:4px 11px;border-radius:999px}
+.f-live{background:var(--red);color:#fff}
+.f-live i{width:6px;height:6px;border-radius:50%;background:#fff}
+.f-time{background:rgba(255,255,255,.16);color:#fff;font-variant-numeric:tabular-nums}
+.f-cat{border:1px solid rgba(255,255,255,.25);background:rgba(0,0,0,.45);color:#ffd166}
+.f-title{font-size:clamp(22px,2.9vw,38px);font-weight:800;line-height:1.15;text-shadow:0 3px 18px rgba(0,0,0,.75);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;overflow-wrap:anywhere}
+.f-desc{font-size:13px;line-height:1.55;color:#d0d6e2;max-width:440px;text-shadow:0 2px 10px rgba(0,0,0,.8);
+  display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.f-watch{display:inline-flex;align-items:center;gap:8px;background:#fff;color:#0b0e14;text-decoration:none;font-weight:700;font-size:13px;padding:9px 22px;border-radius:999px;margin-top:3px}
+.f-watch svg{width:14px;height:14px;fill:currentColor}
+.f-watch:hover{background:#ffd166}
+.f-ctrl{position:absolute;z-index:4;left:var(--gutter);right:var(--gutter);bottom:26px;display:flex;align-items:center;justify-content:space-between;gap:16px}
+.f-dots{display:flex;gap:7px;align-items:center}
+.f-dot{width:8px;height:8px;border:0;border-radius:50%;background:rgba(255,255,255,.35);cursor:pointer;padding:0}
+.f-dot.active{width:24px;border-radius:5px;background:#fff}
+.f-arrows{display:flex;gap:8px}
+.f-arrow{width:34px;height:34px;border-radius:50%;border:1px solid rgba(255,255,255,.22);background:rgba(0,0,0,.45);color:#fff;font-size:16px;cursor:pointer}
+.f-arrow:hover{background:#fff;color:#111}
+.f-empty{position:absolute;inset:0;z-index:3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:var(--nav-h) 20px 60px}
+.f-empty img{width:56px;height:56px;border-radius:50%}
+.f-empty p{color:var(--muted);font-size:14px}
+.f-skel{position:absolute;inset:0;background:#0b0f16}
+@media(prefers-reduced-motion:reduce){.f-slide,.f-slide.active,.f-content,.f-slide.active .f-content{transition:none}}
+
+/* CATEGORY PILLS */
+.cat-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0 0 10px}
+.cat-btn{display:inline-flex;align-items:center;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#a7aebc;font-family:inherit;font-size:13.5px;font-weight:600;padding:10px 22px;border-radius:999px;cursor:pointer;text-transform:capitalize}
+.cat-btn:hover{color:#fff;border-color:rgba(255,255,255,.08)}
+.cat-btn.active{background:#fff;color:#555;border-color:#fff}
+.cat-btn .cdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#8e96a6;margin-right:8px;flex-shrink:0}
+.cat-btn:hover .cdot{background:#fff}
+.cat-btn.active .cdot{background:var(--red)}
+.cat-btn .n{opacity:.7;font-weight:600;margin-left:6px;font-size:12px}
+.skeleton-btn{opacity:.5;pointer-events:none}
+.cat-row{display:block}
+.cat-scroll{display:flex;gap:10px;overflow-x:auto;scroll-behavior:smooth;scrollbar-width:none;cursor:grab;-webkit-overflow-scrolling:touch;padding:2px 0}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-scroll .cat-btn{flex-shrink:0;white-space:nowrap}
+
+/* BODY */
+.container{max-width:1600px;margin:0 auto;padding:6px 56px 110px;position:relative;z-index:3}
+.status-msg{color:var(--muted);padding:20px 4px;font-size:14px}
+.no-card{cursor:default;pointer-events:none;user-select:none}
+.poster-wrap.no-poster{background:#000;display:flex;align-items:center;justify-content:center;border-color:rgba(255,255,255,.16);padding:0 14px 40px}
+.poster-wrap.no-poster::after{content:none}
+.no-art{display:block;width:52%;max-width:170px;max-height:70%;height:auto;color:#e6e9ef}
+.row-title{display:flex;align-items:baseline;gap:12px;margin:26px 0 14px}
+.row-title h2{font-size:20px;font-weight:800}
+.row-title span{color:var(--muted);font-size:13px}
+.grid{display:grid;gap:30px 24px;grid-template-columns:repeat(4,minmax(0,1fr))}
+.card{display:flex;flex-direction:column;gap:8px;min-width:0}
+.poster-wrap{position:relative;display:block;aspect-ratio:16/9;background:#111;border-radius:var(--radius);overflow:hidden;border:1px solid rgba(255,255,255,.1)}
+.poster-wrap img{width:100%;height:100%;object-fit:cover;display:block}
+.poster-wrap::after{content:'';position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(180deg,transparent 0%,rgba(0,0,0,.88) 100%);pointer-events:none}
+.poster-text{position:absolute;left:12px;right:12px;bottom:10px;z-index:1;display:flex;flex-direction:column;gap:2px}
+.poster-cat{font-size:9px;letter-spacing:1px;text-transform:uppercase;color:#ffd166}
+.poster-title{font-size:14px;font-weight:700;line-height:1.35;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card-foot{display:none;min-width:0}
+.card.pin .poster-wrap{border:2px solid #ffd166}
+.pin-tag{position:absolute;top:10px;right:10px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.04);color:#fff;font-size:11px;font-weight:600;letter-spacing:.7px;padding:6px 14px;border-radius:999px}
+.badge-live,.match-time,.viewer-chip{position:absolute;top:10px;right:10px;display:flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.05);background:rgba(10,14,20,.18);color:#fff;font-size:11px;font-weight:600;letter-spacing:.7px;padding:6px 14px;border-radius:999px}
+.match-time{color:#e6ebf3;font-variant-numeric:tabular-nums}
+.viewer-chip .pulse{width:8px;height:8px;border-radius:50%;background:#ff3b46;flex-shrink:0}
+.viewer-chip b{font-weight:700;font-variant-numeric:tabular-nums}
+.slider-wrap{position:relative;margin:46px 0 6px}
+.slider-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:12px}
+.slider-title{display:flex;align-items:baseline;gap:12px}
+.slider-title h2{font-size:20px;font-weight:800}
+.slider-title span{color:var(--muted);font-size:13px}
+.slider-nav{display:flex;gap:8px;flex-shrink:0;flex-wrap:wrap}
+.slider-nav[hidden]{display:none}
+.cat-btn.nav-btn{padding:6px 16px;font-size:16px;line-height:1}
+.slider-row{display:flex;gap:24px;overflow-x:auto;scroll-behavior:smooth;padding:4px 0;scrollbar-width:none}
+.slider-row::-webkit-scrollbar{display:none}
+.slider-row[hidden]{display:none}
+.slider-row .card{flex:0 0 calc((100% - 72px)/4);width:calc((100% - 72px)/4);min-width:0}
+.ch-tile{position:relative;flex:0 0 auto;width:280px;aspect-ratio:16/9;border-radius:12px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#111}
+.ch-tile img{width:100%;height:100%;object-fit:cover;display:block}
+.grid .ch-tile,.card .ch-tile{width:100%}
+.load-more-row{display:flex;justify-content:center;margin-top:20px}
+.skel-poster{position:relative;aspect-ratio:16/9;border-radius:var(--radius);overflow:hidden;background:linear-gradient(100deg,#141a25 40%,#232d40 50%,#141a25 60%);background-size:200% 100%;animation:shimmer 1.2s infinite linear}
+@keyframes shimmer{to{background-position:-200% 0}}
+.skel-title{position:absolute;left:12px;right:40%;bottom:10px;height:14px;border-radius:6px;background:rgba(255,255,255,.14)}
+.empty{background:rgba(255,255,255,.03);border:1px dashed rgba(255,255,255,.2);padding:40px;border-radius:var(--radius);text-align:center;color:var(--muted)}
+.footer{border-top:1px solid rgba(255,255,255,.08);padding:56px 20px 70px;text-align:center;background:rgba(0,0,0,.5)}
+.foot-brand{display:flex;align-items:center;justify-content:center;gap:12px;text-decoration:none}
+.foot-logo{width:52px;height:52px;border-radius:50%;object-fit:cover}
+.foot-name{font-weight:800;font-size:32px;color:#fff}
+.foot-tagline{font-size:19px;font-weight:700;margin-top:16px}
+.foot-disclaimer{font-size:13px;color:var(--muted);max-width:640px;margin:14px auto 0;line-height:1.6}
+.foot-copy{font-size:13px;color:var(--muted);margin-top:10px}
+
+@media(min-width:641px){
+  .poster-wrap,.ch-tile{transition:border-color .25s ease}
+  .poster-wrap img,.ch-tile img{transition:opacity .25s ease,transform .35s ease}
+  .play-hover{position:absolute;inset:0;z-index:1;display:flex;align-items:center;justify-content:center;opacity:0;transform:scale(.8);transition:opacity .25s ease,transform .25s ease;pointer-events:none}
+  .play-circle{width:60px;height:60px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center}
+  .play-circle svg{width:26px;height:26px;fill:#111;margin-left:3px}
+  .poster-wrap:hover img,.ch-tile:hover img{opacity:.55;transform:scale(1.06)}
+  .poster-wrap:hover,.ch-tile:hover{border-color:#ffd166}
+  .poster-wrap:hover .play-hover,.ch-tile:hover .play-hover{opacity:1;transform:scale(1)}
+}
+@media(min-width:641px) and (max-width:1024px){
+  :root{--gutter:24px}
+  .nav{gap:14px}
+  .search-wrap{width:250px}
+  .hero{height:clamp(480px,68vh,600px)}
+  .container{padding:6px 24px 90px}
+  .grid{grid-template-columns:repeat(3,minmax(0,1fr));gap:24px 18px}
+  .slider-row{gap:18px}
+  .slider-row .card{flex-basis:calc((100% - 36px)/3);width:calc((100% - 36px)/3)}
+}
+@media(max-width:640px){
+  :root{--nav-h:48px;--gutter:16px}
+  .in-notice{font-size:12px;padding:9px 12px}
+  .nav{gap:6px}
+  .nav-link{padding:6px 11px;font-size:12.5px}
+  .search-toggle{display:flex}
+  .search-wrap{display:none;margin-left:0;flex:1;width:auto}
+  .nav.searching .search-wrap{display:flex}
+  .nav.searching .nav-brand,.nav.searching .nav-links,.nav.searching .search-toggle{display:none}
+  .clear-btn{display:none!important}
+  .search-close{display:block}
+  .hero{height:clamp(440px,68vh,560px);margin-bottom:24px}
+  .f-slide::before{background:linear-gradient(90deg,rgba(0,0,0,.6) 0%,rgba(0,0,0,.2) 50%,transparent 80%)}
+  .f-slide::after{height:75%}
+  .f-img{object-position:center 30%}
+  .f-content{bottom:56px;gap:8px}
+  .f-title{font-size:clamp(20px,5.6vw,26px)}
+  .f-desc{font-size:12.5px;line-height:1.5}
+  .f-watch{padding:8px 20px;font-size:13px}
+  .f-ctrl{bottom:22px}
+  .f-arrows{display:none}
+  .container{padding:6px 16px 90px;max-width:100%}
+  .cat-row{gap:8px}
+  .grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:19px 13px}
+  .slider-row{gap:13px}
+  .slider-row .card{flex-basis:calc((100% - 13px)/2);width:calc((100% - 13px)/2)}
+  .poster-text{display:none}
+  .card-foot{display:block;padding:6px 2px 0}
+  .card-foot .c{display:flex;align-items:center;justify-content:space-between;gap:6px;min-width:0;font-size:11px;color:#ffd166;text-transform:uppercase;letter-spacing:1px}
+  .badge-live,.match-time,.card-foot .m-chip{display:none}
+  .card-foot .t{font-size:13.5px;font-weight:600;line-height:1.4;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;min-width:0}
+  body{touch-action:pan-x pan-y;overflow-x:hidden}
+  .poster-wrap.no-poster{padding:0 10px 8px}
+  .no-art{width:56%;max-width:110px;max-height:76%}
+  .cat-btn.nav-btn{padding:6px 12px;font-size:14px}
+  .slider-title{min-width:0;flex:1 1 auto;gap:8px}
+  .slider-title h2{font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .slider-title span{white-space:nowrap;flex-shrink:0}
+  .slider-nav{margin-left:auto}
+}
+@media(max-width:400px){.nav-name{display:none}}
+  
+
+/* ============ MATCHES PAGE ADDITIONS ============ */
+/* hero height as a variable so the 16:9 preview can "cover" the hero exactly like the homepage image */
+.hero{--hh:clamp(520px,80vh,760px)}
+@media(min-width:641px) and (max-width:1024px){.hero{--hh:clamp(480px,68vh,600px)}}
+@media(max-width:640px){.hero{--hh:clamp(440px,68vh,560px)}}
+
+.f-media{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
+.f-frame,.f-video{position:absolute;border:0;background:#000;opacity:0;transition:opacity .6s ease}
+.f-frame.on,.f-video.on{opacity:1}
+.f-frame{left:50%;top:50%;transform:translate(-50%,-50%);width:max(100vw,calc(var(--hh) * 16 / 9));height:max(56.25vw,var(--hh))}
+.f-video{inset:0;width:100%;height:100%;object-fit:cover}
+
+/* Match Sources */
+.src-section{border:1px solid rgba(255,255,255,.12);border-radius:14px;background:rgba(255,255,255,.02);padding:18px 18px 22px;margin:10px 0 0}
+.src-head{display:flex;align-items:baseline;gap:12px;margin-bottom:14px}
+.src-head h2{font-size:20px;font-weight:800}
+.src-head span{color:var(--muted);font-size:13px}
+.src-pills{display:flex;flex-wrap:wrap;gap:10px}
+.src-pills a.cat-btn{text-decoration:none;background:rgba(255,255,255,.1)}
+.src-pills a.cat-btn:hover{border-color:rgba(255,255,255,.45)}
+.src-pills .cat-btn .cdot,.src-pills .cat-btn:hover .cdot{background:#ff3b46}
+.src-status{margin-top:14px;color:var(--muted);font-size:13px}
+.src-status:empty{display:none}
+.skel-pill{display:inline-block;height:38px;width:150px;border-radius:999px;background:linear-gradient(100deg,#141a25 40%,#232d40 50%,#141a25 60%);background-size:200% 100%;animation:shimmer 1.2s infinite linear}
+.sim-wrap[hidden]{display:none}
+@media(max-width:640px){
+  .src-section{padding:14px 13px 16px}
+  .src-head h2{font-size:17px}
+  .src-pills{gap:8px}
+  .src-pills a.cat-btn{padding:9px 16px;font-size:13px}
+}
+.nav-links a.nav-link{text-decoration:none;display:inline-block}
+.nav-api{border:1px solid rgba(255,255,255,.22)}
+.foot-links{margin-top:18px;display:flex;justify-content:center;gap:10px}
+.foot-api{display:inline-block;color:#d0d6e2;font-size:13px;font-weight:600;text-decoration:none;padding:7px 18px;border-radius:999px;border:1px solid rgba(255,255,255,.22)}
+.foot-api:hover{color:#fff;background:rgba(255,255,255,.1)}
+  
+  </style>
+</head>
+<body>
+<div id="inNotice" class="in-notice" role="status">
+    <span><strong>System:</strong> If a stream isn't loading, try connecting through Cloudflare's free 1.1.1.1 VPN app and reloading the page.</span>
+    <button id="inNoticeClose" aria-label="Dismiss">✕</button>
+  </div>
+
+  <!-- STICKY NAV (same as homepage) -->
+  <header class="nav" id="nav">
+    <a class="nav-brand" href="/">
+      <img src="../logo.png" alt="BINTV logo" class="nav-logo" />
+      <span class="nav-name">BINTV</span>
+    </a>
+    <nav class="nav-links">
+      <button class="nav-link" data-go="Live">Live</button>
+      <button class="nav-link" data-go="Upcoming">Upcoming</button>
+      <a class="nav-link nav-api" href="https://bintvjson.lovable.app/api/public/bintvjson" target="_blank" rel="noopener">API</a>
+    </nav>
+    <button id="searchToggle" class="search-toggle" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg></button>
+    <div class="search-wrap">
+      <svg viewBox="0 0 24 24" class="search-icon" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input id="searchInput" type="search" placeholder="Search teams, leagues…" autocomplete="off" enterkeyhint="search" />
+      <button id="clearSearch" class="clear-btn" hidden>✕</button>
+      <button id="searchClose" class="search-close" aria-label="Close search">✕</button>
+    </div>
+  </header>
+
+  <!-- MATCH HERO (same size as homepage featured hero) -->
+  <section class="hero" id="hero" aria-label="Match"><div class="f-skel"></div></section>
+
+  <main class="container">
+    <section class="src-section" id="srcSection">
+      <div class="src-head"><h2>Match Sources</h2><span id="srcCount"></span></div>
+      <div class="src-pills" id="srcRow"></div>
+      <p class="src-status" id="srcStatus"></p>
+    </section>
+
+    <div class="slider-wrap sim-wrap" id="simWrap" hidden>
+      <div class="slider-top">
+        <div class="slider-title"><h2>Watch Similar Matches</h2><span id="simCount"></span></div>
+        <div class="slider-nav" id="simNav">
+          <button class="cat-btn nav-btn" id="simPrev" aria-label="Scroll left">‹</button>
+          <button class="cat-btn nav-btn" id="simNext" aria-label="Scroll right">›</button>
+        </div>
+      </div>
+      <div class="slider-row" id="simRow"></div>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <a class="foot-brand" href="/">
+      <img src="../logo.png" alt="BINTV logo" class="foot-logo" />
+      <span class="foot-name">BINTV</span>
+    </a>
+    <p class="foot-tagline">Free Streams For Your Soul!</p>
+    <div class="foot-links"><a class="foot-api" href="https://bintvjson.lovable.app/api/public/bintvjson" target="_blank" rel="noopener">API</a></div>
+    <p class="foot-disclaimer">Disclaimer: We only link to streams available on the internet. We do not host any content.</p>
+    <p class="foot-copy">© 2026 BINTV. All rights reserved.</p>
+  </footer>
+
+  <div class="bottom-fade"></div>
+  <script>
+// ONE feed for everything: live events, upcoming events and 24/7 channels.
+const API_FEED = 'https://bintvjson.lovable.app/api/public/bintvjson';
+
+const HOME = '/';
+const PREVIEW_MS = 10000;     // hero preview plays this long (10s), then falls back to the poster
+const PREVIEW_GUARD_MS = 12000; // if nothing starts within this time, just show the poster
+const FALLBACK = '../fallback.png';
+const PLAY_SVG = '<svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>';
+
+// ---------- Shared helpers ----------
+const NO_TIME = 9e15; // sentinel: upcoming event whose start time isn't known yet
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const slug = (t) => String(t || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+// The feed sometimes HTML-escapes text more than once ("&amp;amp;"): collapse it back to plain text.
+const decodeEnt = (s) => {
+  s = String(s == null ? '' : s);
+  let prev;
+  do { prev = s; s = s.replace(/&amp;/gi, '&'); } while (s !== prev);
+  return s.replace(/&quot;/gi, '"').replace(/&#0?39;/g, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
+};
+const asList = (j, ...keys) => {
+  if (Array.isArray(j)) return j;
+  if (j && typeof j === 'object') for (const k of keys) if (Array.isArray(j[k])) return j[k];
+  return [];
+};
+const itemName = (x) => (x && (x.name || x.title)) || '';
+const fixUrl = (u) => { u = String(u || '').trim(); return !u ? '' : (/^(https?:)?\/\//i.test(u) ? u : (u.indexOf('://') === -1 ? 'https://' : '') + u); };
+// Only real http(s) image links are kept (the feed has junk like "h"); anything else -> fallback image.
+const cleanPoster = (p) => { p = decodeEnt(p).trim(); return /^https?:\/\//i.test(p) ? p : ''; };
+// Short-lived response cache (sessionStorage), shared by URL with the
+// homepage and the watch page — a feed fetched moments ago on another page
+// is reused instantly instead of re-downloading the feed.
+function cacheGet(url, maxAgeMs) {
+  try {
+    const raw = sessionStorage.getItem('apicache:' + url);
+    if (!raw) return null;
+    const { t, data } = JSON.parse(raw);
+    if (maxAgeMs != null && Date.now() - t > maxAgeMs) return null;
+    return data;
+  } catch (e) { return null; }
+}
+function cacheSet(url, data) {
+  try { sessionStorage.setItem('apicache:' + url, JSON.stringify({ t: Date.now(), data })); } catch (e) {}
+}
+// Required feed: 7s timeout x N attempts (short backoff between). Reuses a
+// same-session response younger than 20s, and on total failure falls back
+// to the last-known-good response instead of failing the page outright.
+async function fetchRetry(url, label, tries = 3) {
+  const recent = cacheGet(url, 20000);
+  if (recent) return recent;
+  let err = null;
+  for (let i = 0; i < tries; i++) {
+    const c = new AbortController();
+    const t = setTimeout(() => c.abort(), 7000);
+    try {
+      const r = await fetch(url, { signal: c.signal });
+      if (!r.ok) throw new Error(label + ' HTTP ' + r.status);
+      const data = await r.json();
+      cacheSet(url, data);
+      return data;
+    } catch (e) { err = e; } finally { clearTimeout(t); }
+    if (i < tries - 1) await new Promise((res) => setTimeout(res, 350));
+  }
+  const stale = cacheGet(url, null);
+  if (stale) return stale;
+  throw err;
+}
+// Parse a feed's start time: unix seconds / ms, ISO string, or "Live"/null -> NaN.
+function parseTime(v) {
+  if (v == null || v === '') return NaN;
+  if (typeof v === 'number' || /^\d{9,13}$/.test(String(v).trim())) { const n = Number(v); return n < 1e12 ? n * 1000 : n; }
+  let t = Date.parse(v);
+  if (Number.isNaN(t)) t = Date.parse(String(v).replace(' ', 'T'));
+  return t;
+}
+function normStreams(list) {
+  return (Array.isArray(list) ? list : [])
+    .map((s, i) => ({ name: decodeEnt(s && s.name).trim() || 'Stream ' + (i + 1), url: fixUrl(s && s.url) }))
+    .filter((s) => s.url);
+}
+// One feed item -> page item. kind: 'live' | 'upcoming' | 'channel'
+function normItem(x, kind) {
+  const title = decodeEnt(itemName(x)).trim();
+  if (!title) return null;
+  const isChannel = kind === 'channel';
+  const st = String(x.status || '').trim().toLowerCase();   // the feed's status field decides live vs upcoming
+  const live = isChannel || (st ? st === 'live' : kind !== 'upcoming');
+  let date = isChannel ? Date.now() : parseTime(x.date);
+  if (Number.isNaN(date)) date = live ? Date.now() : NO_TIME;
+  return {
+    id: String(x.id || slug(title)), title, isChannel, live, date,
+    cat: isChannel ? 'Live TV' : (decodeEnt(x.category).trim() || 'Others'),
+    poster: cleanPoster(x.poster), streams: normStreams(x.streams),
+  };
+}
+// Last good feed is kept in localStorage: repeat visits are instant, then it refreshes in the background.
+const FEED_KEY = 'bintv:feed';
+const FEED_FRESH_MS = 30 * 60 * 1000;
+function feedCacheGet() { try { const r = JSON.parse(localStorage.getItem(FEED_KEY)); return r && r.data ? r : null; } catch (e) { return null; } }
+function feedCacheSet(data) { try { localStorage.setItem(FEED_KEY, JSON.stringify({ t: Date.now(), data })); } catch (e) {} }
+let feedFromCache = false;
+function flatten(feed) {
+  const out = [], seen = new Set();
+  [['live', asList(feed, 'Live Events', 'live')],
+   ['upcoming', asList(feed, 'Upcoming Events', 'upcoming')],
+   ['channel', asList(feed, '24/7 Channels', 'channels')]].forEach(([kind, list]) => {
+    list.forEach((x) => {
+      const it = normItem(x, kind);
+      if (it && !seen.has(it.id)) { seen.add(it.id); out.push(it); }
+    });
+  });
+  return out;
+}
+async function loadFeed(forceFresh) {
+  const cached = feedCacheGet();
+  if (!forceFresh && cached && Date.now() - cached.t < FEED_FRESH_MS) {
+    feedFromCache = true;
+    if (Date.now() - cached.t > 30000) fetchRetry(API_FEED, 'feed').then(feedCacheSet).catch(() => {});   // quiet refresh
+    return flatten(cached.data);
+  }
+  feedFromCache = false;
+  const feed = await fetchRetry(API_FEED, 'feed');
+  feedCacheSet(feed);
+  return flatten(feed);
+}
+
+const $ = (s) => document.querySelector(s);
+const heroEl = $('#hero');
+const navEl = $('#nav');
+const searchInput = $('#searchInput');
+const clearSearch = $('#clearSearch');
+
+const imgUrl = (p) => (!p ? FALLBACK : (/^(https?:|data:|blob:)/.test(p) ? p : 'https://' + p));
+function fmtCountdown(ms) {
+  if (!(ms < NO_TIME)) return 'Upcoming';
+  const diff = ms - Date.now();
+  if (diff <= 0) return 'Upcoming';
+  const m = Math.floor(diff / 60000);
+  const d = Math.floor(m / 1440), h = Math.floor((m % 1440) / 60), min = m % 60;
+  if (d > 0) return `${d}d ${h}h`;
+  if (h > 0) return `${h}h ${min}m`;
+  return `${min}m`;
+}
+function startsIn(ms) { const t = fmtCountdown(ms); return t === 'Upcoming' ? t : 'Starts in ' + t; }
+function matchId() {
+  const qs = new URLSearchParams(location.search);
+  return qs.get('src') || qs.get('id') || '';
+}
+function withParams(u, obj, drop) {
+  try {
+    const x = new URL(u);
+    (drop || []).forEach((k) => x.searchParams.delete(k));
+    Object.keys(obj).forEach((k) => x.searchParams.set(k, obj[k]));
+    return x.toString();
+  } catch (e) { return u; }
+}
+
+// Use the original iframe link from the API exactly as published (no decoding), for every stream.
+function embedSrc(u) {
+  return u;
+}
+
+/* ---------- NAV (same behaviour as homepage; Live/Upcoming/search go to the homepage) ---------- */
+function onScroll() { navEl.classList.toggle('solid', window.scrollY > 24); }
+window.addEventListener('scroll', onScroll, { passive: true });
+onScroll();
+document.querySelectorAll('.nav-link[data-go]').forEach((b) => b.addEventListener('click', () => {
+  location.href = HOME + '?cat=' + encodeURIComponent(b.dataset.go);
+}));
+$('#searchToggle').addEventListener('click', () => { navEl.classList.add('searching'); searchInput.focus(); });
+$('#searchClose').addEventListener('click', () => {
+  navEl.classList.remove('searching');
+  searchInput.value = '';
+  clearSearch.hidden = true;
+});
+searchInput.addEventListener('input', () => { clearSearch.hidden = !searchInput.value; });
+searchInput.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  const q = searchInput.value.trim();
+  if (q) location.href = HOME + '?q=' + encodeURIComponent(q);
+});
+clearSearch.addEventListener('click', () => { searchInput.value = ''; clearSearch.hidden = true; searchInput.focus(); });
+
+function featDesc(t, isChannel, live) {
+  if (isChannel) return `Watch ${t} live 24/7 for free in HD. No sign-up, no subscription, just press play.`;
+  if (live) return `Watch ${t} live in HD for free. No sign-up needed. Pick a stream and catch every moment.`;
+  return `Get ready to watch ${t} live for free in HD when it kicks off. No sign-up, no subscription.`;
+}
+
+/* ---------- HERO ---------- */
+function renderHero(o) {
+  const meta = o.live
+    ? '<span class="f-live"><i></i>LIVE</span>'
+    : `<span class="f-time" data-t="${o.date}">${startsIn(o.date)}</span>`;
+  const watch = o.canWatch
+    ? `<a class="f-watch" href="/watch/?m=${encodeURIComponent(o.id)}&i=0">${PLAY_SVG}Watch Now</a>` : '';
+  heroEl.innerHTML = `
+  <div class="f-slide active">
+    <img class="f-img${o.isChannel ? ' contain' : ''}" decoding="async" referrerpolicy="no-referrer" src="${esc(imgUrl(o.poster))}" alt=""
+      onerror="this.onerror=null;this.src='${FALLBACK}'" />
+    <div class="f-media" id="fMedia"></div>
+    <div class="f-content">
+      <div class="f-meta">${meta}<span class="f-cat">${esc(o.cat)}</span></div>
+      <h1 class="f-title">${esc(o.title)}</h1>
+      <p class="f-desc">${esc(featDesc(o.title, o.isChannel, o.live))}</p>
+      ${watch}
+    </div>
+  </div>`;
+}
+function heroMessage(title, msg) {
+  heroEl.innerHTML = `<div class="f-empty"><img src="../logo.png" alt="" /><h1 class="f-title" style="font-size:clamp(22px,3.4vw,40px)">${esc(title)}</h1><p>${esc(msg)}</p></div>`;
+}
+setInterval(() => {
+  heroEl.querySelectorAll('.f-time').forEach((el) => { el.textContent = startsIn(+el.dataset.t); });
+}, 30000);
+
+/* ---------- HERO PREVIEW: autoplay first source for 10s (WITH sound when the browser allows it), then fall back to the poster ---------- */
+const pv = { mediaEl: null, kind: '', url: '', el: null, prev: null, muted: true, timer: null, guard: null, done: false, unlock: null };
+
+function previewAllowed() {
+  // Desktop / laptop only (Mac, Windows, Linux, Chromebook). Phones and tablets keep the poster.
+  const ua = navigator.userAgent || '';
+  const mobileUA = /Android|iPhone|iPad|iPod|Mobile|Tablet|Silk|Kindle|webOS|BlackBerry|Opera Mini/i.test(ua)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   // iPadOS pretends to be a Mac
+  const bigScreen = Math.max(screen.width || 0, window.innerWidth || 0) >= 1024 && window.innerWidth >= 900;
+  // NOTE: Data Saver / "reduce motion" are intentionally NOT checked: Windows turns "reduce motion" on
+  // whenever "Show animations in Windows" is off, which was silently blocking the preview there.
+  return !mobileUA && bigScreen;
+}
+// Will this browser let media start WITH sound right now? (Chrome/Edge/Firefox/Safari expose getAutoplayPolicy;
+// it says "allowed" once the visitor has interacted with the site, e.g. by clicking a match on the homepage.)
+function soundAllowed() {
+  try {
+    if (navigator.getAutoplayPolicy) return navigator.getAutoplayPolicy('mediaelement') === 'allowed';
+  } catch (e) {}
+  return !!(navigator.userActivation && navigator.userActivation.hasBeenActive);
+}
+function pvStartTimer() {
+  clearTimeout(pv.guard);
+  clearTimeout(pv.timer);
+  pv.timer = setTimeout(pvStop, PREVIEW_MS);
+}
+function pvStop() {
+  if (pv.done) return;
+  pv.done = true;
+  clearTimeout(pv.timer);
+  clearTimeout(pv.guard);
+  if (pv.unlock) pv.unlock();
+  if (pv.el) pv.el.classList.remove('on');
+  const el = pv.el, prev = pv.prev;
+  setTimeout(() => {           // after the fade, tear the player down so the poster is all that's left
+    if (prev) prev.remove();
+    if (el) { try { if (el.pause) el.pause(); } catch (e) {} el.removeAttribute('src'); el.remove(); }
+    if (pv.hls) { try { pv.hls.destroy(); } catch (e) {} }
+  }, 650);
+}
+function loadHls() {
+  return new Promise((res, rej) => {
+    if (window.Hls) return res(window.Hls);
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.5.13/hls.min.js';
+    s.onload = () => res(window.Hls);
+    s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+function mountFrame() {
+  const old = pv.el;
+  const f = document.createElement('iframe');
+  f.className = 'f-frame';
+  f.setAttribute('allow', 'autoplay *; encrypted-media *; fullscreen *; picture-in-picture *');
+  f.setAttribute('allowfullscreen', '');
+  f.setAttribute('referrerpolicy', 'no-referrer-when-downgrade');
+  f.setAttribute('tabindex', '-1');
+  f.setAttribute('aria-hidden', 'true');
+  f.title = 'Live preview';
+  f.addEventListener('load', () => {
+    f.classList.add('on');
+    if (pv.prev && pv.prev !== f) { const p = pv.prev; pv.prev = null; setTimeout(() => p.remove(), 650); }  // cross-fade, then drop the old player
+    pvStartTimer();
+  });
+  if (old) {
+    if (pv.muted) old.remove();          // going silent: cut the old player's audio immediately
+    else pv.prev = old;                  // turning sound on: keep the old one until the new one is showing (no black flash)
+  }
+  pv.el = f;
+  pv.mediaEl.appendChild(f);
+  // The embed autoplays on its own: load the stream URL exactly as provided (no autoplay/mute params added).
+  f.src = pv.url;
+}
+function mountVideo() {
+  const v = document.createElement('video');
+  v.className = 'f-video';
+  v.muted = pv.muted; v.autoplay = true; v.playsInline = true; v.preload = 'auto';
+  v.setAttribute('playsinline', '');
+  if (pv.muted) v.setAttribute('muted', '');
+  v.addEventListener('playing', () => { v.classList.add('on'); pvStartTimer(); });
+  v.addEventListener('error', pvStop);
+  pv.el = v;
+  pv.mediaEl.appendChild(v);
+  if (pv.kind === 'hls') {
+    if (v.canPlayType('application/vnd.apple.mpegurl')) v.src = pv.url;
+    else loadHls().then((H) => {
+      if (!H || !H.isSupported()) return pvStop();
+      const h = new H();
+      pv.hls = h;
+      h.loadSource(pv.url);
+      h.attachMedia(v);
+      h.on(H.Events.ERROR, (e, d) => { if (d && d.fatal) pvStop(); });
+    }).catch(pvStop);
+  } else {
+    v.src = pv.url;
+  }
+  const p = v.play();
+  if (p && p.catch) p.catch(() => {
+    // Browser refused to start with sound -> fall back to muted playback and let the viewer unlock sound.
+    if (!v.muted) {
+      pv.muted = true; v.muted = true; v.setAttribute('muted', '');
+      armAutoUnmute();
+      const q = v.play();
+      if (q && q.catch) q.catch(pvStop);
+    } else pvStop();
+  });
+}
+function setMuted(m) {
+  if (pv.done) return;
+  pv.muted = m;
+  if (pv.kind === 'frame') { /* embed manages its own audio; nothing to reload */ }
+  else { pv.el.muted = m; if (!m) pv.el.removeAttribute('muted'); const p = pv.el.play(); if (p && p.catch) p.catch(() => {}); }
+  pvStartTimer();              // give the viewer a fresh 10 seconds after toggling sound
+}
+// Autoplay-with-sound is blocked until the visitor interacts. If we had to start muted, the very first
+// tap / click / key press on the page (anywhere except a link or button) switches the sound on.
+function armAutoUnmute() {
+  if (pv.unlock || pv.done || !pv.muted) return;
+  const evs = ['pointerup', 'touchend', 'keydown'];
+  const off = () => { evs.forEach((t) => document.removeEventListener(t, on, true)); pv.unlock = null; };
+  const on = (e) => {
+    if (pv.done || !pv.muted) return off();
+    if (e.target && e.target.closest && e.target.closest('a,button,input,select,textarea,label')) return;
+    off();
+    setMuted(false);
+  };
+  evs.forEach((t) => document.addEventListener(t, on, true));
+  pv.unlock = off;
+}
+function startPreview(url) {
+  pv.mediaEl = document.getElementById('fMedia');
+  if (!pv.mediaEl || !url || !previewAllowed()) return;
+  pv.url = url;
+  pv.kind = /\.m3u8(\?|#|$)/i.test(url) ? 'hls' : (/\.(mp4|webm|m4v)(\?|#|$)/i.test(url) ? 'file' : 'frame');
+  pv.muted = !soundAllowed();                          // try to start WITH sound whenever the browser permits it
+  pv.guard = setTimeout(pvStop, PREVIEW_GUARD_MS);     // never start in time -> poster stays
+  if (pv.kind === 'frame') mountFrame(); else { mountVideo(); armAutoUnmute(); }
+}
+
+/* ---------- MATCH SOURCES ---------- */
+function renderSources(id, title, streams, isChannel) {
+  const row = $('#srcRow'), status = $('#srcStatus');
+  if (!streams.length) { row.innerHTML = ''; $('#srcCount').textContent = ''; status.textContent = 'No sources listed for this match yet.'; return; }
+  $('#srcCount').textContent = streams.length + (streams.length === 1 ? ' source' : ' sources');
+  row.innerHTML = streams.map((s, i) => `
+    <a class="cat-btn" href="/watch/?m=${encodeURIComponent(id)}&i=${i}">
+      <span class="cdot"></span>${isChannel && streams.length === 1 ? `${esc(title)} - Default Stream` : esc(s.name)}
+    </a>`).join('');
+}
+
+/* ---------- WATCH SIMILAR MATCHES (same cards as the homepage) ---------- */
+function simCard(m) {
+  const chip = m.live ? '' : `<span class="match-time">${fmtCountdown(m.date)}</span>`;
+  const chipFoot = m.live ? '' : `<span class="match-time m-chip">${fmtCountdown(m.date)}</span>`;
+  return `
+  <article class="card">
+    <a class="poster-wrap" href="?src=${encodeURIComponent(m.id)}">
+      <img loading="lazy" decoding="async" referrerpolicy="no-referrer" src="${esc(imgUrl(m.poster))}" alt="" onerror="this.onerror=null;this.src='${FALLBACK}'" />
+      ${chip}
+      <span class="poster-text"><span class="poster-cat">${esc(m.cat)}</span><span class="poster-title">${esc(m.title)}</span></span>
+      <span class="play-hover"><span class="play-circle">${PLAY_SVG}</span></span>
+    </a>
+    <div class="card-foot"><div class="c">${esc(m.cat)}${chipFoot}</div><div class="t">${esc(m.title)}</div></div>
+  </article>`;
+}
+function renderSimilar(all, mid, isChannel, cat) {
+  let list = all.filter((x) => x.id !== mid && x.isChannel === isChannel && x.poster && x.streams.length);
+  if (!isChannel) list.sort((a, b) => ((b.cat === cat) - (a.cat === cat)) || (b.live - a.live) || (a.date - b.date));
+  list = list.slice(0, 12);
+  if (!list.length) return;
+  $('#simCount').textContent = list.length + ' matches';
+  const row = $('#simRow');
+  row.innerHTML = list.map(simCard).join('');
+  $('#simPrev').addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.8 }));
+  $('#simNext').addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.8 }));
+  $('#simWrap').hidden = false;
+  const fit = () => { $('#simNav').hidden = row.scrollWidth <= row.clientWidth + 1; };
+  fit();
+  window.addEventListener('resize', fit);
+}
+
+/* ---------- INIT ---------- */
+const timeout = (ms) => new Promise((r) => setTimeout(() => r(null), ms));
+
+async function init() {
+  const id = matchId();
+  const row = $('#srcRow');
+  if (!id) { heroMessage('Match unavailable', 'No match was specified.'); $('#srcSection').hidden = true; return; }
+  row.innerHTML = '<span class="skel-pill"></span><span class="skel-pill"></span><span class="skel-pill"></span>';
+  try {
+    let all = await loadFeed();
+    let m = all.find((x) => x.id === id);
+    if (!m && feedFromCache) { all = await loadFeed(true); m = all.find((x) => x.id === id); }
+    if (!m) {
+      heroMessage('Match unavailable', 'This match may have finished — pick another from the homepage.');
+      $('#srcSection').hidden = true;
+      return;
+    }
+    document.title = m.title + ' — BINTV';
+    const live = m.live;
+    const streams = m.streams;
+    const first = streams.find((s) => s.url);
+    renderHero({ id, title: m.title, cat: m.cat, live, date: m.date, poster: m.poster, isChannel: m.isChannel, canWatch: !!first });
+    renderSources(id, m.title, streams, m.isChannel);
+    if (live && first) startPreview(embedSrc(first.url));
+    renderSimilar(all, id, m.isChannel, m.cat);   // secondary: already in the same feed, no extra request
+  } catch (e) {
+    heroMessage('Match unavailable', 'Could not load match data. Check connection and reload.');
+    $('#srcRow').innerHTML = '';
+    $('#srcStatus').textContent = 'Could not load match data. Check connection and reload.';
+  }
+}
+
+document.addEventListener('gesturestart', (e) => e.preventDefault());
+document.addEventListener('dblclick', (e) => e.preventDefault(), { passive: false });
+
+init();
+
+// Show the VPN tip only for visitors whose IP geolocates to India.
+// Dismissal is remembered for the rest of the tab session.
+(function () {
+  const notice = document.getElementById('inNotice');
+  const closeBtn = document.getElementById('inNoticeClose');
+  if (!notice || !closeBtn || sessionStorage.getItem('inNoticeDismissed')) return;
+  fetch('https://get.geojs.io/v1/ip/country.json', { cache: 'no-store' })
+    .then((r) => r.json())
+    .then((d) => { if (d && d.country === 'IN') notice.classList.add('show'); })
+    .catch(() => { /* geolocation optional — fail silently */ });
+  closeBtn.addEventListener('click', () => {
+    notice.classList.remove('show');
+    sessionStorage.setItem('inNoticeDismissed', '1');
+  });
+})();
+  </script>
+</body>
+</html>

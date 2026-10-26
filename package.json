@@ -1,7 +1,7 @@
 {
   "name": "akspro",
-  "version": "1.0.0",
-  "description": "AKSPro (AryanStreams Global Pro) - High-Speed Live Sports & 24/7 Multi-Server Streaming Platform",
+  "version": "2.0.0",
+  "description": "AKSPro - High-Speed Zero-Lag Live Sports & 24/7 TV Streaming Platform",
   "private": true,
   "scripts": {
     "deploy": "wrangler pages deploy . --project-name=akspro"
