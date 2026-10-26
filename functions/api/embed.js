@@ -47,13 +47,14 @@ export async function onRequest(context) {
             parsedTarget.pathname = sub.startsWith('/') ? sub : `/${sub}`;
         }
 
+        const isTaifood = parsedTarget.origin.includes('taifood');
+        const isIndianServers = parsedTarget.origin.includes('indianservers');
         const isStreamCorner = parsedTarget.origin.includes('pandecocogaming') ||
                                parsedTarget.origin.includes('getsugatensho') ||
-                               parsedTarget.origin.includes('streamcorner');
-        const isPPV = parsedTarget.origin.includes('taifood') ||
-                      parsedTarget.origin.includes('embedindia') ||
-                      parsedTarget.origin.includes('embed.st') ||
-                      parsedTarget.origin.includes('indianservers');
+                               parsedTarget.origin.includes('streamcorner') ||
+                               isTaifood;
+        const isPPV = parsedTarget.origin.includes('embedindia') ||
+                      parsedTarget.origin.includes('embed.st');
         const isSportsonline = parsedTarget.origin.includes('dynmeadow') ||
                                parsedTarget.origin.includes('sportsonline') ||
                                parsedTarget.origin.includes('sportsonnline');
@@ -68,6 +69,12 @@ export async function onRequest(context) {
         } else if (isRocky) {
             upstreamReferer = 'https://embed.st/';
             upstreamOrigin = 'https://embed.st';
+        } else if (isTaifood) {
+            upstreamReferer = 'https://streamcorner.cloud/';
+            upstreamOrigin = 'https://taifood-blog.asia';
+        } else if (isIndianServers) {
+            upstreamReferer = 'https://taifood-blog.asia/';
+            upstreamOrigin = 'https://taifood-blog.asia';
         } else if (isStreamCorner) {
             upstreamReferer = 'https://streamcorner.cloud/';
             upstreamOrigin = 'https://streamcorner.cloud';
@@ -84,6 +91,13 @@ export async function onRequest(context) {
             'Accept-Language': 'en-US,en;q=0.9'
         };
 
+        // Forward essential request headers (vital for /fetch token calls and media requests)
+        const passHeaders = ['content-type', 'indians', 'authorization', 'x-requested-with', 'range'];
+        for (const h of passHeaders) {
+            const val = context.request.headers.get(h);
+            if (val) upstreamHeaders[h] = val;
+        }
+
         const fetchInit = {
             method: context.request.method,
             headers: upstreamHeaders
@@ -93,9 +107,36 @@ export async function onRequest(context) {
             fetchInit.duplex = 'half';
         }
 
-        const upstreamResponse = await fetch(parsedTarget.toString(), fetchInit);
+        let upstreamResponse = await fetch(parsedTarget.toString(), fetchInit);
+
+        // Fallback for JWPlayer chunk provider scripts if upstream returned 404
+        if (!upstreamResponse.ok && (parsedTarget.pathname.includes('provider.hlsjs') || parsedTarget.pathname.includes('/jwp/'))) {
+            try {
+                const jwpChunkUrl = `https://ssl.p.jwpcdn.com/player/v/8.38.10/${parsedTarget.pathname.split('/').pop()}`;
+                const jwpFallback = await fetch(jwpChunkUrl);
+                if (jwpFallback.ok) {
+                    upstreamResponse = jwpFallback;
+                }
+            } catch (e) {}
+        }
 
         if (!upstreamResponse.ok) {
+            const isMediaOrAsset = parsedTarget.pathname.match(/\.(m3u8|mpd|ts|m4s|wasm|js|css|json|png|jpg|jpeg|gif|webp)$/i) || parsedTarget.pathname.endsWith('/fetch');
+            if (!isMediaOrAsset) {
+                const statusTitle = upstreamResponse.status === 403 ? 'Broadcast Event Upcoming' : 'Feed Temporarily Inactive';
+                const statusMsg = upstreamResponse.status === 403 
+                    ? 'This broadcast feed is scheduled to activate closer to match start time. Switch to Server 1 for active countdown coverage.'
+                    : 'This broadcast channel is currently offline. Please switch to another server to continue watching.';
+                const fallbackHtml = `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>body{margin:0;background:#060a12;color:#94a3b8;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;text-align:center;padding:16px;box-sizing:border-box}.box{padding:28px 24px;max-width:380px;border:1px solid #1e293b;border-radius:18px;background:#0c1322;box-shadow:0 12px 36px rgba(0,0,0,0.5)}.icon{font-size:36px;margin-bottom:12px}h3{color:#f8fafc;font-size:16px;margin:0 0 8px 0;font-weight:800}p{font-size:12px;margin:0 0 16px 0;line-height:1.5;color:#64748b}.btn{display:inline-block;padding:10px 18px;background:#22c55e;color:#000;font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:0.05em;border-radius:10px;cursor:pointer;border:none;outline:none;transition:all 0.2s}.btn:hover{background:#16a34a}</style></head><body><div class="box"><div class="icon">📡</div><h3>${statusTitle}</h3><p>${statusMsg}</p><button class="btn" onclick="window.parent&&window.parent.postMessage({type:'NEXT_SERVER'},'*')">Switch to Next Server</button></div></body></html>`;
+                return new Response(fallbackHtml, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Access-Control-Allow-Origin': '*',
+                        'X-Embed-Version': '10.9.16'
+                    }
+                });
+            }
             return new Response(`Upstream returned ${upstreamResponse.status}`, {
                 status: upstreamResponse.status,
                 headers: { 'Access-Control-Allow-Origin': '*' }
@@ -104,14 +145,18 @@ export async function onRequest(context) {
 
         // If target is a JavaScript file or provider plugin, return with application/javascript
         if (parsedTarget.pathname.endsWith('.js') || targetUrl.includes('.js') || parsedTarget.pathname.includes('/jwp/')) {
-            const jsText = await upstreamResponse.text();
+            let jsText = await upstreamResponse.text();
+            // In JWPlayer bundles, ensure chunk public path points directly to official CDN so provider.hlsjs never 404s
+            if (jsText.includes('i.p=""') && jsText.includes('provider.hlsjs')) {
+                jsText = jsText.replace('i.p=""', 'i.p="https://ssl.p.jwpcdn.com/player/v/8.38.10/"');
+            }
             return new Response(jsText, {
                 status: 200,
                 headers: {
                     'Content-Type': 'application/javascript; charset=utf-8',
                     'Access-Control-Allow-Origin': '*',
                     'Cache-Control': 'public, max-age=3600',
-                    'X-Embed-Version': '10.9.15'
+                    'X-Embed-Version': '10.9.16'
                 }
             });
         }
@@ -125,15 +170,30 @@ export async function onRequest(context) {
                     'Content-Type': 'text/css; charset=utf-8',
                     'Access-Control-Allow-Origin': '*',
                     'Cache-Control': 'public, max-age=86400',
-                    'X-Embed-Version': '10.9.15'
+                    'X-Embed-Version': '10.9.16'
                 }
             });
         }
 
         const upstreamContentType = upstreamResponse.headers.get('content-type') || '';
 
+        // If target is binary token fetch or octet-stream, stream raw binary with full CORS (never convert to text/json!)
+        if (upstreamContentType.includes('octet-stream') || parsedTarget.pathname.endsWith('/fetch')) {
+            return new Response(upstreamResponse.body, {
+                status: 200,
+                headers: {
+                    'Content-Type': upstreamContentType || 'application/octet-stream',
+                    'Access-Control-Allow-Origin': '*',
+                    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+                    'Access-Control-Allow-Headers': '*',
+                    'Cache-Control': 'no-cache',
+                    'X-Embed-Version': '10.9.16'
+                }
+            });
+        }
+
         // If target is an API response or JSON, return application/json
-        if (upstreamContentType.includes('application/json') || parsedTarget.pathname.endsWith('.json') || parsedTarget.pathname.endsWith('/fetch')) {
+        if (upstreamContentType.includes('application/json') || parsedTarget.pathname.endsWith('.json')) {
             const jsonText = await upstreamResponse.text();
             return new Response(jsonText, {
                 status: 200,
@@ -141,7 +201,7 @@ export async function onRequest(context) {
                     'Content-Type': 'application/json; charset=utf-8',
                     'Access-Control-Allow-Origin': '*',
                     'Cache-Control': 'no-cache',
-                    'X-Embed-Version': '10.9.15'
+                    'X-Embed-Version': '10.9.16'
                 }
             });
         }
@@ -446,6 +506,20 @@ export async function onRequest(context) {
                     configurable: true
                 });
             }
+            try {
+                Object.defineProperty(Location.prototype, 'hostname', {
+                    get: function() { return "${parsedTarget.hostname}"; },
+                    configurable: true
+                });
+                Object.defineProperty(Location.prototype, 'host', {
+                    get: function() { return "${parsedTarget.host}"; },
+                    configurable: true
+                });
+                Object.defineProperty(Location.prototype, 'origin', {
+                    get: function() { return "${parsedTarget.origin}"; },
+                    configurable: true
+                });
+            } catch(e) {}
         }
     } catch (e) {}
 

@@ -448,6 +448,10 @@
         });
 
         // 1st: FX sources, 2nd: StreamCorner sources (upper), 3rd: PPV sources (below them)
+        // If match is NOT live, prioritize PPV base servers (with official countdown cards) ahead of inactive feeds
+        if (isLive === false) {
+            return [...fxList, ...ppvList, ...scList];
+        }
         return [...fxList, ...scList, ...ppvList];
     }
 
@@ -2446,7 +2450,8 @@
                     const existingUrls = new Set((match.servers || []).map(s => s.rawUrl || s.url));
                     const newServers = (partnerMatch.servers || []).filter(s => !existingUrls.has(s.rawUrl || s.url));
                     if (newServers.length > 0) {
-                        match.servers = prioritizeFxServers([...(match.servers || []), ...newServers]);
+                        const isMatchLive = match && (match.isLive || (match.timestamp && (Date.now() >= (match.timestamp * 1000 - 600000))));
+                        match.servers = prioritizeFxServers([...(match.servers || []), ...newServers], isMatchLive);
                         match.sources = match.servers;
                     }
                     if (Array.isArray(partnerMatch.streamCornerSources) && partnerMatch.streamCornerSources.length > 0) {
@@ -2497,7 +2502,8 @@
                     const existingUrls = new Set((match.servers || []).map(srv => srv.rawUrl || srv.url));
                     const newFxServers = fxStreams.filter(s => !existingUrls.has(s.rawUrl || s.url));
                     if (newFxServers.length > 0) {
-                        match.servers = prioritizeFxServers([...newFxServers, ...(match.servers || [])]);
+                        const isMatchLive = match && (match.isLive || (match.timestamp && (Date.now() >= (match.timestamp * 1000 - 600000))));
+                        match.servers = prioritizeFxServers([...newFxServers, ...(match.servers || [])], isMatchLive);
                         match.sources = match.servers;
                         match.isFutbolX = true;
                     }
@@ -2798,8 +2804,9 @@
                             });
                         });
 
-                        // Place StreamCorner feeds first, followed by base PPV feeds, and sanitize
-                        const combined = prioritizeFxServers(sanitizeMatchServers({ servers: [...newServers, ...baseServers] }).servers);
+                        // Place StreamCorner feeds first (if live), followed by base PPV feeds, and sanitize
+                        const isMatchLive = match && (match.isLive || (match.timestamp && (Date.now() >= (match.timestamp * 1000 - 600000))));
+                        const combined = prioritizeFxServers(sanitizeMatchServers({ servers: [...newServers, ...baseServers] }).servers, isMatchLive);
 
                         match.servers = combined;
                         match.sources = combined;

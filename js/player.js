@@ -985,3 +985,14 @@ window.AryanPlayerEngine = {
         }
     }
 };
+
+if (typeof window !== 'undefined') {
+    window.addEventListener('message', (e) => {
+        if (e && e.data && e.data.type === 'NEXT_SERVER') {
+            const servers = AryanPlayerEngine.getServers();
+            if (servers && servers.length > 1) {
+                AryanPlayerEngine.switchServer((AryanPlayerEngine.activeServerIdx + 1) % servers.length);
+            }
+        }
+    });
+}
