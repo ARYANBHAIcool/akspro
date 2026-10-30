@@ -3,6 +3,39 @@
  * Edge Router for Live Sports Curated Matches, Match Details, and Unlocked Broadcast Streams
  */
 
+import channelsData from '../../assets/channels.json';
+
+const staticCatalog = channelsData['24/7 Channels'] || [];
+
+function findCatalogStream(name) {
+    if (!name || !staticCatalog.length) return null;
+    const nLow = name.toLowerCase().trim();
+    
+    // 1. Direct or substring match
+    for (const c of staticCatalog) {
+        const cLow = (c.name || '').toLowerCase().trim();
+        if (cLow === nLow || nLow.includes(cLow) || cLow.includes(nLow)) {
+            const s = c.streams && c.streams[0];
+            if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
+        }
+    }
+    
+    // 2. Network keyword matching
+    const keywords = ['canal', 'dazn', 'arena', 'sky', 'tnt', 'bein', 'espn', 'premier', 'willow', 'sony', 'ziggo', 'super'];
+    for (const kw of keywords) {
+        if (nLow.includes(kw)) {
+            for (const c of staticCatalog) {
+                const cLow = (c.name || '').toLowerCase();
+                if (cLow.includes(kw)) {
+                    const s = c.streams && c.streams[0];
+                    if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
+                }
+            }
+        }
+    }
+    return null;
+}
+
 export async function onRequest(context) {
     const url = new URL(context.request.url);
     const rawPath = url.pathname.replace(/^\/api\/v1\/?/, '');
@@ -34,61 +67,13 @@ export async function onRequest(context) {
             const channels = [];
             const seenChannels = new Set();
 
-            // A. Fetch Live Events, Upcoming, and Channels catalog from bintvjson (Single fast call)
-            let catalog = [];
-            let liveEvents = [];
-            let upcomingEvents = [];
-
-            try {
-                const bintvResp = await fetch('https://bintvjson.lovable.app/api/public/bintvjson', {
-                    headers: { 'Accept': 'application/json' },
-                    signal: AbortSignal.timeout(3500)
-                });
-                if (bintvResp.ok) {
-                    const bintvData = await bintvResp.json();
-                    liveEvents = bintvData['Live Events'] || [];
-                    upcomingEvents = bintvData['Upcoming Events'] || [];
-                    catalog = bintvData['24/7 Channels'] || [];
-                }
-            } catch (bErr) {}
-
-            function findCatalogStream(name) {
-                if (!name || !catalog.length) return null;
-                const nLow = name.toLowerCase().trim();
-                
-                // 1. Direct or substring match
-                for (const c of catalog) {
-                    const cLow = (c.name || '').toLowerCase().trim();
-                    if (cLow === nLow || nLow.includes(cLow) || cLow.includes(nLow)) {
-                        const s = c.streams && c.streams[0];
-                        if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
-                    }
-                }
-                
-                // 2. Network keyword matching
-                const keywords = ['canal', 'dazn', 'arena', 'sky', 'tnt', 'bein', 'espn', 'premier', 'willow', 'sony', 'ziggo', 'super'];
-                for (const kw of keywords) {
-                    if (nLow.includes(kw)) {
-                        for (const c of catalog) {
-                            const cLow = (c.name || '').toLowerCase();
-                            if (cLow.includes(kw)) {
-                                const s = c.streams && c.streams[0];
-                                if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
-                            }
-                        }
-                    }
-                }
-                return null;
-            }
-
-            // B. Fetch Team Names dynamically via GraphQL (works for all current and future matches)
+            // A. Fetch Team Names dynamically via GraphQL
             let homeName = '';
             let awayName = '';
             try {
                 const gqlUrl = `https://2.ds.lsapp.eu/pq_graphql?_hash=dsof&eventId=${cleanId}&projectId=2`;
                 const gqlRes = await fetch(gqlUrl, {
-                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' },
-                    signal: AbortSignal.timeout(3000)
+                    headers: { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }
                 });
                 if (gqlRes.ok) {
                     const gqlData = await gqlRes.json();
@@ -100,36 +85,48 @@ export async function onRequest(context) {
                 }
             } catch (gqlErr) {}
 
-            // C. Match against bintvjson (Live Events & Upcoming Events)
-            const allEvents = [...liveEvents, ...upcomingEvents];
-            for (const ev of allEvents) {
-                const evName = (ev.name || '').toLowerCase();
-                let isMatch = false;
+            // B. Fetch Live Events from bintvjson
+            try {
+                const bintvResp = await fetch('https://bintvjson.lovable.app/api/public/bintvjson', {
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (bintvResp.ok) {
+                    const bintvData = await bintvResp.json();
+                    const allEvents = [
+                        ...(bintvData['Live Events'] || []),
+                        ...(bintvData['Upcoming Events'] || [])
+                    ];
 
-                if (cleanId.length > 3 && evName.includes(cleanId.toLowerCase())) {
-                    isMatch = true;
-                } else if (homeName && homeName.length > 3 && evName.includes(homeName.toLowerCase())) {
-                    isMatch = true;
-                } else if (awayName && awayName.length > 3 && evName.includes(awayName.toLowerCase())) {
-                    isMatch = true;
-                }
+                    for (const ev of allEvents) {
+                        const evName = (ev.name || '').toLowerCase();
+                        let isMatch = false;
 
-                if (isMatch) {
-                    for (const s of (ev.streams || [])) {
-                        if (s.url && !seenUrls.has(s.url)) {
-                            seenUrls.add(s.url);
-                            customUrls.push({
-                                id: `srv-${customUrls.length + 1}`,
-                                name: `Server ${customUrls.length + 1}: ${s.name || 'Live Feed'}`,
-                                url: s.url,
-                                enabled: true
-                            });
+                        if (cleanId.length > 3 && evName.includes(cleanId.toLowerCase())) {
+                            isMatch = true;
+                        } else if (homeName && homeName.length > 3 && evName.includes(homeName.toLowerCase())) {
+                            isMatch = true;
+                        } else if (awayName && awayName.length > 3 && evName.includes(awayName.toLowerCase())) {
+                            isMatch = true;
+                        }
+
+                        if (isMatch) {
+                            for (const s of (ev.streams || [])) {
+                                if (s.url && !seenUrls.has(s.url)) {
+                                    seenUrls.add(s.url);
+                                    customUrls.push({
+                                        id: `srv-${customUrls.length + 1}`,
+                                        name: `Server ${customUrls.length + 1}: ${s.name || 'Live Feed'}`,
+                                        url: s.url,
+                                        enabled: true
+                                    });
+                                }
+                            }
                         }
                     }
                 }
-            }
+            } catch (bErr) {}
 
-            // D. Query Dzeko Override API and convert broadcaster names to direct unlocked streams
+            // C. Query Dzeko Override API and convert broadcaster names to direct unlocked streams
             try {
                 const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
                 const dzekoResp = await fetch(dzekoUrl, {
@@ -137,15 +134,14 @@ export async function onRequest(context) {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                         'Referer': 'https://dzeko11.pk/',
                         'Accept': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(3000)
+                    }
                 });
                 if (dzekoResp.ok) {
                     const dData = await dzekoResp.json();
                     for (const item of (dData.custom_urls || [])) {
                         if (!item || !item.name) continue;
                         
-                        // If it's already a full http URL (not a 32-char hex token)
+                        // If it's already a full direct stream URL (not a 32-char hex token)
                         if (item.url && /^https?:\/\//i.test(item.url) && !item.url.includes('iplayer24.me')) {
                             if (!seenUrls.has(item.url)) {
                                 seenUrls.add(item.url);
@@ -173,7 +169,7 @@ export async function onRequest(context) {
                 }
             } catch (dErr) {}
 
-            // E. Query Flashscore TVI Broadcasters feed & map to catalog
+            // D. Query Flashscore TVI Broadcasters feed & map to catalog
             try {
                 const fsUrl = `https://1.newsoccers.one/2/x/feed/df_dos_1_${cleanId}_`;
                 const fsResp = await fetch(fsUrl, {
@@ -182,8 +178,7 @@ export async function onRequest(context) {
                         'X-Fsign': 'SW9D1eZo',
                         'Origin': 'https://dzeko11.pk',
                         'Referer': 'https://dzeko11.pk/'
-                    },
-                    signal: AbortSignal.timeout(2500)
+                    }
                 });
 
                 if (fsResp.ok) {
@@ -236,8 +231,8 @@ export async function onRequest(context) {
                 }
             } catch (fsErr) {}
 
-            // F. Fallback: Always ensure at least 4 top sports stream servers
-            if (customUrls.length < 4 && catalog.length > 0) {
+            // E. Fallback: Always ensure at least 4 top sports stream servers
+            if (customUrls.length < 4 && staticCatalog.length > 0) {
                 const topSports = [
                     'Premier Sports 1 IE',
                     'CANAL+ Sport 6 PL',
@@ -284,8 +279,7 @@ export async function onRequest(context) {
                         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
                         'Referer': 'https://dzeko11.pk/',
                         'Accept': 'application/json'
-                    },
-                    signal: AbortSignal.timeout(4000)
+                    }
                 });
 
                 if (dzekoResp.ok) {
@@ -312,8 +306,7 @@ export async function onRequest(context) {
                         'X-Fsign': 'SW9D1eZo',
                         'Origin': 'https://dzeko11.pk',
                         'Referer': 'https://dzeko11.pk/'
-                    },
-                    signal: AbortSignal.timeout(3500)
+                    }
                 });
 
                 if (fsResp.ok) {
@@ -348,30 +341,10 @@ export async function onRequest(context) {
         // 3. CHANNELS: /api/v1/channels
         // ----------------------------------------------------
         if (parts[0] === 'channels') {
-            try {
-                if (context.env && context.env.ASSETS) {
-                    const assetRes = await context.env.ASSETS.fetch(new Request(new URL('/assets/channels.json', url)));
-                    if (assetRes.ok) {
-                        const json = await assetRes.json();
-                        return new Response(JSON.stringify({ items: json['24/7 Channels'] || [] }), {
-                            status: 200,
-                            headers: corsHeaders
-                        });
-                    }
-                }
-                const bintvResp = await fetch('https://bintvjson.lovable.app/api/public/bintvjson', {
-                    headers: { 'Accept': 'application/json' },
-                    signal: AbortSignal.timeout(3500)
-                });
-                if (bintvResp.ok) {
-                    const bintvData = await bintvResp.json();
-                    return new Response(JSON.stringify({ items: bintvData['24/7 Channels'] || [] }), {
-                        status: 200,
-                        headers: corsHeaders
-                    });
-                }
-            } catch (e) {}
-            return new Response(JSON.stringify({ items: [] }), { status: 200, headers: corsHeaders });
+            return new Response(JSON.stringify({ items: staticCatalog }), {
+                status: 200,
+                headers: corsHeaders
+            });
         }
 
         return new Response(JSON.stringify({ error: 'Route not found' }), { status: 404, headers: corsHeaders });
