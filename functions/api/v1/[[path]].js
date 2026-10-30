@@ -116,7 +116,7 @@ export async function onRequest(context) {
 
                         // If it's a 32-character token, route to our internal player
                         if (/^[a-f0-9]{32}$/i.test(rawStream)) {
-                            playUrl = `/player/?token=${rawStream}`;
+                            playUrl = `/api/stream?token=${rawStream}`;
                         }
 
                         if (playUrl && !seenUrls.has(playUrl)) {
@@ -232,7 +232,7 @@ export async function onRequest(context) {
 
             // Return clean response with ONLY working custom_urls and empty channels list (matching Dzeko exactly)
             return new Response(JSON.stringify({
-                match_id: fsId, dzekoStatus, dzekoErr,
+                match_id: fsId,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
                 channels: []
