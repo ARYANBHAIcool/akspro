@@ -95,15 +95,18 @@ export async function onRequest(context) {
             } catch (gqlErr) {}
 
             // B. Fetch Exact Working Sources from Dzeko API
+            let dzekoStatus = 0;
+            let dzekoErr = null;
             try {
                 const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
                 const dzekoResp = await fetch(dzekoUrl, {
                     headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
                         'Referer': 'https://dzeko11.pk/',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json, text/plain, */*'
                     }
                 });
+                dzekoStatus = dzekoResp.status;
                 if (dzekoResp.ok) {
                     const dData = await dzekoResp.json();
                     for (const item of (dData.custom_urls || [])) {
@@ -127,7 +130,9 @@ export async function onRequest(context) {
                         }
                     }
                 }
-            } catch (dErr) {}
+            } catch (dErr) {
+                dzekoErr = dErr.message || String(dErr);
+            }
 
             // C. Match against bintvjson (Live Events & Upcoming Events)
             try {
@@ -227,7 +232,7 @@ export async function onRequest(context) {
 
             // Return clean response with ONLY working custom_urls and empty channels list (matching Dzeko exactly)
             return new Response(JSON.stringify({
-                match_id: fsId,
+                match_id: fsId, dzekoStatus, dzekoErr,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
                 channels: []
