@@ -1105,22 +1105,9 @@
     }
   }
 
-  // Fetch local API channels
+  // Fetch local API channels (disabled like Dzeko so dummy non-working rights-holder channels are never shown)
   async function fetchLocalChannels() {
-    try {
-      let res = await fetch("/api/channels").catch(() => null);
-      if (!res || !res.ok) {
-        res = await fetch("/assets/channels.json").catch(() => null);
-      }
-      if (res && res.ok) {
-        const json = await res.json();
-        return json.items || json["24/7 Channels"] || [];
-      }
-      return [];
-    } catch (e) {
-      console.error("fetchLocalChannels error:", e);
-      return [];
-    }
+    return [];
   }
 
   // Fetch match-specific channel overrides from local API
