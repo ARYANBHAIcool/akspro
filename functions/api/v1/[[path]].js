@@ -1,6 +1,6 @@
 /**
  * Cloudflare Pages Function: /api/v1/[[path]]
- * Edge Router for Live Sports Curated Matches, Match Details, and Unlocked Broadcast Streams
+ * Edge Router for Live Sports Curated Matches, Match Details, and Dedicated Sports Streaming Servers
  */
 
 import channelsData from '../../assets/channels.json';
@@ -44,13 +44,6 @@ function findCatalogStream(name) {
         }
     }
 
-    // 3. Fallback match in TOP_STREAM_SERVERS
-    for (const top of TOP_STREAM_SERVERS) {
-        if (nLow.includes(top.name.toLowerCase().split(' ')[0])) {
-            return { name: top.name, url: top.url, country: '' };
-        }
-    }
-
     return null;
 }
 
@@ -82,10 +75,8 @@ export async function onRequest(context) {
 
             const customUrls = [];
             const seenUrls = new Set();
-            const channels = [];
-            const seenChannels = new Set();
 
-            // A. Fetch Team Names dynamically via GraphQL
+            // A. Fetch team names dynamically via GraphQL
             let homeName = '';
             let awayName = '';
             try {
@@ -103,7 +94,42 @@ export async function onRequest(context) {
                 }
             } catch (gqlErr) {}
 
-            // B. Fetch Live Events from bintvjson
+            // B. Fetch Exact Working Sources from Dzeko API
+            try {
+                const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
+                const dzekoResp = await fetch(dzekoUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                        'Referer': 'https://dzeko11.pk/',
+                        'Accept': 'application/json'
+                    }
+                });
+                if (dzekoResp.ok) {
+                    const dData = await dzekoResp.json();
+                    for (const item of (dData.custom_urls || [])) {
+                        if (!item || !item.name) continue;
+                        const rawStream = (item.url || '').trim();
+                        let playUrl = rawStream;
+
+                        // If it's a 32-character token, route to our internal player
+                        if (/^[a-f0-9]{32}$/i.test(rawStream)) {
+                            playUrl = `/player/?token=${rawStream}`;
+                        }
+
+                        if (playUrl && !seenUrls.has(playUrl)) {
+                            seenUrls.add(playUrl);
+                            customUrls.push({
+                                id: item.id || `srv-${customUrls.length + 1}`,
+                                name: item.name,
+                                url: playUrl,
+                                enabled: true
+                            });
+                        }
+                    }
+                }
+            } catch (dErr) {}
+
+            // C. Match against bintvjson (Live Events & Upcoming Events)
             try {
                 const bintvResp = await fetch('https://bintvjson.lovable.app/api/public/bintvjson', {
                     headers: { 'Accept': 'application/json' }
@@ -133,7 +159,7 @@ export async function onRequest(context) {
                                     seenUrls.add(s.url);
                                     customUrls.push({
                                         id: `srv-${customUrls.length + 1}`,
-                                        name: `Server ${customUrls.length + 1}: ${s.name || 'Live Feed'}`,
+                                        name: s.name || `Live Feed ${customUrls.length + 1}`,
                                         url: s.url,
                                         enabled: true
                                     });
@@ -144,132 +170,67 @@ export async function onRequest(context) {
                 }
             } catch (bErr) {}
 
-            // C. Query Dzeko Override API and convert broadcaster names to direct unlocked streams
-            try {
-                const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
-                const dzekoResp = await fetch(dzekoUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                        'Referer': 'https://dzeko11.pk/',
-                        'Accept': 'application/json'
-                    }
-                });
-                if (dzekoResp.ok) {
-                    const dData = await dzekoResp.json();
-                    for (const item of (dData.custom_urls || [])) {
-                        if (!item || !item.name) continue;
-                        
-                        // If it's already a full direct stream URL (not a 32-char hex token)
-                        if (item.url && /^https?:\/\//i.test(item.url) && !item.url.includes('iplayer24.me')) {
-                            if (!seenUrls.has(item.url)) {
-                                seenUrls.add(item.url);
-                                customUrls.push({
-                                    id: `srv-${customUrls.length + 1}`,
-                                    name: `Server ${customUrls.length + 1}: ${item.name}`,
-                                    url: item.url,
-                                    enabled: true
-                                });
-                            }
-                        } else {
-                            // Map broadcaster name to our unlocked catalog streams
-                            const catMatch = findCatalogStream(item.name);
-                            if (catMatch && !seenUrls.has(catMatch.url)) {
-                                seenUrls.add(catMatch.url);
-                                customUrls.push({
-                                    id: `srv-${customUrls.length + 1}`,
-                                    name: `Server ${customUrls.length + 1}: ${catMatch.name}`,
-                                    url: catMatch.url,
-                                    enabled: true
-                                });
-                            }
+            // D. Fallback if no specific match streams found yet: Map from Flashscore broadcasters or top servers
+            if (customUrls.length === 0) {
+                try {
+                    const fsUrl = `https://1.newsoccers.one/2/x/feed/df_dos_1_${cleanId}_`;
+                    const fsResp = await fetch(fsUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                            'X-Fsign': 'SW9D1eZo',
+                            'Origin': 'https://dzeko11.pk',
+                            'Referer': 'https://dzeko11.pk/'
                         }
-                    }
-                }
-            } catch (dErr) {}
+                    });
 
-            // D. Query Flashscore TVI Broadcasters feed & map to catalog
-            try {
-                const fsUrl = `https://1.newsoccers.one/2/x/feed/df_dos_1_${cleanId}_`;
-                const fsResp = await fetch(fsUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                        'X-Fsign': 'SW9D1eZo',
-                        'Origin': 'https://dzeko11.pk',
-                        'Referer': 'https://dzeko11.pk/'
-                    }
-                });
+                    if (fsResp.ok) {
+                        const text = await fsResp.text();
+                        const alMatch = text.match(/AL÷(\{[^¬]+\})/);
+                        if (alMatch) {
+                            const parsed = JSON.parse(alMatch[1]);
+                            const broadcasters = parsed['1'] || [];
 
-                if (fsResp.ok) {
-                    const text = await fsResp.text();
-                    const alMatch = text.match(/AL÷(\{[^¬]+\})/);
-                    if (alMatch) {
-                        const parsed = JSON.parse(alMatch[1]);
-                        const broadcasters = parsed['1'] || [];
-
-                        for (const b of broadcasters) {
-                            if (!b || !b.BN) continue;
-                            const bName = b.BN;
-                            const catMatch = findCatalogStream(bName);
-
-                            if (catMatch) {
-                                if (!seenUrls.has(catMatch.url) && customUrls.length < 8) {
+                            for (const b of broadcasters) {
+                                if (!b || !b.BN) continue;
+                                const catMatch = findCatalogStream(b.BN);
+                                if (catMatch && !seenUrls.has(catMatch.url)) {
                                     seenUrls.add(catMatch.url);
                                     customUrls.push({
                                         id: `srv-${customUrls.length + 1}`,
-                                        name: `Server ${customUrls.length + 1}: ${catMatch.name}`,
+                                        name: catMatch.name,
                                         url: catMatch.url,
                                         enabled: true
                                     });
-                                }
-
-                                if (!seenChannels.has(catMatch.name)) {
-                                    seenChannels.add(catMatch.name);
-                                    channels.push({
-                                        id: `ch-${channels.length + 1}`,
-                                        name: catMatch.name,
-                                        country: catMatch.country || b.CC || '',
-                                        streamUrl: catMatch.url,
-                                        source: 'catalog'
-                                    });
-                                }
-                            } else {
-                                if (!seenChannels.has(bName)) {
-                                    seenChannels.add(bName);
-                                    channels.push({
-                                        id: `ch-${channels.length + 1}`,
-                                        name: bName,
-                                        country: b.CC || '',
-                                        streamUrl: null,
-                                        source: 'flashscore'
-                                    });
+                                    if (customUrls.length >= 5) break;
                                 }
                             }
                         }
                     }
-                }
-            } catch (fsErr) {}
+                } catch (fsErr) {}
+            }
 
-            // E. Fallback: Always guarantee at least 4 top sports stream servers
-            if (customUrls.length < 4) {
+            // E. Guaranteed Fallback: Provide top 4 sports streaming servers
+            if (customUrls.length === 0) {
                 for (const top of TOP_STREAM_SERVERS) {
                     if (!seenUrls.has(top.url)) {
                         seenUrls.add(top.url);
                         customUrls.push({
                             id: `srv-${customUrls.length + 1}`,
-                            name: `Server ${customUrls.length + 1}: ${top.name}`,
+                            name: top.name,
                             url: top.url,
                             enabled: true
                         });
-                        if (customUrls.length >= 6) break;
+                        if (customUrls.length >= 4) break;
                     }
                 }
             }
 
+            // Return clean response with ONLY working custom_urls and empty channels list (matching Dzeko exactly)
             return new Response(JSON.stringify({
                 match_id: fsId,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
-                channels: channels
+                channels: []
             }), { status: 200, headers: corsHeaders });
         }
 
