@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Live Player | AryanStreamsGlobal</title>
+  <meta name="theme-color" content="#0a0a0f"/>
+  <link rel="icon" href="/favicon.ico" sizes="48x48"/>
+  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="/assets/globals-SB89wHXU.css"/>
+  <link rel="stylesheet" href="/assets/mobile-button-fix.css"/>
+  <style>
+    body {
+      background: #0a0a0f;
+      color: #fff;
+      font-family: Nunito, system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    .player-aspect {
+      aspect-ratio: 16 / 9;
+      width: 100%;
+      background: #000;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
+    }
+    .server-btn {
+      transition: all 0.2s ease;
+    }
+    .server-btn.active {
+      background-color: var(--primary, #3b82f6);
+      color: #fff;
+      border-color: var(--primary, #3b82f6);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
+    }
+  </style>
+</head>
+<body class="bg-[#0a0a0f] text-foreground">
+  <!-- Top Bar -->
+  <header class="border-b border-border/40 bg-surface/80 backdrop-blur sticky top-0 z-40">
+    <div class="container mx-auto px-4 h-14 flex items-center justify-between">
+      <div class="flex items-center gap-3">
+        <a id="backBtn" href="/" class="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-muted-foreground hover:text-foreground transition-all">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+        </a>
+        <div class="flex items-center gap-2">
+          <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold bg-red-600/20 text-red-400 border border-red-500/30">
+            <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>LIVE
+          </span>
+          <h1 id="matchHeading" class="font-bold text-sm sm:text-base truncate max-w-[200px] sm:max-w-md">Live Stream</h1>
+        </div>
+      </div>
+      <div class="flex items-center gap-2">
+        <button type="button" onclick="toggleFullscreen()" class="px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground">
+          Fullscreen
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Player Stage -->
+  <main class="container mx-auto px-4 py-4 sm:py-6 flex-1 flex flex-col items-center justify-center max-w-5xl">
+    <!-- Video Frame -->
+    <div class="w-full player-aspect relative border border-border/40 mb-4 bg-black">
+      <iframe id="videoIframe" src="" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
+      <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center p-6 hidden">
+        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-3"></div>
+        <p class="text-sm text-muted-foreground">Connecting to live stream server...</p>
+      </div>
+    </div>
+
+    <!-- Server Control Bar -->
+    <div class="w-full bg-surface border border-border/40 rounded-xl p-4 shadow-lg">
+      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div class="flex flex-col">
+          <span class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Available Stream Servers:</span>
+          <div id="serverList" class="flex flex-wrap gap-2">
+            <!-- Server Buttons injected by JS -->
+          </div>
+        </div>
+        <div class="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/30">
+          <button type="button" onclick="reloadStream()" class="text-xs px-3 py-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary border border-border/50 text-foreground flex items-center gap-1.5">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+            Reload Stream
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <footer class="py-4 text-center text-xs text-muted-foreground border-t border-border/30">
+    &copy; 2026 AryanStreamsGlobal. High-Speed Edge Sports Player.
+  </footer>
+
+  <script>
+    const params = new URLSearchParams(window.location.search);
+    const initialSrc = params.get('src');
+    const matchTitle = params.get('title') || 'Live Match';
+    const matchId = params.get('id');
+
+    if (matchTitle) {
+      document.getElementById('matchHeading').textContent = matchTitle;
+      document.title = matchTitle + ' | Live Player';
+    }
+
+    if (matchId) {
+      document.getElementById('backBtn').href = '/match/football/' + matchId;
+    }
+
+    const iframe = document.getElementById('videoIframe');
+    const serverList = document.getElementById('serverList');
+
+    function setStreamUrl(url, name) {
+      iframe.src = url;
+      if (name) {
+        document.getElementById('matchHeading').textContent = matchTitle + ' - ' + name;
+      }
+      document.querySelectorAll('.server-btn').forEach(btn => {
+        if (btn.dataset.url === url) {
+          btn.classList.add('active', 'bg-primary', 'text-white', 'border-primary');
+          btn.classList.remove('bg-surface-secondary', 'text-foreground');
+        } else {
+          btn.classList.remove('active', 'bg-primary', 'text-white', 'border-primary');
+          btn.classList.add('bg-surface-secondary', 'text-foreground');
+        }
+      });
+    }
+
+    function reloadStream() {
+      const cur = iframe.src;
+      iframe.src = '';
+      setTimeout(() => { iframe.src = cur; }, 200);
+    }
+
+    function toggleFullscreen() {
+      if (iframe.requestFullscreen) iframe.requestFullscreen();
+      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+    }
+
+    async function init() {
+      let streams = [];
+
+      if (matchId) {
+        try {
+          const cleanId = matchId.replace(/^(FS:|CUST:)/, '');
+          const res = await fetch('/api/v1/match/' + cleanId);
+          if (res.ok) {
+            const data = await res.json();
+            streams = data.custom_urls || [];
+          }
+        } catch (e) {}
+      }
+
+      if (initialSrc && !streams.some(s => s.url === initialSrc)) {
+        streams.unshift({ id: 'primary', name: 'Server 1 (Direct)', url: initialSrc });
+      }
+
+      if (!streams.length) {
+        // Fallback default stream
+        streams.push({ id: 'default', name: 'Server 1: Premier Sports', url: initialSrc || 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMDFtcTZ3eGEtOTgxNg' });
+      }
+
+      serverList.innerHTML = streams.map((s, idx) => `
+        <button type="button" data-url="${s.url}" onclick="setStreamUrl('${s.url}', '${s.name.replace(/'/g, "\\'")}')"
+                class="server-btn px-3.5 py-2 rounded-lg text-xs font-semibold border border-border/50 bg-surface-secondary hover:bg-surface-tertiary transition-all ${idx === 0 ? 'active bg-primary text-white border-primary' : 'text-foreground'}">
+          ${s.name || 'Server ' + (idx + 1)}
+        </button>
+      `).join('');
+
+      // Play stream
+      if (initialSrc) {
+        const found = streams.find(s => s.url === initialSrc);
+        setStreamUrl(initialSrc, found ? found.name : 'Server 1');
+      } else {
+        setStreamUrl(streams[0].url, streams[0].name);
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>

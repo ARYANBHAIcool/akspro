@@ -1,5 +1,7 @@
 /match/*/*      /match/index.html   200
 /match/*        /match/index.html   200
+/watch/*        /watch/index.html   200
+/watch          /watch/index.html   200
 /sports/*/*     /index.html         200
 /sports/*       /index.html         200
 /tv             /index.html         200

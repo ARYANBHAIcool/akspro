@@ -1201,25 +1201,31 @@
       });
     }
 
-    // Add enabled channels from overrides that aren't in Flashscore (manual additions)
+    // Add enabled channels from overrides
     if (matchOverrides?.channels) {
       for (const ch of matchOverrides.channels) {
         const tviNum = extractTviNumber(ch.id);
-        if (!tviNum) continue;
+        const localCh = tviNum ? localChannelByTviId[tviNum] : null;
 
-        // Only add if enabled and not already added from Flashscore
-        if (ch.enabled === true && !addedTviIds.has(tviNum)) {
-          const localCh = localChannelByTviId[tviNum];
-          if (localCh) {
-            addedTviIds.add(tviNum);
-            channels.push({
-              id: String(localCh.id),
-              tviId: tviNum,
-              name: localCh.name,
-              country: localCh.alpha2 || "",
-              source: "manual"
-            });
-          }
+        if (localCh && !addedTviIds.has(tviNum)) {
+          addedTviIds.add(tviNum);
+          channels.push({
+            id: String(localCh.id),
+            tviId: tviNum,
+            name: localCh.name,
+            country: localCh.alpha2 || "",
+            streamUrl: ch.streamUrl || null,
+            source: "manual"
+          });
+        } else if (!channels.some(c => c.name.toLowerCase() === ch.name.toLowerCase())) {
+          channels.push({
+            id: String(ch.id || `ch-${channels.length + 1}`),
+            tviId: tviNum || "",
+            name: ch.name,
+            country: ch.country || "",
+            streamUrl: ch.streamUrl || null,
+            source: ch.source || "override"
+          });
         }
       }
     }
@@ -2135,86 +2141,220 @@ const enabledChannels = channels
     }
   }
 
-  // Render broadcast tab content
+  // Dedicated Match Stream Player Controls
+  window.switchMatchPlayer = function(btn, streamName, streamUrl) {
+    const iframe = document.getElementById("matchPlayerIframe");
+    if (iframe && streamUrl) {
+      iframe.src = streamUrl;
+    }
+    const label = document.getElementById("activeStreamLabel");
+    if (label && streamName) {
+      label.textContent = streamName;
+    }
+    const theaterBtn = document.getElementById("theaterModeBtn");
+    if (theaterBtn && streamUrl) {
+      const matchID = getMatchIDFromURL();
+      theaterBtn.href = `/watch/?id=${matchID}&src=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(document.title)}`;
+    }
+    // Update button active state
+    document.querySelectorAll(".match-server-pill").forEach(p => {
+      p.classList.remove("bg-primary", "text-white", "border-primary", "shadow-md", "shadow-primary/20");
+      p.classList.add("bg-surface-secondary", "text-foreground", "border-border/50");
+      const dot = p.querySelector(".indicator-dot");
+      if (dot) {
+        dot.classList.remove("bg-white");
+        dot.classList.add("bg-emerald-400");
+      }
+    });
+    if (btn) {
+      btn.classList.add("bg-primary", "text-white", "border-primary", "shadow-md", "shadow-primary/20");
+      btn.classList.remove("bg-surface-secondary", "text-foreground", "border-border/50");
+      const dot = btn.querySelector(".indicator-dot");
+      if (dot) {
+        dot.classList.add("bg-white");
+        dot.classList.remove("bg-emerald-400");
+      }
+    }
+  };
+
+  window.reloadMatchPlayer = function() {
+    const iframe = document.getElementById("matchPlayerIframe");
+    if (iframe) {
+      const cur = iframe.src;
+      iframe.src = "about:blank";
+      setTimeout(() => { iframe.src = cur; }, 200);
+    }
+  };
+
+  window.fullscreenMatchPlayer = function() {
+    const iframe = document.getElementById("matchPlayerIframe");
+    if (iframe) {
+      if (iframe.requestFullscreen) iframe.requestFullscreen();
+      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+      else if (iframe.msRequestFullscreen) iframe.msRequestFullscreen();
+    }
+  };
+
+  // Render broadcast tab content with dedicated player
   function renderBroadcastTab(container, channels, customUrls, lang, matchTimestamp, matchStatus) {
-    const lblNoChannels = t(lang, "match.broadcast.noChannels") || "No TV channels available for this match.";
+    const lblNoChannels = t(lang, "match.broadcast.noChannels") || "No TV channels or stream servers available for this match.";
     const lblChannels = t(lang, "match.broadcast.title") || "TV Channels";
-    const lblLinks = t(lang, "match.broadcast.links") || "Streaming Links";
-    const lblAvailableSoon = t(lang, "match.broadcast.availableSoon") || "Links become active 15 minutes before kickoff";
-    const lblNotYetAvailable = t(lang, "match.broadcast.notYetAvailable") || "Not yet available";
-    const lblAvailableIn = t(lang, "match.broadcast.availableIn") || "Available in";
-    const lblMinutes = t(lang, "match.broadcast.minutes") || "minutes";
+    const lblLinks = t(lang, "match.broadcast.links") || "Streaming Servers";
+    const lblAvailableSoon = t(lang, "match.broadcast.availableSoon") || "Live streams become available 15 minutes before kickoff";
+    const matchID = getMatchIDFromURL();
 
-    const hasChannels = channels && channels.length > 0;
-    const hasCustomUrls = customUrls && customUrls.length > 0;
+    // Collect valid streams
+    const allStreams = [];
+    if (Array.isArray(customUrls)) {
+      for (const u of customUrls) {
+        if (!u || !u.url) continue;
+        if (u.url === '#' || u.url === 'about:blank') continue;
+        allStreams.push({
+          id: u.id || `srv-${allStreams.length + 1}`,
+          name: u.name || `Server ${allStreams.length + 1}`,
+          url: u.url
+        });
+      }
+    }
 
-    // Calculate if links should be clickable
-    // Clickable if: match is live (status 2) OR within 15 minutes of kickoff
+    // Also add any channels that have direct streams
+    if (Array.isArray(channels)) {
+      for (const ch of channels) {
+        if (ch && ch.streamUrl && !allStreams.some(s => s.url === ch.streamUrl)) {
+          allStreams.push({
+            id: `srv-ch-${allStreams.length + 1}`,
+            name: `Server ${allStreams.length + 1}: ${ch.name}`,
+            url: ch.streamUrl
+          });
+        }
+      }
+    }
+
+    const hasStreams = allStreams.length > 0;
+    const hasChannels = Array.isArray(channels) && channels.length > 0;
+
+    // Timing
     const now = Date.now();
     const startTime = matchTimestamp ? parseInt(matchTimestamp, 10) * 1000 : null;
     const isLive = matchStatus === "2";
     const fifteenMinutesMs = 15 * 60 * 1000;
     const timeUntilStart = startTime ? startTime - now : null;
     const isWithin15Min = startTime && timeUntilStart <= fifteenMinutesMs;
-    const isClickable = isLive || isWithin15Min;
-
-    // Calculate minutes until available (if not clickable)
+    // Always active if we have streams or is live
+    const isClickable = isLive || isWithin15Min || hasStreams;
     const minutesUntilAvailable = !isClickable && timeUntilStart
       ? Math.ceil((timeUntilStart - fifteenMinutesMs) / 60000)
       : 0;
 
-    if (!hasChannels && !hasCustomUrls) {
+    if (!hasStreams && !hasChannels) {
       container.innerHTML = `
-        <div class="card card--default p-6 text-center">
-          <p class="text-muted-foreground">${lblNoChannels}</p>
+        <div class="card card--default p-8 text-center border border-border/40 shadow-sm">
+          <div class="w-12 h-12 rounded-full bg-surface-secondary flex items-center justify-center mx-auto mb-3 text-muted-foreground">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+            </svg>
+          </div>
+          <p class="text-muted-foreground text-sm font-medium">${lblNoChannels}</p>
         </div>
       `;
       return;
     }
 
-    // Single card with both sections
-    let html = `<div class="card card--default" data-slot="card">`;
+    let html = `<div class="space-y-4">`;
 
-    // Render TV Channels section
-    if (hasChannels) {
+    // 1. EMBEDDED DEDICATED STREAM PLAYER (If streams available and clickable)
+    if (hasStreams && isClickable) {
+      const activeStream = allStreams[0];
+      const matchTitle = document.title || 'Live Match';
+      const theaterUrl = `/watch/?id=${matchID}&src=${encodeURIComponent(activeStream.url)}&title=${encodeURIComponent(matchTitle)}`;
+
       html += `
-        <div class="card__header" data-slot="card-header">
-          <div class="flex items-center gap-2.5">
-            <div class="p-1.5 rounded-lg bg-surface-secondary">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-                <path d="M2 11C2 7.70017 2 6.05025 3.02513 5.02513C4.05025 4 5.70017 4 9 4H15C18.2998 4 19.9497 4 20.9749 5.02513C22 6.05025 22 7.70017 22 11C22 14.2998 22 15.9497 20.9749 16.9749C19.9497 18 18.2998 18 15 18H9C5.70017 18 4.05025 18 3.02513 16.9749C2 15.9497 2 14.2998 2 11Z" stroke="currentColor" stroke-width="1.5"></path>
-                <path d="M11 15V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                <path d="M13 15V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-              </svg>
+        <!-- Main Dedicated Player Stage -->
+        <div class="card card--default overflow-hidden border border-border/50 shadow-xl rounded-xl" data-slot="card">
+          <div class="card__header flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-surface-secondary/50 border-b border-border/40">
+            <div class="flex items-center gap-2.5">
+              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-600/20 text-red-400 border border-red-500/30">
+                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+                LIVE
+              </span>
+              <span id="activeStreamLabel" class="text-sm font-bold text-foreground truncate max-w-[200px] sm:max-w-md">
+                ${activeStream.name}
+              </span>
             </div>
-            <h4 class="text-base font-semibold" data-i18n="match.broadcast.title">${lblChannels}</h4>
+            <div class="flex items-center gap-2">
+              <button type="button" onclick="window.reloadMatchPlayer()" title="Reload Stream"
+                      class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span class="hidden sm:inline">Reload</span>
+              </button>
+              <button type="button" onclick="window.fullscreenMatchPlayer()" title="Fullscreen"
+                      class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                </svg>
+                <span class="hidden sm:inline">Fullscreen</span>
+              </button>
+              <a id="theaterModeBtn" href="${theaterUrl}" title="Open Full Theater Player"
+                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-sm transition-all">
+                <span>Theater Player</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          </div>
+          <div class="card__content p-0 bg-black">
+            <div class="relative w-full aspect-video bg-black flex items-center justify-center">
+              <iframe id="matchPlayerIframe" src="${activeStream.url}"
+                      class="w-full h-full border-0"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen
+                      referrerpolicy="no-referrer-when-downgrade"></iframe>
+            </div>
           </div>
         </div>
-        <div class="card__content" data-slot="card-content">
-          <div class="flex flex-wrap gap-2">
+      `;
+    }
+
+    // 2. STREAMING SERVERS LIST (Buttons that switch active stream)
+    if (hasStreams) {
+      html += `
+        <div class="card card--default" data-slot="card">
+          <div class="card__header flex items-center justify-between py-3 px-4 border-b border-border/30">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4 text-primary">
+                <path d="M13.5 12C13.5 15.18 10.93 17.75 7.75 17.75C4.57 17.75 2 15.18 2 12C2 8.82 4.57 6.25 7.75 6.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+                <path d="M10 12C10 8.69 12.69 6 16 6C19.31 6 22 8.69 22 12C22 15.31 19.31 18 16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+              </svg>
+              <h4 class="text-sm sm:text-base font-semibold">${lblLinks}</h4>
+            </div>
+            <span class="text-xs text-muted-foreground font-medium">${allStreams.length} Sources Ready</span>
+          </div>
+          <div class="card__content p-4">
+            <div class="flex flex-wrap gap-2.5">
       `;
 
-      // Flat list with inline flags
-      for (const ch of channels) {
-        const countryCode = (ch.country || "").toLowerCase();
-        const playerUrl = '#';
+      allStreams.forEach((s, idx) => {
+        const safeName = (s.name || `Server ${idx + 1}`).replace(/'/g, "\'");
+        const isFirst = idx === 0;
 
         if (isClickable) {
-          // Clickable link
           html += `
-            <a href="${playerUrl}" target="_blank" 
-               class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary hover:bg-surface-secondary/80 text-sm border border-border/50 transition-colors cursor-pointer">
-              ${countryCode ? `<img src="https://flagcdn.com/16x12/${countryCode}.png" alt="${ch.country}" class="w-4 h-3 object-cover rounded-sm" onerror="this.style.display='none'">` : ""}
-              <span class="font-medium">${ch.name}</span>
-            </a>
+            <button type="button"
+                    onclick="window.switchMatchPlayer(this, '${safeName}', '${s.url}')"
+                    class="match-server-pill inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${isFirst ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' : 'bg-surface-secondary hover:bg-surface-secondary/80 text-foreground border-border/50'}">
+              <span class="indicator-dot w-2 h-2 rounded-full ${isFirst ? 'bg-white' : 'bg-emerald-400'}"></span>
+              <span>${s.name}</span>
+            </button>
           `;
         } else {
-          // Non-clickable - shows modal on click
           html += `
             <button type="button" onclick="showBroadcastModal(${minutesUntilAvailable})"
-               class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary/50 text-sm border border-border/30 cursor-not-allowed opacity-60">
-              ${countryCode ? `<img src="https://flagcdn.com/16x12/${countryCode}.png" alt="${ch.country}" class="w-4 h-3 object-cover rounded-sm opacity-50" onerror="this.style.display='none'">` : ""}
-              <span class="font-medium">${ch.name}</span>
+                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-secondary/50 text-xs font-medium border border-border/30 cursor-not-allowed opacity-60">
+              <span class="w-2 h-2 rounded-full bg-muted-foreground"></span>
+              <span>${s.name}</span>
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-3 h-3 text-muted-foreground">
                 <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5"></path>
                 <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
@@ -2222,86 +2362,69 @@ const enabledChannels = channels
             </button>
           `;
         }
-      }
+      });
 
       html += `
+            </div>
           </div>
         </div>
       `;
     }
 
-    // Render Custom URLs section
-    if (hasCustomUrls) {
-      // Add divider if we have channels
-      if (hasChannels) {
-        html += `<div class="border-t border-border/50"></div>`;
-      }
-
+    // 3. OFFICIAL TV CHANNELS
+    if (hasChannels) {
       html += `
-        <div class="card__header" data-slot="card-header">
-          <div class="flex items-center gap-2.5">
-            <div class="p-1.5 rounded-lg bg-surface-secondary">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-                <path d="M13.5 12C13.5 15.18 10.93 17.75 7.75 17.75C4.57 17.75 2 15.18 2 12C2 8.82 4.57 6.25 7.75 6.25" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                <path d="M10 12C10 8.69 12.69 6 16 6C19.31 6 22 8.69 22 12C22 15.31 19.31 18 16 18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
+        <div class="card card--default" data-slot="card">
+          <div class="card__header flex items-center justify-between py-3 px-4 border-b border-border/30">
+            <div class="flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4 text-primary">
+                <path d="M2 11C2 7.70017 2 6.05025 3.02513 5.02513C4.05025 4 5.70017 4 9 4H15C18.2998 4 19.9497 4 20.9749 5.02513C22 6.05025 22 7.70017 22 11C22 14.2998 22 15.9497 20.9749 16.9749C19.9497 18 18.2998 18 15 18H9C5.70017 18 4.05025 18 3.02513 16.9749C2 15.9497 2 14.2998 2 11Z" stroke="currentColor" stroke-width="1.5"></path>
+                <path d="M11 15V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
+                <path d="M13 15V18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
               </svg>
+              <h4 class="text-sm sm:text-base font-semibold" data-i18n="match.broadcast.title">${lblChannels}</h4>
             </div>
-            <h4 class="text-base font-semibold" data-i18n="match.broadcast.links">${lblLinks}</h4>
           </div>
-        </div>
-        <div class="card__content" data-slot="card-content">
-          <div class="flex flex-wrap gap-2">
+          <div class="card__content p-4">
+            <div class="flex flex-wrap gap-2">
       `;
 
-      for (const link of customUrls) {
-        const isToken = /^[a-f0-9]{32}$/.test(link.url);
-        const embedUrl = isToken ? ('https://iplayer24.me/beta/' + link.url) : (link.url || '#');
+      channels.forEach(ch => {
+        const countryCode = (ch.country || "").toLowerCase();
+        const safeName = (ch.name || "").replace(/'/g, "\'");
 
-        if (isClickable) {
-          // Clickable link
+        if (ch.streamUrl && isClickable) {
           html += `
-  <a href="${embedUrl}" target="_blank" 
-     class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary hover:bg-surface-secondary/80 text-sm border border-border/50 transition-colors cursor-pointer">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-                <path d="M11 4H4V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                <path d="M9 15L20 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                <path d="M15 4H20V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-              <span>${link.name}</span>
-            </a>
-          `;
-        } else {
-          // Non-clickable
-          html += `
-            <button type="button" onclick="showBroadcastModal(${minutesUntilAvailable})"
-               class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary/50 text-sm border border-border/30 cursor-not-allowed opacity-60">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4">
-                <path d="M11 4H4V18C4 19.1046 4.89543 20 6 20H18C19.1046 20 20 19.1046 20 18V13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                <path d="M9 15L20 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"></path>
-                <path d="M15 4H20V9" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
-              <span>${link.name}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-3 h-3">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5"></path>
-                <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
+            <button type="button"
+                    onclick="window.switchMatchPlayer(null, '${safeName}', '${ch.streamUrl}')"
+                    class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary hover:bg-surface-secondary/80 text-xs font-medium border border-border/50 transition-colors cursor-pointer">
+              ${countryCode ? `<img src="https://flagcdn.com/16x12/${countryCode}.png" alt="${ch.country}" class="w-4 h-3 object-cover rounded-sm" onerror="this.style.display='none'">` : ""}
+              <span class="font-medium">${ch.name}</span>
+              <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-400">STREAM</span>
             </button>
           `;
+        } else {
+          html += `
+            <div class="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-surface-secondary/60 text-xs text-muted-foreground border border-border/30">
+              ${countryCode ? `<img src="https://flagcdn.com/16x12/${countryCode}.png" alt="${ch.country}" class="w-4 h-3 object-cover rounded-sm opacity-60" onerror="this.style.display='none'">` : ""}
+              <span>${ch.name}</span>
+            </div>
+          `;
         }
-      }
+      });
 
       html += `
+            </div>
           </div>
         </div>
       `;
     }
 
-    // Add helper text if not clickable
-    if (!isClickable && (hasChannels || hasCustomUrls)) {
+    // Helper text if not clickable
+    if (!isClickable && (hasChannels || hasStreams)) {
       html += `
-        <div class="border-t border-border/50"></div>
-        <div class="px-4 py-3 flex items-center gap-2 text-xs text-muted-foreground">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4 flex-shrink-0">
+        <div class="card card--default px-4 py-3 flex items-center gap-2 text-xs text-muted-foreground border border-border/30">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-4 h-4 flex-shrink-0 text-primary">
             <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5"></path>
             <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
           </svg>
@@ -2310,13 +2433,11 @@ const enabledChannels = channels
       `;
     }
 
-    // Close the card
     html += `</div>`;
-
     container.innerHTML = html;
   }
 
-  // Show modal when user clicks on unavailable broadcast link
+    // Show modal when user clicks on unavailable broadcast link
   window.showBroadcastModal = function(minutesUntilAvailable) {
     const lang = normalizeLang(getLang());
     const lblNotYetAvailable = t(lang, "match.broadcast.notYetAvailable") || "Not yet available";
