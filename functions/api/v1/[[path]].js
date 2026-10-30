@@ -5,13 +5,23 @@
 
 import channelsData from '../../assets/channels.json';
 
-const staticCatalog = channelsData['24/7 Channels'] || [];
+const rawCatalog = (channelsData && channelsData.default) ? channelsData.default : channelsData;
+const staticCatalog = (rawCatalog && rawCatalog['24/7 Channels']) || [];
+
+const TOP_STREAM_SERVERS = [
+    { name: 'Premier Sports 1 IE', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMDFtcTZ3eGEtOTgxNg' },
+    { name: 'CANAL+ Sport 6 PL', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva3Vsd2l3OWEtMzM4MA' },
+    { name: 'DAZN 1 Germany', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZWltdzltNGstOTI2Nw' },
+    { name: 'ARENA SPORT 1 BiH', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOWxmc2Nud2UtMzE2OQ' },
+    { name: 'Sky Sports Premier League', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveWtpY3l3N3otOTA2OA' },
+    { name: 'beIN Sports', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHhzcXd4M2gtMzc3MA' }
+];
 
 function findCatalogStream(name) {
-    if (!name || !staticCatalog.length) return null;
+    if (!name) return null;
     const nLow = name.toLowerCase().trim();
     
-    // 1. Direct or substring match
+    // 1. Search in static catalog
     for (const c of staticCatalog) {
         const cLow = (c.name || '').toLowerCase().trim();
         if (cLow === nLow || nLow.includes(cLow) || cLow.includes(nLow)) {
@@ -20,7 +30,7 @@ function findCatalogStream(name) {
         }
     }
     
-    // 2. Network keyword matching
+    // 2. Keyword match in static catalog
     const keywords = ['canal', 'dazn', 'arena', 'sky', 'tnt', 'bein', 'espn', 'premier', 'willow', 'sony', 'ziggo', 'super'];
     for (const kw of keywords) {
         if (nLow.includes(kw)) {
@@ -33,6 +43,14 @@ function findCatalogStream(name) {
             }
         }
     }
+
+    // 3. Fallback match in TOP_STREAM_SERVERS
+    for (const top of TOP_STREAM_SERVERS) {
+        if (nLow.includes(top.name.toLowerCase().split(' ')[0])) {
+            return { name: top.name, url: top.url, country: '' };
+        }
+    }
+
     return null;
 }
 
@@ -231,25 +249,15 @@ export async function onRequest(context) {
                 }
             } catch (fsErr) {}
 
-            // E. Fallback: Always ensure at least 4 top sports stream servers
-            if (customUrls.length < 4 && staticCatalog.length > 0) {
-                const topSports = [
-                    'Premier Sports 1 IE',
-                    'CANAL+ Sport 6 PL',
-                    'DAZN 1 Germany',
-                    'ARENA SPORT 1 BiH',
-                    'beIN Sports',
-                    'Sky Sports Premier League',
-                    'TNT'
-                ];
-                for (const targetName of topSports) {
-                    const match = findCatalogStream(targetName);
-                    if (match && !seenUrls.has(match.url)) {
-                        seenUrls.add(match.url);
+            // E. Fallback: Always guarantee at least 4 top sports stream servers
+            if (customUrls.length < 4) {
+                for (const top of TOP_STREAM_SERVERS) {
+                    if (!seenUrls.has(top.url)) {
+                        seenUrls.add(top.url);
                         customUrls.push({
                             id: `srv-${customUrls.length + 1}`,
-                            name: `Server ${customUrls.length + 1}: ${match.name}`,
-                            url: match.url,
+                            name: `Server ${customUrls.length + 1}: ${top.name}`,
+                            url: top.url,
                             enabled: true
                         });
                         if (customUrls.length >= 6) break;
