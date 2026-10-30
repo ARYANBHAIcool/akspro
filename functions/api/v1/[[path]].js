@@ -21,7 +21,6 @@ function findCatalogStream(name) {
     if (!name) return null;
     const nLow = name.toLowerCase().trim();
     
-    // 1. Search in static catalog
     for (const c of staticCatalog) {
         const cLow = (c.name || '').toLowerCase().trim();
         if (cLow === nLow || nLow.includes(cLow) || cLow.includes(nLow)) {
@@ -30,13 +29,11 @@ function findCatalogStream(name) {
         }
     }
     
-    // 2. Keyword match in static catalog
     const keywords = ['canal', 'dazn', 'arena', 'sky', 'tnt', 'bein', 'espn', 'premier', 'willow', 'sony', 'ziggo', 'super'];
     for (const kw of keywords) {
         if (nLow.includes(kw)) {
             for (const c of staticCatalog) {
-                const cLow = (c.name || '').toLowerCase();
-                if (cLow.includes(kw)) {
+                if ((c.name || '').toLowerCase().includes(kw)) {
                     const s = c.streams && c.streams[0];
                     if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
                 }
@@ -65,6 +62,77 @@ export async function onRequest(context) {
     }
 
     try {
+        // ----------------------------------------------------
+        // 0. STREAM PROXY: /api/v1/stream?token=:token
+        // ----------------------------------------------------
+        if (parts[0] === 'stream') {
+            const token = (url.searchParams.get('token') || url.searchParams.get('id') || parts[1] || '').trim();
+            const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
+
+            if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
+                return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;padding:0;background:#000;overflow:hidden;}iframe{width:100%;height:100%;border:0;display:block;}</style></head><body><iframe src="${rawUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></body></html>`, {
+                    status: 200,
+                    headers: { 'Content-Type': 'text/html; charset=utf-8' }
+                });
+            }
+
+            if (!token || !/^[a-f0-9]{32}$/i.test(token)) {
+                return new Response('Invalid or missing stream token.', { status: 400 });
+            }
+
+            const upstreamUrl = `https://iplayer24.me/beta/${token}`;
+
+            try {
+                const resp = await fetch(upstreamUrl, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                        'Referer': 'https://dzeko11.pk/',
+                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                    }
+                });
+
+                if (!resp.ok) {
+                    return new Response(`Upstream stream error: ${resp.status}`, { status: resp.status });
+                }
+
+                let html = await resp.text();
+
+                if (html.includes('google.com') && !html.includes('jwplayer')) {
+                    return new Response('Stream token unavailable or expired.', { status: 502 });
+                }
+
+                // Rewrite WebSocket endpoint to our proxy
+                html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
+                html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
+
+                // Strip intrusive ads/popups
+                html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
+
+                // Dark clean styling
+                const customCss = `<style>
+html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
+body.beta { background: #000 !important; padding: 0 !important; }
+body.beta .stage { width: 100% !important; height: 100% !important; max-width: 100% !important; border-radius: 0 !important; aspect-ratio: unset !important; }
+body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.beta h1, body.beta p, .video-unmute { display: none !important; }
+#player { width: 100% !important; height: 100% !important; }
+#player video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+</style>`;
+                html = html.replace('</head>', customCss + '</head>');
+
+                return new Response(html, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'no-store, no-cache, must-revalidate'
+                    }
+                });
+            } catch (err) {
+                return new Response('Stream Proxy Error: ' + err.message, { status: 500 });
+            }
+        }
+
         // ----------------------------------------------------
         // 1. MATCH DETAILS & BROADCAST STREAMS: /api/v1/match/:matchId
         // ----------------------------------------------------
@@ -114,9 +182,9 @@ export async function onRequest(context) {
                         const rawStream = (item.url || '').trim();
                         let playUrl = rawStream;
 
-                        // If it's a 32-character token, route to our internal player
+                        // Route 32-character tokens through our internal /api/v1/stream proxy
                         if (/^[a-f0-9]{32}$/i.test(rawStream)) {
-                            playUrl = `/api/stream?token=${rawStream}`;
+                            playUrl = `/api/v1/stream?token=${rawStream}`;
                         }
 
                         if (playUrl && !seenUrls.has(playUrl)) {
@@ -235,7 +303,8 @@ export async function onRequest(context) {
                 match_id: fsId,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
-                channels: []
+                channels: [],
+                debug: { dzekoStatus, dzekoErr, count: customUrls.length }
             }), { status: 200, headers: corsHeaders });
         }
 
@@ -303,26 +372,24 @@ export async function onRequest(context) {
                         });
                     }
                 }
-            } catch (fsErr) {}
+            } catch (fsFeedErr) {}
 
-            return new Response(JSON.stringify({ date: date, items: [] }), {
-                status: 200,
-                headers: corsHeaders
-            });
+            return new Response(JSON.stringify({ date: date, items: [] }), { status: 200, headers: corsHeaders });
         }
 
         // ----------------------------------------------------
         // 3. CHANNELS: /api/v1/channels
         // ----------------------------------------------------
         if (parts[0] === 'channels') {
-            return new Response(JSON.stringify({ items: staticCatalog }), {
-                status: 200,
-                headers: corsHeaders
-            });
+            return new Response(JSON.stringify({ items: [] }), { status: 200, headers: corsHeaders });
         }
 
-        return new Response(JSON.stringify({ error: 'Route not found' }), { status: 404, headers: corsHeaders });
-    } catch (e) {
-        return new Response(JSON.stringify({ error: e.message }), { status: 500, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Endpoint not found', parts }), { status: 404, headers: corsHeaders });
+
+    } catch (globalErr) {
+        return new Response(JSON.stringify({ error: globalErr.message || 'Internal edge error' }), {
+            status: 500,
+            headers: corsHeaders
+        });
     }
 }
