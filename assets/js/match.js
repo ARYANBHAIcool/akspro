@@ -2101,9 +2101,9 @@ const enabledChannels = channels
                               /^[a-z0-9]+-\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/.test(matchID);
         const apiMatchID = isCustomMatch ? `CUST:${matchID}` : `FS:${matchID}`;
 
-        // Get match timing info from sessionStorage
-        const matchTimestamp = sessionStorage.getItem(`time_${matchID}`);
-        const matchStatus = sessionStorage.getItem(`status_${matchID}`) || "1";
+        // Get match timing info from sessionStorage or loaded match data
+        const matchTimestamp = sessionStorage.getItem(`time_${matchID}`) || currentMatchData?.matchData?.timestamp;
+        const matchStatus = sessionStorage.getItem(`status_${matchID}`) || currentMatchData?.matchData?.status || "2";
 
         // Fetch data in parallel (skip Flashscore TVI for custom matches)
         const [flashscoreChannels, localChannels, matchOverrides] = await Promise.all([
