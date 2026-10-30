@@ -1,0 +1,3558 @@
+{
+  "success": true,
+  "generated_at": "2026-10-30T20:06:03.925Z",
+  "cached": false,
+  "counts": {
+    "live": 31,
+    "upcoming": 20,
+    "channels": 219
+  },
+  "Live Events": [
+    {
+      "id": "nepal-premier-league-live-24-7-0",
+      "name": "Nepal Premier League Live 24/7",
+      "poster": "https://blog.esewa.com.np/storage/images/blogs/6adf09eca72ce_1793001964.png",
+      "category": "Cricket",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Live Feed",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9wcmFiYXNocHJvamVjdC5naXRodWIuaW8vbTN1OHBsYXllci8_c3JjPWh0dHBzOi8vbGItb3R0bnAubmV0dHZzdHJlYW16LmNvbS9saXZlX2hscy9ucGxfbWF0Y2hfMy9wbGF5bGlzdC5tM3U4"
+        }
+      ]
+    },
+    {
+      "id": "paris-saint-germain-v-le-havre-ac-401876421",
+      "name": "Paris Saint-Germain @ Le Havre AC",
+      "poster": "https://473c5d9d.imgggre.pages.dev/ligue1-401876421.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "beIN Sports Connect 3 (USA)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMmUzdWhodTEtNTgxMQ"
+        }
+      ]
+    },
+    {
+      "id": "stade-rennais-v-nice-401876416",
+      "name": "Stade Rennais @ Nice",
+      "poster": "https://473c5d9d.imgggre.pages.dev/ligue1-401876416.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "beIN Sports Connect 6 (USA)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcWdxbjE1eXAtODA5Ng"
+        }
+      ]
+    },
+    {
+      "id": "mexico-city-grand-prix-free-practice-1-f1-401839123",
+      "name": "Mexico City Grand Prix - Free Practice 1",
+      "poster": "https://473c5d9d.imgggre.pages.dev/f1-401839123.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Sky Sports F1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZjU5NmY5OHItMzAwOQ"
+        },
+        {
+          "name": "Sky Sports F1 UHD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYzg5dnhydmMtODc4Nw"
+        }
+      ]
+    },
+    {
+      "id": "mainz-v-sv-elversberg-401884746",
+      "name": "Mainz @ SV Elversberg",
+      "poster": "https://473c5d9d.imgggre.pages.dev/bundesliga-401884746.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "DAZN Canada",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdzNhNXYxeTQtMzQ1MA"
+        }
+      ]
+    },
+    {
+      "id": "espanyol-v-villarreal-401882817",
+      "name": "Espanyol @ Villarreal",
+      "poster": "https://473c5d9d.imgggre.pages.dev/laliga-401882817.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Premier Sports",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMDFtcTZ3eGEtOTgxNg"
+        }
+      ]
+    },
+    {
+      "id": "10-30-26-the-dirt-track-at-charlotte",
+      "name": "10.30.26 | The Dirt Track at Charlotte",
+      "poster": "https://dirtvision.asset.viewlift.com/images/2026/08/25/10-30-26_Charlotte-1787680084701.png?impolicy=resize&amp;w=1920&amp;h=1080",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Dirtvision",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMGx5b2liMXktNjQ2OQ"
+        }
+      ]
+    },
+    {
+      "id": "lens-v-lille-401876420",
+      "name": "Lens @ Lille",
+      "poster": "https://473c5d9d.imgggre.pages.dev/ligue1-401876420.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "beIN Sports Connect 5 (USA)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOGE5cnY0YmEtNTUyOQ"
+        },
+        {
+          "name": "beIN Sports (USA)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOXNoamFjaWktOTg0Mg"
+        },
+        {
+          "name": "DAZN France",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvemxqbWF5ODItMTMyMA"
+        }
+      ]
+    },
+    {
+      "id": "zenith-racing-series-at-daytona",
+      "name": "Zenith Racing Series at Daytona",
+      "poster": "https://d2779tscntxxsw.cloudfront.net/69aaef7be7abf.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Floracing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvN3MxMHh6N24tNzY4OQ"
+        }
+      ]
+    },
+    {
+      "id": "pbr-ridepass",
+      "name": "PBR RidePass",
+      "poster": "https://d2779tscntxxsw.cloudfront.net/68150c778dbc1.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Floracing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcGgxM3YxY2EtNDA"
+        }
+      ]
+    },
+    {
+      "id": "new-jersey-devils-v-vegas-golden-knights-401892611",
+      "name": "New Jersey Devils @ Vegas Golden Knights",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nhl-401892611.png",
+      "category": "Others",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN+",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYXlydzM1OHYtNTAyMg"
+        }
+      ]
+    },
+    {
+      "id": "national-100-at-east-alabama-motor-speedway",
+      "name": "National 100 at East Alabama Motor Speedway",
+      "poster": "https://d2779tscntxxsw.cloudfront.net/6adf84ab54a9e.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Floracing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZTAxNXozc3ctNDU0MQ"
+        }
+      ]
+    },
+    {
+      "id": "mexico-city-grand-prix-free-practice-2-f1-401839124",
+      "name": "Mexico City Grand Prix - Free Practice 2",
+      "poster": "https://473c5d9d.imgggre.pages.dev/f1-401839124.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Apple TV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdzN0dXU2aHgtOTEwMg"
+        }
+      ]
+    },
+    {
+      "id": "iron-man-halloween-nationals-at-portsmouth-raceway-park",
+      "name": "Iron-Man Halloween Nationals at Portsmouth Raceway Park",
+      "poster": "https://d2779tscntxxsw.cloudfront.net/6adf80c558fc8.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Floracing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvand1N3N3OTQtMjE3NQ"
+        }
+      ]
+    },
+    {
+      "id": "charlotte-hornets-v-washington-wizards-401909277",
+      "name": "Charlotte Hornets @ Washington Wizards",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909277.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMXphdGwxcGstODk3OA"
+        }
+      ]
+    },
+    {
+      "id": "tulane-green-wave-v-charlotte-49ers-401862813",
+      "name": "Tulane Green Wave @ Charlotte 49ers",
+      "poster": "https://473c5d9d.imgggre.pages.dev/cfb-401862813.png",
+      "category": "American Football",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMzNqaHB6ZnItMTAzNw"
+        }
+      ]
+    },
+    {
+      "id": "winnipeg-jets-v-florida-panthers-401892612",
+      "name": "Winnipeg Jets @ Florida Panthers",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nhl-401892612.png",
+      "category": "Others",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN+",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvazAweHJ0aXUtNTQ0Mw"
+        }
+      ]
+    },
+    {
+      "id": "mirassol-v-corinthians-401841295",
+      "name": "Mirassol @ Corinthians",
+      "poster": "https://473c5d9d.imgggre.pages.dev/brasileirao-401841295.png",
+      "category": "Soccer",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Fanatiz",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMTE3OTVsbmwtMTg2Nw"
+        }
+      ]
+    },
+    {
+      "id": "chicago-bulls-v-boston-celtics-401909278",
+      "name": "Chicago Bulls @ Boston Celtics",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909278.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcm82NDJra2otOTg5Mg"
+        }
+      ]
+    },
+    {
+      "id": "detroit-pistons-v-brooklyn-nets-401909279",
+      "name": "Detroit Pistons @ Brooklyn Nets",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909279.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdHpta295bTktNDQzMA"
+        }
+      ]
+    },
+    {
+      "id": "new-york-knicks-v-philadelphia-76ers-401909280",
+      "name": "New York Knicks @ Philadelphia 76ers",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909280.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDZ3NWZmaHktNzE1MA"
+        }
+      ]
+    },
+    {
+      "id": "orlando-magic-v-toronto-raptors-401909281",
+      "name": "Orlando Magic @ Toronto Raptors",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909281.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbjZqcnBzMG4tNDQ3NA"
+        }
+      ]
+    },
+    {
+      "id": "baylor-bears-v-ucf-knights-401856844",
+      "name": "Baylor Bears @ UCF Knights",
+      "poster": "https://473c5d9d.imgggre.pages.dev/cfb-401856844.png",
+      "category": "American Football",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbzlibDhjYWktNTUwOQ"
+        }
+      ]
+    },
+    {
+      "id": "indiana-pacers-v-miami-heat-401909282",
+      "name": "Indiana Pacers @ Miami Heat",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909282.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZzJkbmJkdGstNzIzNw"
+        }
+      ]
+    },
+    {
+      "id": "houston-rockets-v-dallas-mavericks-401909283",
+      "name": "Houston Rockets @ Dallas Mavericks",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909283.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdnl3NTE5YjctMjQyOA"
+        }
+      ]
+    },
+    {
+      "id": "la-clippers-v-minnesota-timberwolves-401909284",
+      "name": "LA Clippers @ Minnesota Timberwolves",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909284.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaDB1NGI0cngtNjE5MA"
+        }
+      ]
+    },
+    {
+      "id": "seattle-kraken-v-calgary-flames-401892613",
+      "name": "Seattle Kraken @ Calgary Flames",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nhl-401892613.png",
+      "category": "Others",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN+",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZHpqc2hiMDQtMzI4MQ"
+        }
+      ]
+    },
+    {
+      "id": "trophy-cup-at-tulare-thunderbowl-raceway",
+      "name": "Trophy Cup at Tulare Thunderbowl Raceway",
+      "poster": "https://d2779tscntxxsw.cloudfront.net/6adf7de5445ff.png",
+      "category": "Motorsport",
+      "status": "live",
+      "streams": [
+        {
+          "name": "Floracing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvM3RycXRoejYtNTA2NA"
+        }
+      ]
+    },
+    {
+      "id": "los-angeles-lakers-v-golden-state-warriors-401909285",
+      "name": "Los Angeles Lakers @ Golden State Warriors",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909285.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcnlvZmVuODctMTc5NQ"
+        }
+      ]
+    },
+    {
+      "id": "denver-nuggets-v-phoenix-suns-401909286",
+      "name": "Denver Nuggets @ Phoenix Suns",
+      "poster": "https://473c5d9d.imgggre.pages.dev/nba-401909286.png",
+      "category": "Basketball",
+      "status": "live",
+      "streams": [
+        {
+          "name": "NBA League Pass",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYnlkeDc2aHgtMTgwNw"
+        }
+      ]
+    },
+    {
+      "id": "kent-state-golden-flashes-v-sacramento-state-hornets-401866451",
+      "name": "Kent State Golden Flashes @ Sacramento State Hornets",
+      "poster": "https://473c5d9d.imgggre.pages.dev/cfb-401866451.png",
+      "category": "American Football",
+      "status": "live",
+      "streams": [
+        {
+          "name": "ESPN2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMzNqaHB6ZnItOTQyMg"
+        }
+      ]
+    }
+  ],
+  "Upcoming Events": [
+    {
+      "id": "match-B0HPB4WCJX",
+      "name": "Hong Kong Sixes 2026 - 10th Match - Oman vs Afghanistan",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.088f3019-a61f-4ee6-b949-e3404fa06ca4/2/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HLPHVTPB",
+      "name": "Hong Kong Sixes 2026 - 11th Match - Scotland vs Sri Lanka",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.6d4fd29c-1738-463c-8252-d92ad764de01/2/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HP7S4L72",
+      "name": "Hong Kong Sixes 2026 - 12th Match - United Arab Emirates vs India",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.561ec0f8-75e0-40bc-8b07-5b2e8a35a3c6/2/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HMRLD4SS",
+      "name": "Hong Kong Sixes 2026 - Bowl Semi Final 1- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.c042e372-387f-4e2e-acd1-d139e4a518a1/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HMLYWN5Q",
+      "name": "Hong Kong Sixes 2026 - Bowl Semi Final 2- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.f6d7d22d-e9b7-436e-885e-68eee5ed2f44/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HLZ4VQPQ",
+      "name": "Womens Big Bash League 2026 - 4th Match - Adelaide Strikers Women vs Melbourne Stars Women",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.7bcd78a9-701e-4b82-a7b4-b4c98580e6ac/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HP1YTNK3",
+      "name": "Hong Kong Sixes 2026 - Plate Semi Final 1- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.f184d693-d14a-433a-83c0-4bb8ef9b6697/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HNNMHMKL",
+      "name": "Hong Kong Sixes 2026 - Plate Semi Final 2- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.a35734b2-96cf-404b-ada4-c2105b79b166/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HPNT3K4V",
+      "name": "Hong Kong Sixes 2026 - Cup Semi Final 1- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.ee1dcc61-123f-4703-8d75-5ce40b906778/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HKDPRJRS",
+      "name": "Australia tour of South Africa 2026 - 3rd Test - South Africa vs Australia",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.20a790a3-51e9-4ec1-9a8b-cb632845af2d/4/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HP445XSZ",
+      "name": "Pakistan ODI Tri-Series 2026 - Final - Pakistan vs Sri Lanka",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.585cf604-276f-4a0d-8d72-73b6136cd9fb/2/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HPL4RFT7",
+      "name": "Hong Kong Sixes 2026 - Cup Semi Final 2- TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.c97812c4-968f-44ea-9aba-a074b19e5ce5/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HNGCKJ18",
+      "name": "Womens Big Bash League 2026 - 5th Match - Perth Scorchers Women vs Melbourne Renegades Women",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.473de08a-bbf3-4dd2-9f27-d805debb9f93/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HPBMQSPR",
+      "name": "Hong Kong Sixes 2026 - Bowl Play-off - TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.8d3092af-d45c-4071-ba1e-6d686fe74ff5/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HP8K8BCP",
+      "name": "Hong Kong Sixes 2026 - Plate Play-off - TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.ecb96c5f-51e3-4ffc-91c4-707c3aa698e5/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HK3VBJC3",
+      "name": "Hong Kong Sixes 2026 - Cup Play-off - TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.b31bbf10-d78e-4244-a344-95a338e78552/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HM6M2GHF",
+      "name": "Womens Big Bash League 2026 - 6th Match - Sydney Thunder Women vs Brisbane Heat Women",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.c2c84966-e524-464e-a567-5ea6dad62f38/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HM7PCY3B",
+      "name": "Hong Kong Sixes 2026 - Bowl Final - TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.be6510ba-4d01-4cc6-b9ae-3ce2cf432774/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0H6W3NWKD",
+      "name": "Hong Kong Sixes 2026 - Plate Final - TBC vs TBC",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.51c0bf91-b33c-483f-9979-81cd852e7387/1/BOXART-16X9/en-US._UR1920,1080_.jpeg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "match-B0HNWRBDCQ",
+      "name": "New Zealand vs. India",
+      "poster": "https://m.media-amazon.com/images/S/le-target-images-prod/amzn1.dv.gti.2d613298-262a-42ed-a769-e267442a7aa6/2/BOXART-16X9/en-US._UR1920,1080_.jpg",
+      "category": "Cricket",
+      "status": "upcoming",
+      "streams": [
+        {
+          "name": "Willow HD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    }
+  ],
+  "24/7 Channels": [
+    {
+      "id": "channel-abc",
+      "name": "ABC",
+      "poster": "https://cdn.abcotvs.com/dip/images/11479454_011822-cc-abc-generic-thumb-img.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ABC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmhtemt6ZXotMzAyOA"
+        }
+      ]
+    },
+    {
+      "id": "channel-acc-network",
+      "name": "ACC Network",
+      "poster": "https://theacc.com/images/2018/11/30/ACCN_Launch.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ACC Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYXF3aWRrOTYtMjk4NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-ae-network",
+      "name": "AE",
+      "poster": "https://deadline.com/wp-content/uploads/2016/12/ae-network-logo.jpg?w=630&amp;amp;h=383&amp;amp;crop=1",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "AE",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbXBtbzJycTYtMjI0Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-amc",
+      "name": "AMC",
+      "poster": "https://tvseriesfinale.com/wp-content/uploads/2014/08/amc02.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "AMC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcTRvNjh2OHgtMTA5Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-american-heroes-channel",
+      "name": "American Heroes Channel",
+      "poster": "https://payload.cargocollective.com/1/10/342209/9724942/AHC_15a_3_1340_c.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "American Heroes Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveWVidXlicjItNjg2Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-animal-planet",
+      "name": "Animal Planet",
+      "poster": "https://imagescdn.designweek.co.uk/uploads/2018/10/25115647/AnimalPlanet_Vertical_OneLineLarge_RGB-002.jpg?fit=max&amp;amp;amp;crop=faces&amp;amp;amp;q=50&amp;amp;amp;auto=compress,format&amp;amp;amp;cs=origin&amp;amp;amp;w=2559&amp;amp;amp;h=1.0",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Animal Planet",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvd21zeGNxdHktNjc2OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-arena-sport-1-bih",
+      "name": "ARENA SPORT 1 BiH",
+      "poster": "https://mediadaily.biz/wp-content/uploads/2019/07/ARENA-SPORT.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcG1rNDAwNmItNzA5OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-axs-tv",
+      "name": "AXS TV",
+      "poster": "https://www.hcc.net/wp-content/uploads/2012/06/AXS_TV_BlueWhite.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "AXS TV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNWV2emRrNDktNDk5Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bbc-america",
+      "name": "BBC America",
+      "poster": "https://variety.com/wp-content/uploads/2014/02/bbc-america-logo1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "BBC America",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaGE1eGJ1Z2ktNzc2OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-bbc-news",
+      "name": "BBC News",
+      "poster": "https://ichef.bbci.co.uk/images/ic/1200x675/p0g6j1tq.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "BBC News",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMmhpZnRpbTgtNzAzMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-bbc-one-london",
+      "name": "BBC One London",
+      "poster": "https://ichef.bbci.co.uk/images/ic/1200x675/p0dkt7rv.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "BBC One London",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZXZxYWFvNDctODkyMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bbc-two",
+      "name": "BBC Two",
+      "poster": "https://ichef.bbci.co.uk/images/ic/1200x675/p0bvs8dg.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "BBC Two",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaTE5OTlqaTItODQ5NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-max-4-francais",
+      "name": "beIN Max 4 Francais",
+      "poster": "https://i.postimg.cc/MG3RnXzm/Frame-12-(1).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Max 4 Francais",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZzhmMHdwcWMtMjY5Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-max-5-francais",
+      "name": "beIN Max 5 Francais",
+      "poster": "https://i.postimg.cc/MG3RnXzm/Frame-12-(1).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Max 5 Francais",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2Nra29lZHYtMjU5NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-max-6",
+      "name": "beIN Max 6 Francais",
+      "poster": "https://i.postimg.cc/MG3RnXzm/Frame-12-(1).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Max 6 Francais",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvd3FqbGJ3bGwtMjI1OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-max-7-francais",
+      "name": "beIN Max 7 Francais",
+      "poster": "https://i.postimg.cc/MG3RnXzm/Frame-12-(1).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Max 7 Francais",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbnA0Yml3ZjMtMzA5Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports",
+      "name": "beIN Sports",
+      "poster": "https://assets-us-01.kc-usercontent.com/31dbcbc6-da4c-0033-328a-d7621d0fa726/1318873e-8501-4f79-bb69-182d741cf9ad/beIN%20SPORTS%20Portada.jpg?ver=03-06-2025?w=3840&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;q=75",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdTM2ZnRmY3ktNzEwMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-francais-1",
+      "name": "beIN Sports Francais 1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/beinsports.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports Francais 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ2J3MDlhbm4tOTgz"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-francais-2",
+      "name": "beIN Sports Francais 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/beinsports.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports Francais 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYWhsNzdjZ28tMzU5Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-francais-3",
+      "name": "beIN Sports Francais 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/beinsports.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports Francais 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZmN4cGViMmktOTI3NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-1",
+      "name": "beIN Sports MENA 1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ2g5bTd1ODktODQ3MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-2",
+      "name": "beIN Sports MENA 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2xrMGo3cDItMzM0Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-3",
+      "name": "beIN Sports MENA 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2V0YmNsdjAtNDc5NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-4",
+      "name": "beIN Sports MENA 4",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 4",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHh4NGw2MTUtNjUyNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-5",
+      "name": "beIN Sports MENA 5",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 5",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNTliODljdWItNjgyNQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-6",
+      "name": "beIN Sports MENA 6",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 6",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNXU4MWgwb24tODI4Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-7",
+      "name": "beIN Sports MENA 7",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 7",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbW13dzFrc3MtMzU2OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-8",
+      "name": "beIN Sports MENA 8",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 8",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvODB5bmJudXYtNTM4Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-bein-sports-mena-9",
+      "name": "beIN Sports MENA 9",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/beIN%20SPORTS%20Portada.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "beIN Sports MENA 9",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbHRjcW5zemgtNjIxOA"
+        }
+      ]
+    },
+    {
+      "id": "channel-big-ten-network",
+      "name": "Big Ten Network",
+      "poster": "https://gopsusports.com/imgproxy/k91lOV2DCMvY-TlDrKf6wFdFPL2C-VUkzBYcnteT1zs/rs:fit:1980:0:0:0/g:ce:0:0/q:90/aHR0cHM6Ly9zdG9yYWdlLmdvb2dsZWFwaXMuY29tL2dvcHN1c3BvcnRzLXByb2QvMjAyMy8wNy8xMy9yT004VFFtV0t0Y09WOHlsZ1JsZXJKSGFWN0lxNzVLRmlQY3NPUmo3LndlYnA.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Big Ten Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdGtkdHRhdjMtMjU4Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-boomerang",
+      "name": "Boomerang",
+      "poster": "https://cdn.broadbandtvnews.com/wp-content/uploads/2024/08/05120702/Boomerang.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Boomerang",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcml3cmY2dHctODQxNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-bravo",
+      "name": "Bravo",
+      "poster": "https://www.bravotv.com/sites/bravo/files/2024/05/bravo-logo-2jpg.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Bravo",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdmV4dmh5cWktNDcw"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-extra-1",
+      "name": "CANAL+ Extra 1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/canalextra.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Extra 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOW5sbHhrczgtNDg4Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-extra-2",
+      "name": "CANAL+ Extra 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/canalextra.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Extra 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZnVkbGxud2otMzUxNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-2-pl",
+      "name": "CANAL+ Sport 2 PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport 2 PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdnowYjhkYWktMzUzMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-3-pl",
+      "name": "CANAL+ Sport 3 PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport 3 PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZjlxMndoZ2MtNzc4Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-4-pl",
+      "name": "CANAL+ Sport 4 PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport 4 PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcmNic3A5bzEtNTkxMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-5-pl",
+      "name": "CANAL+ Sport 5 PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport 5 PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYXllaGRycDEtNDMwNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-6-pl",
+      "name": "CANAL+ Sport 6 PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport 6 PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcXJta2U1eDQtMjAyOA"
+        }
+      ]
+    },
+    {
+      "id": "channel-canal-sport-pl",
+      "name": "CANAL+ Sport PL",
+      "poster": "https://i.postimg.cc/ZRtsQkk0/Frame-(3).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CANAL+ Sport PL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvanI0Y3luYm8tOTI3Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-cartoon-network",
+      "name": "Cartoon Network",
+      "poster": "https://1000logos.net/wp-content/uploads/2016/10/Cartoon-Network-logo.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Cartoon Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYjNzZmM5NG4tMjM5OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-cbeebies",
+      "name": "CBeebies",
+      "poster": "https://static.files.bbci.co.uk/core/website/assets/static/childrens-web/images/metadata/cbeebies-poster-1024x576.8eb27aa32e.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CBeebies",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDM4Y2hxNTctNDcw"
+        }
+      ]
+    },
+    {
+      "id": "channel-cbs",
+      "name": "CBS",
+      "poster": "https://wwwimage-tve.cbsstatic.com/base/files/seo/cbs_seo_1200x627_1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CBS",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmdtdTltdGgtNDIxNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-cbs-sports-network",
+      "name": "CBS Sports Network",
+      "poster": "https://www.paramountshop.com/cdn/shop/files/cbssportsnetwork-mobile-min.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CBS Sports Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOWMyandyNDAtMzQwNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-cnbc",
+      "name": "CNBC",
+      "poster": "https://cdn.versantmedia.com/versantmedia/styles/newsroom/s3/2025-11/cnbc%281600x900%29.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CNBC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNTc1bzk1d2gtNDMzNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-cnn",
+      "name": "CNN",
+      "poster": "https://media.cnn.com/api/v1/images/cnn/cnn-placeholder-image.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CNN",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvam1idDR0cmEtMzM0Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-comedy-central",
+      "name": "Comedy Central",
+      "poster": "https://wwwimage-us.pplusstatic.com/base/files/seo/og-brand-comedy-central.jpg?format=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Comedy Central",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYW9lYjc3eHEtOTUxMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-cw",
+      "name": "CW",
+      "poster": "https://www.wavy.com/wp-content/uploads/sites/3/2024/08/cw-logo-white-on-blue-wavy-background.jpg?w=1280",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "CW",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOHgwMTUxMDItNjQ1Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-1-germany",
+      "name": "DAZN 1 Germany",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=12dpnhddhmpm71228raanhyxs2_image-header_pDach_1723627450000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 1 Germany",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvM2RrOHJ4dWktNjIxMg"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-1-italia",
+      "name": "DAZN 1 Italia",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=pterrit4f2xu1pa2r6x87y5e9_image-header_pIt_1724315365000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 1 Italia",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ21vcW96N2ItNDk0NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-1-portugal",
+      "name": "DAZN 1 Portugal",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=1o4eamzb4env61ddc8wv4ra06l_image-header_pRow_1720521601000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 1 Portugal",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvM3poY3p6YmwtOTA4Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-1-spain",
+      "name": "DAZN 1 Spain",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=hn9vkic8rbfi1ndrym8sw2qh7_image-header_pEs_1723035920000",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 1 Spain",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3EyNmlueWYtMjY2MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-1-usa",
+      "name": "DAZN 1 USA",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=1owzb99m9mnzy15hjxolpukwul_image-header_pUs_1771501796000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 1 USA",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvanlxemV0MGItMjkwMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-2-germany",
+      "name": "DAZN 2 Germany",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=1ni1lpwjtnxmr1xklfoptrt2mz_image-header_pDach_1723628653000",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 2 Germany",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdG5pZnNwajYtODUy"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-2-spain",
+      "name": "DAZN 2 Spain",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=2ouwtae8ad7l1fxviow9bowpk_image-header_pEs_1723118632000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN 2 Spain",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMG8zdmxhYmstNDA4OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-f1",
+      "name": "DAZN F1",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=14ln25pmjdv031ejxsmg8dczsu_image-header_pEs_1723117975000&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN F1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNXJ2YXpzenotNjk4Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-dazn-laliga",
+      "name": "DAZN LaLiga",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=1weziux6zy5mb16pev002ax1yu_image-header_pEs_1723118324000",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "DAZN LaLiga",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZncyanJ1bTktNDQ4"
+        }
+      ]
+    },
+    {
+      "id": "channel-dirtvision-now-24-7",
+      "name": "Dirtvision Now 24/7",
+      "poster": "https://dirtvision.asset.viewlift.com/images/2025/10/17/1715300867054-64c720a301f24f34820b4c7143ff5bd2-1737996577673-1742219029838-1760724870716.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Dirtvision Now 24/7",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMnVoejhwcTctMjMyMg"
+        }
+      ]
+    },
+    {
+      "id": "channel-discovery-channel",
+      "name": "Discovery Channel",
+      "poster": "https://i.ibb.co/k2rbB1jc/e35d6be84084fed1d756c39242f13163.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Discovery Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNWhpYmlocngtNDU5"
+        }
+      ]
+    },
+    {
+      "id": "channel-discovery-family",
+      "name": "Discovery Family",
+      "poster": "https://i.ibb.co/wFmT9Q5t/Discovery-Family-ID-Let-s-Go-Yellow.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Discovery Family",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbWNvcDhjYnAtNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-discovery-turbo",
+      "name": "Discovery Turbo",
+      "poster": "https://i.ibb.co/20MgSXjy/featured-Image-1767979538707.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Discovery Turbo",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaGdmNHFnNzgtNjQ5"
+        }
+      ]
+    },
+    {
+      "id": "channel-disney-channel",
+      "name": "Disney Channel",
+      "poster": "https://vignette4.wikia.nocookie.net/logopedia/images/9/93/Disney_Channel_Original_2014.png/revision/latest?cb=20140705213010",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Disney Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZXB1emU1ZTktMTc3Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-disney-junior",
+      "name": "Disney Junior",
+      "poster": "https://thewaltdisneycompany.com/app/uploads/2021/02/021221_Disney-Junior-10th-Anniversary-00.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Disney Junior",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbXhoOXhoeWstNjM0OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-disney-xd",
+      "name": "Disney XD",
+      "poster": "https://www.laughingplace.com/uploads/2015/10/d128457e3b3ab8c050f306aa8e23666b9b05d3cc.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Disney XD",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNmN6ejgwa3AtMjMyNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-eleven-sports-1",
+      "name": "Eleven Sports 1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/100659.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Eleven Sports 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ2cyOHd3aDQtNjg0OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-eleven-sports-2",
+      "name": "Eleven Sports 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/100659.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Eleven Sports 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHcweTBnengtNzYxNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-eleven-sports-3",
+      "name": "Eleven Sports 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/100659.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Eleven Sports 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveXRqcnRkZTQtNjA4Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-eleven-sports-4",
+      "name": "Eleven Sports 4",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/100659.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Eleven Sports 4",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYm9jN2N2NHktNjE2MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-espn",
+      "name": "ESPN",
+      "poster": "https://a1.espncdn.com/combiner/i?img=%2Fi%2Fespn%2Fespn_logos%2Fespn_red.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ESPN",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbzlibDhjYWktNzIyMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-espn-deportes",
+      "name": "ESPN Deportes",
+      "poster": "https://i.ibb.co/Y7zHmbbz/i.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ESPN Deportes",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNnRyc2FudDctMTQyMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-espn2",
+      "name": "ESPN2",
+      "poster": "https://discgolf.ultiworld.com/wp-content/uploads/2020/10/ESPN2.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ESPN2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMzNqaHB6ZnItOTM2"
+        }
+      ]
+    },
+    {
+      "id": "channel-espnews",
+      "name": "ESPNEWS",
+      "poster": "https://i.ibb.co/5h4LGFHq/image.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ESPNEWS",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbWZ0c2xlejQtMzM2NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-espnu",
+      "name": "ESPNU",
+      "poster": "https://i.ibb.co/Lh5jHVDm/ESPNU-logo-1-jpg.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "ESPNU",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvd3Fid2pqaGYtOTc3MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-food-network",
+      "name": "Food Network",
+      "poster": "https://i.ibb.co/5WcnZbYf/food-network-jpg.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Food Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvY25vbXhubzAtMTk4Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox",
+      "name": "Fox",
+      "poster": "https://i.ibb.co/8JdwqP4/foxusa.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYmhnN3JrdWctNjkyNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-deportes",
+      "name": "Fox Deportes",
+      "poster": "https://foxsports-wordpress-www-prsupports-prod.s3.amazonaws.com/uploads/sites/2/2016/12/LOGO-DEPORTES-1040x585.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Deportes",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOHAwd2pyNnQtMzMxNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-news",
+      "name": "Fox News",
+      "poster": "https://a57.foxnews.com/cf-images.us-east-1.prod.boltdns.net/v1/static/694940094001/15de0523-3be4-4a9a-8159-7020114e7036/b6ff623a-26d6-4fd9-8bb8-0856adbf38ce/1280x720/match/896/500/image.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox News",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbXR5ejczNnYtMTE5OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-1",
+      "name": "Fox Sports 1",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/2015_Fox_Sports_1_logo.svg/1280px-2015_Fox_Sports_1_logo.svg.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZjRpanI0c2wtMTg3"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-2",
+      "name": "Fox Sports 2",
+      "poster": "https://upload.wikimedia.org/wikipedia/commons/thumb/3/38/FS2_logo_2015.svg/1280px-FS2_logo_2015.svg.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcDU1NjJid20tMzI4NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-501-cricket",
+      "name": "Fox Sports 501 (Cricket)",
+      "poster": "https://i.ibb.co/Y4bTS1p7/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 501 (Cricket)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaW1pZm5lb2otMTQxNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-502-league",
+      "name": "Fox Sports 502 (League)",
+      "poster": "https://i.ibb.co/tppZhDrb/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 502 (League)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvY2F4cTlkNWctMTg1NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-503",
+      "name": "Fox Sports 503",
+      "poster": "https://i.ibb.co/xS4MkGSL/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 503",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDFpbG5zNWktNzQ2"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-504-footy",
+      "name": "Fox Sports 504 (Footy)",
+      "poster": "https://i.ibb.co/SXvQLc0M/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 504 (Footy)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbTV5czJ0MnotNzQxMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-505",
+      "name": "Fox Sports 505",
+      "poster": "https://i.ibb.co/prKZGNLt/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 505",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcDBqa3BtMTItMTE0MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-506",
+      "name": "Fox Sports 506",
+      "poster": "https://i.ibb.co/Swks4Lmj/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 506",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOWhnOXJ6emgtMjkzNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-fox-sports-507",
+      "name": "Fox Sports 507",
+      "poster": "https://i.ibb.co/7d6VgDVL/image.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Fox Sports 507",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvczFucHFtb2QtOTMzNQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-freeform",
+      "name": "Freeform",
+      "poster": "https://d2z00kf51ll94q.cloudfront.net//archive/2023/large/ADC102_BCD021B_0.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Freeform",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvY2V4NWN0dnYtNzc0Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-fx",
+      "name": "FX",
+      "poster": "https://static0.srcdn.com/wordpress/wp-content/uploads/2026/01/gold-fx-channel-logo-1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "FX",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZm4zcGExZ2ItOTM"
+        }
+      ]
+    },
+    {
+      "id": "channel-fxm",
+      "name": "FXM",
+      "poster": "https://www.awn.com/sites/default/files/styles/original/public/image/featured/50716-buster-creates-brand-id-new-fxm-programming-block_0.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "FXM",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYWY1bnQ5MDItNjc0NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-fxx",
+      "name": "FXX",
+      "poster": "https://thestreamable.com/media/pages/channels/fxx/b6fc72ce3d-1756344305/fxx-banner-1536x864-crop.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "FXX",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOGx5c2dkODMtNDg2Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-go3-sport-1",
+      "name": "Go3 Sport 1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/go3sport.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Go3 Sport 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMnRzbDJjYm4tNjk2OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-go3-sport-2",
+      "name": "Go3 Sport 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/go3sport.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Go3 Sport 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ3UwemF3cDAtODE3Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-go3-sport-3",
+      "name": "Go3 Sport 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/go3sport.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Go3 Sport 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ3UwemF3cDAtNTQ1Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-golf-channel",
+      "name": "GOLF Channel",
+      "poster": "https://corporate.comcast.com/media/img/1000w/2020/01/corporate_golf-channel-16x9-social.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "GOLF Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcDh3b3M1cTEtMTMzMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-hbo",
+      "name": "HBO",
+      "poster": "https://static.hbo.com/2021-11/hbo-static-1920.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HBO",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvb3QwM2pxcGItNDEyNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-hbo-comedy",
+      "name": "HBO Comedy",
+      "poster": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRLyenDc7wucCDm_3vYBURzz0cfYKw5tVWpm4rtCOfILlOua2dcpiTwG5JZ&amp;amp;amp;s=10",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HBO Comedy",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZzhybHR2YTItMTE1NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-hbo-drama",
+      "name": "HBO Drama",
+      "poster": "https://i.ibb.co/Qv2Mz3ZB/https-archive-images-prod-global-a201836-reutersmedia-net-2016-10-30-LYNXMPEC9-T08-O.avif",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HBO Drama",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMzBvd3FyY2stNzg0MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-hbo-latino",
+      "name": "HBO Latino",
+      "poster": "https://i.ibb.co/TMzmbVYq/maxresdefault.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HBO Latino",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveW02eTR6eWEtOTkxMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-hbo-movies",
+      "name": "HBO Movies",
+      "poster": "https://i.ibb.co/Qv2Mz3ZB/https-archive-images-prod-global-a201836-reutersmedia-net-2016-10-30-LYNXMPEC9-T08-O.avif",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HBO Movies",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdWlvbmh5czItNDYx"
+        }
+      ]
+    },
+    {
+      "id": "channel-hgtv",
+      "name": "HGTV",
+      "poster": "https://i.ibb.co/gbtDnLhS/hgtv-jpg.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "HGTV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvb2tqM3c2ZTctNzI5NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-hub-sports-1-singapore",
+      "name": "Hub Sports 1 Singapore",
+      "poster": "https://i.vimeocdn.com/video/2065871386-1e9bff68a218b46f95c503bc69cf9d566c5021dae6479880b15ba09efa83da70-d?f=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMjY3MHJubHAtMjY5Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-hub-sports-2-singapore",
+      "name": "Hub Sports 2 Singapore",
+      "poster": "https://i.vimeocdn.com/video/2065871386-1e9bff68a218b46f95c503bc69cf9d566c5021dae6479880b15ba09efa83da70-d?f=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdXhqanUyOGotMjk3Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-hub-sports-3-singapore",
+      "name": "Hub Sports 3 Singapore",
+      "poster": "https://i.vimeocdn.com/video/2065871386-1e9bff68a218b46f95c503bc69cf9d566c5021dae6479880b15ba09efa83da70-d?f=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOTFpZWNjcHctMzQ4OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-hub-sports-4-singapore",
+      "name": "Hub Sports 4 Singapore",
+      "poster": "https://i.vimeocdn.com/video/2065871386-1e9bff68a218b46f95c503bc69cf9d566c5021dae6479880b15ba09efa83da70-d?f=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcGdiMWtkbWYtODI5Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-hub-sports-5-singapore",
+      "name": "Hub Sports 5 Singapore",
+      "poster": "https://i.vimeocdn.com/video/2065871386-1e9bff68a218b46f95c503bc69cf9d566c5021dae6479880b15ba09efa83da70-d?f=webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdGZycng3MTUtODEyNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-mlb-network",
+      "name": "MLB Network",
+      "poster": "https://img.mlbstatic.com/mlb-images/image/private/t_16x9/t_w2208/mlb/xtkynqe5wgtzaddnsus2.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "MLB Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2JycXAwZDUtMTY4OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-motogp-channel",
+      "name": "MotoGP Channel",
+      "poster": "https://sportbikesincmag.com/wp-content/uploads/2024/11/New-MotoGP-Logo-sportbikesincmag.com-4.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "MotoGP Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3Y3YTRzZmMtOTIxMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-movistar-deportes",
+      "name": "Movistar Deportes",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/movistardeportes.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Movistar Deportes",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ3psaTNqdGEtNTcw"
+        }
+      ]
+    },
+    {
+      "id": "channel-movistar-deportes-2",
+      "name": "Movistar Deportes 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/movistardeportes.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Movistar Deportes 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMWd2MnJoeGMtNDI5Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-movistar-deportes-3",
+      "name": "Movistar Deportes 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/movistardeportes.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Movistar Deportes 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvd3Rubmd6M3AtNDg2Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-movistar-laliga",
+      "name": "Movistar LaLiga",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/movistarlaliga.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Movistar LaLiga",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdm93cndoZG4tMjQ5MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-movistar-plus",
+      "name": "Movistar Plus",
+      "poster": "https://imagenes.hobbyconsolas.com/uploads/imagenes/2026/05/11/6a01f2422d3b19-96205427.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Movistar Plus",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYjZhM2NqYngtOTAyMg"
+        }
+      ]
+    },
+    {
+      "id": "channel-mtv",
+      "name": "MTV",
+      "poster": "https://static0.colliderimages.com/wordpress/wp-content/uploads/2025/12/mtv-logo-1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "MTV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbTdkeGJ0NnMtNjM4MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-nba-tv",
+      "name": "NBA TV",
+      "poster": "https://static.cdn.turner.com/styles/header_image_1500x500_cropped/s3/nba-tv-16x9-1.jpg?itok=6H8mrlyR",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NBA TV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOHRsMmtzZWYtMjc3NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-nbc",
+      "name": "NBC",
+      "poster": "https://cdn.mos.cms.futurecdn.net/zP42nmS7MRj2kvBqNEs8CE.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NBC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYmRsN215MzQtMTg2Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-nbc-sports-bay-area",
+      "name": "NBC Sports Bay Area",
+      "poster": "https://cdn.mos.cms.futurecdn.net/d7jWexxhtezRZ6ryLHyKmd.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NBC Sports Bay Area",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc29pcGY4MGQtODQ0MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-nbc-sports-philadelphia",
+      "name": "NBC Sports Philadelphia",
+      "poster": "https://media.nbcsportsphiladelphia.com/2023/04/Philly-Landmark.png?resize=1200%2C675&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=85&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;strip=all",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NBC Sports Philadelphia",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMDN1eG1nMnAtODY3NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-nfl-network",
+      "name": "NFL Network",
+      "poster": "https://i.ibb.co/ZRsTndvV/tfki7njrm3y8jycbtkrx.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NFL Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYTQwY3p4OGUtNDAyMg"
+        }
+      ]
+    },
+    {
+      "id": "channel-nhl-network",
+      "name": "NHL Network",
+      "poster": "https://media.d3.nhle.com/image/private/t_ratio16_9-size50/prd/lhum6z3hyaga9ahnjow0.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "NHL Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2VsY3dxbDItMTkzOA"
+        }
+      ]
+    },
+    {
+      "id": "channel-nick-jr",
+      "name": "Nick Jr.",
+      "poster": "https://i.ibb.co/xS6CMxZD/nick-jr-logo-2023-4.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Nick Jr.",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbWtxNHEyYTQtOTMyMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-nickelodeon",
+      "name": "Nickelodeon",
+      "poster": "https://i.ibb.co/xSM8bDYh/roger-nickelodeon-graphic-design-format-webp-width-2880-8-Yj-L2u3-KSI20j-HDQ.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Nickelodeon",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvODFnaXlvN28tNTQ5NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-nicktoons",
+      "name": "Nicktoons",
+      "poster": "https://i.ibb.co/XfX32tyx/nicktoons-logo-2023-rebrand-2.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Nicktoons",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveXJxdmIwMDctMTEyNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-polsat",
+      "name": "Polsat",
+      "poster": "https://i.ibb.co/1YTCVJ7W/image.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZG5yMWI2azUtMzk2MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-polsat-sport-1",
+      "name": "Polsat Sport 1",
+      "poster": "https://staticeu.sweet.tv/images/cache/v2/channel_banner/COEd/3809-polsat-sport-1-hd.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Polsat Sport 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcGk1ZHFzamQtODk2NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-polsat-sport-2",
+      "name": "Polsat Sport 2",
+      "poster": "https://staticeu.sweet.tv/images/cache/v2/channel_banner/COId/3810-polsat-sport-2-hd.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Polsat Sport 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmpzNXBjNmstNTM0Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-polsat-sport-3",
+      "name": "Polsat Sport 3",
+      "poster": "https://staticeu.sweet.tv/images/cache/v2/channel_banner/COMd/3811-polsat-sport-3-hd.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Polsat Sport 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcjFlaHdnZGUtOTEzOQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-polsat-sport-fight",
+      "name": "Polsat Sport Fight",
+      "poster": "https://staticeu.sweet.tv/images/cache/v2/channel_banner/COUd/3813-polsat-sport-fight-hd.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Polsat Sport Fight",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbWtyNm52cXQtNDY2Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-premier-sports-1-ie",
+      "name": "Premier Sports 1 IE",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/premiersports.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Premier Sports 1 IE",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmYxc2toMmwtMTkyNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-premier-sports-2-ie",
+      "name": "Premier Sports 2 IE",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/premiersports.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Premier Sports 2 IE",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYzhwcmY5eWgtMjQ5OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-premiere",
+      "name": "Premiere",
+      "poster": "https://s3.glbimg.com/v1/AUTH_36abb2af534644878388f516c38b89ac/prod/home-share-1b75cdaa.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Premiere",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaHg4bmtuNWgtMjY0NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-racer-network",
+      "name": "RACER Network",
+      "poster": "https://cdn-cs-images.racer.com/v3/assets/blte77f57883ea46be1/bltb30b537c79808b35/680f2c517c8c98109d720e49/Racer_Network_1920x1080_Presser_V1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "RACER Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYzA4aTk0ajctODk5OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sec-network",
+      "name": "SEC Network",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/images/2NRKBDE2CLIGI5XHHHHMY2BCAQ.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "SEC Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMnA5cHRzaGItMzUzNw"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime",
+      "name": "Showtime",
+      "poster": "https://i.ibb.co/v7vcNY4/Showtime-Logo.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbGJmOGI5cXgtNTc5NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime-2",
+      "name": "Showtime 2",
+      "poster": "https://i.ibb.co/8gCRbv0s/Showtime-2-svg.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZHV0bTZhcWYtMTYzMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime-extreme",
+      "name": "Showtime Extreme",
+      "poster": "https://i.ibb.co/1t5fNwpQ/Showtime-Closing-2013.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime Extreme",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNWNhcHpyYTAtNDAyNQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime-family-zone",
+      "name": "Showtime Family Zone",
+      "poster": "https://i.ibb.co/1t5fNwpQ/Showtime-Closing-2013.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime Family Zone",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdHFwazc4eGktMzE3Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime-next",
+      "name": "Showtime Next",
+      "poster": "https://i.ibb.co/1t5fNwpQ/Showtime-Closing-2013.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime Next",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMW45MHZnNnktMjI0"
+        }
+      ]
+    },
+    {
+      "id": "channel-showtime-women",
+      "name": "Showtime Women",
+      "poster": "https://i.ibb.co/1t5fNwpQ/Showtime-Closing-2013.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Showtime Women",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZzRuZ2h2MnItMjUxNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-arts",
+      "name": "Sky Arts",
+      "poster": "https://www.advanced-television.com/wp-content/uploads/2020/07/SkyArts-e1596120009794.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Arts",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYmpwdXh5MHYtNjM2"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-atlantic",
+      "name": "Sky Atlantic",
+      "poster": "https://news.virginmediao2.co.uk/wp-content/uploads/2026/02/Screenshot-2026-02-23-at-08.44.25.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Atlantic",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbGt6OGtrbXUtMjgyMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-comedy",
+      "name": "Sky Comedy",
+      "poster": "https://i.imgur.com/wKLxOY3.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Comedy",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveWVlbHZmcm4tMzUz"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-crime",
+      "name": "Sky Crime",
+      "poster": "https://i.imgur.com/A6zkJB3.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Crime",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbGo3c2E2eWYtMjQ1Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-documentaries",
+      "name": "Sky Documentaries",
+      "poster": "https://i.imgur.com/zlR5nbe.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Documentaries",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOXo0Y3FxOGktODE3OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-kids",
+      "name": "Sky Kids",
+      "poster": "https://i.imgur.com/EPPYzm6.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Kids",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOGR1eGM4d3otMTkx"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-nature",
+      "name": "Sky Nature",
+      "poster": "https://static.wikia.nocookie.net/logosfake/images/a/ad/Sky_Nature_Generic_ID_2020.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Nature",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYWRmbWY4MWgtNjE2MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-news",
+      "name": "Sky News",
+      "poster": "https://videos.skynews.com/image/v1/static/6058004172001/8eed3dc3-7e5b-434c-8a86-db429eda4fc5/d8918560-71dd-450b-810c-ae8137f2f6ad/1280x720/match/image.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky News",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveXM5OXQ2dXEtNDczNQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-one",
+      "name": "Sky One",
+      "poster": "https://www.newscaststudio.com/wp-content/uploads/2021/07/sky-one-logo.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky One",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMGFlZ3g0MGctOTk1"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sci-fi",
+      "name": "Sky Sci-Fi",
+      "poster": "https://cdn.broadbandtvnews.com/wp-content/uploads/2022/06/14105945/Sky-SciFi-Main.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sci-Fi",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbjFidmtxdXAtMTcwOQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-1-nz",
+      "name": "Sky Sport 1 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 1 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOG51bTNhZmgtODIwNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-2-nz",
+      "name": "Sky Sport 2 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 2 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc2w5dW45N2otNDQ3NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-3-nz",
+      "name": "Sky Sport 3 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 3 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbGRmYnM4Z2YtNzg4NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-4-nz",
+      "name": "Sky Sport 4 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 4 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaDByeW9zZjktMTczNg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-5-nz",
+      "name": "Sky Sport 5 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 5 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMzJmOXU0bm8tNTgyOA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-6-nz",
+      "name": "Sky Sport 6 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 6 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvd2dodWs5bngtMTk2Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-7-nz",
+      "name": "Sky Sport 7 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 7 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZG9odmdhMWwtMjI4NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-8-nz",
+      "name": "Sky Sport 8 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 8 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYXN4ZGZjenItOTA1MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-9-nz",
+      "name": "Sky Sport 9 NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 9 NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2IxbmdjZWktOTk3Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-24",
+      "name": "Sky Sport 24",
+      "poster": "https://mir-s3-cdn-cf.behance.net/project_modules/max_1200_webp/dfa89629775883.5602ff6b0aacf.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport 24",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMWszY2tiMm0tODc5Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-arena-it",
+      "name": "Sky Sport Arena IT",
+      "poster": "https://api-stg.cloudstreamer.cc/?c=sky-sport-arena",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYWtmbDdsczYtMjIzMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-bundesliga",
+      "name": "Sky Sport Bundesliga",
+      "poster": "https://www.sportsvideo.org/wp-content/uploads/2024/12/Sky-Sports-Bundesliega-featured.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport Bundesliga",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYnN1ZHdyZjQtNjUz"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-calcio-it",
+      "name": "Sky Sport Calcio IT",
+      "poster": "https://i.postimg.cc/RhnJsRmT/Frame-10.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ2liMHcyNXotMzU3"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-f1-italia",
+      "name": "Sky Sport F1 Italia",
+      "poster": "https://api-stg.cloudstreamer.cc/?c=sky-sport-f1-italia",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDVtcG4xOTItOTI3"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-max-it",
+      "name": "Sky Sport Max IT",
+      "poster": "https://api-stg.cloudstreamer.cc/?c=sky-sport-max",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvamZna3M5dnQtNzk1OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-motogp-it",
+      "name": "Sky Sport MotoGP IT",
+      "poster": "https://api-stg.cloudstreamer.cc/?c=sky-sport-motogp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvejFiOW53aHItNDgxMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-select-nz",
+      "name": "Sky Sport Select NZ",
+      "poster": "https://i.ibb.co/v4NvkZst/Untitled-design.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport Select NZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYjZjYTMxODgtODQ0OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-tennis-it",
+      "name": "Sky Sport Tennis IT",
+      "poster": "https://i.postimg.cc/rw53XXjJ/Frame-10-(1).png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbXNzbmxtajYtNDE3Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sport-uno",
+      "name": "Sky Sport Uno",
+      "poster": "https://i.imgur.com/dnoy7mK.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sport Uno",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHFkNnF4NDctNDUyMg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-action",
+      "name": "Sky Sports Action",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/skysportsaction.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Action",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvM3ltNnE1aXktODc4"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-cricket",
+      "name": "Sky Sports Cricket",
+      "poster": "https://e0.365dm.com/17/07/2048x1152/skysports-sky-sports-cricket-podcast-sky-cricket-podcast_4004801.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Cricket",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcWZ4NDAzOHAtOTU"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-f1",
+      "name": "Sky Sports F1",
+      "poster": "https://e0.365dm.com/21/03/1600x900/skysports-f1-2021-graphic_5299452.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "English",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZjU5NmY5OHItNjk3Nw"
+        },
+        {
+          "name": "Italian",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDVtcG4xOTItNjUwNA"
+        },
+        {
+          "name": "German",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNzhoeTY2bjYtODE5OA"
+        },
+        {
+          "name": "4K HEVC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYzg5dnhydmMtNTA4Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-football",
+      "name": "Sky Sports Football",
+      "poster": "https://images.squarespace-cdn.com/content/v1/6380a5b12f7b6f632e16ce77/46d62da8-e650-4d2b-a5bc-48a5648edb8e/Beth_Mead.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Football",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYTgwcThqM2ktMjE4Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-golf",
+      "name": "Sky Sports Golf",
+      "poster": "https://e0.365dm.com/23/05/1600x900/skysports-golf-sky-sports-golf_6158933.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Golf",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMGJ5ZHZtZ3MtNDc1NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-main-event",
+      "name": "Sky Sports Main Event",
+      "poster": "https://e0.365dm.com/17/07/1600x900/skysports-all-new-rebrand-f1-premier-league-golf-cricket_4001810.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Main Event",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbjU4YWpnZngtNDcy"
+        },
+        {
+          "name": "4K HEVC",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaXk1MDBoenEtNzY1MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-mix",
+      "name": "Sky Sports Mix",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/Sky_Sports_Mix_Generic_ID_2017.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Mix",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva3Q4anVzNWUtNzY5Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-news",
+      "name": "Sky Sports News",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/image.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports News",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc2F3dHV3NHQtMTgwMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-premier-league",
+      "name": "Sky Sports Premier League",
+      "poster": "https://e0.365dm.com/25/06/2048x1152/skysports-premier-league-fixtures_6937276.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Premier League",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva3pkM2hycXotNDMxNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-racing",
+      "name": "Sky Sports Racing",
+      "poster": "https://e0.365dm.com/23/07/2048x1152/skysports-racing-league-sky-sports-racing_6230990.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Racing",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMmpseDRwN3ItNTUy"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-tennis",
+      "name": "Sky Sports Tennis",
+      "poster": "https://e0.365dm.com/24/01/2048x1152/skysports-sky-sports-tennis_6437709.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports Tennis",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva2tiYjV4OGktMTk5MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-sports-plus",
+      "name": "Sky Sports+",
+      "poster": "https://e0.365dm.com/24/07/2048x1152/skysports-ssplus-sky-sports-plus_6644064.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Sports+",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvandyajJkNnAtODg3NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sky-witness",
+      "name": "Sky Witness",
+      "poster": "https://i.imgur.com/arXl5qa.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sky Witness",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYmplMnJhZTAtODQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sony-sports-network",
+      "name": "Sony Sports Network",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/085457534.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sony Sports Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdG9hcm5hbzMtNTI1"
+        }
+      ]
+    },
+    {
+      "id": "channel-sony-sports-network-2",
+      "name": "Sony Sports Network 2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/085457534.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sony Sports Network 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdW1pY2F3Z2otNjU5OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sony-sports-network-3",
+      "name": "Sony Sports Network 3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/085457534.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sony Sports Network 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaWl0MGU3cXMtNjU2MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sony-sports-network-4",
+      "name": "Sony Sports Network 4",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/085457534.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sony Sports Network 4",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZHhjbGZzOW4tMjE1MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sony-sports-network-5",
+      "name": "Sony Sports Network 5",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/085457534.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sony Sports Network 5",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvb2F5OXN4YXItMzk4NQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sport-tv1",
+      "name": "Sport TV1",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/sportv-pt.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sport TV1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvb3FxNWM4NmctNzUyMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sport-tv2",
+      "name": "Sport TV2",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/sportv-pt.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sport TV2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvNmR3OXIyMmEtNzE5Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-sport-tv3",
+      "name": "Sport TV3",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/sportv-pt.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sport TV3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZGJvMDlqd2gtNTQwNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sport-tv4",
+      "name": "Sport TV4",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/sportv-pt.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sport TV4",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdDIxOHd3d2stMzM2MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-sport-tv5",
+      "name": "Sport TV5",
+      "poster": "https://cdn.jsdelivr.net/gh/willthequeencome/img-cdn/sportv-pt.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Sport TV5",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdHdnMzFnODQtNjM5NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-sportdigital-fussball",
+      "name": "SPORTDIGITAL FUSSBALL",
+      "poster": "https://image.discovery.indazn.com/ca/v2/ca/image?id=712wbfqz8apl1k09rf681eqxd_image-header_pDach_1661948855000&amp;amp;amp;amp;amp;amp;amp;amp;quality=70",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "SPORTDIGITAL FUSSBALL",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOWJuNWxyOXItNTk1OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-starz",
+      "name": "STARZ",
+      "poster": "https://careers.starz.com/wp-content/uploads/2025/01/STARZ-LOGO-IMAGE.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "STARZ",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbW11cWszYjYtNjkzNA"
+        }
+      ]
+    },
+    {
+      "id": "channel-starz-cinema",
+      "name": "STARZ Cinema",
+      "poster": "https://careers.starz.com/wp-content/uploads/2025/01/STARZ-LOGO-IMAGE.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "STARZ Cinema",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvN2tzaGx5ODQtNDU1MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-starz-comedy",
+      "name": "STARZ Comedy",
+      "poster": "https://careers.starz.com/wp-content/uploads/2025/01/STARZ-LOGO-IMAGE.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "STARZ Comedy",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHM3aHpqYXotNjgzMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-starz-kids-and-family",
+      "name": "STARZ Kids and Family",
+      "poster": "https://careers.starz.com/wp-content/uploads/2025/01/STARZ-LOGO-IMAGE.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "STARZ Kids and Family",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvazRjbDNnbzAtODc3Nw"
+        }
+      ]
+    },
+    {
+      "id": "channel-syfy",
+      "name": "SYFY",
+      "poster": "https://assets.goal.com/images/v3/blt1be56273baf0440d/syfy%20logo.jpg?auto=webp&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;format=pjpg&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;width=3840&amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;amp;quality=60",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "SYFY",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZXltbWR2bTMtODI5NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-tbs",
+      "name": "TBS",
+      "poster": "https://cdn.sanity.io/images/1pn9obcz/production/a6971fbe09c85f2deeb480fc494a39219d039135-1920x1080.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TBS",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMnJxdjZjM2ctNDA2"
+        }
+      ]
+    },
+    {
+      "id": "channel-teenick",
+      "name": "TeenNick",
+      "poster": "https://i.ibb.co/3yCJDVrW/Teen-Nick-2023.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TeenNick",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdW0wM3p5aTItNTM"
+        }
+      ]
+    },
+    {
+      "id": "channel-telemundo",
+      "name": "Telemundo",
+      "poster": "https://media-cldnry.s-nbcnews.com/image/upload/newscms/2020_20/3352176/telemundo-social-default.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Telemundo",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaGE1MzVrejMtODcwMQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-tennis-channel",
+      "name": "Tennis Channel",
+      "poster": "https://s10019.cdn.ncms.io/wp-content/uploads/2026/05/tenn2.jpg.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Tennis Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvODBucmg2NjAtMTM"
+        }
+      ]
+    },
+    {
+      "id": "channel-the-weather-channel",
+      "name": "The Weather Channel",
+      "poster": "https://i.ibb.co/bRJqL6WK/LWRBPBUMCVFA3-G5-Q4-ZH3-XJYDNY.avif",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "The Weather Channel",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaXpndjlkaTEtNDQyOQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-tnt",
+      "name": "TNT",
+      "poster": "https://i.ytimg.com/vi/F-AHKcxi3pY/maxresdefault.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TNT",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMnN6eDQxaWstNzA3OQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-tnt-sports-1",
+      "name": "TNT Sports 1",
+      "poster": "https://cdn.mos.cms.futurecdn.net/y3oPitXYAwGJnyTHFYo5qB.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TNT Sports 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZTBseXJraHItMTAwMg"
+        },
+        {
+          "name": "4K HEVC (Select Events Only)",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZDlkYjRnbnQtNDAzOQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-tnt-sports-2",
+      "name": "TNT Sports 2",
+      "poster": "https://cdn.mos.cms.futurecdn.net/y3oPitXYAwGJnyTHFYo5qB.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TNT Sports 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaXQ3YXl0cWgtMTU0MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-tnt-sports-3",
+      "name": "TNT Sports 3",
+      "poster": "https://cdn.mos.cms.futurecdn.net/y3oPitXYAwGJnyTHFYo5qB.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TNT Sports 3",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYmphcnp4ZjktMTcxMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-tnt-sports-4",
+      "name": "TNT Sports 4",
+      "poster": "https://cdn.mos.cms.futurecdn.net/y3oPitXYAwGJnyTHFYo5qB.jpeg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TNT Sports 4",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvM3UycmZobXAtODQ2OA"
+        }
+      ]
+    },
+    {
+      "id": "channel-trutv",
+      "name": "TruTV",
+      "poster": "https://i.ibb.co/DfGcnjXY/Header-tru-TV.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TruTV",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcXB3aWhocTItNjU5MA"
+        }
+      ]
+    },
+    {
+      "id": "channel-tsn1",
+      "name": "TSN1",
+      "poster": "https://www.bellmedia.ca/lede/wp-content/uploads/2024/09/18581592_10155403529061055_8240563011649656197_n.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TSN1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvaWVvZGJnajUtNDk4Mg"
+        }
+      ]
+    },
+    {
+      "id": "channel-tudn",
+      "name": "TUDN",
+      "poster": "https://cdn.aptoide.com/imgs/e/e/6/ee65573e3ed2c5fcafa0191860afdf51_fgraphic.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TUDN",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcTJ1NXVycTMtMzkxMA"
+        }
+      ]
+    },
+    {
+      "id": "channel-tyc-sports-internacional",
+      "name": "TYC Sports Internacional",
+      "poster": "https://assets.goal.com/images/v3/blta396e76391fffdfa/TyC_Sports_logo.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "TYC Sports Internacional",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZ3E0eXNpZmstMTE1NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-ufc-fight-pass-24-7",
+      "name": "UFC Fight Pass 24/7",
+      "poster": "https://fightrecord.co.uk/wp-content/uploads/2020/12/ufc-fight-pass-lion-fight-muay-thai.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "UFC Fight Pass 24/7",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYzJnNmdnem0tMjk4MQ"
+        }
+      ]
+    },
+    {
+      "id": "channel-unimas",
+      "name": "UniMas",
+      "poster": "https://www.cabletv.com/app/uploads/2026/01/UniMas-Channel-Guide.webp",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "UniMas",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYndtZGZkNXUtMzczMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-unite8-sports-1-zee-caf",
+      "name": "Unite8 Sports 1 / ZEE CAFÉ",
+      "poster": "https://exchange4media.gumlet.io/news-photo/155155-Z1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Stream 1",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvdG54d21raGItMzAwMw"
+        }
+      ]
+    },
+    {
+      "id": "channel-univision",
+      "name": "Univision",
+      "poster": "https://tvnewscheck.com/wp-content/uploads/2018/08/Univision_logo_hi.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Univision",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMTNrbnphY2ktODA1Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-usa-network",
+      "name": "USA Network",
+      "poster": "https://variety.com/wp-content/uploads/2013/10/usa-network-logo1.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "USA Network",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbmxvYzM3c2MtMjY5Mw"
+        }
+      ]
+    },
+    {
+      "id": "channel-wapa-america",
+      "name": "WAPA America",
+      "poster": "https://m.media-amazon.com/images/I/81AEkpHaIPL._SL1920_.png",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "WAPA America",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvbWkwaTA5NHMtMTIx"
+        }
+      ]
+    },
+    {
+      "id": "channel-wapa-deportes",
+      "name": "WAPA Deportes",
+      "poster": "https://i.ibb.co/pBzhsJ17/WAPA-Deportes.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "WAPA Deportes",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvYWF0YW94NWItODI2NA"
+        }
+      ]
+    },
+    {
+      "id": "channel-willow-cricket",
+      "name": "Willow Cricket",
+      "poster": "https://mgpindia.com/wp-content/uploads/2021/10/willow-logo.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Willow Cricket",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvc3BkOGdwb2gtNjU4Ng"
+        }
+      ]
+    },
+    {
+      "id": "channel-willow-cricket-2",
+      "name": "Willow Cricket 2",
+      "poster": "https://d229kpbsb5jevy.cloudfront.net/tv/1920/1080/languages/WILLOW-2.jpg",
+      "category": "24/7 Channels",
+      "status": "24/7",
+      "streams": [
+        {
+          "name": "Willow Cricket 2",
+          "url": "https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMTRxdWF3ZDUtODgxOQ"
+        }
+      ]
+    }
+  ]
+}

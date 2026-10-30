@@ -1,25 +1,25 @@
-# AKSPro — High-Speed Live Sports & 24/7 TV Streaming Platform
+# AKSPro — High-Speed Live Sports & 24/7 TV Streaming Platform (Dzeko11 Architecture)
 
-AKSPro is a zero-cost, zero-delay sports and television streaming application built with the ultra-fast edge architecture of **`bintv.cc`**.
+AKSPro is an ultra-fast, zero-delay sports and television streaming application modeled after **`dzeko11.pk`**.
 
 ---
 
 ## ⚡ Highlights
 
-- **Unified Master Feed**: Live and upcoming matches across Football, Cricket, Basketball, MMA/UFC, NFL, F1, and Tennis, plus **217+ 24/7 TV channels** (Sky Sports, Willow HD, TNT, beIN, ESPN, ABC, NBC, Fox Sports).
-- **Edge CDN Speed**: Response caching via Cloudflare Pages and Edge Stale-While-Revalidate headers with client-side dual-tier caching.
-- **Integrated Live Chat**: Sport category chat rooms powered by BanterTalks.
-- **Real-Time Viewers**: Live presence counters updated dynamically.
-- **Embedded Sandbox**: Sandboxed base64 streaming engine with `referrerpolicy="no-referrer-when-downgrade"`.
+- **Dzeko11 UI & Dark Layout**: Top sports navigation bar with vector SVG icons (`sport.svg`), date navigation (`dayPrev`, `dayCenter`, `dayNext`), status filters (`All`, `Live` with live counter, `Finished`, `Upcoming`), and instant search (`matchSearch`).
+- **Live Match Scores & Minute Ticker**: Real-time minute ticker, scores, team crests, and tournament grouping powered by Flashscore feeds.
+- **Edge API Proxies**: Zero-CORS Cloudflare Pages function proxying Flashscore feeds (`/api/feed`) and 24/7 TV channels (`/api/channels`).
+- **200+ 24/7 TV Channels**: Dedicated TV mode (`/tv`) rendering 219+ live sports channels (Sky Sports, Willow, ESPN, TNT Sports, beIN Sports, DAZN, NBC, ABC) with instant modal player playback.
+- **Match Details Page (`/match/{sport}/{id}`)**: Match header with live score cards, breadcrumbs, overview, venue/referee details, and TV broadcast tab with working stream links.
+- **Instant Search**: Real-time client-side filter across teams, leagues, and TV channels.
 
 ---
 
 ## 📁 Routes
 
-- `/` — Homepage: Featured matches carousel, category pills, live & upcoming matches grid, 24/7 TV channels grid, real-time search.
-- `/match/?src={id}` — Match overview: 10-second auto-preview, stream source buttons, similar events.
-- `/watch/?m={id}&i={streamIndex}` — Full player & live chat with instant stream switcher, embed code modal, theater mode.
-- `/embed/?id={base64Url}` — Standalone base64-isolated stream sandbox.
+- `/` — Homepage: Sports bar, date selector, match status filters, tournament match cards with live scores.
+- `/tv` — 24/7 TV Channels Directory: 219 live channels with stream switcher & embedded player modal.
+- `/match/{sport}/{id}` — Match Details: Live score updates, lineups, venue/referee info, broadcast channels & streams.
 
 ---
 
