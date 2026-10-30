@@ -51,24 +51,43 @@
 <script>
 (function(){
   var params = new URLSearchParams(window.location.search);
-  var TOKEN = params.get('token') || params.get('id') || '';
+  var rawId = params.get('id') || '';
+  var rawToken = params.get('token') || '';
   var rawUrl = params.get('src') || params.get('url') || '';
 
-  // If already a full URL or not a token, redirect or embed directly
+  function decodeBase64Url(value){
+    try{
+      var b = value.replace(/-/g,'+').replace(/_/g,'/');
+      while(b.length % 4) b += '=';
+      var bytes = Uint8Array.from(atob(b), function(c){ return c.charCodeAt(0); });
+      return new TextDecoder().decode(bytes);
+    }catch(e){ return null; }
+  }
+
+  // Check if rawId is base64 URL
+  if (rawId && !/^[a-f0-9]{32}$/i.test(rawId)) {
+    var decoded = decodeBase64Url(rawId);
+    if (decoded && /^https?:\/\//i.test(decoded)) {
+      rawUrl = decoded;
+    }
+  }
+
+  // If we have an external direct stream URL, embed in high-performance sandboxed iframe
   if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
-    window.location.replace(rawUrl);
+    var loader = document.getElementById('loader');
+    if (loader) loader.style.display = 'none';
+    var p = document.getElementById('player');
+    p.innerHTML = '<iframe src="' + rawUrl + '" style="width:100%;height:100%;border:0;" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>';
     return;
   }
-  if (TOKEN && /^https?:\/\//i.test(TOKEN)) {
-    window.location.replace(TOKEN);
-    return;
-  }
+
+  var TOKEN = rawToken || (/^[a-f0-9]{32}$/i.test(rawId) ? rawId : '');
 
   if (!TOKEN) {
     document.getElementById('loader').style.display = 'none';
     var msg = document.getElementById('msg');
     msg.style.display = 'block';
-    msg.textContent = 'No stream token specified.';
+    msg.textContent = 'No stream token or source specified.';
     return;
   }
 
@@ -203,11 +222,11 @@
     waitReady(0);
   }
 
-  if ("serviceWorker" in navigator){
+  if ("serviceWorker" in navigator) {
     navigator.serviceWorker.register("/sw.js", { scope: "/" })
       .then(function(){ return navigator.serviceWorker.ready; })
       .then(function(){
-        if (navigator.serviceWorker.controller){
+        if (navigator.serviceWorker.controller) {
           begin();
         } else {
           navigator.serviceWorker.addEventListener("controllerchange", begin, { once: true });
@@ -216,7 +235,7 @@
           }, 2500);
         }
       })
-      .catch(function(e){
+      .catch(function(){
         begin();
       });
   } else {
@@ -224,5 +243,6 @@
   }
 })();
 </script>
+
 </body>
 </html>
