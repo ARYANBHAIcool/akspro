@@ -492,8 +492,9 @@
   // NAV config (sports) - All sports enabled with /sports/ prefix
   // ---------------------------
   const SPORTS = [
-    { id: "tv",                sportId: 99, key: "sport.tv",        href: "/tv",                    enabled: true  },
+    { id: "all",               sportId: 0,  key: "sport.all",        href: "/all",                   enabled: true  },
     { id: "football",          sportId: 1,  key: "sport.football",   href: "/",                      enabled: true  },
+    { id: "tv",                sportId: 99, key: "sport.tv",        href: "/tv",                    enabled: true  },
     { id: "volleyball",        sportId: 12, key: "sport.volleyball", href: "/sports/volleyball",     enabled: true  },
     { id: "basketball",        sportId: 3,  key: "sport.basketball", href: "/sports/basketball",     enabled: true  },
     { id: "futsal",            sportId: 11, key: "sport.futsal",     href: "/sports/futsal",         enabled: true  },
@@ -588,6 +589,14 @@
 
 
   function iconUse(id, extraClass) {
+    if (id === 'all') {
+      return (
+        `<svg class="h-5 w-5 shrink-0 text-amber-400 ${extraClass || ""}" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">` +
+        `<path d="M12 23c-4.97 0-9-4.03-9-9 0-4.04 2.87-7.46 6.74-8.66.42-.13.84.18.84.62 0 .28-.16.53-.41.65C8.82 7.23 8 8.65 8 10.2c0 2.21 1.79 4 4 4s4-1.79 4-4c0-.76-.23-1.48-.63-2.08-.22-.33-.14-.77.17-1 1.95 1.45 3.26 3.73 3.44 6.32.03.38-.26.7-.64.72-.03 0-.05 0-.08 0-1.89-.13-3.6 1.05-3.9 2.91-.07.41-.42.72-.84.73-.02 0-.04 0-.06 0z"/>` +
+        `<path d="M13.5 2.21c-.34-.41-.95-.46-1.35-.11-.12.1-.21.23-.27.38C10.59 5.86 12.3 8.36 12 11c-.13-1.07-.63-2.02-1.42-2.73-.39-.35-1-.31-1.35.08-.15.17-.23.39-.23.62 0 3.87 3.13 7 7 7 1.04 0 2.02-.23 2.91-.64.44-.2.66-.7.51-1.16-.14-.42-.55-.7-1-.67-2.12.15-4.01-1.34-4.27-3.46-.22-1.79.84-3.48 2.55-4.07.45-.16.71-.63.6-1.09-.1-.39-.43-.68-.83-.71-.97-.08-1.92-.37-2.76-.87-.33-.2-.51-.57-.46-.96.05-.38.31-.69.69-.76.73-.13 1.48-.1 2.2.09.46.12.93-.15 1.05-.61.12-.46-.15-.93-.61-1.05-1.12-.29-2.28-.35-3.43-.16z"/>` +
+        `</svg>`
+      );
+    }
     return (
       `<svg class="h-5 w-5 shrink-0 ${extraClass || ""}" aria-hidden="true">` +
       `<use href="/assets/sport.svg#${id}"></use>` +
@@ -1230,10 +1239,10 @@ function dayLabel(dayOffset, d) {
     `;
   }
 
-  // ✅ Flashscore fetch with CORS edge proxy fallback
-  async function fetchFlashscore(sportId, dayOffset) {
-    const feedKey = `f_${sportId}_${dayOffset}_2_en_1`;
-    const url = flashUrl(sportId, dayOffset);
+  // Flashscore fetch with CORS edge proxy fallback
+  async function fetchSingleFlash(sId, dayOffset) {
+    const feedKey = `f_${sId}_${dayOffset}_2_en_1`;
+    const url = flashUrl(sId, dayOffset);
 
     // Try direct fetch first
     try {
@@ -1248,11 +1257,9 @@ function dayLabel(dayOffset, d) {
       });
       if (res.ok) {
         const text = await res.text().catch(() => "");
-        return { ok: true, status: res.status, url, text };
+        return { ok: true, text };
       }
-    } catch (e) {
-      // CORS blocked or failed, proceed to proxy fallback
-    }
+    } catch (e) {}
 
     // Cloudflare Pages edge proxy fallback
     try {
@@ -1260,11 +1267,32 @@ function dayLabel(dayOffset, d) {
       const res2 = await fetch(proxyUrl);
       if (res2.ok) {
         const text2 = await res2.text().catch(() => "");
-        return { ok: true, status: res2.status, url: proxyUrl, text: text2 };
+        return { ok: true, text: text2 };
       }
     } catch (e2) {}
 
-    return { ok: false, status: 0, url, text: "" };
+    return { ok: false, text: "" };
+  }
+
+  async function fetchFlashscore(sportId, dayOffset) {
+    if (sportId === 0) {
+      // Aggregate top sports: Football (1), Basketball (3), Tennis (2), Hockey (4), Motorsport (31)
+      const topSportIds = [1, 3, 2, 4, 31];
+      const results = await Promise.allSettled(topSportIds.map(sid => fetchSingleFlash(sid, dayOffset)));
+      const texts = [];
+      results.forEach(r => {
+        if (r.status === 'fulfilled' && r.value.ok && r.value.text) {
+          texts.push(r.value.text);
+        }
+      });
+      if (texts.length > 0) {
+        return { ok: true, status: 200, url: 'aggregated', text: texts.join('~') };
+      }
+      return { ok: false, status: 0, url: 'aggregated', text: "" };
+    }
+
+    const single = await fetchSingleFlash(sportId, dayOffset);
+    return { ok: single.ok, status: single.ok ? 200 : 0, url: flashUrl(sportId, dayOffset), text: single.text };
   }
 
   async function fetchYourAPI(sportSlug, ymd) {

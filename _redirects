@@ -2,5 +2,7 @@
 /match/*        /match/index.html   200
 /sports/*/*     /index.html         200
 /sports/*       /index.html         200
+/all            /index.html         200
+/all/*          /index.html         200
 /tv             /index.html         200
 /legal/*        /index.html         200

@@ -2,8 +2,8 @@
  * Cloudflare Pages Function: Unified High-Performance Sports API Router
  * Supports:
  *   /api/v1/stream?token=:token      -> Edge player proxy with dual-referer bypass (dzeko11.pk / strumyk.pk)
- *   /api/v1/match/:matchId           -> Dual-mirror aggregated streams (dzeko11.pk + strumyk.pk + bintv)
- *   /api/v1/:sport/:date             -> Multi-host daily sports fixtures
+ *   /api/v1/match/:matchId           -> Multi-source stream aggregation (dzeko11.pk + strumyk.pk + bintv + tim-streams)
+ *   /api/v1/:sport/:date             -> Multi-host daily sports fixtures (including /api/v1/all/:date for All Live & Top)
  *   /api/v1/channels                 -> 24/7 Live TV channels catalog (tim-streams + fallback)
  */
 
@@ -74,10 +74,11 @@ export async function onRequest(context) {
             html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
             html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
 
-            // 2. Strip intrusive ads/popups
+            // 2. Strip intrusive ads/popups completely
             html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
             html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
             html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
+            html = html.replace(/<script[^>]*popunder[\s\S]*?<\/script>/gi, '');
 
             // 3. Dark clean responsive styling
             const customCss = `<style>
@@ -129,7 +130,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 }
             } catch (gqlErr) {}
 
-            // B. Dual-Mirror Stream Query: dzeko11.pk + strumyk.pk concurrently
+            // B. Multi-Mirror Stream Query: dzeko11.pk + strumyk.pk concurrently
             const streamHosts = ['dzeko11.pk', 'strumyk.pk'];
             await Promise.allSettled(streamHosts.map(async (host) => {
                 try {
@@ -197,7 +198,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                 if (s.url && !seenUrls.has(s.url)) {
                                     seenUrls.add(s.url);
                                     customUrls.push({
-                                        id: `srv-${customUrls.length + 1}`,
+                                        id: `srv-bintv-${customUrls.length + 1}`,
                                         name: s.name || `Live Feed ${customUrls.length + 1}`,
                                         url: s.url,
                                         enabled: true
@@ -208,6 +209,36 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     }
                 }
             } catch (bErr) {}
+
+            // D. Match against Tim-Streams 24/7 channels if broadcasters match
+            try {
+                const timRes = await fetch('https://tim-streams.com/api/channels', {
+                    headers: { 'User-Agent': 'Mozilla/5.0' }
+                });
+                if (timRes.ok) {
+                    const tData = await timRes.json();
+                    const tChannels = tData.channels || [];
+                    for (const ch of tChannels) {
+                        const chName = (ch.name || '').toLowerCase();
+                        let matchesChannel = false;
+                        if (homeName && homeName.length > 3 && chName.includes(homeName.toLowerCase())) matchesChannel = true;
+                        if (awayName && awayName.length > 3 && chName.includes(awayName.toLowerCase())) matchesChannel = true;
+                        if (matchesChannel) {
+                            for (const s of (ch.streams || [])) {
+                                if (s.url && !seenUrls.has(s.url)) {
+                                    seenUrls.add(s.url);
+                                    customUrls.push({
+                                        id: `srv-tim-${customUrls.length + 1}`,
+                                        name: `${ch.name} (TV Feed)`,
+                                        url: s.url,
+                                        enabled: true
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (tErr) {}
 
             return new Response(JSON.stringify({
                 match_id: fsId,
@@ -222,6 +253,39 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
         // ----------------------------------------------------
         if (parts.length === 2) {
             const [sport, date] = parts;
+
+            // SPECIAL: /api/v1/all/:date - Unified Live & Top Matches across all sports
+            if (sport === 'all') {
+                const allSports = ['football', 'basketball', 'motorsport', 'hockey', 'tennis'];
+                const allItems = [];
+                const seenIds = new Set();
+
+                await Promise.allSettled(allSports.map(async (sp) => {
+                    for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                        try {
+                            const hostUrl = `https://${host}/api/v1/${encodeURIComponent(sp)}/${encodeURIComponent(date)}`;
+                            const resp = await fetch(hostUrl, {
+                                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }
+                            });
+                            if (resp.ok) {
+                                const data = await resp.json();
+                                for (const it of (data.items || [])) {
+                                    if (it.match_id && !seenIds.has(it.match_id)) {
+                                        seenIds.add(it.match_id);
+                                        allItems.push(it);
+                                    }
+                                }
+                                break;
+                            }
+                        } catch (err) {}
+                    }
+                }));
+
+                return new Response(JSON.stringify({ date: date, items: allItems }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            }
 
             // Try Dzeko and Strumyk daily sport API
             for (const host of ['dzeko11.pk', 'strumyk.pk']) {

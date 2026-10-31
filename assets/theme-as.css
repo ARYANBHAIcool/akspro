@@ -1,0 +1,250 @@
+/* ==========================================================================
+   AS / AryanStreams - Premium Blue-Black Glossy Theme & Server Button Fixes
+   ========================================================================== */
+
+:root {
+  --as-bg: #050814;
+  --as-surface: #0a0f24;
+  --as-surface-card: rgba(13, 20, 42, 0.75);
+  --as-surface-secondary: #111a38;
+  --as-surface-tertiary: #18244d;
+  --as-border: rgba(59, 130, 246, 0.18);
+  --as-border-hover: rgba(59, 130, 246, 0.45);
+  --as-primary: #2563eb;
+  --as-primary-glow: rgba(37, 99, 235, 0.45);
+  --as-accent: #06b6d4;
+  --as-accent-glow: rgba(6, 182, 212, 0.4);
+  --as-text: #f1f5f9;
+  --as-text-muted: #94a3b8;
+  --as-live: #ef4444;
+  --as-live-glow: rgba(239, 68, 68, 0.4);
+}
+
+/* Global Background and Body */
+body {
+  background-color: var(--as-bg) !important;
+  background-image: 
+    radial-gradient(ellipse 80% 50% at 50% -20%, rgba(37, 99, 235, 0.15), transparent),
+    radial-gradient(ellipse 60% 40% at 80% 80%, rgba(6, 182, 212, 0.08), transparent),
+    linear-gradient(180deg, #050814 0%, #080d1e 100%) !important;
+  background-attachment: fixed !important;
+  color: var(--as-text) !important;
+  min-height: 100vh;
+}
+
+/* Glassmorphic Cards & Surfaces */
+.card,
+[data-slot="card"],
+.bg-surface {
+  background: var(--as-surface-card) !important;
+  backdrop-filter: blur(16px) !important;
+  -webkit-backdrop-filter: blur(16px) !important;
+  border: 1px solid var(--as-border) !important;
+  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.06) !important;
+}
+
+.card:hover,
+[data-slot="card"]:hover {
+  border-color: var(--as-border-hover) !important;
+}
+
+/* Navigation bar */
+nav.bg-surface {
+  background: rgba(8, 13, 29, 0.85) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border-bottom: 1px solid var(--as-border) !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4) !important;
+}
+
+/* ==========================================================================
+   CRITICAL FIX: Multi-Source Stream Buttons in Broadcast Tab
+   (Prevents empty white button issue and provides glossy cyber-blue styling)
+   ========================================================================== */
+.match-server-pill,
+button.match-server-pill,
+[onclick*="switchMatchPlayer"] {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.5rem !important;
+  padding: 0.6rem 1.1rem !important;
+  border-radius: 0.65rem !important;
+  font-size: 0.8125rem !important;
+  font-weight: 700 !important;
+  letter-spacing: 0.025em !important;
+  cursor: pointer !important;
+  background: linear-gradient(180deg, #121c3b 0%, #0d152c 100%) !important;
+  color: #e2e8f0 !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.08) !important;
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5) !important;
+}
+
+.match-server-pill:hover,
+button.match-server-pill:hover,
+[onclick*="switchMatchPlayer"]:hover {
+  background: linear-gradient(180deg, #1a2750 0%, #121c3b 100%) !important;
+  border-color: #3b82f6 !important;
+  color: #ffffff !important;
+  box-shadow: 0 0 18px rgba(59, 130, 246, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.15) !important;
+  transform: translateY(-1.5px) !important;
+}
+
+.match-server-pill.active,
+button.match-server-pill.active,
+.match-server-pill.bg-primary,
+button.match-server-pill.bg-primary {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 50%, #3b82f6 100%) !important;
+  color: #ffffff !important;
+  border: 1px solid #60a5fa !important;
+  box-shadow: 0 0 22px rgba(37, 99, 235, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.3) !important;
+}
+
+/* Status dots inside server pills */
+.indicator-dot {
+  width: 0.55rem !important;
+  height: 0.55rem !important;
+  border-radius: 9999px !important;
+  background-color: #10b981 !important;
+  box-shadow: 0 0 8px #10b981 !important;
+}
+
+.match-server-pill.active .indicator-dot,
+.match-server-pill.bg-primary .indicator-dot {
+  background-color: #ffffff !important;
+  box-shadow: 0 0 10px #ffffff !important;
+}
+
+/* Theater mode button & player controls */
+#theaterModeBtn {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+  border: 1px solid #3b82f6 !important;
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.35) !important;
+  color: #ffffff !important;
+  font-weight: 700 !important;
+}
+
+#theaterModeBtn:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%) !important;
+  box-shadow: 0 0 20px rgba(37, 99, 235, 0.6) !important;
+}
+
+/* Live pill indicators */
+.badge--live,
+[data-slot="badge"][data-status="live"],
+span:has(> .animate-pulse) {
+  background: rgba(239, 68, 68, 0.15) !important;
+  border: 1px solid rgba(239, 68, 68, 0.35) !important;
+  color: #fca5a5 !important;
+  box-shadow: 0 0 12px rgba(239, 68, 68, 0.25) !important;
+}
+
+/* Sports Bar Navigation Pills */
+.sport-pill,
+[data-sport-item] {
+  transition: all 0.2s ease !important;
+  border-radius: 0.75rem !important;
+  color: #94a3b8 !important;
+}
+
+.sport-pill:hover,
+[data-sport-item]:hover {
+  color: #ffffff !important;
+  background: rgba(37, 99, 235, 0.12) !important;
+}
+
+.sport-pill.active,
+[data-sport-item].active {
+  color: #60a5fa !important;
+  background: rgba(37, 99, 235, 0.2) !important;
+  border-bottom: 2px solid #3b82f6 !important;
+}
+
+/* Filter buttons (All, Live, Finished, Upcoming) */
+.filter-btn,
+button[data-filter] {
+  background: rgba(17, 26, 56, 0.6) !important;
+  border: 1px solid rgba(59, 130, 246, 0.2) !important;
+  color: #94a3b8 !important;
+  border-radius: 0.5rem !important;
+  transition: all 0.2s ease !important;
+}
+
+.filter-btn:hover,
+button[data-filter]:hover {
+  background: rgba(37, 99, 235, 0.18) !important;
+  color: #ffffff !important;
+  border-color: rgba(59, 130, 246, 0.4) !important;
+}
+
+.filter-btn.active,
+button[data-filter].active {
+  background: linear-gradient(135deg, #1d4ed8 0%, #2563eb 100%) !important;
+  color: #ffffff !important;
+  border-color: #60a5fa !important;
+  box-shadow: 0 0 14px rgba(37, 99, 235, 0.45) !important;
+}
+
+/* Brand Logo Styling */
+.as-brand-logo {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: inherit;
+  font-weight: 900;
+  letter-spacing: -0.03em;
+  text-decoration: none !important;
+}
+
+.as-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.6rem;
+  background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 50%, #06b6d4 100%);
+  color: #ffffff;
+  font-size: 1.05rem;
+  font-weight: 900;
+  box-shadow: 0 0 15px rgba(37, 99, 235, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.as-brand-text {
+  font-size: 1.25rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #ffffff 40%, #93c5fd 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.as-brand-pro {
+  font-size: 0.65rem;
+  font-weight: 800;
+  padding: 0.15rem 0.4rem;
+  border-radius: 0.35rem;
+  background: linear-gradient(135deg, #2563eb, #06b6d4);
+  -webkit-background-clip: unset;
+  -webkit-text-fill-color: #ffffff;
+  color: #ffffff;
+  letter-spacing: 0.05em;
+  margin-left: 0.2rem;
+  box-shadow: 0 0 8px rgba(6, 182, 212, 0.4);
+}
+
+/* Modals & Channel Player */
+#channelPlayerModal > div {
+  background: #090e23 !important;
+  border: 1px solid rgba(59, 130, 246, 0.3) !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(37, 99, 235, 0.2) !important;
+}
+
+/* Match Page Player Frame */
+#matchPlayerIframe {
+  background: #000000 !important;
+}
