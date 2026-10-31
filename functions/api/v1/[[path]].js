@@ -340,7 +340,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             const [sport, date] = parts;
 
             // Fast fetch helper
-            async function fastFetch2(u, h = {}, tMs = 2500) {
+            async function fastFetch2(u, h = {}, tMs = 3500) {
                 const ctrl = new AbortController();
                 const tid = setTimeout(() => ctrl.abort(), tMs);
                 try {
@@ -446,6 +446,22 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                             if (nflRes.status === 'fulfilled' && nflRes.value && nflRes.value.ok) {
                                 const html2 = await nflRes.value.text();
                                 parseTopSchedule(html2, 'nfl', 'american-football');
+                            }
+                            // Fallback active topstreamer games if schedule fetch lags
+                            const fallbackGames = [
+                                { match_id: 'TOP:nba_wizards', name: 'Hornets - Wizards', sport: 'basketball' },
+                                { match_id: 'TOP:nba_76ers', name: 'Knicks - 76ers', sport: 'basketball' },
+                                { match_id: 'TOP:nba_celtics', name: 'Bulls - Celtics', sport: 'basketball' },
+                                { match_id: 'TOP:nba_warriors', name: 'Suns - Warriors', sport: 'basketball' },
+                                { match_id: 'TOP:nfl_packers', name: 'Panthers - Packers', sport: 'american-football' },
+                                { match_id: 'TOP:nfl_bills', name: 'Ravens - Bills', sport: 'american-football' },
+                                { match_id: 'TOP:nfl_cowboys', name: 'Cardinals - Cowboys', sport: 'american-football' }
+                            ];
+                            for (const fg of fallbackGames) {
+                                if (!seenIds.has(fg.match_id)) {
+                                    seenIds.add(fg.match_id);
+                                    allItems.push({ ...fg, start_ts: Math.floor(Date.now() / 1000) });
+                                }
                             }
                         } catch (e) {}
                     })()

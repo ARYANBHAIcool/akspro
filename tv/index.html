@@ -474,5 +474,24 @@
       <script src="/assets/js/main.js" defer></script>
       
       
-   </body>
+   
+    <script>
+      // Instant TV Channel grid trigger on load
+      (function() {
+        function triggerTV() {
+          const c = document.getElementById("matchesContainer");
+          if (c && window.renderTVChannels) {
+            window.renderTVChannels(c);
+          } else {
+            setTimeout(triggerTV, 50);
+          }
+        }
+        if (document.readyState === "loading") {
+          document.addEventListener("DOMContentLoaded", triggerTV);
+        } else {
+          triggerTV();
+        }
+      })();
+    </script>
+</body>
 </html>

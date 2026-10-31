@@ -2619,7 +2619,8 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
   // ============================================
   // 24/7 TV CHANNELS & MODAL PLAYER
   // ============================================
-  async function renderTVChannels(container) {
+  window.renderTVChannels = async function renderTVChannels(container) {
+    window.isRenderingTV = true;
     const { prev, next, label } = findControls();
     if (label) label.textContent = "24/7 Live TV Channels";
     if (prev) prev.disabled = true;
