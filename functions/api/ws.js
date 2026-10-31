@@ -24,7 +24,7 @@ export async function onRequest(context) {
 
         const backendWs = backendResponse.webSocket;
         if (!backendWs) {
-            return new Response('Upstream WebSocket connection failed', { status: 502 });
+            return new Response('Upstream WS failed: status=' + backendResponse.status + ' ' + backendResponse.statusText, { status: 502 });
         }
 
         backendWs.accept();
