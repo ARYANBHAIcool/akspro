@@ -9,9 +9,42 @@ export async function onRequest(context) {
     const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
     if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
+        try {
+            const parsed = new URL(rawUrl);
+            const origin = parsed.origin;
+            const resp = await fetch(rawUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                    'Referer': 'https://dzeko11.pk/',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                }
+            });
+            if (resp.ok) {
+                let html = await resp.text();
+                // Insert base tag for relative assets
+                html = html.replace('<head>', `<head><base href="${origin}/">`);
+                // Strip anti-sandbox script completely
+                html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?Remove sandbox attributes[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*disable-devtool[^>]*>[\s\S]*?<\/script>/gi, '');
+                // Strip intrusive popunders/ads
+                html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*popunder[\s\S]*?<\/script>/gi, '');
+
+                return new Response(html, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'no-store, no-cache, must-revalidate'
+                    }
+                });
+            }
+        } catch (e) {}
+
         return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;padding:0;background:#000;overflow:hidden;}iframe{width:100%;height:100%;border:0;display:block;}</style></head><body><iframe src="${rawUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></body></html>`, {
             status: 200,
-            headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, no-cache' }
         });
     }
 

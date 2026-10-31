@@ -1253,7 +1253,8 @@
           customUrls.push({
             id: url.id,
             name: url.name,
-            url: url.url
+            url: url.url,
+            direct_url: url.direct_url || url.url
           });
         }
       }
@@ -2244,7 +2245,8 @@ const enabledChannels = channels
         allStreams.push({
           id: u.id || `srv-${allStreams.length + 1}`,
           name: u.name || `Server ${allStreams.length + 1}`,
-          url: u.url
+          url: u.url,
+          direct_url: u.direct_url || u.url
         });
       }
     }
