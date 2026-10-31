@@ -315,3 +315,180 @@ html.light .button--ghost:hover {
 html.light .text-muted-foreground {
   color: #64748b !important;
 }
+
+/* ==========================================================================
+   MULTI-DEVICE RESPONSIVE UI SYSTEM (Mobile, Tablet, Desktop, 4K)
+   ========================================================================== */
+
+/* Universal Overflow & Touch Protection across all viewports */
+html, body {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+  width: 100% !important;
+  -webkit-text-size-adjust: 100%;
+}
+
+/* Responsive Search Field in Nav (prevents navbar overflow on tablet/desktop) */
+.search-field.search-field--secondary {
+  max-width: 100% !important;
+}
+
+/* Touch-action optimization for mobile responsiveness */
+button, a, input, select {
+  touch-action: manipulation;
+}
+
+/* Prevent horizontal scrollbars on sports navigation */
+#sportsRow {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+  -webkit-overflow-scrolling: touch !important;
+}
+#sportsRow::-webkit-scrollbar {
+  display: none !important;
+}
+
+/* Fix iOS Auto-Zoom on Search Input (< 640px) */
+@media (max-width: 40rem) {
+  input[type="search"],
+  input[type="text"],
+  .search-field__input,
+  #mobileSearchInput {
+    font-size: 16px !important;
+  }
+}
+
+/* Extra-Small Mobile Screens (iPhone SE, Galaxy S8, Fold closed: < 400px) */
+@media (max-width: 25rem) {
+  .as-brand-text {
+    font-size: 1.05rem !important;
+  }
+  .as-brand-pro {
+    display: none !important;
+  }
+  .as-tv-pill {
+    padding: 0.35rem 0.55rem !important;
+    font-size: 0.75rem !important;
+  }
+  a[aria-label="Join our Discord"] {
+    display: none !important;
+  }
+  .container {
+    padding-inline: 0.5rem !important;
+  }
+  .card, [data-slot="card"] {
+    padding-inline: 0.5rem !important;
+  }
+}
+
+/* Standard Mobile Screens (< 640px: all smartphones) */
+@media (max-width: 39.9375rem) {
+  /* Match Card Event items */
+  [data-event-id] {
+    padding-left: 0.5rem !important;
+    padding-right: 0.5rem !important;
+  }
+
+  /* Team Names */
+  [data-event-id] span.truncate {
+    font-size: 0.8125rem !important;
+    max-width: 100% !important;
+  }
+
+  /* Date Navigation */
+  #dayCenter {
+    font-size: 0.8125rem !important;
+    padding-inline: 0.5rem !important;
+  }
+
+  /* Video Player Stage */
+  #matchPlayerIframe,
+  .player-aspect iframe,
+  #channelPlayerIframe {
+    aspect-ratio: 16 / 9 !important;
+  }
+
+  /* Server Switcher Pills */
+  .match-server-pill,
+  button.match-server-pill,
+  [onclick*="switchMatchPlayer"] {
+    padding: 0.45rem 0.75rem !important;
+    font-size: 0.75rem !important;
+    gap: 0.35rem !important;
+    max-width: calc(100vw - 3.75rem) !important;
+  }
+
+  .match-server-pill span.font-bold {
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    max-width: 150px !important;
+  }
+
+  /* 24/7 TV Grid on Mobile (2 columns) */
+  #tvChannelsGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+    gap: 0.625rem !important;
+  }
+
+  #tvChannelsGrid .card {
+    border-radius: 0.75rem !important;
+  }
+
+  #tvChannelsGrid .h-32 {
+    height: 6rem !important;
+    padding: 0.5rem !important;
+  }
+
+  #tvChannelsGrid h4 {
+    font-size: 0.8125rem !important;
+  }
+
+  #tvChannelsGrid button {
+    height: 2rem !important;
+    font-size: 0.75rem !important;
+    padding-block: 0.25rem !important;
+  }
+
+  /* Modal Dialogs */
+  #channelPlayerModal,
+  #broadcastModal {
+    padding: 0.5rem !important;
+  }
+
+  #channelPlayerModal > div,
+  #broadcastModal > div {
+    max-height: 94vh !important;
+    border-radius: 1rem !important;
+  }
+}
+
+/* Tablet Devices (640px to 1024px: iPads, Android tablets) */
+@media (min-width: 40rem) and (max-width: 63.9375rem) {
+  .container {
+    padding-inline: 1.25rem !important;
+  }
+
+  #tvChannelsGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 1rem !important;
+  }
+}
+
+/* Desktop Displays (1024px and up) */
+@media (min-width: 64rem) {
+  #tvChannelsGrid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+/* Large and 4K Displays (1536px+) */
+@media (min-width: 96rem) {
+  .container {
+    max-width: 1440px !important;
+  }
+
+  #tvChannelsGrid {
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+  }
+}

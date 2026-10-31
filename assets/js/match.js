@@ -1538,17 +1538,17 @@
                     <div class="order-1 md:order-2 relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 shrink-0">
                       <img alt="${homeName}" class="object-contain w-full h-full" src="${homeImg}" onerror="this.src='/assets/img/team-placeholder.png'">
                     </div>
-                    <div class="order-2 md:order-1 text-center sm:text-center md:text-right w-full">
-                      <h2 id="home-team-name" class="text-sm sm:text-lg md:text-2xl font-bold">${homeName}</h2>
+                    <div class="order-2 md:order-1 text-center sm:text-center md:text-right w-full min-w-0">
+                      <h2 id="home-team-name" class="text-xs sm:text-base md:text-2xl font-bold break-words line-clamp-2">${homeName}</h2>
                     </div>
                   </div>
 
                   <!-- Score / Time -->
-                  <div class="flex flex-col items-center gap-1 sm:gap-2 md:gap-3 min-w-20 sm:min-w-25 md:min-w-35 shrink-0">
+                  <div class="flex flex-col items-center gap-1 sm:gap-2 md:gap-3 min-w-16 sm:min-w-24 md:min-w-32 shrink-0">
                     <div id="match-score" class="text-center">
                       ${scoreDisplay}
                     </div>
-                    <div id="match-status" class="font-semibold rounded-full ${statusBadgeClass} cursor-default inline-flex items-center text-xs px-1 py-1 md:text-md md:px-2 md:py-2">
+                    <div id="match-status" class="font-semibold rounded-full ${statusBadgeClass} cursor-default inline-flex items-center text-[10px] sm:text-xs px-2 py-0.5 md:text-md md:px-2 md:py-1">
                       ${status === "1" ? lblNotStarted : status === "2" ? lblLive : lblFinished}
                     </div>
                   </div>
@@ -1558,8 +1558,8 @@
                     <div class="order-1 relative w-12 h-12 sm:w-16 sm:h-16 md:w-20 md:h-20 shrink-0">
                       <img alt="${awayName}" class="object-contain w-full h-full" src="${awayImg}" onerror="this.src='/assets/img/team-placeholder.png'">
                     </div>
-                    <div class="order-2 text-center sm:text-center md:text-left w-full">
-                      <h2 id="away-team-name" class="text-sm sm:text-lg md:text-2xl font-bold">${awayName}</h2>
+                    <div class="order-2 text-center sm:text-center md:text-left w-full min-w-0">
+                      <h2 id="away-team-name" class="text-xs sm:text-base md:text-2xl font-bold break-words line-clamp-2">${awayName}</h2>
                     </div>
                   </div>
                 </div>
@@ -2306,51 +2306,52 @@ const enabledChannels = channels
       html += `
         <!-- Main Dedicated Player Stage -->
         <div class="card card--default overflow-hidden border border-border/50 shadow-xl rounded-xl" data-slot="card">
-          <div class="card__header flex flex-wrap items-center justify-between gap-3 px-4 py-3 bg-surface-secondary/50 border-b border-border/40">
-            <div class="flex items-center gap-2.5">
-              <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-red-600/20 text-red-400 border border-red-500/30">
-                <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
+          <div class="card__header flex flex-wrap items-center justify-between gap-2 sm:gap-3 px-3 sm:px-4 py-2.5 sm:py-3 bg-surface-secondary/50 border-b border-border/40">
+            <div class="flex items-center gap-2 min-w-0">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] sm:text-[11px] font-bold bg-red-600/20 text-red-400 border border-red-500/30 shrink-0">
+                <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
                 LIVE
               </span>
-              <span id="activeStreamLabel" class="text-sm font-bold text-foreground truncate max-w-[200px] sm:max-w-md">
+              <span id="activeStreamLabel" class="text-xs sm:text-sm font-bold text-foreground truncate max-w-[130px] xs:max-w-[200px] sm:max-w-md">
                 ${activeStream.name}
               </span>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
               <button type="button" onclick="window.reloadMatchPlayer()" title="Reload Stream"
-                      class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
+                      class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                 </svg>
-                <span class="hidden sm:inline">Reload</span>
+                <span class="hidden md:inline">Reload</span>
               </button>
               <button type="button" onclick="window.fullscreenMatchPlayer()" title="Fullscreen"
-                      class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
+                      class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all">
                 <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
                 </svg>
-                <span class="hidden sm:inline">Fullscreen</span>
+                <span class="hidden md:inline">Fullscreen</span>
               </button>
               <a id="directPopoutBtn" href="${initialDirect}" target="_blank" rel="noopener noreferrer" title="Open Stream in New Tab"
-                 class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all hover:text-primary">
+                 class="inline-flex items-center gap-1 px-2 sm:px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all hover:text-primary">
                 <span>Pop-Out ↗</span>
               </a>
               <a id="theaterModeBtn" href="${theaterUrl}" title="Open Full Theater Player"
-                 class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-sm transition-all">
-                <span>Theater Player</span>
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                 class="inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-sm transition-all">
+                <span class="hidden xs:inline">Theater Player</span>
+                <span class="xs:hidden">Theater ↗</span>
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5 hidden xs:inline" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
               </a>
             </div>
           </div>
           <div class="card__content p-0 bg-black">
-            <div class="relative w-full aspect-video bg-black flex items-center justify-center">
+            <div class="relative w-full aspect-video bg-black flex items-center justify-center overflow-hidden">
               <iframe id="matchPlayerIframe" src="${activeStream.url}"
                       class="w-full h-full border-0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowfullscreen
-                      referrerpolicy="no-referrer-when-downgrade"></iframe>
+                      referrerpolicy="no-referrer"></iframe>
             </div>
           </div>
         </div>
@@ -2387,7 +2388,7 @@ const enabledChannels = channels
 
         if (isClickable) {
           html += `
-            <div class="inline-flex items-center gap-1">
+            <div class="inline-flex items-center gap-1 max-w-full">
               <button type="button"
                       onclick="window.switchMatchPlayer(this)"
                       data-stream-url="${escapedUrl}"
@@ -2395,12 +2396,12 @@ const enabledChannels = channels
                       data-direct-url="${directUrl}"
                       class="match-server-pill ${isFirst ? 'active bg-primary border-primary' : 'bg-surface-secondary border-border/50'}">
                 <span class="indicator-dot ${isFirst ? 'bg-white' : 'bg-emerald-400'}"></span>
-                ${flagCode ? `<img src="https://flagcdn.com/16x12/${flagCode}.png" alt="${flagCode}" class="w-4 h-3 object-cover rounded-sm inline-block" onerror="this.style.display='none'">` : ''}
-                <span class="font-bold">${sName}</span>
-                <span class="text-[10px] px-1 py-0.2 rounded bg-black/30 text-blue-300 font-mono">HD</span>
+                ${flagCode ? `<img src="https://flagcdn.com/16x12/${flagCode}.png" alt="${flagCode}" class="w-4 h-3 object-cover rounded-sm inline-block shrink-0" onerror="this.style.display='none'">` : ''}
+                <span class="font-bold truncate max-w-[130px] xs:max-w-[180px] sm:max-w-none">${sName}</span>
+                <span class="text-[10px] px-1 py-0.2 rounded bg-black/30 text-blue-300 font-mono shrink-0">HD</span>
               </button>
               <a href="${directUrl}" target="_blank" rel="noopener noreferrer" title="Open Stream in New Tab"
-                 class="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-muted-foreground hover:text-foreground border border-border/40 text-xs transition-colors">
+                 class="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-muted-foreground hover:text-foreground border border-border/40 text-xs transition-colors shrink-0">
                 &nearr;
               </a>
             </div>

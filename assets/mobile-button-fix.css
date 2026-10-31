@@ -48,6 +48,6 @@
   }
 
   .search-field__input {
-    font-size: 0.8125rem; /* 13px */
+    font-size: 16px; /* Prevents iOS auto-zoom on focus */
   }
 }

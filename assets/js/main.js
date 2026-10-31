@@ -1935,9 +1935,9 @@ function setStatusFiltersVisible(visible) {
        <a href="/match/${event.sport || 'football'}/${event.id}"
 class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-all duration-200 relative" data-event-id="${event.id}" data-status="${event.status}" style="overflow: visible;">
           <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top"></div>
-          <div class="flex items-center justify-between gap-3">
-            <span class="text-sm sm:text-base font-semibold group-hover:text-primary transition-colors">${eventName}</span>
-            ${statusHTML}
+          <div class="flex items-center justify-between gap-3 min-w-0">
+            <span class="text-xs sm:text-sm md:text-base font-semibold group-hover:text-primary transition-colors truncate min-w-0 pr-2">${eventName}</span>
+            <div class="shrink-0">${statusHTML}</div>
           </div>
         </a>
       </div>
@@ -2739,7 +2739,7 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
     }
 
     let html = `
-      <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4" id="tvChannelsGrid">
+      <div class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-2.5 sm:gap-4" id="tvChannelsGrid">
     `;
 
     channels.forEach(ch => {
@@ -2751,24 +2751,24 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         <div class="card card--default overflow-hidden group hover:border-primary/50 transition-all duration-200 cursor-pointer flex flex-col justify-between"
              data-channel-id="${ch.id}" data-channel-name="${name.toLowerCase()}" data-channel-category="${category.toLowerCase()}"
              onclick="openChannelPlayer('${ch.id}')">
-          <div class="p-4 flex flex-col items-center text-center">
-            <div class="w-full h-32 flex items-center justify-center bg-surface-secondary/60 rounded-xl p-3 overflow-hidden mb-3 border border-border/30">
+          <div class="p-2.5 sm:p-4 flex flex-col items-center text-center">
+            <div class="w-full h-24 sm:h-32 flex items-center justify-center bg-surface-secondary/60 rounded-xl p-2 sm:p-3 overflow-hidden mb-2 sm:mb-3 border border-border/30">
               <img src="${poster}" alt="${name}" class="max-h-full max-w-full object-contain transition-transform group-hover:scale-105"
                    loading="lazy" onerror="this.src='/assets/favicon-96x96.png'"/>
             </div>
             <div class="w-full">
-              <div class="flex items-center justify-between gap-2 mb-1">
-                <span class="text-xs text-muted-foreground truncate">${category}</span>
-                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 whitespace-nowrap">
+              <div class="flex items-center justify-between gap-1 sm:gap-2 mb-1">
+                <span class="text-[10px] sm:text-xs text-muted-foreground truncate">${category}</span>
+                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] sm:text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 whitespace-nowrap">
                   <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>24/7
                 </span>
               </div>
-              <h4 class="font-bold text-foreground text-sm truncate text-left group-hover:text-primary transition-colors">${name}</h4>
+              <h4 class="font-bold text-foreground text-xs sm:text-sm truncate text-left group-hover:text-primary transition-colors">${name}</h4>
             </div>
           </div>
-          <div class="px-4 pb-4">
-            <button type="button" class="button button--sm button--primary w-full flex items-center justify-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-4 h-4">
+          <div class="px-2.5 pb-2.5 sm:px-4 sm:pb-4">
+            <button type="button" class="button button--sm button--primary w-full flex items-center justify-center gap-1.5 text-xs py-1.5">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="w-3.5 h-3.5">
                 <path d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
               </svg>
               <span>Watch Now</span>
