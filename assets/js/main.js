@@ -1155,7 +1155,7 @@ function dayLabel(dayOffset, d) {
   // Parse custom matches from API items (CUST: prefix)
   // Format: { match_id: "CUST:ftb-20260126-001", sport: "football", start_ts: 1769486400, name: "Bosnia XI - Croatia XI" }
   // Or single event: { match_id: "CUST:ucl-draw-001", sport: "football", start_ts: 1769486400, name: "UCL DRAW" }
-  function parseCustomMatches(items) {
+  function parseCustomMatches(items, flashEventIds = new Set()) {
     if (!items || !Array.isArray(items)) return [];
 
     const customMatches = [];
@@ -1163,10 +1163,14 @@ function dayLabel(dayOffset, d) {
 
     items.forEach(item => {
       if (!item.match_id) return;
-      const isCustomMatch = item.match_id.startsWith("CUST:") || item.match_id.startsWith("TIM:") || item.match_id.startsWith("TOP:");
+      const cleanId = item.match_id.replace(/^FS:/, "");
+      const isCustomMatch = item.match_id.startsWith("CUST:") ||
+                            item.match_id.startsWith("TIM:") ||
+                            item.match_id.startsWith("TOP:") ||
+                            (item.match_id.startsWith("FS:") && !flashEventIds.has(cleanId) && item.name);
       if (!isCustomMatch) return;
 
-      const id = item.match_id;
+      const id = item.match_id.startsWith("FS:") ? cleanId : item.match_id;
       const sport = item.sport || "football";
       const startTs = parseInt(item.start_ts, 10) || Math.floor(Date.now() / 1000);
       const name = item.name || "";
@@ -1441,10 +1445,19 @@ function setStatusFiltersVisible(visible) {
     const tournaments = {};
     const events = [];
     let currentTournament = null;
+    let currentSportId = 1;
+    const active = getActiveSport();
+    if (active && active.sportId) {
+      currentSportId = active.sportId;
+    }
 
     rows.forEach((row, rowIndex) => {
       if (!row) return;
       if (row.startsWith("SA÷")) {
+        const sid = parseInt(row.replace("SA÷", "").split("¬")[0], 10);
+        if (!isNaN(sid)) {
+          currentSportId = sid;
+        }
         currentTournament = null;
         return;
       }
@@ -1536,7 +1549,8 @@ function setStatusFiltersVisible(visible) {
           homeTeamLogo: homeTeamLogo,
           awayTeamLogo: awayTeamLogo,
           tvChannelIds: tvChannelIds,       // Array of TV channel IDs
-          hasTv: tvChannelIds.length > 0
+          hasTv: tvChannelIds.length > 0,
+          sport: (SPORTS.find(s => s.sportId === currentSportId)?.id) || (active.id !== 'all' && active.id !== 'tv' ? active.id : 'football')
         };
 
         currentTournament.events.push(event);
@@ -1857,9 +1871,12 @@ function setStatusFiltersVisible(visible) {
     const homeLogoURL = event.homeTeamLogo || `/assets/team-placeholder.svg`;
     const awayLogoURL = event.awayTeamLogo || `/assets/team-placeholder.svg`;
 
+    // Match sport routing
+    const matchSport = event.sport || (getActiveSport().id !== 'all' && getActiveSport().id !== 'tv' ? getActiveSport().id : 'football');
+
     return `
       <div class="w-full rounded-none border-b-background-secondary not-last:border-b-[0.5px] hover:bg-surface-secondary">
-        <a href="/match/football/${event.id}" class="w-full group block px-3 sm:px-5 py-2 sm:py-2 cursor-pointer transition-all duration-200 relative" data-event-id="${event.id}" data-status="${event.status}" style="overflow: visible;">
+        <a href="/match/${matchSport}/${event.id}" class="w-full group block px-3 sm:px-5 py-2 sm:py-2 cursor-pointer transition-all duration-200 relative" data-event-id="${event.id}" data-status="${event.status}" style="overflow: visible;">
           <div class="absolute left-0 top-0 bottom-0 w-1 bg-primary transform scale-y-0 group-hover:scale-y-100 transition-transform duration-200 origin-top"></div>
           <div class="flex items-center justify-between gap-2 sm:gap-3 md:gap-4">
             ${statusBadgeHTML}
@@ -2209,9 +2226,11 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         const homeTeam = teamSpans[0]?.textContent.toLowerCase() || '';
         const awayTeam = teamSpans[1]?.textContent.toLowerCase() || '';
 
-        // Check status filter
+        // Check status filter (search query bypasses status restriction)
         let matchesStatus = false;
-        if (showAll) {
+        if (searchQuery) {
+          matchesStatus = true;
+        } else if (showAll) {
           // ALL shows only live and upcoming (not finished)
           matchesStatus = (status === "inprogress" || status === "notstarted");
         } else if (showLive && status === "inprogress") {
@@ -2273,14 +2292,27 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
       }
     });
 
-    // Mobile search toggle
+    // Mobile search toggle & input binding
+    const mInput = document.getElementById("mobileSearchInput");
+    if (mInput && !mInput.dataset.searchBound) {
+      mInput.dataset.searchBound = "1";
+      mInput.addEventListener("input", () => {
+        if (searchInput) {
+          searchInput.value = mInput.value;
+          searchInput.dispatchEvent(new Event("input"));
+        } else if (navInput) {
+          navInput.value = mInput.value;
+        }
+        applyFilters();
+      });
+    }
+
     if (mobileBtn && !mobileBtn.dataset.searchBound) {
       mobileBtn.dataset.searchBound = "1";
       mobileBtn.addEventListener("click", () => {
         const wrap = document.getElementById("mobileSearchWrap");
         if (wrap) wrap.classList.toggle("hidden");
-        const mInput = document.getElementById("mobileSearchInput");
-        if (mInput && !wrap.classList.contains("hidden")) mInput.focus();
+        if (mInput && wrap && !wrap.classList.contains("hidden")) mInput.focus();
       });
     }
 
@@ -2382,8 +2414,9 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
       }
     });
 
-    // Parse custom matches (CUST: prefix) from API items
-    const customMatches = parseCustomMatches(apiItems);
+    // Parse custom matches (CUST:, TIM:, TOP: or missing API items) from API items
+    const flashEventIds = new Set(Object.values(flashData.tournaments).flatMap(t => (t.events || []).map(e => e.id)));
+    const customMatches = parseCustomMatches(apiItems, flashEventIds);
 
     // Filter events: only apply Polish TV channel restriction on Football when manual matches are present.
     // For other sports (Cricket, Tennis, Motorsport, All) show all events so nothing gets purged!
@@ -2803,6 +2836,18 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         </div>
       </div>
     `;
+
+    modal.onclick = function(e) {
+      if (e.target === modal) window.closeChannelPlayer();
+    };
+
+    const handleEsc = function(e) {
+      if (e.key === "Escape") {
+        window.closeChannelPlayer();
+        document.removeEventListener("keydown", handleEsc);
+      }
+    };
+    document.addEventListener("keydown", handleEsc);
 
     modal.classList.remove("hidden");
     document.body.style.overflow = "hidden";

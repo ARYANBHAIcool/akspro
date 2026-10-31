@@ -6,4 +6,6 @@
 /all/*          /index.html         200
 /tv             /tv/index.html      200
 /tv/*           /tv/index.html      200
+/watch          /watch/index.html   200
+/watch/*        /watch/index.html   200
 /legal/*        /index.html         200

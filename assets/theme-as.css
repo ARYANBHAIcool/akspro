@@ -267,13 +267,51 @@ button[data-filter].active {
   transform: translateY(-1px);
 }
 
-/* Light Mode Overrides (Keeps theme crisp and legible when user toggles) */
+/* Light Mode Overrides (Crisp, clean, legible when user toggles theme) */
 html.light body,
 html.light {
-  background-color: #0b1120 !important;
-  color: #f1f5f9 !important;
+  background-color: #f1f5f9 !important;
+  color: #0f172a !important;
+}
+html.light nav,
+html.light header {
+  background-color: #ffffff !important;
+  border-bottom: 1px solid #e2e8f0 !important;
 }
 html.light .card {
-  background: #0f172a !important;
-  border-color: rgba(59, 130, 246, 0.2) !important;
+  background: #ffffff !important;
+  border-color: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html.light .card__header {
+  background: #f8fafc !important;
+  border-color: #e2e8f0 !important;
+}
+html.light .sport-item {
+  color: #475569 !important;
+}
+html.light .sport-item.active {
+  background: #2563eb !important;
+  color: #ffffff !important;
+}
+html.light .sport-item:hover:not(.active) {
+  background: #e2e8f0 !important;
+}
+html.light [data-slot="search-field"] {
+  background: #f8fafc !important;
+  border-color: #cbd5e1 !important;
+  color: #0f172a !important;
+}
+html.light [data-slot="search-field"] input {
+  color: #0f172a !important;
+}
+html.light .button--ghost {
+  color: #334155 !important;
+}
+html.light .button--ghost:hover {
+  background: #e2e8f0 !important;
+  color: #0f172a !important;
+}
+html.light .text-muted-foreground {
+  color: #64748b !important;
 }

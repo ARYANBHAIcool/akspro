@@ -451,23 +451,23 @@
   // NAV config (sports)
   // ---------------------------
   const SPORTS = [
-    { id: "all",               sportId: 0,  key: "sport.all",        href: "/all",                   enabled: true  },
-    { id: "football",          sportId: 1,  key: "sport.football",   href: "/",                      enabled: true  },
+    { id: "all",               sportId: 0,  key: "sport.all",        href: "/",                      enabled: true  },
+    { id: "football",          sportId: 1,  key: "sport.football",   href: "/sports/football",       enabled: true  },
     { id: "tv",                sportId: 99, key: "sport.tv",        href: "/tv",                    enabled: true  },
-    { id: "volleyball",        sportId: 12, key: "sport.volleyball", href: "/sports/volleyball",     enabled: true  },
+    { id: "cricket",           sportId: 13, key: "sport.cricket",    href: "/sports/cricket",        enabled: true  },
     { id: "basketball",        sportId: 3,  key: "sport.basketball", href: "/sports/basketball",     enabled: true  },
-    { id: "futsal",            sportId: 11, key: "sport.futsal",     href: "/sports/futsal",         enabled: true  },
-    { id: "handball",          sportId: 7,  key: "sport.handball",   href: "/sports/handball",       enabled: true  },
-    { id: "winter-sports",     sportId: 37, key: "sport.winter",     href: "/sports/winter-sports",  enabled: true  },
     { id: "tennis",            sportId: 2,  key: "sport.tennis",     href: "/sports/tennis",         enabled: true  },
     { id: "hockey",            sportId: 4,  key: "sport.hockey",     href: "/sports/hockey",         enabled: true  },
-    { id: "mma",               sportId: 28, key: "sport.mma",        href: "/sports/mma",            enabled: true  },
-    { id: "boxing",            sportId: 16, key: "sport.boxing",     href: "/sports/boxing",         enabled: true  },
     { id: "motorsport",        sportId: 31, key: "sport.motorsport", href: "/sports/motorsport",     enabled: true  },
     { id: "american-football", sportId: 5,  key: "sport.nfl",        href: "/sports/nfl",            enabled: true  },
+    { id: "volleyball",        sportId: 12, key: "sport.volleyball", href: "/sports/volleyball",     enabled: true  },
+    { id: "futsal",            sportId: 11, key: "sport.futsal",     href: "/sports/futsal",         enabled: true  },
+    { id: "handball",          sportId: 7,  key: "sport.handball",   href: "/sports/handball",       enabled: true  },
+    { id: "mma",               sportId: 28, key: "sport.mma",        href: "/sports/mma",            enabled: true  },
+    { id: "boxing",            sportId: 16, key: "sport.boxing",     href: "/sports/boxing",         enabled: true  },
+    { id: "winter-sports",     sportId: 37, key: "sport.winter",     href: "/sports/winter-sports",  enabled: true  },
     { id: "snooker",           sportId: 15, key: "sport.snooker",    href: "/sports/snooker",        enabled: true  },
     { id: "darts",             sportId: 14, key: "sport.darts",      href: "/sports/darts",          enabled: true  },
-    { id: "cricket",           sportId: 13, key: "sport.cricket",    href: "/sports/cricket",        enabled: true  },
     { id: "cycling",           sportId: 34, key: "sport.cycling",    href: "/sports/cycling",        enabled: true  },
     { id: "golf",              sportId: 23, key: "sport.golf",       href: "/sports/golf",           enabled: true  },
     { id: "waterpolo",         sportId: 0,  key: "sport.waterpolo",  href: "/sports/waterpolo",      enabled: true  }
@@ -527,8 +527,8 @@
     const reordered = [];
     const remaining = [...sportsCopy];
 
-    // Always keep top 3 pinned: 'all', 'football', 'tv'
-    ['all', 'football', 'tv'].forEach(topId => {
+    // Always keep top pinned: 'all', 'football', 'tv', 'cricket', 'basketball'
+    ['all', 'football', 'tv', 'cricket', 'basketball'].forEach(topId => {
       const idx = remaining.findIndex(s => s.id === topId);
       if (idx !== -1) {
         reordered.push(remaining.splice(idx, 1)[0]);
@@ -914,7 +914,7 @@
       if (sport) return sport;
     }
 
-    return SPORTS[0]; // Default to football
+    return SPORTS.find(s => s.id === "football") || SPORTS[1]; // Default to football
   }
 
   // Parse Flashscore response format (key÷value¬)
@@ -967,7 +967,12 @@
 
   // Helper to check if match ID is custom event
   function isCustomEvent(matchID) {
-    return matchID && matchID.startsWith("CUST:");
+    if (!matchID) return false;
+    return matchID.startsWith("CUST:") ||
+           matchID.startsWith("TIM:") ||
+           matchID.startsWith("TOP:") ||
+           /^[a-z]+-\d{8}-\d+$/i.test(matchID) ||
+           /^[a-z0-9]+-\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/.test(matchID);
   }
 
   // Calculate status for custom event based on start time and either an
@@ -995,7 +1000,10 @@
   // Fetch custom event data from our API
   async function fetchCustomEventData(matchID) {
     try {
-      const response = await fetch(`/api/v1/match/${matchID}`);
+      const spObj = getSportFromURL();
+      const sp = (spObj && spObj.id && spObj.id !== 'all' && spObj.id !== 'tv') ? spObj.id : "";
+      const url = `/api/v1/match/${encodeURIComponent(matchID)}${sp ? `?sport=${encodeURIComponent(sp)}` : ""}`;
+      const response = await fetch(url);
       if (!response.ok) throw new Error("Failed to fetch custom event");
 
       const data = await response.json();
@@ -1030,18 +1038,21 @@
     }
   }
 
-  // Fetch match basic data (scores, status)
-    // Robust Feed fetch with CORS proxy fallback
-  async function fetchFlashFeed(path) {
+  // Robust Feed fetch with ultra-fast edge proxy first (prevents 10-15s CORS hang)
+  async function fetchFlashFeed(path, signal) {
     try {
-      const res = await fetch(`${FLASH_BASE}/${path}`, {
-        headers: { "X-Fsign": FLASH_FSIGN }
-      });
-      if (res.ok) return await res.text();
+      const res = await fetch(`/api/feed?path=${encodeURIComponent(path)}`, { signal: signal });
+      if (res.ok) {
+        const text = await res.text();
+        if (text && text.length > 0) return text;
+      }
     } catch (e) {}
 
     try {
-      const res2 = await fetch(`/api/feed?path=${encodeURIComponent(path)}`);
+      const res2 = await fetch(`${FLASH_BASE}/${path}`, {
+        headers: { "X-Fsign": FLASH_FSIGN },
+        signal: signal
+      });
       if (res2.ok) return await res2.text();
     } catch (e2) {}
 
@@ -1101,10 +1112,13 @@
     }
   }
 
-  // Fetch TV channel TVI IDs from Flashscore endpoint
+  // Fetch TV channel TVI IDs from Flashscore endpoint (with timeout to prevent stalls)
   async function fetchFlashscoreTVI(matchID) {
     try {
-      const text = await fetchFlashFeed(`df_dos_1_${matchID}_`);
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 2000);
+      const text = await fetchFlashFeed(`df_dos_1_${matchID}_`, controller.signal);
+      clearTimeout(timer);
       if (!text) return [];
 
       // Extract AL field with JSON: AL÷{"1":[{TVI:id, BN:name, ...}]}
@@ -1113,7 +1127,6 @@
 
       return parseTvChannelIds(alMatch[1]);
     } catch (e) {
-      console.error("fetchFlashscoreTVI error:", e);
       return [];
     }
   }
@@ -1126,8 +1139,9 @@
   // Fetch match-specific channel overrides from local API
   async function fetchMatchChannelOverrides(matchID) {
     try {
-      const sp = getSportFromURL() || "";
-      const url = `/api/v1/match/${encodeURIComponent(matchID)}?sport=${encodeURIComponent(sp)}`;
+      const spObj = getSportFromURL();
+      const sp = (spObj && spObj.id) ? spObj.id : "";
+      const url = `/api/v1/match/${encodeURIComponent(matchID)}${sp ? `?sport=${encodeURIComponent(sp)}` : ""}`;
       const response = await fetch(url);
       if (!response.ok) return null;
 
@@ -1584,14 +1598,18 @@
 
               <!-- Tab Navigation (inside card) -->
               <div class="flex flex-row overflow-x-auto gap-5 justify-start md:justify-center">
+                ${showBroadcastTab ? `
+                <button type="button" class="tab-btn relative flex items-center justify-center h-11 px-4 text-xs md:text-sm whitespace-nowrap flex-1 md:flex-none text-surface-foreground font-semibold after:content-[''] after:absolute after:bottom-0 after:start-0 after:w-full after:h-0.75 after:bg-(--eclipse) dark:after:bg-(--snow) after:rounded-t-2xl active" data-tab="broadcast" data-status="active" aria-current="page">
+                  <span class="mr-2">${tabIcons.broadcast}</span><span data-i18n="match.tab.broadcast">${lblBroadcast}</span>
+                </button>
+                <button type="button" class="tab-btn relative flex items-center justify-center h-11 px-4 text-xs md:text-sm whitespace-nowrap flex-1 md:flex-none text-surface-foreground/60" data-tab="overview">
+                  <span class="mr-2">${tabIcons.overview}</span><span data-i18n="match.tab.overview">${lblOverview}</span>
+                </button>
+                ` : `
                 <button type="button" class="tab-btn relative flex items-center justify-center h-11 px-4 text-xs md:text-sm whitespace-nowrap flex-1 md:flex-none text-surface-foreground font-semibold after:content-[''] after:absolute after:bottom-0 after:start-0 after:w-full after:h-0.75 after:bg-(--eclipse) dark:after:bg-(--snow) after:rounded-t-2xl active" data-tab="overview" data-status="active" aria-current="page">
                   <span class="mr-2">${tabIcons.overview}</span><span data-i18n="match.tab.overview">${lblOverview}</span>
                 </button>
-                ${showBroadcastTab ? `
-                <button type="button" class="tab-btn relative flex items-center justify-center h-11 px-4 text-xs md:text-sm whitespace-nowrap flex-1 md:flex-none text-surface-foreground/60" data-tab="broadcast">
-                  <span class="mr-2">${tabIcons.broadcast}</span><span data-i18n="match.tab.broadcast">${lblBroadcast}</span>
-                </button>
-                ` : ""}
+                `}
                 <button type="button" class="tab-btn relative flex items-center justify-center h-11 px-4 text-xs md:text-sm whitespace-nowrap flex-1 md:flex-none text-surface-foreground/60" data-tab="lineups">
                   <span class="mr-2">${tabIcons.lineups}</span><span data-i18n="match.tab.lineups">${lblLineups}</span>
                 </button>
@@ -2102,12 +2120,12 @@ const enabledChannels = channels
       `;
 
       try {
-        // Determine if custom match (CUST:) or Flashscore match (FS:)
-        // Pattern 1: football-style  "ftb-20260126-001"
-        // Pattern 2: motorsport-style "f1-2026-03-16-race" / "nascar-2026-03-08-race"
-        const isCustomMatch = /^[a-z]+-\d{8}-\d+$/i.test(matchID) ||
-                              /^[a-z0-9]+-\d{4}-\d{2}-\d{2}-[a-z0-9-]+$/.test(matchID);
-        const apiMatchID = isCustomMatch ? `CUST:${matchID}` : `FS:${matchID}`;
+        // Determine if custom match (CUST:, TIM:, TOP:) or Flashscore match (FS:)
+        const isCustom = isCustomEvent(matchID);
+        let apiMatchID = matchID;
+        if (!matchID.startsWith("CUST:") && !matchID.startsWith("TIM:") && !matchID.startsWith("TOP:") && !matchID.startsWith("FS:")) {
+          apiMatchID = isCustom ? `CUST:${matchID}` : `FS:${matchID}`;
+        }
 
         // Get match timing info from sessionStorage or loaded match data
         const matchTimestamp = sessionStorage.getItem(`time_${matchID}`) || currentMatchData?.matchData?.timestamp;
@@ -2115,7 +2133,7 @@ const enabledChannels = channels
 
         // Fetch data in parallel (skip Flashscore TVI for custom matches)
         const [flashscoreChannels, localChannels, matchOverrides] = await Promise.all([
-          isCustomMatch ? Promise.resolve([]) : fetchFlashscoreTVI(matchID),
+          isCustom ? Promise.resolve([]) : fetchFlashscoreTVI(matchID),
           fetchLocalChannels(),
           fetchMatchChannelOverrides(apiMatchID)
         ]);
@@ -2161,7 +2179,9 @@ const enabledChannels = channels
     const theaterBtn = document.getElementById("theaterModeBtn");
     if (theaterBtn && streamUrl) {
       const matchID = getMatchIDFromURL();
-      theaterBtn.href = `/watch/?id=${matchID}&src=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(document.title)}`;
+      const spObj = getSportFromURL();
+      const sp = (spObj && spObj.id) ? spObj.id : "";
+      theaterBtn.href = `/watch/?id=${matchID}&sport=${encodeURIComponent(sp)}&src=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(document.title)}`;
     }
     const popoutBtn = document.getElementById("directPopoutBtn");
     if (popoutBtn && directUrl) {
@@ -2278,7 +2298,9 @@ const enabledChannels = channels
     if (hasStreams && isClickable) {
       const activeStream = allStreams[0];
       const matchTitle = document.title || 'Live Match';
-      const theaterUrl = `/watch/?id=${matchID}&src=${encodeURIComponent(activeStream.url)}&title=${encodeURIComponent(matchTitle)}`;
+      const spObj = getSportFromURL();
+      const sp = (spObj && spObj.id) ? spObj.id : "";
+      const theaterUrl = `/watch/?id=${matchID}&sport=${encodeURIComponent(sp)}&src=${encodeURIComponent(activeStream.url)}&title=${encodeURIComponent(matchTitle)}`;
       const initialDirect = activeStream.direct_url || activeStream.url;
 
       html += `
@@ -2600,6 +2622,12 @@ const enabledChannels = channels
 
       // Setup tab click handlers
       setupTabClickHandlers();
+
+      // Immediately activate and load the stream player for live and scheduled matches
+      const showBroadcast = matchData?.status === "1" || matchData?.status === "2";
+      if (showBroadcast) {
+        loadTabContent("broadcast");
+      }
 
       // Start live refresh if match is in progress
       if (matchData?.status === "2") {

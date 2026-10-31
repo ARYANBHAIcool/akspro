@@ -108,14 +108,24 @@
     const initialSrc = params.get('src');
     const matchTitle = params.get('title') || 'Live Match';
     const matchId = params.get('id');
+    const sport = params.get('sport') || '';
 
     if (matchTitle) {
       document.getElementById('matchHeading').textContent = matchTitle;
       document.title = matchTitle + ' | Live Player';
     }
 
-    if (matchId) {
-      document.getElementById('backBtn').href = '/match/football/' + matchId;
+    const backBtn = document.getElementById('backBtn');
+    if (backBtn) {
+      if (matchId) {
+        backBtn.href = (sport ? '/match/' + sport + '/' : '/match/') + matchId;
+      }
+      backBtn.addEventListener('click', (e) => {
+        if (window.history.length > 1) {
+          e.preventDefault();
+          window.history.back();
+        }
+      });
     }
 
     const iframe = document.getElementById('videoIframe');
@@ -153,8 +163,8 @@
 
       if (matchId) {
         try {
-          const cleanId = matchId.replace(/^(FS:|CUST:)/, '');
-          const res = await fetch('/api/v1/match/' + cleanId);
+          const cleanId = matchId.replace(/^(FS:|CUST:|TIM:|TOP:)/, '');
+          const res = await fetch('/api/v1/match/' + encodeURIComponent(cleanId) + (sport ? '?sport=' + encodeURIComponent(sport) : ''));
           if (res.ok) {
             const data = await res.json();
             streams = data.custom_urls || [];
