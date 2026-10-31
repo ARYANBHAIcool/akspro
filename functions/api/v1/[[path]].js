@@ -1,60 +1,22 @@
 /**
- * Cloudflare Pages Function: /api/v1/[[path]]
- * Edge Router for Live Sports Curated Matches, Match Details, and Dedicated Sports Streaming Servers
+ * Cloudflare Pages Function: Unified High-Performance Sports API Router
+ * Supports:
+ *   /api/v1/stream?token=:token      -> Edge player proxy with dual-referer bypass (dzeko11.pk / strumyk.pk)
+ *   /api/v1/match/:matchId           -> Dual-mirror aggregated streams (dzeko11.pk + strumyk.pk + bintv)
+ *   /api/v1/:sport/:date             -> Multi-host daily sports fixtures
+ *   /api/v1/channels                 -> 24/7 Live TV channels catalog (tim-streams + fallback)
  */
-
-import channelsData from '../../assets/channels.json';
-
-const rawCatalog = (channelsData && channelsData.default) ? channelsData.default : channelsData;
-const staticCatalog = (rawCatalog && rawCatalog['24/7 Channels']) || [];
-
-const TOP_STREAM_SERVERS = [
-    { name: 'Premier Sports 1 IE', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvMDFtcTZ3eGEtOTgxNg' },
-    { name: 'CANAL+ Sport 6 PL', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYva3Vsd2l3OWEtMzM4MA' },
-    { name: 'DAZN 1 Germany', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvZWltdzltNGstOTI2Nw' },
-    { name: 'ARENA SPORT 1 BiH', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvOWxmc2Nud2UtMzE2OQ' },
-    { name: 'Sky Sports Premier League', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYveWtpY3l3N3otOTA2OA' },
-    { name: 'beIN Sports', url: 'https://bintv-sources.pages.dev/?id=aHR0cHM6Ly9laGdlbWJ4ZS5jZmQvYmludHYvcHhzcXd4M2gtMzc3MA' }
-];
-
-function findCatalogStream(name) {
-    if (!name) return null;
-    const nLow = name.toLowerCase().trim();
-    
-    for (const c of staticCatalog) {
-        const cLow = (c.name || '').toLowerCase().trim();
-        if (cLow === nLow || nLow.includes(cLow) || cLow.includes(nLow)) {
-            const s = c.streams && c.streams[0];
-            if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
-        }
-    }
-    
-    const keywords = ['canal', 'dazn', 'arena', 'sky', 'tnt', 'bein', 'espn', 'premier', 'willow', 'sony', 'ziggo', 'super'];
-    for (const kw of keywords) {
-        if (nLow.includes(kw)) {
-            for (const c of staticCatalog) {
-                if ((c.name || '').toLowerCase().includes(kw)) {
-                    const s = c.streams && c.streams[0];
-                    if (s && s.url) return { name: c.name, url: s.url, country: c.alpha2 || c.country || '' };
-                }
-            }
-        }
-    }
-
-    return null;
-}
 
 export async function onRequest(context) {
     const url = new URL(context.request.url);
-    const rawPath = url.pathname.replace(/^\/api\/v1\/?/, '');
-    const parts = context.params.path || rawPath.split('/').filter(Boolean);
+    const pathname = url.pathname.replace(/^\/api\/v1\/?/, '');
+    const parts = pathname.split('/').filter(Boolean);
 
     const corsHeaders = {
-        'Content-Type': 'application/json; charset=utf-8',
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
         'Access-Control-Allow-Headers': '*',
-        'Cache-Control': 'public, max-age=30, stale-while-revalidate=60'
+        'Content-Type': 'application/json'
     };
 
     if (context.request.method === 'OPTIONS') {
@@ -63,12 +25,13 @@ export async function onRequest(context) {
 
     try {
         // ----------------------------------------------------
-        // 0. STREAM PROXY: /api/v1/stream?token=:token
+        // 0. STREAM PROXY: /api/v1/stream?token=:token OR ?src=:url
         // ----------------------------------------------------
         if (parts[0] === 'stream') {
             const token = (url.searchParams.get('token') || url.searchParams.get('id') || parts[1] || '').trim();
             const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
+            // Direct iframe proxy
             if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
                 return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;padding:0;background:#000;overflow:hidden;}iframe{width:100%;height:100%;border:0;display:block;}</style></head><body><iframe src="${rawUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></body></html>`, {
                     status: 200,
@@ -82,36 +45,42 @@ export async function onRequest(context) {
 
             const upstreamUrl = `https://iplayer24.me/beta/${token}`;
 
-            try {
-                const resp = await fetch(upstreamUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                        'Referer': 'https://dzeko11.pk/',
-                        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+            // Try upstream with dzeko11.pk, fallback to strumyk.pk if needed
+            let html = '';
+            for (const ref of ['https://dzeko11.pk/', 'https://strumyk.pk/']) {
+                try {
+                    const resp = await fetch(upstreamUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                            'Referer': ref,
+                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+                        }
+                    });
+                    if (resp.ok) {
+                        const text = await resp.text();
+                        if (text.includes('jwplayer') || !text.includes('google.com')) {
+                            html = text;
+                            break;
+                        }
                     }
-                });
+                } catch (fetchErr) {}
+            }
 
-                if (!resp.ok) {
-                    return new Response(`Upstream stream error: ${resp.status}`, { status: resp.status });
-                }
+            if (!html || (html.includes('google.com') && !html.includes('jwplayer'))) {
+                return new Response('Stream token unavailable or expired.', { status: 502 });
+            }
 
-                let html = await resp.text();
+            // 1. Rewrite WebSocket endpoint to our proxy
+            html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
+            html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
 
-                if (html.includes('google.com') && !html.includes('jwplayer')) {
-                    return new Response('Stream token unavailable or expired.', { status: 502 });
-                }
+            // 2. Strip intrusive ads/popups
+            html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
+            html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
+            html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
 
-                // Rewrite WebSocket endpoint to our proxy
-                html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
-                html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
-
-                // Strip intrusive ads/popups
-                html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
-                html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
-                html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
-
-                // Dark clean styling
-                const customCss = `<style>
+            // 3. Dark clean responsive styling
+            const customCss = `<style>
 html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
 body.beta { background: #000 !important; padding: 0 !important; }
 body.beta .stage { width: 100% !important; height: 100% !important; max-width: 100% !important; border-radius: 0 !important; aspect-ratio: unset !important; }
@@ -119,18 +88,15 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
 #player { width: 100% !important; height: 100% !important; }
 #player video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
 </style>`;
-                html = html.replace('</head>', customCss + '</head>');
+            html = html.replace('</head>', customCss + '</head>');
 
-                return new Response(html, {
-                    status: 200,
-                    headers: {
-                        'Content-Type': 'text/html; charset=utf-8',
-                        'Cache-Control': 'no-store, no-cache, must-revalidate'
-                    }
-                });
-            } catch (err) {
-                return new Response('Stream Proxy Error: ' + err.message, { status: 500 });
-            }
+            return new Response(html, {
+                status: 200,
+                headers: {
+                    'Content-Type': 'text/html; charset=utf-8',
+                    'Cache-Control': 'no-store, no-cache, must-revalidate'
+                }
+            });
         }
 
         // ----------------------------------------------------
@@ -143,6 +109,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
 
             const customUrls = [];
             const seenUrls = new Set();
+            const seenNames = new Set();
 
             // A. Fetch team names dynamically via GraphQL
             let homeName = '';
@@ -162,45 +129,44 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 }
             } catch (gqlErr) {}
 
-            // B. Fetch Exact Working Sources from Dzeko API
-            let dzekoStatus = 0;
-            let dzekoErr = null;
-            try {
-                const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
-                const dzekoResp = await fetch(dzekoUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
-                        'Referer': 'https://dzeko11.pk/',
-                        'Accept': 'application/json, text/plain, */*'
-                    }
-                });
-                dzekoStatus = dzekoResp.status;
-                if (dzekoResp.ok) {
-                    const dData = await dzekoResp.json();
-                    for (const item of (dData.custom_urls || [])) {
-                        if (!item || !item.name) continue;
-                        const rawStream = (item.url || '').trim();
-                        let playUrl = rawStream;
-
-                        // Route 32-character tokens through our internal /api/v1/stream proxy
-                        if (/^[a-f0-9]{32}$/i.test(rawStream)) {
-                            playUrl = `/api/v1/stream?token=${rawStream}`;
+            // B. Dual-Mirror Stream Query: dzeko11.pk + strumyk.pk concurrently
+            const streamHosts = ['dzeko11.pk', 'strumyk.pk'];
+            await Promise.allSettled(streamHosts.map(async (host) => {
+                try {
+                    const hostUrl = `https://${host}/api/v1/match/FS:${cleanId}`;
+                    const resp = await fetch(hostUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36',
+                            'Referer': `https://${host}/`,
+                            'Accept': 'application/json, text/plain, */*'
                         }
+                    });
+                    if (resp.ok) {
+                        const dData = await resp.json();
+                        for (const item of (dData.custom_urls || [])) {
+                            if (!item || !item.name) continue;
+                            const rawStream = (item.url || '').trim();
+                            let playUrl = rawStream;
 
-                        if (playUrl && !seenUrls.has(playUrl)) {
-                            seenUrls.add(playUrl);
-                            customUrls.push({
-                                id: item.id || `srv-${customUrls.length + 1}`,
-                                name: item.name,
-                                url: playUrl,
-                                enabled: true
-                            });
+                            if (/^[a-f0-9]{32}$/i.test(rawStream)) {
+                                playUrl = `/api/v1/stream?token=${rawStream}`;
+                            }
+
+                            const streamKey = `${item.name.toLowerCase()}:${playUrl}`;
+                            if (playUrl && !seenUrls.has(playUrl) && !seenNames.has(streamKey)) {
+                                seenUrls.add(playUrl);
+                                seenNames.add(streamKey);
+                                customUrls.push({
+                                    id: item.id || `srv-${customUrls.length + 1}`,
+                                    name: item.name,
+                                    url: playUrl,
+                                    enabled: true
+                                });
+                            }
                         }
                     }
-                }
-            } catch (dErr) {
-                dzekoErr = dErr.message || String(dErr);
-            }
+                } catch (err) {}
+            }));
 
             // C. Match against bintvjson (Live Events & Upcoming Events)
             try {
@@ -243,95 +209,40 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 }
             } catch (bErr) {}
 
-            // D. Fallback if no specific match streams found yet: Map from Flashscore broadcasters or top servers
-            if (customUrls.length === 0) {
-                try {
-                    const fsUrl = `https://1.newsoccers.one/2/x/feed/df_dos_1_${cleanId}_`;
-                    const fsResp = await fetch(fsUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                            'X-Fsign': 'SW9D1eZo',
-                            'Origin': 'https://dzeko11.pk',
-                            'Referer': 'https://dzeko11.pk/'
-                        }
-                    });
-
-                    if (fsResp.ok) {
-                        const text = await fsResp.text();
-                        const alMatch = text.match(/AL÷(\{[^¬]+\})/);
-                        if (alMatch) {
-                            const parsed = JSON.parse(alMatch[1]);
-                            const broadcasters = parsed['1'] || [];
-
-                            for (const b of broadcasters) {
-                                if (!b || !b.BN) continue;
-                                const catMatch = findCatalogStream(b.BN);
-                                if (catMatch && !seenUrls.has(catMatch.url)) {
-                                    seenUrls.add(catMatch.url);
-                                    customUrls.push({
-                                        id: `srv-${customUrls.length + 1}`,
-                                        name: catMatch.name,
-                                        url: catMatch.url,
-                                        enabled: true
-                                    });
-                                    if (customUrls.length >= 5) break;
-                                }
-                            }
-                        }
-                    }
-                } catch (fsErr) {}
-            }
-
-            // E. Guaranteed Fallback: Provide top 4 sports streaming servers
-            if (customUrls.length === 0) {
-                for (const top of TOP_STREAM_SERVERS) {
-                    if (!seenUrls.has(top.url)) {
-                        seenUrls.add(top.url);
-                        customUrls.push({
-                            id: `srv-${customUrls.length + 1}`,
-                            name: top.name,
-                            url: top.url,
-                            enabled: true
-                        });
-                        if (customUrls.length >= 4) break;
-                    }
-                }
-            }
-
-            // Return clean response with ONLY working custom_urls and empty channels list (matching Dzeko exactly)
             return new Response(JSON.stringify({
                 match_id: fsId,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
-                channels: [],
-                debug: { dzekoStatus, dzekoErr, count: customUrls.length }
+                channels: []
             }), { status: 200, headers: corsHeaders });
         }
 
         // ----------------------------------------------------
-        // 2. CURATED DAILY MATCH LIST: /api/v1/:sport/:date
+        // 2. SPORT SCHEDULE / MATCHES LIST: /api/v1/:sport/:date
         // ----------------------------------------------------
-        if (parts.length >= 2) {
+        if (parts.length === 2) {
             const [sport, date] = parts;
 
-            // Try Dzeko daily sport API for curated high-profile matches
-            try {
-                const dzekoUrl = `https://dzeko11.pk/api/v1/${encodeURIComponent(sport)}/${encodeURIComponent(date)}`;
-                const dzekoResp = await fetch(dzekoUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                        'Referer': 'https://dzeko11.pk/',
-                        'Accept': 'application/json'
-                    }
-                });
+            // Try Dzeko and Strumyk daily sport API
+            for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                try {
+                    const hostUrl = `https://${host}/api/v1/${encodeURIComponent(sport)}/${encodeURIComponent(date)}`;
+                    const resp = await fetch(hostUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                            'Referer': `https://${host}/`,
+                            'Accept': 'application/json'
+                        }
+                    });
 
-                if (dzekoResp.ok) {
-                    const data = await dzekoResp.json();
-                    if (data && Array.isArray(data.items) && data.items.length > 0) {
-                        return new Response(JSON.stringify(data), { status: 200, headers: corsHeaders });
+                    if (resp.ok) {
+                        const data = await resp.json();
+                        if (data && Array.isArray(data.items) && data.items.length > 0) {
+                            return new Response(JSON.stringify(data), { status: 200, headers: corsHeaders });
+                        }
                     }
-                }
-            } catch (err) {}
+                } catch (err) {}
+            }
 
             // Fallback: Flashscore feed for sport
             const sportIdMap = {
@@ -378,9 +289,46 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
         }
 
         // ----------------------------------------------------
-        // 3. CHANNELS: /api/v1/channels
+        // 3. CHANNELS: /api/v1/channels (TimStreams + Fallback)
         // ----------------------------------------------------
         if (parts[0] === 'channels') {
+            try {
+                const timRes = await fetch('https://tim-streams.com/api/channels', {
+                    headers: { 'User-Agent': 'Mozilla/5.0' }
+                });
+                if (timRes.ok) {
+                    const raw = await timRes.json();
+                    const channels = raw.channels || [];
+                    const genres = {};
+                    for (const g of (raw.genres || [])) genres[g.id] = g.name;
+
+                    const formatted = [];
+                    for (const c of channels) {
+                        const streams = [];
+                        for (const s of (c.streams || [])) {
+                            if (s.url) streams.push({ name: s.name || 'Live Feed', url: s.url });
+                        }
+                        if (streams.length > 0) {
+                            formatted.push({
+                                id: c.url || `ch-${formatted.length + 1}`,
+                                name: c.name,
+                                poster: c.logo || '/assets/favicon-96x96.png',
+                                category: genres[c.genre] || 'Sports',
+                                status: '24/7',
+                                flag: c.flag || '',
+                                streams: streams
+                            });
+                        }
+                    }
+                    if (formatted.length > 0) {
+                        return new Response(JSON.stringify({ items: formatted, counts: { channels: formatted.length } }), {
+                            status: 200,
+                            headers: corsHeaders
+                        });
+                    }
+                }
+            } catch (timErr) {}
+
             return new Response(JSON.stringify({ items: [] }), { status: 200, headers: corsHeaders });
         }
 
