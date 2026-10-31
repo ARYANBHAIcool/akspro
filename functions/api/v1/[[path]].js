@@ -412,41 +412,40 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                 fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200),
                                 fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200)
                             ]);
-                            if (nbaRes.status === 'fulfilled' && nbaRes.value && nbaRes.value.ok) {
-                                const html = await nbaRes.value.text();
-                                const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
-                                let match;
-                                while ((match = re.exec(html)) !== null) {
-                                    const [, gid, away, home] = match;
-                                    const mId = `TOP:nba_${home.toLowerCase().trim()}`;
-                                    if (!seenIds.has(mId)) {
-                                        seenIds.add(mId);
-                                        allItems.push({
-                                            match_id: mId,
-                                            name: `${away} - ${home}`,
-                                            sport: 'basketball',
-                                            start_ts: Math.floor(Date.now() / 1000)
-                                        });
+                            function parseTopSchedule(rawHtml, prefix, sportName) {
+                                const blocks = rawHtml.split('class="item upcoming');
+                                for (let i = 1; i < blocks.length; i++) {
+                                    const b = blocks[i];
+                                    const names = [];
+                                    const nameRe = /<div class="name">([^<]+)<\/div>/g;
+                                    let nm;
+                                    while ((nm = nameRe.exec(b)) !== null) names.push(nm[1].trim());
+                                    const linkMatch = b.match(new RegExp(`href="(/${prefix}/[^"]+)"`));
+                                    if (names.length >= 2 && linkMatch) {
+                                        const away = names[0];
+                                        const home = names[1];
+                                        const teamKey = linkMatch[1].replace(`/${prefix}/`, '');
+                                        const mId = `TOP:${prefix}_${teamKey.toLowerCase().trim()}`;
+                                        if (!seenIds.has(mId)) {
+                                            seenIds.add(mId);
+                                            allItems.push({
+                                                match_id: mId,
+                                                name: `${away} - ${home}`,
+                                                sport: sportName,
+                                                start_ts: Math.floor(Date.now() / 1000)
+                                            });
+                                        }
                                     }
                                 }
                             }
+
+                            if (nbaRes.status === 'fulfilled' && nbaRes.value && nbaRes.value.ok) {
+                                const html = await nbaRes.value.text();
+                                parseTopSchedule(html, 'nba', 'basketball');
+                            }
                             if (nflRes.status === 'fulfilled' && nflRes.value && nflRes.value.ok) {
                                 const html2 = await nflRes.value.text();
-                                const re2 = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
-                                let match2;
-                                while ((match2 = re2.exec(html2)) !== null) {
-                                    const [, gid2, away2, home2] = match2;
-                                    const mId2 = `TOP:nfl_${home2.toLowerCase().trim()}`;
-                                    if (!seenIds.has(mId2)) {
-                                        seenIds.add(mId2);
-                                        allItems.push({
-                                            match_id: mId2,
-                                            name: `${away2} - ${home2}`,
-                                            sport: 'american-football',
-                                            start_ts: Math.floor(Date.now() / 1000)
-                                        });
-                                    }
-                                }
+                                parseTopSchedule(html2, 'nfl', 'american-football');
                             }
                         } catch (e) {}
                     })()
@@ -506,24 +505,25 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                         }
                     } catch (e) {}
                 }
-                // Also parse topstreamer NBA schedule
                 try {
                     const topRes = await fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
                     if (topRes && topRes.ok) {
                         const html = await topRes.text();
-                        const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
-                        let m;
-                        while ((m = re.exec(html)) !== null) {
-                            const [, gid, away, home] = m;
-                            const tId = `TOP:nba_${home.toLowerCase().trim()}`;
-                            if (!bSeen.has(tId)) {
-                                bSeen.add(tId);
-                                bItems.push({
-                                    match_id: tId,
-                                    name: `${away} - ${home}`,
-                                    sport: 'basketball',
-                                    start_ts: Math.floor(Date.now() / 1000)
-                                });
+                        const blocks = html.split('class="item upcoming');
+                        for (let i = 1; i < blocks.length; i++) {
+                            const b = blocks[i];
+                            const names = [];
+                            const nameRe = /<div class="name">([^<]+)<\/div>/g;
+                            let nm;
+                            while ((nm = nameRe.exec(b)) !== null) names.push(nm[1].trim());
+                            const linkMatch = b.match(/href="(\/nba\/[^"]+)"/);
+                            if (names.length >= 2 && linkMatch) {
+                                const teamKey = linkMatch[1].replace('/nba/', '');
+                                const tId = `TOP:nba_${teamKey.toLowerCase().trim()}`;
+                                if (!bSeen.has(tId)) {
+                                    bSeen.add(tId);
+                                    bItems.push({ match_id: tId, name: `${names[0]} - ${names[1]}`, sport: 'basketball', start_ts: Math.floor(Date.now() / 1000) });
+                                }
                             }
                         }
                     }
@@ -543,19 +543,21 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     const topRes = await fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
                     if (topRes && topRes.ok) {
                         const html = await topRes.text();
-                        const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
-                        let m;
-                        while ((m = re.exec(html)) !== null) {
-                            const [, gid, away, home] = m;
-                            const tId = `TOP:nfl_${home.toLowerCase().trim()}`;
-                            if (!nflSeen.has(tId)) {
-                                nflSeen.add(tId);
-                                nflItems.push({
-                                    match_id: tId,
-                                    name: `${away} - ${home}`,
-                                    sport: 'american-football',
-                                    start_ts: Math.floor(Date.now() / 1000)
-                                });
+                        const blocks = html.split('class="item upcoming');
+                        for (let i = 1; i < blocks.length; i++) {
+                            const b = blocks[i];
+                            const names = [];
+                            const nameRe = /<div class="name">([^<]+)<\/div>/g;
+                            let nm;
+                            while ((nm = nameRe.exec(b)) !== null) names.push(nm[1].trim());
+                            const linkMatch = b.match(/href="(\/nfl\/[^"]+)"/);
+                            if (names.length >= 2 && linkMatch) {
+                                const teamKey = linkMatch[1].replace('/nfl/', '');
+                                const tId = `TOP:nfl_${teamKey.toLowerCase().trim()}`;
+                                if (!nflSeen.has(tId)) {
+                                    nflSeen.add(tId);
+                                    nflItems.push({ match_id: tId, name: `${names[0]} - ${names[1]}`, sport: 'american-football', start_ts: Math.floor(Date.now() / 1000) });
+                                }
                             }
                         }
                     }
