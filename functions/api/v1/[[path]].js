@@ -459,12 +459,12 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
             }
 
-            // Prioritize direct HTTPS streams (ehgembxe.cfd, bintv, topstreamer) so Server 1 plays instantly
+            // Prioritize direct playable streams (src= and https://) so Server 1 plays instantly
             customUrls.sort((a, b) => {
-                const aDirect = a.url.startsWith('https://');
-                const bDirect = b.url.startsWith('https://');
-                if (aDirect && !bDirect) return -1;
-                if (!aDirect && bDirect) return 1;
+                const aIsDirect = Boolean(a.url && (a.url.includes('/stream?src=') || a.url.startsWith('https://')));
+                const bIsDirect = Boolean(b.url && (b.url.includes('/stream?src=') || b.url.startsWith('https://')));
+                if (aIsDirect && !bIsDirect) return -1;
+                if (!aIsDirect && bIsDirect) return 1;
                 return 0;
             });
 
