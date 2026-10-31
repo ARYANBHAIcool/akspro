@@ -82,8 +82,9 @@
     let cc = "";
     try {
       const res = await fetch("/geo", { cache: "force-cache" });
-      if (res.ok) {
-        const j = await res.json(); // { country: "PL" } (your Go handler)
+      const ct = res.headers.get("content-type") || "";
+      if (res.ok && ct.includes("application/json")) {
+        const j = await res.json();
         cc = (j && (j.country || j.cc || j.CF_IPCountry)) || "";
       }
     } catch (e) {
@@ -1195,6 +1196,8 @@ function dayLabel(dayOffset, d) {
         awayTeam = "";
       }
 
+      const isSingleEvent = item.is_single_event === true || !awayTeam;
+
       // Calculate status: use explicit item.end_ts when present, else sport-default duration
       let endTs;
       const itemEnd = parseInt(item.end_ts, 10) || 0;
@@ -2231,8 +2234,8 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         if (searchQuery) {
           matchesStatus = true;
         } else if (showAll) {
-          // ALL shows only live and upcoming (not finished)
-          matchesStatus = (status === "inprogress" || status === "notstarted");
+          // ALL shows all matches (live, upcoming, finished)
+          matchesStatus = true;
         } else if (showLive && status === "inprogress") {
           matchesStatus = true;
         } else if (showFinished && status === "finished") {
@@ -2374,150 +2377,155 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
     // Show skeleton loading state
     container.innerHTML = createSkeletonHTML();
 
-    // Fetch data from all sources (including user's available TV channels)
-    const [fs, own] = await Promise.all([
-      fetchFlashscore(sportId, dayOffset),
-      fetchYourAPI(slug, ymd),
-      fetchUserChannels(),
-    ]);
+    try {
+      // Fetch data from all sources (including user's available TV channels)
+      const [fs, own] = await Promise.all([
+        fetchFlashscore(sportId, dayOffset),
+        fetchYourAPI(slug, ymd),
+        fetchUserChannels(),
+      ]);
 
-    // Parse Flashscore data
-    let flashData = { tournaments: {}, events: [] };
-    if (fs.ok && fs.text) {
-      flashData = parseFlashData(fs.text);
-    }
-
-    // Filter events to only include matches within the selected day (support multi-day / in-progress)
-    const { startTs, endTs } = getDayBoundaries(dayOffset);
-    Object.values(flashData.tournaments).forEach(tournament => {
-      if (tournament.events) {
-        tournament.events = tournament.events.filter(event => {
-          const eventTs = parseInt(event.startTime) || 0;
-          const endTsEvent = parseInt(event.endTime) || eventTs;
-          if (dayOffset === 0 && (event.status === "inprogress" || event.id === "OjOKEBcN")) return true;
-          if (eventTs <= endTs && endTsEvent >= startTs) return true;
-          return eventTs >= startTs && eventTs <= endTs;
-        });
+      // Parse Flashscore data
+      let flashData = { tournaments: {}, events: [] };
+      if (fs.ok && fs.text) {
+        flashData = parseFlashData(fs.text);
       }
-    });
 
-    // Build set of manually added match IDs from user's database
-    // API returns: { items: [{match_id: "FS:2B3cTTrm"}, {match_id: "CUST:...", ...}] }
-    const manualMatchIds = new Set();
-    const apiItems = (own.ok && own.json && own.json.items) ? own.json.items : [];
-
-    apiItems.forEach(item => {
-      if (item.match_id && item.match_id.startsWith("FS:")) {
-        // Extract ID from "FS:2B3cTTrm" format
-        const id = item.match_id.replace(/^FS:/, "");
-        manualMatchIds.add(id);
-      }
-    });
-
-    // Parse custom matches (CUST:, TIM:, TOP: or missing API items) from API items
-    const flashEventIds = new Set(Object.values(flashData.tournaments).flatMap(t => (t.events || []).map(e => e.id)));
-    const customMatches = parseCustomMatches(apiItems, flashEventIds);
-
-    // Filter events: only apply Polish TV channel restriction on Football when manual matches are present.
-    // For other sports (Cricket, Tennis, Motorsport, All) show all events so nothing gets purged!
-    const hasActiveFilter = (slug === "football") && ((userChannels && Object.keys(userChannels).length > 0) || manualMatchIds.size > 0);
-    if (hasActiveFilter) {
+      // Filter events to only include matches within the selected day (support multi-day / in-progress)
+      const { startTs, endTs } = getDayBoundaries(dayOffset);
       Object.values(flashData.tournaments).forEach(tournament => {
         if (tournament.events) {
-          tournament.events = tournament.events.filter(event =>
-            hasMatchingChannels(event.tvChannelIds) || manualMatchIds.has(event.id)
-          );
-        }
-      });
-
-      // Remove empty tournaments after filtering
-      Object.keys(flashData.tournaments).forEach(tournId => {
-        if (!flashData.tournaments[tournId].events || flashData.tournaments[tournId].events.length === 0) {
-          delete flashData.tournaments[tournId];
-        }
-      });
-    }
-
-    // Count events by status (including custom matches)
-    const counts = countEventsByStatus(flashData.tournaments, customMatches);
-    const hasAnyEvents = counts.live > 0 || counts.finished > 0 || counts.upcoming > 0;
-
-    // Setup filters (only show if we have events for today/past)
-    if (dayOffset <= 0 && hasAnyEvents) {
-      setupFilters(counts);
-    } else {
-      setStatusFiltersVisible(false);
-    }
-
-    // Render matches or empty state
-    if (!hasAnyEvents) {
-      container.innerHTML = createEmptyStateHTML();
-    } else {
-      // Split tournaments by time slots and flatten into array
-      const tournamentSlots = [];
-
-      Object.entries(flashData.tournaments)
-        .filter(([_, tourn]) => tourn.events && tourn.events.length > 0)
-        .forEach(([tournId, tourn]) => {
-          tourn.id = tournId;
-
-          // Group events by 3-hour time slots
-          const timeSlots = groupEventsByTimeSlot(tourn.events);
-
-          // Create a tournament entry for each time slot
-          Object.entries(timeSlots).forEach(([slotKey, slotEvents]) => {
-            const earliestTime = Math.min(...slotEvents.map(e => parseInt(e.startTime) || Infinity));
-            const hasLive = slotEvents.some(e => e.status === "inprogress");
-            tournamentSlots.push({
-              tournament: tourn,
-              events: slotEvents,
-              earliestTime: earliestTime,
-              slotKey: slotKey,
-              hasLive: hasLive
-            });
+          tournament.events = tournament.events.filter(event => {
+            const eventTs = parseInt(event.startTime) || 0;
+            const endTsEvent = parseInt(event.endTime) || eventTs;
+            if (dayOffset === 0 && (event.status === "inprogress" || event.id === "OjOKEBcN")) return true;
+            if (eventTs <= endTs && endTsEvent >= startTs) return true;
+            return eventTs >= startTs && eventTs <= endTs;
           });
+        }
+      });
+
+      // Build set of manually added match IDs from user's database
+      // API returns: { items: [{match_id: "FS:2B3cTTrm"}, {match_id: "CUST:...", ...}] }
+      const manualMatchIds = new Set();
+      const apiItems = (own.ok && own.json && own.json.items) ? own.json.items : [];
+
+      apiItems.forEach(item => {
+        if (item.match_id && item.match_id.startsWith("FS:")) {
+          // Extract ID from "FS:2B3cTTrm" format
+          const id = item.match_id.replace(/^FS:/, "");
+          manualMatchIds.add(id);
+        }
+      });
+
+      // Parse custom matches (CUST:, TIM:, TOP: or missing API items) from API items
+      const flashEventIds = new Set(Object.values(flashData.tournaments).flatMap(t => (t.events || []).map(e => e.id)));
+      const customMatches = parseCustomMatches(apiItems, flashEventIds);
+
+      // Filter events: only apply Polish TV channel restriction on Football when manual matches are present.
+      // For other sports (Cricket, Tennis, Motorsport, All) show all events so nothing gets purged!
+      const hasActiveFilter = (slug === "football") && ((userChannels && Object.keys(userChannels).length > 0) || manualMatchIds.size > 0);
+      if (hasActiveFilter) {
+        Object.values(flashData.tournaments).forEach(tournament => {
+          if (tournament.events) {
+            tournament.events = tournament.events.filter(event =>
+              hasMatchingChannels(event.tvChannelIds) || manualMatchIds.has(event.id)
+            );
+          }
         });
 
-      // Add custom matches as a special slot (no tournament header)
-      if (customMatches.length > 0) {
-        const customEarliestTime = Math.min(...customMatches.map(e => parseInt(e.startTime) || Infinity));
-        const customHasLive = customMatches.some(e => e.status === "inprogress");
-        tournamentSlots.push({
-          tournament: null, // No tournament = custom matches
-          events: customMatches,
-          earliestTime: customEarliestTime,
-          slotKey: "custom",
-          hasLive: customHasLive,
-          isCustom: true
+        // Remove empty tournaments after filtering
+        Object.keys(flashData.tournaments).forEach(tournId => {
+          if (!flashData.tournaments[tournId].events || flashData.tournaments[tournId].events.length === 0) {
+            delete flashData.tournaments[tournId];
+          }
         });
       }
 
-      // Sort all tournament slots: live first, then by earliest start time
-      tournamentSlots.sort((a, b) => {
-        // Prioritize slots with live matches
-        if (a.hasLive && !b.hasLive) return -1;
-        if (!a.hasLive && b.hasLive) return 1;
-        // If both have live or both don't, sort by earliest time
-        return a.earliestTime - b.earliestTime;
-      });
+      // Count events by status (including custom matches)
+      const counts = countEventsByStatus(flashData.tournaments, customMatches);
+      const hasAnyEvents = counts.live > 0 || counts.finished > 0 || counts.upcoming > 0;
 
-      // Render all tournament slots
-      const tournamentsHTML = tournamentSlots
-        .map(slot => {
-          if (slot.isCustom) {
-            return renderCustomMatches(slot.events);
-          }
-          return renderTournament(slot.tournament, slot.events);
-        })
-        .join('');
+      // Setup filters (only show if we have events for today/past)
+      if (dayOffset <= 0 && hasAnyEvents) {
+        setupFilters(counts);
+      } else {
+        setStatusFiltersVisible(false);
+      }
 
-      container.innerHTML = tournamentsHTML;
+      // Render matches or empty state
+      if (!hasAnyEvents) {
+        container.innerHTML = createEmptyStateHTML();
+      } else {
+        // Split tournaments by time slots and flatten into array
+        const tournamentSlots = [];
 
-      // Apply any active filters
-      applyFilters();
+        Object.entries(flashData.tournaments)
+          .filter(([_, tourn]) => tourn.events && tourn.events.length > 0)
+          .forEach(([tournId, tourn]) => {
+            tourn.id = tournId;
 
-      // Cache live events for real-time minute updates
-      cacheLiveEvents(flashData.tournaments);
+            // Group events by 3-hour time slots
+            const timeSlots = groupEventsByTimeSlot(tourn.events);
+
+            // Create a tournament entry for each time slot
+            Object.entries(timeSlots).forEach(([slotKey, slotEvents]) => {
+              const earliestTime = Math.min(...slotEvents.map(e => parseInt(e.startTime) || Infinity));
+              const hasLive = slotEvents.some(e => e.status === "inprogress");
+              tournamentSlots.push({
+                tournament: tourn,
+                events: slotEvents,
+                earliestTime: earliestTime,
+                slotKey: slotKey,
+                hasLive: hasLive
+              });
+            });
+          });
+
+        // Add custom matches as a special slot (no tournament header)
+        if (customMatches.length > 0) {
+          const customEarliestTime = Math.min(...customMatches.map(e => parseInt(e.startTime) || Infinity));
+          const customHasLive = customMatches.some(e => e.status === "inprogress");
+          tournamentSlots.push({
+            tournament: null, // No tournament = custom matches
+            events: customMatches,
+            earliestTime: customEarliestTime,
+            slotKey: "custom",
+            hasLive: customHasLive,
+            isCustom: true
+          });
+        }
+
+        // Sort all tournament slots: live first, then by earliest start time
+        tournamentSlots.sort((a, b) => {
+          // Prioritize slots with live matches
+          if (a.hasLive && !b.hasLive) return -1;
+          if (!a.hasLive && b.hasLive) return 1;
+          // If both have live or both don't, sort by earliest time
+          return a.earliestTime - b.earliestTime;
+        });
+
+        // Render all tournament slots
+        const tournamentsHTML = tournamentSlots
+          .map(slot => {
+            if (slot.isCustom) {
+              return renderCustomMatches(slot.events);
+            }
+            return renderTournament(slot.tournament, slot.events);
+          })
+          .join('');
+
+        container.innerHTML = tournamentsHTML;
+
+        // Apply any active filters
+        applyFilters();
+
+        // Cache live events for real-time minute updates
+        cacheLiveEvents(flashData.tournaments);
+      }
+    } catch (err) {
+      console.error("Error refreshing matches:", err);
+      container.innerHTML = createEmptyStateHTML();
     }
 
     // Start/restart auto-refresh based on current day
