@@ -589,6 +589,7 @@
   window.SPORTS_CONFIG = SPORTS;
   window.getCountrySpecificSports = getCountrySpecificSports;
   window.getUserCountry = getUserCountry;
+  window.getActiveSport = getActiveSport;
 
 
   function iconUse(id, extraClass) {
@@ -994,6 +995,25 @@ async function init() {
   // Use shared SPORTS config from main module
   const SPORTS = window.SPORTS_CONFIG || [];
 
+  function getActiveSport() {
+    if (typeof window.getActiveSport === "function") {
+      return window.getActiveSport();
+    }
+    const p = location.pathname.replace(/\/+$/, "") || "/";
+    let found = null;
+    if (p === "/" || p === "/all" || p.startsWith("/all/")) {
+      found = SPORTS.find(x => x.id === "all");
+    } else if (p === "/tv" || p.startsWith("/tv/")) {
+      found = SPORTS.find(x => x.id === "tv");
+    } else if (p === "/sports/football" || p.startsWith("/sports/football")) {
+      found = SPORTS.find(x => x.id === "football");
+    } else {
+      found = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
+    }
+    const item = found || SPORTS.find(x => x.id === "all") || SPORTS[0] || { id: "all", slug: "all", sportId: 0, href: "/" };
+    return { ...item, slug: item.id || "all" };
+  }
+
   const FLASH_BASE = "https://1.newsoccers.one/2/x/feed";
   const FLASH_FSIGN = "SW9D1eZo"; // ✅ HERE  
 
@@ -1154,6 +1174,7 @@ function dayLabel(dayOffset, d) {
       const isCustomMatch = item.match_id.startsWith("CUST:") ||
                             item.match_id.startsWith("TIM:") ||
                             item.match_id.startsWith("TOP:") ||
+                            item.match_id.startsWith("BIN:") ||
                             (item.match_id.startsWith("FS:") && !flashEventIds.has(cleanId) && item.name);
       if (!isCustomMatch) return;
 
