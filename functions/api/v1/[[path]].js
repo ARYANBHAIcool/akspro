@@ -525,7 +525,10 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                     for (const it of (data.items || [])) {
                                         if (it.match_id && !seenIds.has(it.match_id)) {
                                             seenIds.add(it.match_id);
-                                            allItems.push(it);
+                                            allItems.push({
+                                                ...it,
+                                                sport: sp
+                                            });
                                         }
                                     }
                                     break;
