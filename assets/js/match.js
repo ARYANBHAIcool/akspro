@@ -1126,7 +1126,9 @@
   // Fetch match-specific channel overrides from local API
   async function fetchMatchChannelOverrides(matchID) {
     try {
-      const response = await fetch(`/api/v1/match/${matchID}`);
+      const sp = getSportFromURL() || "";
+      const url = `/api/v1/match/${encodeURIComponent(matchID)}?sport=${encodeURIComponent(sp)}`;
+      const response = await fetch(url);
       if (!response.ok) return null;
 
       const json = await response.json();

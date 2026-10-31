@@ -8,7 +8,8 @@
  */
 
 export async function onRequest(context) {
-    const url = new URL(context.request.url);
+    const request = context.request;
+    const url = new URL(request.url);
     const pathname = url.pathname.replace(/^\/api\/v1\/?/, '');
     const parts = pathname.split('/').filter(Boolean);
 
@@ -107,6 +108,11 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             const rawId = parts.slice(1).join('/');
             const cleanId = rawId.replace(/^(FS:|CUST:|TIM:|TOP:)/, '');
             const fsId = rawId.startsWith('CUST:') || rawId.startsWith('TIM:') || rawId.startsWith('TOP:') ? rawId : `FS:${cleanId}`;
+
+            const urlObj = new URL(request.url);
+            const qSport = (urlObj.searchParams.get('sport') || '').toLowerCase();
+            const qHome = urlObj.searchParams.get('home') || '';
+            const qAway = urlObj.searchParams.get('away') || '';
 
             const customUrls = [];
             const seenUrls = new Set();
@@ -286,9 +292,19 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             }
 
             // F. Smart Match: High-Speed Direct Playable Streams by League & Sport
+            if (!homeName && qHome) homeName = qHome;
+            if (!awayName && qAway) awayName = qAway;
             if (cleanId === 'OjOKEBcN' && !homeName) {
                 homeName = 'Australia';
                 awayName = 'South Africa';
+            }
+            if (cleanId === 'Sf1w7jsR' && !homeName) {
+                homeName = 'Pakistan';
+                awayName = 'Sri Lanka';
+            }
+            if (cleanId === 'f3Cirdak' && !homeName) {
+                homeName = 'Bangladesh';
+                awayName = 'West Indies';
             }
             const hLow = (homeName || '').toLowerCase();
             const aLow = (awayName || '').toLowerCase();
@@ -297,7 +313,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             const eplKeywords = ['chelsea', 'manchester', 'arsenal', 'liverpool', 'tottenham', 'newcastle',
                 'aston villa', 'west ham', 'everton', 'brighton', 'wolves', 'fulham', 'brentford',
                 'crystal palace', 'nottingham', 'leicester', 'ipswich', 'southampton', 'bournemouth'];
-            const isEPL = eplKeywords.some(k => hLow.includes(k) || aLow.includes(k));
+            const isEPL = cleanId === 'OWc65atm' || eplKeywords.some(k => hLow.includes(k) || aLow.includes(k));
             if (isEPL) {
                 addStream('Sky Sports Premier League HD', 'https://ehgembxe.cfd/kzd3hrqz-4314', 'https://ehgembxe.cfd/kzd3hrqz-4314');
                 addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
@@ -327,18 +343,35 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream('DAZN 1 Germany HD', 'https://ehgembxe.cfd/3dk8rxui-6212', 'https://ehgembxe.cfd/3dk8rxui-6212');
             }
 
-            // 4. Cricket (Aus vs SA, India, Pakistan, etc.)
-            const isAusVsSa = cleanId === 'OjOKEBcN' ||
-                              ((hLow.includes('australia') || aLow.includes('australia')) &&
-                               (hLow.includes('south africa') || aLow.includes('south africa')));
-            if (isAusVsSa || hLow.includes('cricket') || aLow.includes('cricket') || hLow.includes('india') || aLow.includes('india')) {
-                addStream('Fox Sports 501 (Cricket)', 'https://ehgembxe.cfd/imifneoj-1417', 'https://ehgembxe.cfd/imifneoj-1417');
+            // 4. Cricket (Pakistan, Sri Lanka, India, Australia, South Africa, Bangladesh, England, etc.)
+            const cricketKeywords = [
+                'cricket', 'pakistan', 'sri lanka', 'india', 'australia', 'south africa', 
+                'england', 'bangladesh', 'west indies', 'new zealand', 'afghanistan',
+                'ireland', 'scotland', 'netherlands', 'zimbabwe', 'nepal', 'uae', 'emirates',
+                'barishal', 'tigers', 'riders', 'royals', 'strikers', 'warriors', 'kings',
+                'brave', 'aces', 'firebirds', 'stags', 'volts', 'titans', 'dolphins',
+                'lions', 'super kings', 'indians', 'challengers', 'knight riders', 'capitals',
+                'super giants', 'sunrisers', 'zalmi', 'qalandars', 'gladiators',
+                'sultans', 'stars', 'renegades', 'sixers', 'scorchers',
+                'heat', 'hurricanes', 'thunder'
+            ];
+            const isCricket = cleanId === 'OjOKEBcN' || cleanId === 'Sf1w7jsR' || cleanId === 'f3Cirdak' ||
+                qSport === 'cricket' ||
+                cricketKeywords.some(k => hLow.includes(k) || aLow.includes(k));
+
+            if (isCricket) {
+                addStream('Sony Sports Ten 1 HD', 'https://ehgembxe.cfd/toarnao3-525', 'https://ehgembxe.cfd/toarnao3-525');
+                addStream('A Sports HD / PTV Sports', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
+                addStream('Sony Sports Ten 5 HD', 'https://ehgembxe.cfd/oay9sxar-3985', 'https://ehgembxe.cfd/oay9sxar-3985');
                 addStream('Sky Sports Cricket HD', 'https://ehgembxe.cfd/qfx4038p-95', 'https://ehgembxe.cfd/qfx4038p-95');
                 addStream('Willow Cricket HD', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
+                addStream('Fox Sports 501 (Cricket)', 'https://ehgembxe.cfd/imifneoj-1417', 'https://ehgembxe.cfd/imifneoj-1417');
+                addStream('SuperSport Cricket HD', 'https://ehgembxe.cfd/np4biwf3-3097', 'https://ehgembxe.cfd/np4biwf3-3097');
             }
 
             // 5. NBA / Basketball
-            const isBasketball = hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
+            const isBasketball = qSport === 'basketball' ||
+                                 hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
                                  hLow.includes('wizards') || hLow.includes('hornets') || hLow.includes('bulls') ||
                                  hLow.includes('heat') || hLow.includes('knicks') || aLow.includes('lakers') ||
                                  aLow.includes('warriors') || aLow.includes('celtics');
@@ -349,7 +382,8 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             }
 
             // 6. NFL / American Football
-            const isNFL = hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
+            const isNFL = qSport === 'american-football' || qSport === 'nfl' ||
+                          hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
                           hLow.includes('bills') || hLow.includes('steelers') || hLow.includes('patriots') ||
                           aLow.includes('packers') || aLow.includes('cowboys') || aLow.includes('chiefs');
             if (isNFL) {
@@ -359,15 +393,23 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             }
 
             // 7. Formula 1 / Motorsport
-            if (hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('f1') || aLow.includes('f1') || hLow.includes('formula 1') || aLow.includes('formula 1')) {
+            if (qSport === 'motorsport' || hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('f1') || aLow.includes('f1') || hLow.includes('formula 1') || aLow.includes('formula 1')) {
                 addStream('Sky Sports F1 HD', 'https://ehgembxe.cfd/f596f98r-6977', 'https://ehgembxe.cfd/f596f98r-6977');
                 addStream('DAZN F1 HD', 'https://ehgembxe.cfd/5rvazszz-6983', 'https://ehgembxe.cfd/5rvazszz-6983');
             }
 
             // 8. Tennis
-            if (hLow.includes('atp') || aLow.includes('atp') || hLow.includes('wta') || aLow.includes('wta') || hLow.includes('tennis') || aLow.includes('tennis')) {
+            if (qSport === 'tennis' || hLow.includes('atp') || aLow.includes('atp') || hLow.includes('wta') || aLow.includes('wta') || hLow.includes('tennis') || aLow.includes('tennis')) {
                 addStream('Sky Sports Tennis HD', 'https://ehgembxe.cfd/kkbb5x8i-1991', 'https://ehgembxe.cfd/kkbb5x8i-1991');
                 addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
+            }
+
+            // 9. Universal Fallback - Ensure NO MATCH ever shows "no sources"
+            if (customUrls.length === 0) {
+                addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
+                addStream('TNT Sports 1 HD', 'https://ehgembxe.cfd/e0lyrkhr-1002', 'https://ehgembxe.cfd/e0lyrkhr-1002');
+                addStream('ARENA SPORT 1 HD', 'https://ehgembxe.cfd/pmk4006b-7099', 'https://ehgembxe.cfd/pmk4006b-7099');
+                addStream('CANAL+ Sport HD', 'https://ehgembxe.cfd/jr4cynbo-9272', 'https://ehgembxe.cfd/jr4cynbo-9272');
             }
 
             // Prioritize direct HTTPS streams (ehgembxe.cfd, bintv, topstreamer) so Server 1 plays instantly
@@ -418,9 +460,15 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 const allItems = [];
                 const seenIds = new Set();
 
-                // Always include Australia vs South Africa Cricket Test Match
+                // Always include top priority matches (Cricket tests & Chelsea vs Man Utd)
                 seenIds.add('FS:OjOKEBcN');
                 allItems.push({ match_id: 'FS:OjOKEBcN', sport: 'cricket', name: 'Australia vs South Africa (Test)' });
+                seenIds.add('FS:Sf1w7jsR');
+                allItems.push({ match_id: 'FS:Sf1w7jsR', sport: 'cricket', name: 'Pakistan vs Sri Lanka' });
+                seenIds.add('FS:f3Cirdak');
+                allItems.push({ match_id: 'FS:f3Cirdak', sport: 'cricket', name: 'Bangladesh vs West Indies' });
+                seenIds.add('FS:OWc65atm');
+                allItems.push({ match_id: 'FS:OWc65atm', sport: 'football', name: 'Chelsea vs Manchester United' });
 
                 // Fetch multi-sport fixtures concurrently
                 await Promise.allSettled([
@@ -537,8 +585,13 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
 
             // Sport: Cricket
             if (sport === 'cricket') {
-                const cItems = [{ match_id: 'FS:OjOKEBcN', name: 'Australia vs South Africa (Test)' }];
-                const cSeen = new Set(['FS:OjOKEBcN']);
+                const cItems = [
+                    { match_id: 'FS:OjOKEBcN', name: 'Australia vs South Africa (Test)' },
+                    { match_id: 'FS:Sf1w7jsR', name: 'Pakistan vs Sri Lanka' },
+                    { match_id: 'FS:f3Cirdak', name: 'Bangladesh vs West Indies' },
+                    { match_id: 'FS:l2XddLp9', name: 'United Arab Emirates vs Netherlands' }
+                ];
+                const cSeen = new Set(['FS:OjOKEBcN', 'FS:Sf1w7jsR', 'FS:f3Cirdak', 'FS:l2XddLp9']);
                 for (const host of ['dzeko11.pk', 'strumyk.pk']) {
                     try {
                         const hostUrl = `https://${host}/api/v1/cricket/${encodeURIComponent(date)}`;

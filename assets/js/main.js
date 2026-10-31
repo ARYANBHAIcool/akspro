@@ -492,23 +492,23 @@
   // NAV config (sports) - All sports enabled with /sports/ prefix
   // ---------------------------
   const SPORTS = [
-    { id: "all",               sportId: 0,  key: "sport.all",        href: "/all",                   enabled: true  },
-    { id: "football",          sportId: 1,  key: "sport.football",   href: "/",                      enabled: true  },
+    { id: "all",               sportId: 0,  key: "sport.all",        href: "/",                      enabled: true  },
+    { id: "football",          sportId: 1,  key: "sport.football",   href: "/sports/football",       enabled: true  },
     { id: "tv",                sportId: 99, key: "sport.tv",        href: "/tv",                    enabled: true  },
-    { id: "volleyball",        sportId: 12, key: "sport.volleyball", href: "/sports/volleyball",     enabled: true  },
+    { id: "cricket",           sportId: 13, key: "sport.cricket",    href: "/sports/cricket",        enabled: true  },
     { id: "basketball",        sportId: 3,  key: "sport.basketball", href: "/sports/basketball",     enabled: true  },
-    { id: "futsal",            sportId: 11, key: "sport.futsal",     href: "/sports/futsal",         enabled: true  },
-    { id: "handball",          sportId: 7,  key: "sport.handball",   href: "/sports/handball",       enabled: true  },
-    { id: "winter-sports",     sportId: 37, key: "sport.winter",     href: "/sports/winter-sports",  enabled: true  },
     { id: "tennis",            sportId: 2,  key: "sport.tennis",     href: "/sports/tennis",         enabled: true  },
     { id: "hockey",            sportId: 4,  key: "sport.hockey",     href: "/sports/hockey",         enabled: true  },
-    { id: "mma",               sportId: 28, key: "sport.mma",        href: "/sports/mma",            enabled: true  },
-    { id: "boxing",            sportId: 16, key: "sport.boxing",     href: "/sports/boxing",         enabled: true  },
     { id: "motorsport",        sportId: 31, key: "sport.motorsport", href: "/sports/motorsport",     enabled: true  },
     { id: "american-football", sportId: 5,  key: "sport.nfl",        href: "/sports/nfl",            enabled: true  },
+    { id: "volleyball",        sportId: 12, key: "sport.volleyball", href: "/sports/volleyball",     enabled: true  },
+    { id: "futsal",            sportId: 11, key: "sport.futsal",     href: "/sports/futsal",         enabled: true  },
+    { id: "handball",          sportId: 7,  key: "sport.handball",   href: "/sports/handball",       enabled: true  },
+    { id: "mma",               sportId: 28, key: "sport.mma",        href: "/sports/mma",            enabled: true  },
+    { id: "boxing",            sportId: 16, key: "sport.boxing",     href: "/sports/boxing",         enabled: true  },
+    { id: "winter-sports",     sportId: 37, key: "sport.winter",     href: "/sports/winter-sports",  enabled: true  },
     { id: "snooker",           sportId: 15, key: "sport.snooker",    href: "/sports/snooker",        enabled: true  },
     { id: "darts",             sportId: 14, key: "sport.darts",      href: "/sports/darts",          enabled: true  },
-    { id: "cricket",           sportId: 13, key: "sport.cricket",    href: "/sports/cricket",        enabled: true  },
     { id: "cycling",           sportId: 34, key: "sport.cycling",    href: "/sports/cycling",        enabled: true  },
     { id: "golf",              sportId: 23, key: "sport.golf",       href: "/sports/golf",           enabled: true  },
     { id: "waterpolo",         sportId: 0,  key: "sport.waterpolo",  href: "/sports/waterpolo",      enabled: true  }
@@ -553,8 +553,8 @@
     const reordered = [];
     const remaining = [...sportsCopy];
 
-    // Always keep top 3 pinned: 'all', 'football', 'tv'
-    ['all', 'football', 'tv'].forEach(topId => {
+    // Always keep top pinned: 'all', 'football', 'tv', 'cricket', 'basketball'
+    ['all', 'football', 'tv', 'cricket', 'basketball'].forEach(topId => {
       const idx = remaining.findIndex(s => s.id === topId);
       if (idx !== -1) {
         reordered.push(remaining.splice(idx, 1)[0]);
@@ -608,17 +608,17 @@
 
   function getActiveSport() {
     const p = location.pathname.replace(/\/+$/, "") || "/";
-    if (p === "/all" || p.startsWith("/all/")) {
-      return SPORTS.find(x => x.id === "all") || { id: "all", sportId: 0, key: "sport.all", href: "/all", enabled: true };
+    if (p === "/" || p === "/all" || p.startsWith("/all/")) {
+      return SPORTS.find(x => x.id === "all") || { id: "all", sportId: 0, key: "sport.all", href: "/", enabled: true };
     }
     if (p === "/tv" || p.startsWith("/tv/")) {
       return SPORTS.find(x => x.id === "tv") || { id: "tv", sportId: 99, key: "sport.tv", href: "/tv", enabled: true };
     }
-    if (p === "/") {
-      return SPORTS.find(x => x.id === "football") || { id: "football", sportId: 1, key: "sport.football", href: "/", enabled: true };
+    if (p === "/sports/football" || p.startsWith("/sports/football")) {
+      return SPORTS.find(x => x.id === "football") || { id: "football", sportId: 1, key: "sport.football", href: "/sports/football", enabled: true };
     }
     const s = SPORTS.find((x) => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
-    return s || SPORTS.find(x => x.id === "football") || SPORTS[0];
+    return s || SPORTS.find(x => x.id === "all") || SPORTS[0];
   }
 
   function sportLabel(lang, sport) {
@@ -630,6 +630,7 @@
   // ---------------------------
 
   function renderDesktopSports() {
+    window.renderDesktopSports = renderDesktopSports;
     const row = document.getElementById("sportsRow");
     const moreWrap = document.getElementById("moreWrap");
     if (!row || !moreWrap) return;
@@ -844,6 +845,7 @@
     btn.dataset.mobileSportsBound = BOUND_MARKER;
 
     function render() {
+      window.renderMobileSports = render;
       const lang = normalizeLang(getLang());
       const active = getActiveSport();
       const country = getUserCountry();
@@ -883,6 +885,7 @@
       menu.style.webkitOverflowScrolling = "touch";
       menu.style.overscrollBehavior = "contain";
     }
+    window.renderMobileSports = render;
 
     function openMenu() {
       menu.classList.remove("hidden");
@@ -912,8 +915,20 @@
       return !menu.classList.contains("hidden");
     }
 
-    // keep scrolling inside menu (don’t bubble)
-    menu.addEventListener("click", (e) => e.stopPropagation());
+    // Handle clicks inside mobile menu: navigate cleanly when link tapped
+    menu.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (a && a.href) {
+        closeMenu();
+        if (typeof window.asNavigate === "function") {
+          e.preventDefault();
+          const u = new URL(a.href, window.location.origin);
+          window.asNavigate(u.pathname, u.search);
+        }
+        return;
+      }
+      e.stopPropagation();
+    });
     menu.addEventListener("touchstart", (e) => e.stopPropagation(), { passive: true });
     menu.addEventListener("wheel", (e) => e.stopPropagation(), { passive: true });
 
@@ -1029,18 +1044,18 @@ function dayLabel(dayOffset, d) {
 
   function getActiveSport() {
     const p = location.pathname.replace(/\/+$/, "") || "/";
-    if (p === "/all" || p.startsWith("/all/")) {
-      return { id: "all", slug: "all", sportId: 0, href: "/all" };
+    if (p === "/" || p === "/all" || p.startsWith("/all/")) {
+      return { id: "all", slug: "all", sportId: 0, href: "/" };
     }
     if (p === "/tv" || p.startsWith("/tv/")) {
       return { id: "tv", slug: "tv", sportId: 99, href: "/tv" };
     }
-    if (p === "/") {
-      return { id: "football", slug: "football", sportId: 1, href: "/" };
+    if (p === "/sports/football" || p.startsWith("/sports/football")) {
+      return { id: "football", slug: "football", sportId: 1, href: "/sports/football" };
     }
     const s = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
     if (s) return { id: s.id, slug: s.id, sportId: s.sportId, href: s.href };
-    return { id: "football", slug: "football", sportId: 1, href: "/" };
+    return { id: "all", slug: "all", sportId: 0, href: "/" };
   }
 
   // ============================================
@@ -2571,6 +2586,25 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
   }
 
   function setupSpanavigation() {
+    function navigate(pathname, search) {
+      const targetPath = (pathname.replace(/\/+$/, "") || "/");
+      const currentPath = (window.location.pathname.replace(/\/+$/, "") || "/");
+      const q = search || "";
+      if (currentPath !== targetPath || window.location.search !== q) {
+        window.history.pushState(null, "", targetPath + q);
+      }
+      if (typeof window.renderDesktopSports === "function") {
+        try { window.renderDesktopSports(); } catch (e) { console.warn("renderDesktopSports err:", e); }
+      }
+      if (typeof window.renderMobileSports === "function") {
+        try { window.renderMobileSports(); } catch (e) { console.warn("renderMobileSports err:", e); }
+      }
+      refresh();
+      window.scrollTo({ top: 0, behavior: "smooth" });
+    }
+
+    window.asNavigate = navigate;
+
     document.addEventListener("click", (e) => {
       const a = e.target.closest("a");
       if (!a || !a.href) return;
@@ -2582,17 +2616,20 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         const isSportOrTv = p === "/" || p === "/all" || p === "/tv" || p.startsWith("/sports/");
         if (isSportOrTv) {
           e.preventDefault();
-          if (window.location.pathname.replace(/\/+$/, "") !== p) {
-            window.history.pushState(null, "", url.pathname + url.search);
-            renderDesktopSports();
-            refresh();
-          }
+          navigate(p, url.search);
         }
-      } catch (err) {}
+      } catch (err) {
+        console.error("SPA nav err:", err);
+      }
     });
 
     window.addEventListener("popstate", () => {
-      renderDesktopSports();
+      if (typeof window.renderDesktopSports === "function") {
+        try { window.renderDesktopSports(); } catch (e) {}
+      }
+      if (typeof window.renderMobileSports === "function") {
+        try { window.renderMobileSports(); } catch (e) {}
+      }
       refresh();
     });
   }
@@ -2601,6 +2638,12 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
     bind();
     setupSearch();
     setupSpanavigation();
+    if (typeof window.renderDesktopSports === "function") {
+      try { window.renderDesktopSports(); } catch (e) {}
+    }
+    if (typeof window.renderMobileSports === "function") {
+      try { window.renderMobileSports(); } catch (e) {}
+    }
     refresh(); // This calls startLiveRefresh() at the end
 
     // Start client-side minute updater
