@@ -1147,27 +1147,33 @@ function dayLabel(dayOffset, d) {
     const now = Math.floor(Date.now() / 1000);
 
     items.forEach(item => {
-      if (!item.match_id || !item.match_id.startsWith("CUST:")) return;
+      if (!item.match_id) return;
+      const isCustomMatch = item.match_id.startsWith("CUST:") || item.match_id.startsWith("TIM:") || item.match_id.startsWith("TOP:");
+      if (!isCustomMatch) return;
 
       const id = item.match_id;
       const sport = item.sport || "football";
-      const startTs = parseInt(item.start_ts, 10) || 0;
+      const startTs = parseInt(item.start_ts, 10) || Math.floor(Date.now() / 1000);
       const name = item.name || "";
 
-      // Check if it's a single event (no " - " separator) or a match
-      const isSingleEvent = !name.includes(" - ");
       let homeTeam = "";
       let awayTeam = "";
 
-      if (isSingleEvent) {
-        // Single event like "UCL DRAW" - store full name in eventName
-        homeTeam = name.trim();
-        awayTeam = "";
-      } else {
-        // Match with two teams
+      if (name.includes(" - ")) {
         const teamParts = name.split(" - ");
         homeTeam = teamParts[0] ? teamParts[0].trim() : "Team A";
         awayTeam = teamParts[1] ? teamParts[1].trim() : "Team B";
+      } else if (name.includes(" vs ") || name.includes(" vs. ")) {
+        const teamParts = name.split(/\s*vs\.?\s*/i);
+        homeTeam = teamParts[0] ? teamParts[0].trim() : "Team A";
+        awayTeam = teamParts[1] ? teamParts[1].trim() : "Team B";
+      } else if (name.includes(" @ ")) {
+        const teamParts = name.split(" @ ");
+        awayTeam = teamParts[0] ? teamParts[0].trim() : "Away";
+        homeTeam = teamParts[1] ? teamParts[1].trim() : "Home";
+      } else {
+        homeTeam = name.trim();
+        awayTeam = "";
       }
 
       // Calculate status: use explicit item.end_ts when present, else sport-default duration

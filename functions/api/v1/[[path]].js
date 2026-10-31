@@ -2,7 +2,7 @@
  * Cloudflare Pages Function: Unified High-Performance Sports API Router
  * Supports:
  *   /api/v1/stream?token=:token      -> Edge player proxy with dual-referer bypass (dzeko11.pk / strumyk.pk)
- *   /api/v1/match/:matchId           -> Multi-source stream aggregation (dzeko11.pk + strumyk.pk + bintv + tim-streams)
+ *   /api/v1/match/:matchId           -> Multi-source stream aggregation (dzeko11.pk + strumyk.pk + bintv + tim-streams + topstreamer)
  *   /api/v1/:sport/:date             -> Multi-host daily sports fixtures (including /api/v1/all/:date for All Live & Top)
  *   /api/v1/channels                 -> 24/7 Live TV channels catalog (tim-streams + fallback)
  */
@@ -102,10 +102,11 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
 
         // ----------------------------------------------------
         // 1. MATCH DETAILS & BROADCAST STREAMS: /api/v1/match/:matchId (ULTRA-FAST PARALLEL RESOLVER)
+        // ----------------------------------------------------
         if (parts[0] === 'match' && parts.length > 1) {
             const rawId = parts.slice(1).join('/');
-            const cleanId = rawId.replace(/^(FS:|CUST:)/, '');
-            const fsId = rawId.startsWith('CUST:') ? rawId : `FS:${cleanId}`;
+            const cleanId = rawId.replace(/^(FS:|CUST:|TIM:|TOP:)/, '');
+            const fsId = rawId.startsWith('CUST:') || rawId.startsWith('TIM:') || rawId.startsWith('TOP:') ? rawId : `FS:${cleanId}`;
 
             const customUrls = [];
             const seenUrls = new Set();
@@ -147,17 +148,21 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 }
             }
 
-            // Concurrently query GraphQL, Dzeko, Strumyk, and BinTV in parallel (Sub-1s speed)
+            // Concurrently query GraphQL, Dzeko, Strumyk, BinTV, Tim-Streams, and TopStreamer
             const gqlUrl = `https://2.ds.lsapp.eu/pq_graphql?_hash=dsof&eventId=${cleanId}&projectId=2`;
             const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
             const strumykUrl = `https://strumyk.pk/api/v1/match/FS:${cleanId}`;
             const bintvUrl = `https://bintvjson.lovable.app/api/public/bintvjson`;
+            const timLiveUrl = `https://tim-streams.com/api/live-upcoming`;
+            const timChanUrl = `https://tim-streams.com/api/channels`;
 
-            const [gqlRes, dzekoRes, strumykRes, bintvRes] = await Promise.allSettled([
+            const [gqlRes, dzekoRes, strumykRes, bintvRes, timLiveRes, timChanRes] = await Promise.allSettled([
                 fastFetch(gqlUrl, { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }, 2000),
                 fastFetch(dzekoUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://dzeko11.pk/' }, 2200),
                 fastFetch(strumykUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://strumyk.pk/' }, 2200),
-                fastFetch(bintvUrl, { 'Accept': 'application/json' }, 1800)
+                fastFetch(bintvUrl, { 'Accept': 'application/json' }, 1800),
+                fastFetch(timLiveUrl, { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 2000),
+                fastFetch(timChanUrl, { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 1800)
             ]);
 
             // A. Parse team names from GraphQL
@@ -172,6 +177,23 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                         if (p?.type?.side === 'AWAY') awayName = p?.name || '';
                     }
                 } catch (e) {}
+            }
+
+            // Special handle for TIM: or TOP: IDs
+            if (rawId.startsWith('TIM:')) {
+                const decoded = decodeURIComponent(cleanId);
+                const parts = decoded.split(/\s*(?:vs\.?|@|-)\s*/i);
+                homeName = parts[0] || decoded;
+                awayName = parts[1] || '';
+            } else if (rawId.startsWith('TOP:')) {
+                const team = cleanId.replace(/^(nba_|nfl_)/, '');
+                homeName = team.toUpperCase();
+                awayName = '';
+                if (cleanId.startsWith('nba_')) {
+                    addStream(`TopStreamer HD (NBA)`, `https://topstreamer.site/nba/${team}`, `https://topstreamer.site/nba/${team}`);
+                } else if (cleanId.startsWith('nfl_')) {
+                    addStream(`TopStreamer HD (NFL)`, `https://topstreamer.site/nfl/${team}`, `https://topstreamer.site/nfl/${team}`);
+                }
             }
 
             // B. Parse Dzeko & Strumyk multi-mirror streams
@@ -212,7 +234,58 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // D. Smart Match: Cricket & Special Sport Channels (e.g. Australia vs South Africa)
+            // D. Match against Tim-Streams Live & Upcoming API (All Sports Automation)
+            if (timLiveRes.status === 'fulfilled' && timLiveRes.value && timLiveRes.value.ok) {
+                try {
+                    const tLiveData = await timLiveRes.value.json();
+                    const tEvents = tLiveData.events || [];
+                    const hLow = (homeName || '').toLowerCase();
+                    const aLow = (awayName || '').toLowerCase();
+
+                    for (const ev of tEvents) {
+                        const evName = (ev.name || '').toLowerCase();
+                        let isMatch = false;
+                        if (rawId.startsWith('TIM:') && evName.includes(cleanId.toLowerCase())) {
+                            isMatch = true;
+                        } else if (hLow.length > 3 && evName.includes(hLow)) {
+                            isMatch = true;
+                        } else if (aLow.length > 3 && evName.includes(aLow)) {
+                            isMatch = true;
+                        }
+
+                        if (isMatch) {
+                            for (const s of (ev.streams || [])) {
+                                if (s.url) addStream(`TimStreams (${s.name || 'Live Feed'})`, s.url, s.url);
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // E. Match against Tim-Streams 24/7 Channels if broadcasters match
+            if (timChanRes.status === 'fulfilled' && timChanRes.value && timChanRes.value.ok) {
+                try {
+                    const tChanData = await timChanRes.value.json();
+                    const channels = tChanData.channels || [];
+                    const hLow = (homeName || '').toLowerCase();
+                    const aLow = (awayName || '').toLowerCase();
+
+                    for (const ch of channels) {
+                        const chName = (ch.name || '').toLowerCase();
+                        let matchesChannel = false;
+                        if (hLow.length > 3 && chName.includes(hLow)) matchesChannel = true;
+                        if (aLow.length > 3 && chName.includes(aLow)) matchesChannel = true;
+
+                        if (matchesChannel) {
+                            for (const s of (ch.streams || [])) {
+                                if (s.url) addStream(`${ch.name} (TV Feed)`, s.url, s.url);
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // F. Smart Match: Cricket & Special Sport Channels (e.g. Australia vs South Africa)
             if (cleanId === 'OjOKEBcN' && !homeName) {
                 homeName = 'Australia';
                 awayName = 'South Africa';
@@ -226,7 +299,25 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             if (isAusVsSa || hLow.includes('cricket') || aLow.includes('cricket')) {
                 addStream('Fox Sports 501 (Cricket)', 'https://ehgembxe.cfd/imifneoj-1417', 'https://ehgembxe.cfd/imifneoj-1417');
                 addStream('Sky Sports Cricket', 'https://ehgembxe.cfd/qfx4038p-95', 'https://ehgembxe.cfd/qfx4038p-95');
-                addStream('Willow Cricket', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
+                addStream('Willow Cricket HD', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
+            }
+
+            // G. TopStreamer Match for NBA / NFL games
+            const isBasketball = hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
+                                 hLow.includes('wizards') || hLow.includes('hornets') || hLow.includes('bulls') ||
+                                 hLow.includes('heat') || hLow.includes('knicks') || aLow.includes('lakers') ||
+                                 aLow.includes('warriors') || aLow.includes('celtics');
+            if (isBasketball) {
+                const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nba').toLowerCase();
+                addStream(`TopStreamer HD (NBA)`, `https://topstreamer.site/nba/${team}`, `https://topstreamer.site/nba/${team}`);
+            }
+
+            const isNFL = hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
+                          hLow.includes('bills') || hLow.includes('steelers') || hLow.includes('patriots') ||
+                          aLow.includes('packers') || aLow.includes('cowboys') || aLow.includes('chiefs');
+            if (isNFL) {
+                const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nfl').toLowerCase();
+                addStream(`TopStreamer HD (NFL)`, `https://topstreamer.site/nfl/${team}`, `https://topstreamer.site/nfl/${team}`);
             }
 
             const matchHeaders = {
@@ -242,54 +333,143 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             }), { status: 200, headers: matchHeaders });
         }
 
+        // ----------------------------------------------------
         // 2. SPORT SCHEDULE / MATCHES LIST: /api/v1/:sport/:date
         // ----------------------------------------------------
         if (parts.length === 2) {
             const [sport, date] = parts;
+
+            // Fast fetch helper
+            async function fastFetch2(u, h = {}, tMs = 2500) {
+                const ctrl = new AbortController();
+                const tid = setTimeout(() => ctrl.abort(), tMs);
+                try {
+                    const r = await fetch(u, { headers: h, signal: ctrl.signal });
+                    clearTimeout(tid);
+                    return r;
+                } catch (e) {
+                    clearTimeout(tid);
+                    return null;
+                }
+            }
 
             // SPECIAL: /api/v1/all/:date - Unified Live & Top Matches across all sports
             if (sport === 'all') {
                 const allSports = ['football', 'cricket', 'basketball', 'motorsport', 'hockey', 'tennis', 'volleyball', 'american-football'];
                 const allItems = [];
                 const seenIds = new Set();
-                seenIds.add('FS:OjOKEBcN');
-                allItems.push({ match_id: 'FS:OjOKEBcN' });
 
-                await Promise.allSettled(allSports.map(async (sp) => {
-                    for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                // Always include Australia vs South Africa Cricket Test Match
+                seenIds.add('FS:OjOKEBcN');
+                allItems.push({ match_id: 'FS:OjOKEBcN', sport: 'cricket', name: 'Australia vs South Africa (Test)' });
+
+                // Fetch multi-sport fixtures concurrently
+                await Promise.allSettled([
+                    // A. Query Dzeko & Strumyk across all sports
+                    ...allSports.map(async (sp) => {
+                        for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                            try {
+                                const hostUrl = `https://${host}/api/v1/${encodeURIComponent(sp)}/${encodeURIComponent(date)}`;
+                                const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2000);
+                                if (resp && resp.ok) {
+                                    const data = await resp.json();
+                                    for (const it of (data.items || [])) {
+                                        if (it.match_id && !seenIds.has(it.match_id)) {
+                                            seenIds.add(it.match_id);
+                                            allItems.push(it);
+                                        }
+                                    }
+                                    break;
+                                }
+                            } catch (err) {}
+                        }
+                    }),
+                    // B. Query Tim-Streams Live & Upcoming API
+                    (async () => {
                         try {
-                            const hostUrl = `https://${host}/api/v1/${encodeURIComponent(sp)}/${encodeURIComponent(date)}`;
-                            const resp = await fetch(hostUrl, {
-                                headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }
-                            });
-                            if (resp.ok) {
-                                const data = await resp.json();
-                                for (const it of (data.items || [])) {
-                                    if (it.match_id && !seenIds.has(it.match_id)) {
-                                        seenIds.add(it.match_id);
-                                        allItems.push(it);
+                            const tRes = await fastFetch2('https://tim-streams.com/api/live-upcoming', { 'User-Agent': 'Mozilla/5.0' }, 2200);
+                            if (tRes && tRes.ok) {
+                                const tData = await tRes.json();
+                                for (const ev of (tData.events || [])) {
+                                    const tId = `TIM:${encodeURIComponent(ev.name || 'Event')}`;
+                                    if (!seenIds.has(tId)) {
+                                        seenIds.add(tId);
+                                        allItems.push({
+                                            match_id: tId,
+                                            name: ev.name,
+                                            sport: 'other',
+                                            start_ts: Math.floor(Date.now() / 1000)
+                                        });
                                     }
                                 }
-                                break;
                             }
-                        } catch (err) {}
-                    }
-                }));
+                        } catch (e) {}
+                    })(),
+                    // C. Query TopStreamer NBA & NFL Schedules
+                    (async () => {
+                        try {
+                            const [nbaRes, nflRes] = await Promise.allSettled([
+                                fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200),
+                                fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200)
+                            ]);
+                            if (nbaRes.status === 'fulfilled' && nbaRes.value && nbaRes.value.ok) {
+                                const html = await nbaRes.value.text();
+                                const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
+                                let match;
+                                while ((match = re.exec(html)) !== null) {
+                                    const [, gid, away, home] = match;
+                                    const mId = `TOP:nba_${home.toLowerCase().trim()}`;
+                                    if (!seenIds.has(mId)) {
+                                        seenIds.add(mId);
+                                        allItems.push({
+                                            match_id: mId,
+                                            name: `${away} - ${home}`,
+                                            sport: 'basketball',
+                                            start_ts: Math.floor(Date.now() / 1000)
+                                        });
+                                    }
+                                }
+                            }
+                            if (nflRes.status === 'fulfilled' && nflRes.value && nflRes.value.ok) {
+                                const html2 = await nflRes.value.text();
+                                const re2 = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
+                                let match2;
+                                while ((match2 = re2.exec(html2)) !== null) {
+                                    const [, gid2, away2, home2] = match2;
+                                    const mId2 = `TOP:nfl_${home2.toLowerCase().trim()}`;
+                                    if (!seenIds.has(mId2)) {
+                                        seenIds.add(mId2);
+                                        allItems.push({
+                                            match_id: mId2,
+                                            name: `${away2} - ${home2}`,
+                                            sport: 'american-football',
+                                            start_ts: Math.floor(Date.now() / 1000)
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (e) {}
+                    })()
+                ]);
 
                 return new Response(JSON.stringify({ date: date, items: allItems }), {
                     status: 200,
-                    headers: corsHeaders
+                    headers: {
+                        ...corsHeaders,
+                        'Cache-Control': 'public, max-age=30, stale-while-revalidate=120'
+                    }
                 });
             }
 
+            // Sport: Cricket
             if (sport === 'cricket') {
-                const cItems = [{ match_id: 'FS:OjOKEBcN' }];
+                const cItems = [{ match_id: 'FS:OjOKEBcN', name: 'Australia vs South Africa (Test)' }];
                 const cSeen = new Set(['FS:OjOKEBcN']);
                 for (const host of ['dzeko11.pk', 'strumyk.pk']) {
                     try {
-                        const hostUrl = https://System.Management.Automation.Internal.Host.InternalHost/api/v1/cricket/;
-                        const resp = await fetch(hostUrl, { headers: { 'User-Agent': 'Mozilla/5.0', 'Referer': https://System.Management.Automation.Internal.Host.InternalHost/ } });
-                        if (resp.ok) {
+                        const hostUrl = `https://${host}/api/v1/cricket/${encodeURIComponent(date)}`;
+                        const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2000);
+                        if (resp && resp.ok) {
                             const data = await resp.json();
                             for (const it of (data.items || [])) {
                                 if (it.match_id && !cSeen.has(it.match_id)) {
@@ -306,19 +486,98 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 });
             }
 
+            // Sport: Basketball (Add TopStreamer NBA games)
+            if (sport === 'basketball') {
+                const bItems = [];
+                const bSeen = new Set();
+                for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                    try {
+                        const hostUrl = `https://${host}/api/v1/basketball/${encodeURIComponent(date)}`;
+                        const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2000);
+                        if (resp && resp.ok) {
+                            const data = await resp.json();
+                            for (const it of (data.items || [])) {
+                                if (it.match_id && !bSeen.has(it.match_id)) {
+                                    bSeen.add(it.match_id);
+                                    bItems.push(it);
+                                }
+                            }
+                            break;
+                        }
+                    } catch (e) {}
+                }
+                // Also parse topstreamer NBA schedule
+                try {
+                    const topRes = await fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
+                    if (topRes && topRes.ok) {
+                        const html = await topRes.text();
+                        const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
+                        let m;
+                        while ((m = re.exec(html)) !== null) {
+                            const [, gid, away, home] = m;
+                            const tId = `TOP:nba_${home.toLowerCase().trim()}`;
+                            if (!bSeen.has(tId)) {
+                                bSeen.add(tId);
+                                bItems.push({
+                                    match_id: tId,
+                                    name: `${away} - ${home}`,
+                                    sport: 'basketball',
+                                    start_ts: Math.floor(Date.now() / 1000)
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                return new Response(JSON.stringify({ date: date, items: bItems }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            }
+
+            // Sport: American Football (Add TopStreamer NFL games)
+            if (sport === 'american-football') {
+                const nflItems = [];
+                const nflSeen = new Set();
+                try {
+                    const topRes = await fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
+                    if (topRes && topRes.ok) {
+                        const html = await topRes.text();
+                        const re = /<div class="item[^"]*game[^"]*"[^>]*data-id="([^"]*)"[^>]*>[\s\S]*?<div class="away"[\s\S]*?<div class="name">([^<]+)<\/div>[\s\S]*?<div class="home"[\s\S]*?<div class="name">([^<]+)<\/div>/g;
+                        let m;
+                        while ((m = re.exec(html)) !== null) {
+                            const [, gid, away, home] = m;
+                            const tId = `TOP:nfl_${home.toLowerCase().trim()}`;
+                            if (!nflSeen.has(tId)) {
+                                nflSeen.add(tId);
+                                nflItems.push({
+                                    match_id: tId,
+                                    name: `${away} - ${home}`,
+                                    sport: 'american-football',
+                                    start_ts: Math.floor(Date.now() / 1000)
+                                });
+                            }
+                        }
+                    }
+                } catch (e) {}
+
+                return new Response(JSON.stringify({ date: date, items: nflItems }), {
+                    status: 200,
+                    headers: corsHeaders
+                });
+            }
+
             // Try Dzeko and Strumyk daily sport API
             for (const host of ['dzeko11.pk', 'strumyk.pk']) {
                 try {
                     const hostUrl = `https://${host}/api/v1/${encodeURIComponent(sport)}/${encodeURIComponent(date)}`;
-                    const resp = await fetch(hostUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                            'Referer': `https://${host}/`,
-                            'Accept': 'application/json'
-                        }
-                    });
+                    const resp = await fastFetch2(hostUrl, {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                        'Referer': `https://${host}/`,
+                        'Accept': 'application/json'
+                    }, 2200);
 
-                    if (resp.ok) {
+                    if (resp && resp.ok) {
                         const data = await resp.json();
                         if (data && Array.isArray(data.items) && data.items.length > 0) {
                             return new Response(JSON.stringify(data), { status: 200, headers: corsHeaders });
@@ -337,16 +596,14 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
 
             try {
                 const fsFeedUrl = `https://1.newsoccers.one/2/x/feed/f_${sportId}_0_2_en_1`;
-                const fsResp = await fetch(fsFeedUrl, {
-                    headers: {
-                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
-                        'X-Fsign': 'SW9D1eZo',
-                        'Origin': 'https://dzeko11.pk',
-                        'Referer': 'https://dzeko11.pk/'
-                    }
-                });
+                const fsResp = await fastFetch2(fsFeedUrl, {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
+                    'X-Fsign': 'SW9D1eZo',
+                    'Origin': 'https://dzeko11.pk',
+                    'Referer': 'https://dzeko11.pk/'
+                }, 2500);
 
-                if (fsResp.ok) {
+                if (fsResp && fsResp.ok) {
                     const text = await fsResp.text();
                     const events = text.split('~AA÷');
                     const items = [];
@@ -354,7 +611,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     for (let i = 1; i < events.length; i++) {
                         const ev = events[i];
                         const evId = ev.split('¬')[0];
-                        if (ev.includes('AL÷') || ev.includes('AB÷2')) {
+                        if (evId) {
                             items.push({ match_id: `FS:${evId}` });
                         }
                     }
@@ -380,45 +637,57 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     headers: { 'User-Agent': 'Mozilla/5.0' }
                 });
                 if (timRes.ok) {
-                    const raw = await timRes.json();
-                    const channels = raw.channels || [];
-                    const genres = {};
-                    for (const g of (raw.genres || [])) genres[g.id] = g.name;
+                    const data = await timRes.json();
+                    const channels = data.channels || [];
+                    const items = channels.map(c => ({
+                        id: c.url || c.name,
+                        name: c.name,
+                        poster: c.logo || '/assets/favicon-96x96.png',
+                        category: (data.genres || []).find(g => g.id === c.genre)?.name || 'Sports',
+                        status: '24/7',
+                        streams: (c.streams || []).map(s => ({
+                            name: s.name || 'Server 1',
+                            url: s.url
+                        }))
+                    }));
 
-                    const formatted = [];
-                    for (const c of channels) {
-                        const streams = [];
-                        for (const s of (c.streams || [])) {
-                            if (s.url) streams.push({ name: s.name || 'Live Feed', url: s.url });
+                    return new Response(JSON.stringify({
+                        items: items,
+                        counts: { channels: items.length }
+                    }), {
+                        status: 200,
+                        headers: {
+                            ...corsHeaders,
+                            'Cache-Control': 'public, max-age=300, stale-while-revalidate=600'
                         }
-                        if (streams.length > 0) {
-                            formatted.push({
-                                id: c.url || `ch-${formatted.length + 1}`,
-                                name: c.name,
-                                poster: c.logo || '/assets/favicon-96x96.png',
-                                category: genres[c.genre] || 'Sports',
-                                status: '24/7',
-                                flag: c.flag || '',
-                                streams: streams
-                            });
-                        }
-                    }
-                    if (formatted.length > 0) {
-                        return new Response(JSON.stringify({ items: formatted, counts: { channels: formatted.length } }), {
-                            status: 200,
-                            headers: corsHeaders
-                        });
-                    }
+                    });
                 }
-            } catch (timErr) {}
+            } catch (err) {}
 
-            return new Response(JSON.stringify({ items: [] }), { status: 200, headers: corsHeaders });
+            // Fallback: local channels.json
+            const origin = new URL(context.request.url).origin;
+            const fallbackRes = await fetch(`${origin}/assets/channels.json`);
+            if (fallbackRes.ok) {
+                const fbData = await fallbackRes.json();
+                return new Response(JSON.stringify({
+                    items: fbData['24/7 Channels'] || [],
+                    counts: { channels: (fbData['24/7 Channels'] || []).length }
+                }), { status: 200, headers: corsHeaders });
+            }
+
+            return new Response(JSON.stringify({ items: [], counts: { channels: 0 } }), {
+                status: 200,
+                headers: corsHeaders
+            });
         }
 
-        return new Response(JSON.stringify({ error: 'Endpoint not found', parts }), { status: 404, headers: corsHeaders });
+        return new Response(JSON.stringify({ error: 'Endpoint not found' }), {
+            status: 404,
+            headers: corsHeaders
+        });
 
-    } catch (globalErr) {
-        return new Response(JSON.stringify({ error: globalErr.message || 'Internal edge error' }), {
+    } catch (err) {
+        return new Response(JSON.stringify({ error: err.message }), {
             status: 500,
             headers: corsHeaders
         });
