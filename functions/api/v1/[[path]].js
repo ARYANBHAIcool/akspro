@@ -138,7 +138,8 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
         // 1. MATCH DETAILS & BROADCAST STREAMS: /api/v1/match/:matchId (ULTRA-FAST PARALLEL RESOLVER)
         // ----------------------------------------------------
         if (parts[0] === 'match' && parts.length > 1) {
-            const rawId = parts.slice(1).join('/');
+            let rawId = parts.slice(1).join('/');
+            try { rawId = decodeURIComponent(rawId); } catch (e) {}
             let cleanId = rawId.replace(/^(FS:|CUST:|TIM:|TOP:|BIN:)/, '');
             try { cleanId = decodeURIComponent(cleanId); } catch (e) {}
             const fsId = rawId.startsWith('CUST:') || rawId.startsWith('TIM:') || rawId.startsWith('TOP:') || rawId.startsWith('BIN:') ? rawId : `FS:${cleanId}`;
