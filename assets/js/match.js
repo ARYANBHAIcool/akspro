@@ -410,7 +410,7 @@
     function getTheme() {
       const v = safeLocalStorageGet(storageKey);
       if (v === "light" || v === "dark") return v;
-      return "light";
+      return "dark";
     }
 
     function setTheme(btn, theme) {
@@ -527,10 +527,13 @@
     const reordered = [];
     const remaining = [...sportsCopy];
 
-    const footballIdx = remaining.findIndex(s => s.id === "football");
-    if (footballIdx !== -1) {
-      reordered.push(remaining.splice(footballIdx, 1)[0]);
-    }
+    // Always keep top 3 pinned: 'all', 'football', 'tv'
+    ['all', 'football', 'tv'].forEach(topId => {
+      const idx = remaining.findIndex(s => s.id === topId);
+      if (idx !== -1) {
+        reordered.push(remaining.splice(idx, 1)[0]);
+      }
+    });
 
     const sortedByPriority = Object.entries(priorities)
       .sort(([, a], [, b]) => a - b)
@@ -2139,7 +2142,12 @@ const enabledChannels = channels
   }
 
   // Dedicated Match Stream Player Controls
-  window.switchMatchPlayer = function(btn, streamName, streamUrl) {
+  window.switchMatchPlayer = function(btn, explicitName, explicitUrl) {
+    if (!btn && !explicitUrl) return;
+    const streamUrl = (btn && btn.getAttribute("data-stream-url")) || explicitUrl;
+    const streamName = (btn && btn.getAttribute("data-stream-name")) || explicitName || "Live Stream";
+    const directUrl = (btn && btn.getAttribute("data-direct-url")) || streamUrl;
+
     const iframe = document.getElementById("matchPlayerIframe");
     if (iframe && streamUrl) {
       iframe.src = streamUrl;
@@ -2153,9 +2161,14 @@ const enabledChannels = channels
       const matchID = getMatchIDFromURL();
       theaterBtn.href = `/watch/?id=${matchID}&src=${encodeURIComponent(streamUrl)}&title=${encodeURIComponent(document.title)}`;
     }
-    // Update button active state
+    const popoutBtn = document.getElementById("directPopoutBtn");
+    if (popoutBtn && directUrl) {
+      popoutBtn.href = directUrl;
+    }
+
+    // Update active class on pills
     document.querySelectorAll(".match-server-pill").forEach(p => {
-      p.classList.remove("bg-primary", "text-white", "border-primary", "shadow-md", "shadow-primary/20");
+      p.classList.remove("active", "bg-primary", "border-primary");
       p.classList.add("bg-surface-secondary", "text-foreground", "border-border/50");
       const dot = p.querySelector(".indicator-dot");
       if (dot) {
@@ -2164,8 +2177,8 @@ const enabledChannels = channels
       }
     });
     if (btn) {
-      btn.classList.add("bg-primary", "text-white", "border-primary", "shadow-md", "shadow-primary/20");
-      btn.classList.remove("bg-surface-secondary", "text-foreground", "border-border/50");
+      btn.classList.add("active", "bg-primary", "border-primary");
+      btn.classList.remove("bg-surface-secondary");
       const dot = btn.querySelector(".indicator-dot");
       if (dot) {
         dot.classList.add("bg-white");
@@ -2264,6 +2277,7 @@ const enabledChannels = channels
       const activeStream = allStreams[0];
       const matchTitle = document.title || 'Live Match';
       const theaterUrl = `/watch/?id=${matchID}&src=${encodeURIComponent(activeStream.url)}&title=${encodeURIComponent(matchTitle)}`;
+      const initialDirect = activeStream.direct_url || activeStream.url;
 
       html += `
         <!-- Main Dedicated Player Stage -->
@@ -2293,6 +2307,10 @@ const enabledChannels = channels
                 </svg>
                 <span class="hidden sm:inline">Fullscreen</span>
               </button>
+              <a id="directPopoutBtn" href="${initialDirect}" target="_blank" rel="noopener noreferrer" title="Open Stream in New Tab"
+                 class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground transition-all hover:text-primary">
+                <span>Pop-Out ↗</span>
+              </a>
               <a id="theaterModeBtn" href="${theaterUrl}" title="Open Full Theater Player"
                  class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-primary hover:bg-primary/90 text-white text-xs font-semibold shadow-sm transition-all">
                 <span>Theater Player</span>
@@ -2334,28 +2352,41 @@ const enabledChannels = channels
       `;
 
       allStreams.forEach((s, idx) => {
-        const safeName = (s.name || `Server ${idx + 1}`).replace(/'/g, "\'");
         const isFirst = idx === 0;
+        const sName = s.name || `Server ${idx + 1}`;
+        const escapedName = sName.replace(/"/g, '&quot;');
+        const escapedUrl = (s.url || '').replace(/"/g, '&quot;');
+        const directUrl = (s.direct_url || s.url || '').replace(/"/g, '&quot;');
+
+        const flagMatch = sName.match(/\b(RS|PT|ES|UK|GB|FR|DE|IT|US|PL|AU|CA|NL|BE|CH|AT|TR|BR|MX|AR)\b/i);
+        const flagCode = flagMatch ? flagMatch[1].toLowerCase() : '';
 
         if (isClickable) {
           html += `
-            <button type="button"
-                    onclick="window.switchMatchPlayer(this, '${safeName}', '${s.url}')"
-                    class="match-server-pill inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${isFirst ? 'bg-primary text-white border-primary shadow-md shadow-primary/20' : 'bg-surface-secondary hover:bg-surface-secondary/80 text-foreground border-border/50'}">
-              <span class="indicator-dot w-2 h-2 rounded-full ${isFirst ? 'bg-white' : 'bg-emerald-400'}"></span>
-              <span>${s.name}</span>
-            </button>
+            <div class="inline-flex items-center gap-1">
+              <button type="button"
+                      onclick="window.switchMatchPlayer(this)"
+                      data-stream-url="${escapedUrl}"
+                      data-stream-name="${escapedName}"
+                      data-direct-url="${directUrl}"
+                      class="match-server-pill ${isFirst ? 'active bg-primary border-primary' : 'bg-surface-secondary border-border/50'}">
+                <span class="indicator-dot ${isFirst ? 'bg-white' : 'bg-emerald-400'}"></span>
+                ${flagCode ? `<img src="https://flagcdn.com/16x12/${flagCode}.png" alt="${flagCode}" class="w-4 h-3 object-cover rounded-sm inline-block" onerror="this.style.display='none'">` : ''}
+                <span class="font-bold">${sName}</span>
+                <span class="text-[10px] px-1 py-0.2 rounded bg-black/30 text-blue-300 font-mono">HD</span>
+              </button>
+              <a href="${directUrl}" target="_blank" rel="noopener noreferrer" title="Open Stream in New Tab"
+                 class="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-muted-foreground hover:text-foreground border border-border/40 text-xs transition-colors">
+                &nearr;
+              </a>
+            </div>
           `;
         } else {
           html += `
             <button type="button" onclick="showBroadcastModal(${minutesUntilAvailable})"
-                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-surface-secondary/50 text-xs font-medium border border-border/30 cursor-not-allowed opacity-60">
-              <span class="w-2 h-2 rounded-full bg-muted-foreground"></span>
-              <span>${s.name}</span>
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="w-3 h-3 text-muted-foreground">
-                <path d="M12 22C17.5228 22 22 17.5228 22 12C22 6.47715 17.5228 2 12 2C6.47715 2 2 6.47715 2 12C2 17.5228 6.47715 22 12 22Z" stroke="currentColor" stroke-width="1.5"></path>
-                <path d="M12 8V12L14.5 14.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-              </svg>
+                    class="match-server-pill opacity-60 cursor-not-allowed">
+              <span class="indicator-dot bg-muted-foreground"></span>
+              <span>${sName}</span>
             </button>
           `;
         }

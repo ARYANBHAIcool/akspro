@@ -451,7 +451,7 @@
     function getTheme() {
       const v = safeLocalStorageGet(storageKey);
       if (v === "light" || v === "dark") return v;
-      return "light";
+      return "dark";
     }
 
     function setTheme(btn, theme) {
@@ -553,11 +553,13 @@
     const reordered = [];
     const remaining = [...sportsCopy];
 
-    // Always keep football first
-    const footballIdx = remaining.findIndex(s => s.id === "football");
-    if (footballIdx !== -1) {
-      reordered.push(remaining.splice(footballIdx, 1)[0]);
-    }
+    // Always keep top 3 pinned: 'all', 'football', 'tv'
+    ['all', 'football', 'tv'].forEach(topId => {
+      const idx = remaining.findIndex(s => s.id === topId);
+      if (idx !== -1) {
+        reordered.push(remaining.splice(idx, 1)[0]);
+      }
+    });
 
     // Sort remaining sports by priority
     const sortedByPriority = Object.entries(priorities)
@@ -606,8 +608,17 @@
 
   function getActiveSport() {
     const p = location.pathname.replace(/\/+$/, "") || "/";
+    if (p === "/all" || p.startsWith("/all/")) {
+      return SPORTS.find(x => x.id === "all") || { id: "all", sportId: 0, key: "sport.all", href: "/all", enabled: true };
+    }
+    if (p === "/tv" || p.startsWith("/tv/")) {
+      return SPORTS.find(x => x.id === "tv") || { id: "tv", sportId: 99, key: "sport.tv", href: "/tv", enabled: true };
+    }
+    if (p === "/") {
+      return SPORTS.find(x => x.id === "football") || { id: "football", sportId: 1, key: "sport.football", href: "/", enabled: true };
+    }
     const s = SPORTS.find((x) => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
-    return s || SPORTS[0];
+    return s || SPORTS.find(x => x.id === "football") || SPORTS[0];
   }
 
   function sportLabel(lang, sport) {
@@ -1017,23 +1028,19 @@ function dayLabel(dayOffset, d) {
 }
 
   function getActiveSport() {
-    const activeEl =
-      document.querySelector('.sport-item[aria-current="page"]') ||
-      document.querySelector('.sport-item.active');
-
-    if (activeEl) {
-      const href = (activeEl.getAttribute("href") || "").trim() || "/";
-      const sid  = parseInt(activeEl.getAttribute("data-sportid") || "", 10);
-
-      const s = SPORTS.find(x => x.href === href) || SPORTS.find(x => x.sportId === sid);
-      const slug = s?.id || (href === "/" ? "football" : href.replace(/^\/+/, "").split("/")[0] || "football");
-      const sportId = Number.isFinite(sid) ? sid : (s?.sportId || 1);
-      return { slug, sportId };
-    }
-
     const p = location.pathname.replace(/\/+$/, "") || "/";
-    const s = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href))) || SPORTS[0];
-    return { slug: s.id, sportId: s.sportId };
+    if (p === "/all" || p.startsWith("/all/")) {
+      return { id: "all", slug: "all", sportId: 0, href: "/all" };
+    }
+    if (p === "/tv" || p.startsWith("/tv/")) {
+      return { id: "tv", slug: "tv", sportId: 99, href: "/tv" };
+    }
+    if (p === "/") {
+      return { id: "football", slug: "football", sportId: 1, href: "/" };
+    }
+    const s = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
+    if (s) return { id: s.id, slug: s.id, sportId: s.sportId, href: s.href };
+    return { id: "football", slug: "football", sportId: 1, href: "/" };
   }
 
   // ============================================
@@ -1056,12 +1063,13 @@ function dayLabel(dayOffset, d) {
         const data = await res.json();
 
         // Handle different response formats
-        // API returns: { items: [{id, FS: "TVI2569", name: "DAZN 2", alpha2: "PT"}, ...] }
         let channelsArray = [];
         if (Array.isArray(data)) {
           channelsArray = data;
         } else if (data && Array.isArray(data.items)) {
           channelsArray = data.items;
+        } else if (data && Array.isArray(data["24/7 Channels"])) {
+          channelsArray = data["24/7 Channels"];
         } else if (data && Array.isArray(data.channels)) {
           channelsArray = data.channels;
         } else if (data && Array.isArray(data.data)) {
@@ -1239,14 +1247,24 @@ function dayLabel(dayOffset, d) {
     `;
   }
 
-  // Flashscore fetch with CORS edge proxy fallback
+  // Flashscore fetch with CORS edge proxy (ultra-fast, zero-CORS stall)
   async function fetchSingleFlash(sId, dayOffset) {
     const feedKey = `f_${sId}_${dayOffset}_2_en_1`;
-    const url = flashUrl(sId, dayOffset);
+    const proxyUrl = `/api/feed?path=${encodeURIComponent(feedKey)}`;
 
-    // Try direct fetch first
+    // Try Cloudflare Pages edge proxy first (handles CORS & headers)
     try {
-      const res = await fetch(url, {
+      const res = await fetch(proxyUrl, { cache: "no-store" });
+      if (res.ok) {
+        const text = await res.text().catch(() => "");
+        if (text && text.length > 20) return { ok: true, text };
+      }
+    } catch (e) {}
+
+    // Direct fetch fallback
+    try {
+      const url = flashUrl(sId, dayOffset);
+      const res2 = await fetch(url, {
         method: "GET",
         cache: "no-store",
         mode: "cors",
@@ -1255,16 +1273,6 @@ function dayLabel(dayOffset, d) {
           "accept": "*/*",
         },
       });
-      if (res.ok) {
-        const text = await res.text().catch(() => "");
-        return { ok: true, text };
-      }
-    } catch (e) {}
-
-    // Cloudflare Pages edge proxy fallback
-    try {
-      const proxyUrl = `/api/feed?path=${encodeURIComponent(feedKey)}`;
-      const res2 = await fetch(proxyUrl);
       if (res2.ok) {
         const text2 = await res2.text().catch(() => "");
         return { ok: true, text: text2 };
@@ -1414,7 +1422,11 @@ function setStatusFiltersVisible(visible) {
     let currentTournament = null;
 
     rows.forEach((row, rowIndex) => {
-      if (rowIndex === 0 || !row) return; // Skip first SA row
+      if (!row) return;
+      if (row.startsWith("SA÷")) {
+        currentTournament = null;
+        return;
+      }
 
       // Split row into cells
       const cells = row.split("¬");
@@ -2209,8 +2221,48 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
   // Setup search functionality
   function setupSearch() {
     const searchInput = document.getElementById("matchSearch");
-    if (!searchInput || searchInput.dataset.searchBound) return;
+    const navInput = document.getElementById("navbarSearchInput");
+    const mobileBtn = document.getElementById("mobileSearchBtn");
 
+    // Sync navbar search with page search
+    if (navInput && !navInput.dataset.searchBound) {
+      navInput.dataset.searchBound = "1";
+      navInput.removeAttribute("readonly");
+      navInput.classList.remove("pointer-events-none");
+      navInput.addEventListener("input", () => {
+        if (searchInput) {
+          searchInput.value = navInput.value;
+          searchInput.dispatchEvent(new Event("input"));
+        }
+      });
+      // Click container focuses input
+      const container = navInput.closest("[data-slot='search-field']");
+      if (container) {
+        container.addEventListener("click", () => navInput.focus());
+      }
+    }
+
+    // Ctrl+K keybinding
+    document.addEventListener("keydown", (e) => {
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        if (navInput) navInput.focus();
+        else if (searchInput) searchInput.focus();
+      }
+    });
+
+    // Mobile search toggle
+    if (mobileBtn && !mobileBtn.dataset.searchBound) {
+      mobileBtn.dataset.searchBound = "1";
+      mobileBtn.addEventListener("click", () => {
+        const wrap = document.getElementById("mobileSearchWrap");
+        if (wrap) wrap.classList.toggle("hidden");
+        const mInput = document.getElementById("mobileSearchInput");
+        if (mInput && !wrap.classList.contains("hidden")) mInput.focus();
+      });
+    }
+
+    if (!searchInput || searchInput.dataset.searchBound) return;
     searchInput.dataset.searchBound = "1";
 
     // Use input event for real-time filtering

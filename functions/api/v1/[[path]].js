@@ -161,6 +161,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                     id: item.id || `srv-${customUrls.length + 1}`,
                                     name: item.name,
                                     url: playUrl,
+                                    direct_url: /^[a-f0-9]{32}$/i.test(rawStream) ? `https://iplayer24.me/beta/${rawStream}` : playUrl,
                                     enabled: true
                                 });
                             }
