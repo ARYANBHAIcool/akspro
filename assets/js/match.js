@@ -1141,7 +1141,11 @@
     try {
       const spObj = getSportFromURL();
       const sp = (spObj && spObj.id) ? spObj.id : "";
-      const url = `/api/v1/match/${encodeURIComponent(matchID)}${sp ? `?sport=${encodeURIComponent(sp)}` : ""}`;
+      let url = `/api/v1/match/${encodeURIComponent(matchID)}${sp ? `?sport=${encodeURIComponent(sp)}` : ""}`;
+      const homeName = currentMatchData?.matchData?.homeTeam?.name || sessionStorage.getItem('home_' + matchID) || '';
+      const awayName = currentMatchData?.matchData?.awayTeam?.name || sessionStorage.getItem('away_' + matchID) || '';
+      if (homeName) url += (url.includes('?') ? '&' : '?') + `home=${encodeURIComponent(homeName)}`;
+      if (awayName) url += (url.includes('?') ? '&' : '?') + `away=${encodeURIComponent(awayName)}`;
       const response = await fetch(url);
       if (!response.ok) return null;
 

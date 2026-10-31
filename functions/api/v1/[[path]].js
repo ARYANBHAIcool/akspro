@@ -34,46 +34,7 @@ export async function onRequest(context) {
 
             // Direct iframe proxy with upstream referer bypass
             if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
-                try {
-                    const parsed = new URL(rawUrl);
-                    const origin = parsed.origin;
-                    const resp = await fetch(rawUrl, {
-                        headers: {
-                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-                            'Referer': 'https://dzeko11.pk/',
-                            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
-                        }
-                    });
-                    if (resp.ok) {
-                        let html = await resp.text();
-                        // Insert base tag for relative assets
-                        html = html.replace('<head>', `<head><base href="${origin}/">`);
-                        // Strip anti-sandbox and devtool detection scripts completely
-                        html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?Remove sandbox attributes[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?__sb_probe[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?timst\.cfd[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*disable-devtool[^>]*>[\s\S]*?<\/script>/gi, '');
-                        // Strip intrusive popunders/ads/runtime
-                        html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?runtime\.js[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
-                        html = html.replace(/<script[^>]*popunder[\s\S]*?<\/script>/gi, '');
-
-                        return new Response(html, {
-                            status: 200,
-                            headers: {
-                                'Content-Type': 'text/html; charset=utf-8',
-                                'Cache-Control': 'no-store, no-cache, must-revalidate'
-                            }
-                        });
-                    }
-                } catch (e) {}
-
-                return new Response(`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{width:100%;height:100%;margin:0;padding:0;background:#000;overflow:hidden;}iframe{width:100%;height:100%;border:0;display:block;}</style></head><body><iframe src="${rawUrl}" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe></body></html>`, {
-                    status: 200,
-                    headers: { 'Content-Type': 'text/html; charset=utf-8', 'Cache-Control': 'no-store, no-cache' }
-                });
+                return Response.redirect(rawUrl, 302);
             }
 
             if (!token || !/^[a-f0-9]{32}$/i.test(token)) {
@@ -157,6 +118,32 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             const seenUrls = new Set();
             const seenNames = new Set();
 
+            function normalizeTeam(t) {
+                if (!t) return '';
+                return t.toLowerCase()
+                    .replace(/\b(fc|cf|sc|afc|ssc|ac|as|rc|sk|cd|ca|bv|sv|fk|vfb|tsg|rb)\b/g, '')
+                    .replace(/\b(united|city|town|wanderers|albion|rovers|county|athletic|hotspur|wednesday)\b/g, '')
+                    .replace(/[^a-z0-9]/g, ' ')
+                    .replace(/\s+/g, ' ')
+                    .trim();
+            }
+
+            function matchTeams(h, a, text) {
+                if (!text) return false;
+                const txt = text.toLowerCase().replace(/[^a-z0-9]/g, ' ');
+                const hNorm = normalizeTeam(h);
+                const aNorm = normalizeTeam(a);
+                if (hNorm.length >= 3 && aNorm.length >= 3) {
+                    if (txt.includes(hNorm) && txt.includes(aNorm)) return true;
+                }
+                const hClean = (h || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+                const aClean = (a || '').toLowerCase().replace(/[^a-z0-9]/g, ' ').trim();
+                if (hClean.length >= 4 && aClean.length >= 4) {
+                    if (txt.includes(hClean) && txt.includes(aClean)) return true;
+                }
+                return false;
+            }
+
             function addStream(name, url, directUrl) {
                 if (!url) return;
                 let playUrl = url.trim();
@@ -164,9 +151,6 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 if (/^[a-f0-9]{32}$/i.test(playUrl)) {
                     direct = `https://iplayer24.me/beta/${playUrl}`;
                     playUrl = `/api/v1/stream?token=${playUrl}`;
-                } else if (/^https?:\/\/ehgembxe\.cfd\//i.test(playUrl)) {
-                    direct = playUrl;
-                    playUrl = `/api/v1/stream?src=${encodeURIComponent(playUrl)}`;
                 }
                 const key = `${name.toLowerCase()}:${playUrl}`;
                 if (!seenUrls.has(playUrl) && !seenNames.has(key)) {
@@ -196,21 +180,23 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 }
             }
 
-            // Concurrently query GraphQL, Dzeko, Strumyk, BinTV, Tim-Streams, and TopStreamer
+            // Concurrently query GraphQL, Dzeko, Strumyk, BinTV, Tim-Streams, and Footy4u
             const gqlUrl = `https://2.ds.lsapp.eu/pq_graphql?_hash=dsof&eventId=${cleanId}&projectId=2`;
             const dzekoUrl = `https://dzeko11.pk/api/v1/match/FS:${cleanId}`;
             const strumykUrl = `https://strumyk.pk/api/v1/match/FS:${cleanId}`;
             const bintvUrl = `https://bintvjson.lovable.app/api/public/bintvjson`;
             const timLiveUrl = `https://tim-streams.com/api/live-upcoming`;
             const timChanUrl = `https://tim-streams.com/api/channels`;
+            const footy4uUrl = `https://footy4u.st/`;
 
-            const [gqlRes, dzekoRes, strumykRes, bintvRes, timLiveRes, timChanRes] = await Promise.allSettled([
+            const [gqlRes, dzekoRes, strumykRes, bintvRes, timLiveRes, timChanRes, footyRes] = await Promise.allSettled([
                 fastFetch(gqlUrl, { 'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)' }, 2000),
                 fastFetch(dzekoUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://dzeko11.pk/' }, 2200),
                 fastFetch(strumykUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://strumyk.pk/' }, 2200),
-                fastFetch(bintvUrl, { 'Accept': 'application/json' }, 1800),
+                fastFetch(bintvUrl, { 'Accept': 'application/json' }, 2000),
                 fastFetch(timLiveUrl, { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 2000),
-                fastFetch(timChanUrl, { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 1800)
+                fastFetch(timChanUrl, { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 1800),
+                fastFetch(footy4uUrl, { 'User-Agent': 'Mozilla/5.0' }, 2200)
             ]);
 
             // A. Parse team names from GraphQL
@@ -226,6 +212,14 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     }
                 } catch (e) {}
             }
+
+            // Fallback to query params or known match IDs
+            if (!homeName && qHome) homeName = qHome;
+            if (!awayName && qAway) awayName = qAway;
+            if (cleanId === 'OjOKEBcN' && !homeName) { homeName = 'Australia'; awayName = 'South Africa'; }
+            if (cleanId === 'Sf1w7jsR' && !homeName) { homeName = 'Pakistan'; awayName = 'Sri Lanka'; }
+            if (cleanId === 'f3Cirdak' && !homeName) { homeName = 'Bangladesh'; awayName = 'West Indies'; }
+            if (cleanId === 'OWc65atm' && !homeName) { homeName = 'Chelsea'; awayName = 'Manchester Utd'; }
 
             // Special handle for TIM:, BIN:, or TOP: IDs
             if (rawId.startsWith('TIM:')) {
@@ -270,21 +264,20 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                         ...(bintvData['Upcoming Events'] || [])
                     ];
                     const cLow = cleanId.toLowerCase();
-                    const hLow = (homeName || '').toLowerCase();
-                    const aLow = (awayName || '').toLowerCase();
 
                     for (const ev of allEvents) {
-                        const evName = (ev.name || '').toLowerCase();
-                        const evId = (ev.id || '').toLowerCase();
+                        const evName = ev.name || '';
+                        const evId = ev.id || '';
                         let isMatch = false;
-                        if (rawId.startsWith('BIN:') && (evId.includes(cLow) || cLow.includes(evId) || evName.includes(cLow) || cLow.includes(evName))) isMatch = true;
-                        else if (cLow.length > 3 && (evName.includes(cLow) || evId.includes(cLow))) isMatch = true;
-                        else if (hLow.length > 3 && (evName.includes(hLow) || evId.includes(hLow))) isMatch = true;
-                        else if (aLow.length > 3 && (evName.includes(aLow) || evId.includes(aLow))) isMatch = true;
+                        if (rawId.startsWith('BIN:') && (evId.toLowerCase().includes(cLow) || cLow.includes(evId.toLowerCase()) || evName.toLowerCase().includes(cLow))) {
+                            isMatch = true;
+                        } else if (matchTeams(homeName, awayName, evName) || matchTeams(homeName, awayName, evId)) {
+                            isMatch = true;
+                        }
 
                         if (isMatch) {
                             for (const s of (ev.streams || [])) {
-                                if (s.url) addStream(s.name || `BinTV Live Stream ${customUrls.length + 1}`, s.url);
+                                if (s.url) addStream(s.name || `BinTV Live Stream ${customUrls.length + 1}`, s.url, s.url);
                             }
                         }
                     }
@@ -296,46 +289,71 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 try {
                     const tLiveData = await timLiveRes.value.json();
                     const tEvents = tLiveData.events || [];
-                    const hLow = (homeName || '').toLowerCase();
-                    const aLow = (awayName || '').toLowerCase();
                     const cLow = cleanId.toLowerCase();
 
                     for (const ev of tEvents) {
-                        const evName = (ev.name || '').toLowerCase();
-                        const evUrl = (ev.url || '').toLowerCase();
+                        const evName = ev.name || '';
+                        const evUrl = ev.url || '';
                         let isMatch = false;
-                        if (rawId.startsWith('TIM:') && (evName.includes(cLow) || cLow.includes(evName) || evUrl.includes(cLow) || cLow.includes(evUrl))) {
+                        if (rawId.startsWith('TIM:') && (evName.toLowerCase().includes(cLow) || cLow.includes(evName.toLowerCase()) || evUrl.toLowerCase().includes(cLow))) {
                             isMatch = true;
-                        } else if (cLow.length > 3 && (evName.includes(cLow) || evUrl.includes(cLow))) {
-                            isMatch = true;
-                        } else if (hLow.length > 3 && (evName.includes(hLow) || evUrl.includes(hLow))) {
-                            isMatch = true;
-                        } else if (aLow.length > 3 && (evName.includes(aLow) || evUrl.includes(aLow))) {
+                        } else if (matchTeams(homeName, awayName, evName) || matchTeams(homeName, awayName, evUrl.replace(/-/g, ' '))) {
                             isMatch = true;
                         }
 
                         if (isMatch) {
                             for (const s of (ev.streams || [])) {
-                                if (s.url) addStream(`TimStreams (${s.name || 'Live Feed'})`, s.url, s.url);
+                                if (s.url) addStream(`TimStreams (${s.name || 'HD Feed'})`, s.url, s.url);
                             }
                         }
                     }
                 } catch (e) {}
             }
 
-            // E. Match against Tim-Streams 24/7 Channels if broadcasters match
+            // E. Match against Footy4U events directory
+            if (footyRes.status === 'fulfilled' && footyRes.value && footyRes.value.ok) {
+                try {
+                    const fHtml = await footyRes.value.text();
+                    const matches = Array.from(fHtml.matchAll(/href=["'](\/events\/[a-z0-9-]+)["']/gi));
+                    for (const m of matches) {
+                        const slug = m[1];
+                        const slugText = slug.replace('/events/', '').replace(/-/g, ' ');
+                        if (matchTeams(homeName, awayName, slugText)) {
+                            const evRes = await fastFetch(`https://footy4u.st${slug}`, { 'User-Agent': 'Mozilla/5.0' }, 2000);
+                            if (evRes && evRes.ok) {
+                                const evHtml = await evRes.text();
+                                const embedLinks = evHtml.match(/https?:\/\/[^\s"'<>]+/g) || [];
+                                const validEmbeds = embedLinks.filter(u => 
+                                    (u.includes('hitcast.st') || u.includes('streamec.st') || u.includes('rockyembed.st') || u.includes('flyembed.cfd') || u.includes('daddylive1') || u.includes('taifood-blog')) &&
+                                    !u.endsWith('.png') && !u.endsWith('.jpg') && !u.endsWith('.js') && !u.endsWith('.css')
+                                );
+                                let idx = 1;
+                                for (const emb of new Set(validEmbeds)) {
+                                    let cleanUrl = emb;
+                                    const srcMatch = emb.match(/[?&]src=([^&]+)/);
+                                    if (srcMatch) cleanUrl = decodeURIComponent(srcMatch[1]);
+                                    addStream(`Footy4U Server ${idx++}`, cleanUrl, cleanUrl);
+                                }
+                            }
+                            break;
+                        }
+                    }
+                } catch (e) {}
+            }
+
+            // F. Match against Tim-Streams 24/7 Channels if team names match TV broadcaster
             if (timChanRes.status === 'fulfilled' && timChanRes.value && timChanRes.value.ok) {
                 try {
                     const tChanData = await timChanRes.value.json();
                     const channels = tChanData.channels || [];
-                    const hLow = (homeName || '').toLowerCase();
-                    const aLow = (awayName || '').toLowerCase();
+                    const hNorm = normalizeTeam(homeName);
+                    const aNorm = normalizeTeam(awayName);
 
                     for (const ch of channels) {
                         const chName = (ch.name || '').toLowerCase();
                         let matchesChannel = false;
-                        if (hLow.length > 3 && chName.includes(hLow)) matchesChannel = true;
-                        if (aLow.length > 3 && chName.includes(aLow)) matchesChannel = true;
+                        if (hNorm.length >= 4 && chName.includes(hNorm)) matchesChannel = true;
+                        if (aNorm.length >= 4 && chName.includes(aNorm)) matchesChannel = true;
 
                         if (matchesChannel) {
                             for (const s of (ch.streams || [])) {
@@ -346,73 +364,25 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // F. Smart Match: High-Speed Direct Playable Streams by League & Sport
-            if (!homeName && qHome) homeName = qHome;
-            if (!awayName && qAway) awayName = qAway;
-            if (cleanId === 'OjOKEBcN' && !homeName) {
-                homeName = 'Australia';
-                awayName = 'South Africa';
-            }
-            if (cleanId === 'Sf1w7jsR' && !homeName) {
-                homeName = 'Pakistan';
-                awayName = 'Sri Lanka';
-            }
-            if (cleanId === 'f3Cirdak' && !homeName) {
-                homeName = 'Bangladesh';
-                awayName = 'West Indies';
-            }
+            // G. Match-Specific Verified Channels
             const hLow = (homeName || '').toLowerCase();
             const aLow = (awayName || '').toLowerCase();
 
-            // 1. English Premier League (Chelsea, Man Utd, Arsenal, Liverpool, Man City, etc.)
-            const eplKeywords = ['chelsea', 'manchester', 'arsenal', 'liverpool', 'tottenham', 'newcastle',
-                'aston villa', 'west ham', 'everton', 'brighton', 'wolves', 'fulham', 'brentford',
-                'crystal palace', 'nottingham', 'leicester', 'ipswich', 'southampton', 'bournemouth'];
-            const isEPL = cleanId === 'OWc65atm' || eplKeywords.some(k => hLow.includes(k) || aLow.includes(k));
-            if (isEPL) {
+            // Chelsea vs Man Utd specifically
+            if (cleanId === 'OWc65atm' || (hLow.includes('chelsea') && aLow.includes('manchester')) || (hLow.includes('manchester') && aLow.includes('chelsea'))) {
                 addStream('Sky Sports Premier League HD', 'https://ehgembxe.cfd/kzd3hrqz-4314', 'https://ehgembxe.cfd/kzd3hrqz-4314');
                 addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
                 addStream('TNT Sports 1 HD', 'https://ehgembxe.cfd/e0lyrkhr-1002', 'https://ehgembxe.cfd/e0lyrkhr-1002');
                 addStream('DAZN 1 Portugal HD', 'https://ehgembxe.cfd/3zhczzbl-9086', 'https://ehgembxe.cfd/3zhczzbl-9086');
-                addStream('ARENA SPORT 1 HD', 'https://ehgembxe.cfd/pmk4006b-7099', 'https://ehgembxe.cfd/pmk4006b-7099');
-                addStream('CANAL+ Sport PL HD', 'https://ehgembxe.cfd/jr4cynbo-9272', 'https://ehgembxe.cfd/jr4cynbo-9272');
             }
 
-            // 2. La Liga (Real Madrid, Barcelona, Atletico, etc.)
-            const laLigaKeywords = ['madrid', 'barcelona', 'atletico', 'sevilla', 'valencia', 'villarreal', 'betis', 'athletic club'];
-            if (laLigaKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
-                addStream('DAZN LaLiga HD', 'https://ehgembxe.cfd/fw2jrum9-448', 'https://ehgembxe.cfd/fw2jrum9-448');
-                addStream('ESPN Deportes HD', 'https://ehgembxe.cfd/6trsant7-1421', 'https://ehgembxe.cfd/6trsant7-1421');
-            }
-
-            // 3. Serie A & Bundesliga
-            const serieAKeywords = ['juventus', 'inter', 'milan', 'napoli', 'roma', 'lazio', 'atalanta', 'fiorentina'];
-            if (serieAKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
-                addStream('DAZN 1 Italia HD', 'https://ehgembxe.cfd/gmoqoz7b-4945', 'https://ehgembxe.cfd/gmoqoz7b-4945');
-                addStream('Sky Sport Calcio IT', 'https://ehgembxe.cfd/gib0w25z-357', 'https://ehgembxe.cfd/gib0w25z-357');
-            }
-
-            const bundesligaKeywords = ['bayern', 'dortmund', 'leverkusen', 'leipzig', 'stuttgart', 'frankfurt'];
-            if (bundesligaKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
-                addStream('Sky Sport Bundesliga HD', 'https://ehgembxe.cfd/bsudwrf4-653', 'https://ehgembxe.cfd/bsudwrf4-653');
-                addStream('DAZN 1 Germany HD', 'https://ehgembxe.cfd/3dk8rxui-6212', 'https://ehgembxe.cfd/3dk8rxui-6212');
-            }
-
-            // 4. Cricket (Pakistan, Sri Lanka, India, Australia, South Africa, Bangladesh, England, etc.)
-            const cricketKeywords = [
-                'cricket', 'pakistan', 'sri lanka', 'india', 'australia', 'south africa', 
-                'england', 'bangladesh', 'west indies', 'new zealand', 'afghanistan',
-                'ireland', 'scotland', 'netherlands', 'zimbabwe', 'nepal', 'uae', 'emirates',
-                'barishal', 'tigers', 'riders', 'royals', 'strikers', 'warriors', 'kings',
-                'brave', 'aces', 'firebirds', 'stags', 'volts', 'titans', 'dolphins',
-                'lions', 'super kings', 'indians', 'challengers', 'knight riders', 'capitals',
-                'super giants', 'sunrisers', 'zalmi', 'qalandars', 'gladiators',
-                'sultans', 'stars', 'renegades', 'sixers', 'scorchers',
-                'heat', 'hurricanes', 'thunder'
-            ];
+            // Cricket Matches
             const isCricket = cleanId === 'OjOKEBcN' || cleanId === 'Sf1w7jsR' || cleanId === 'f3Cirdak' ||
                 qSport === 'cricket' ||
-                cricketKeywords.some(k => hLow.includes(k) || aLow.includes(k));
+                (hLow.includes('pakistan') && aLow.includes('sri lanka')) ||
+                (hLow.includes('australia') && aLow.includes('south africa')) ||
+                (hLow.includes('bangladesh') && aLow.includes('west indies')) ||
+                (hLow.includes('india') || aLow.includes('india'));
 
             if (isCricket) {
                 addStream('Sony Sports Ten 1 HD', 'https://ehgembxe.cfd/toarnao3-525', 'https://ehgembxe.cfd/toarnao3-525');
@@ -424,7 +394,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream('SuperSport Cricket HD', 'https://ehgembxe.cfd/np4biwf3-3097', 'https://ehgembxe.cfd/np4biwf3-3097');
             }
 
-            // 5. NBA / Basketball
+            // NBA / Basketball
             const isBasketball = qSport === 'basketball' ||
                                  hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
                                  hLow.includes('wizards') || hLow.includes('hornets') || hLow.includes('bulls') ||
@@ -436,7 +406,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream(`NBA League Pass HD`, `https://ehgembxe.cfd/1zatl1pk-8978`, `https://ehgembxe.cfd/1zatl1pk-8978`);
             }
 
-            // 6. NFL / American Football
+            // NFL / American Football
             const isNFL = qSport === 'american-football' || qSport === 'nfl' ||
                           hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
                           hLow.includes('bills') || hLow.includes('steelers') || hLow.includes('patriots') ||
@@ -447,25 +417,28 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream(`NFL RedZone / Game Pass`, `https://ehgembxe.cfd/f4ijr4sl-187`, `https://ehgembxe.cfd/f4ijr4sl-187`);
             }
 
-            // 7. Formula 1 / Motorsport
-            if (qSport === 'motorsport' || hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('f1') || aLow.includes('f1') || hLow.includes('formula 1') || aLow.includes('formula 1')) {
+            // Formula 1 / Motorsport
+            if (qSport === 'motorsport' || hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('formula 1') || hLow.includes(' f1') || aLow.includes(' f1')) {
                 addStream('Sky Sports F1 HD', 'https://ehgembxe.cfd/f596f98r-6977', 'https://ehgembxe.cfd/f596f98r-6977');
                 addStream('DAZN F1 HD', 'https://ehgembxe.cfd/5rvazszz-6983', 'https://ehgembxe.cfd/5rvazszz-6983');
             }
 
-            // 8. Tennis
+            // Tennis
             if (qSport === 'tennis' || hLow.includes('atp') || aLow.includes('atp') || hLow.includes('wta') || aLow.includes('wta') || hLow.includes('tennis') || aLow.includes('tennis')) {
                 addStream('Sky Sports Tennis HD', 'https://ehgembxe.cfd/kkbb5x8i-1991', 'https://ehgembxe.cfd/kkbb5x8i-1991');
                 addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
             }
 
-            // Prioritize direct playable streams (src= and https://) so Server 1 plays instantly
+            // Prioritize direct playable streams (https://) so Server 1 plays instantly
             customUrls.sort((a, b) => {
-                const aIsDirect = Boolean(a.url && (a.url.includes('/stream?src=') || a.url.startsWith('https://')));
-                const bIsDirect = Boolean(b.url && (b.url.includes('/stream?src=') || b.url.startsWith('https://')));
+                const aIsDirect = Boolean(a.url && (a.url.startsWith('https://') || a.url.startsWith('http://')));
+                const bIsDirect = Boolean(b.url && (b.url.startsWith('https://') || b.url.startsWith('http://')));
                 if (aIsDirect && !bIsDirect) return -1;
                 if (!aIsDirect && bIsDirect) return 1;
                 return 0;
+            });
+            customUrls.forEach((u, i) => {
+                u.id = `srv-${i + 1}`;
             });
 
             const matchHeaders = {

@@ -2922,7 +2922,7 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
           </button>
         </div>
         <div class="relative w-full bg-black aspect-video flex items-center justify-center overflow-hidden">
-          <iframe id="channelPlayerIframe" src="${initialUrl}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <iframe id="channelPlayerIframe" src="${initialUrl}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
         <div class="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-border bg-surface-secondary/40 text-sm">
           <div class="flex items-center gap-2">

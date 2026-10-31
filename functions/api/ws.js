@@ -12,14 +12,20 @@ export async function onRequest(context) {
     try {
         const [client, server] = Object.values(new WebSocketPair());
 
+        const reqHeaders = {
+            'Upgrade': 'websocket',
+            'Connection': 'Upgrade',
+            'Host': 'l1.strims24.st',
+            'Origin': 'https://iplayer24.me',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
+        };
+        const secKey = context.request.headers.get('Sec-WebSocket-Key');
+        if (secKey) reqHeaders['Sec-WebSocket-Key'] = secKey;
+        const secVer = context.request.headers.get('Sec-WebSocket-Version');
+        if (secVer) reqHeaders['Sec-WebSocket-Version'] = secVer;
+
         const backendResponse = await fetch('https://l1.strims24.st/ws', {
-            headers: {
-                'Upgrade': 'websocket',
-                'Connection': 'Upgrade',
-                'Host': 'l1.strims24.st',
-                'Origin': 'https://iplayer24.me',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36'
-            }
+            headers: reqHeaders
         });
 
         const backendWs = backendResponse.webSocket;
