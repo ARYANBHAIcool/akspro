@@ -23,10 +23,13 @@ export async function onRequest(context) {
                 let html = await resp.text();
                 // Insert base tag for relative assets
                 html = html.replace('<head>', `<head><base href="${origin}/">`);
-                // Strip anti-sandbox script completely
+                // Strip anti-sandbox and devtool detection scripts completely
                 html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?Remove sandbox attributes[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?__sb_probe[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?timst\.cfd[\s\S]*?<\/script>/gi, '');
                 html = html.replace(/<script[^>]*disable-devtool[^>]*>[\s\S]*?<\/script>/gi, '');
-                // Strip intrusive popunders/ads
+                // Strip intrusive popunders/ads/runtime
+                html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?runtime\.js[\s\S]*?<\/script>/gi, '');
                 html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
                 html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
                 html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
@@ -78,13 +81,14 @@ export async function onRequest(context) {
         return new Response('Stream token expired or unavailable.', { status: 502 });
     }
 
-    // 1. Rewrite WebSocket endpoint to our edge proxy
-    html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
+    // 1. Direct upstream WebSocket (no proxy needed - browsers connect directly without CORS)
+    // html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
 
     // 2. Fix relative script paths
     html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
 
-    // 3. Strip intrusive ads/popups
+    // 3. Strip intrusive ads/popups/runtime
+    html = html.replace(/<script[^>]*>(?:(?!<script)[\s\S])*?runtime\.js[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*runtime\.js[^>]*>[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*isim\.is[^>]*>[\s\S]*?<\/script>/gi, '');
     html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');

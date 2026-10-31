@@ -1483,8 +1483,8 @@
     const lblBroadcast = t(lang, "match.tab.broadcast") || "TV";
     const lblMatchDetails = t(lang, "match.details") || "Match Details";
 
-    // Show broadcast tab only for non-finished matches (status 1 = scheduled, 2 = live)
-    const showBroadcastTab = status === "1" || status === "2";
+    // Always show broadcast tab so users can stream live matches and replays
+    const showBroadcastTab = true;
 
     // Tab icons
     const tabIcons = {
@@ -2353,7 +2353,7 @@ const enabledChannels = channels
                       class="w-full h-full border-0"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                       allowfullscreen
-                      referrerpolicy="no-referrer"></iframe>
+                      referrerpolicy="no-referrer-when-downgrade"></iframe>
             </div>
           </div>
         </div>
@@ -2626,11 +2626,8 @@ const enabledChannels = channels
       // Setup tab click handlers
       setupTabClickHandlers();
 
-      // Immediately activate and load the stream player for live and scheduled matches
-      const showBroadcast = matchData?.status === "1" || matchData?.status === "2";
-      if (showBroadcast) {
-        loadTabContent("broadcast");
-      }
+      // Immediately activate and load the stream player
+      loadTabContent("broadcast");
 
       // Start live refresh if match is in progress
       if (matchData?.status === "2") {
@@ -2724,7 +2721,7 @@ const enabledChannels = channels
           </button>
         </div>
         <div class="relative w-full bg-black aspect-video flex items-center justify-center overflow-hidden">
-          <iframe id="broadcastPlayerIframe" src="${url}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen></iframe>
+          <iframe id="broadcastPlayerIframe" src="${url}" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
         </div>
         <div class="flex items-center justify-between px-5 py-3 border-t border-border bg-surface-secondary/40 text-sm">
           <span class="text-xs text-muted-foreground">Stream provided by high-speed edge CDN</span>

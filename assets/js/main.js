@@ -2482,12 +2482,18 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         let sectionsHTML = "";
 
         sportCategories.forEach(cat => {
-          // Find Flashscore tournaments belonging to this sport
-          const catTournaments = Object.values(flashData.tournaments).filter(t => {
-            return t.events && t.events.some(e => e.sport === cat.id);
-          });
-          // Find custom matches belonging to this sport
-          const catCustom = activeCustomMatches.filter(m => m.sport === cat.id);
+          // Find Flashscore tournaments belonging to this sport, keeping only Live and Hot fixtures with streams
+          const catTournaments = Object.values(flashData.tournaments).map(t => {
+            const filteredEvents = (t.events || []).filter(e => {
+              if (e.sport !== cat.id) return false;
+              // Keep live matches or confirmed streamable fixtures for today
+              return e.status === 'inprogress' || (manualMatchIds.has(e.id) && e.status !== 'finished');
+            });
+            return { ...t, events: filteredEvents };
+          }).filter(t => t.events && t.events.length > 0);
+
+          // Find custom matches belonging to this sport (only live and hot upcoming)
+          const catCustom = activeCustomMatches.filter(m => m.sport === cat.id && m.status !== 'finished');
 
           const totalMatches = catTournaments.reduce((acc, t) => acc + (t.events ? t.events.length : 0), 0) + catCustom.length;
           if (totalMatches === 0) return;
