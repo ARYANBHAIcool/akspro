@@ -285,24 +285,59 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // F. Smart Match: Cricket & Special Sport Channels (e.g. Australia vs South Africa)
+            // F. Smart Match: High-Speed Direct Playable Streams by League & Sport
             if (cleanId === 'OjOKEBcN' && !homeName) {
                 homeName = 'Australia';
                 awayName = 'South Africa';
             }
             const hLow = (homeName || '').toLowerCase();
             const aLow = (awayName || '').toLowerCase();
+
+            // 1. English Premier League (Chelsea, Man Utd, Arsenal, Liverpool, Man City, etc.)
+            const eplKeywords = ['chelsea', 'manchester', 'arsenal', 'liverpool', 'tottenham', 'newcastle',
+                'aston villa', 'west ham', 'everton', 'brighton', 'wolves', 'fulham', 'brentford',
+                'crystal palace', 'nottingham', 'leicester', 'ipswich', 'southampton', 'bournemouth'];
+            const isEPL = eplKeywords.some(k => hLow.includes(k) || aLow.includes(k));
+            if (isEPL) {
+                addStream('Sky Sports Premier League HD', 'https://ehgembxe.cfd/kzd3hrqz-4314', 'https://ehgembxe.cfd/kzd3hrqz-4314');
+                addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
+                addStream('TNT Sports 1 HD', 'https://ehgembxe.cfd/e0lyrkhr-1002', 'https://ehgembxe.cfd/e0lyrkhr-1002');
+                addStream('DAZN 1 Portugal HD', 'https://ehgembxe.cfd/3zhczzbl-9086', 'https://ehgembxe.cfd/3zhczzbl-9086');
+                addStream('ARENA SPORT 1 HD', 'https://ehgembxe.cfd/pmk4006b-7099', 'https://ehgembxe.cfd/pmk4006b-7099');
+                addStream('CANAL+ Sport PL HD', 'https://ehgembxe.cfd/jr4cynbo-9272', 'https://ehgembxe.cfd/jr4cynbo-9272');
+            }
+
+            // 2. La Liga (Real Madrid, Barcelona, Atletico, etc.)
+            const laLigaKeywords = ['madrid', 'barcelona', 'atletico', 'sevilla', 'valencia', 'villarreal', 'betis', 'athletic club'];
+            if (laLigaKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
+                addStream('DAZN LaLiga HD', 'https://ehgembxe.cfd/fw2jrum9-448', 'https://ehgembxe.cfd/fw2jrum9-448');
+                addStream('ESPN Deportes HD', 'https://ehgembxe.cfd/6trsant7-1421', 'https://ehgembxe.cfd/6trsant7-1421');
+            }
+
+            // 3. Serie A & Bundesliga
+            const serieAKeywords = ['juventus', 'inter', 'milan', 'napoli', 'roma', 'lazio', 'atalanta', 'fiorentina'];
+            if (serieAKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
+                addStream('DAZN 1 Italia HD', 'https://ehgembxe.cfd/gmoqoz7b-4945', 'https://ehgembxe.cfd/gmoqoz7b-4945');
+                addStream('Sky Sport Calcio IT', 'https://ehgembxe.cfd/gib0w25z-357', 'https://ehgembxe.cfd/gib0w25z-357');
+            }
+
+            const bundesligaKeywords = ['bayern', 'dortmund', 'leverkusen', 'leipzig', 'stuttgart', 'frankfurt'];
+            if (bundesligaKeywords.some(k => hLow.includes(k) || aLow.includes(k))) {
+                addStream('Sky Sport Bundesliga HD', 'https://ehgembxe.cfd/bsudwrf4-653', 'https://ehgembxe.cfd/bsudwrf4-653');
+                addStream('DAZN 1 Germany HD', 'https://ehgembxe.cfd/3dk8rxui-6212', 'https://ehgembxe.cfd/3dk8rxui-6212');
+            }
+
+            // 4. Cricket (Aus vs SA, India, Pakistan, etc.)
             const isAusVsSa = cleanId === 'OjOKEBcN' ||
                               ((hLow.includes('australia') || aLow.includes('australia')) &&
                                (hLow.includes('south africa') || aLow.includes('south africa')));
-
-            if (isAusVsSa || hLow.includes('cricket') || aLow.includes('cricket')) {
+            if (isAusVsSa || hLow.includes('cricket') || aLow.includes('cricket') || hLow.includes('india') || aLow.includes('india')) {
                 addStream('Fox Sports 501 (Cricket)', 'https://ehgembxe.cfd/imifneoj-1417', 'https://ehgembxe.cfd/imifneoj-1417');
-                addStream('Sky Sports Cricket', 'https://ehgembxe.cfd/qfx4038p-95', 'https://ehgembxe.cfd/qfx4038p-95');
+                addStream('Sky Sports Cricket HD', 'https://ehgembxe.cfd/qfx4038p-95', 'https://ehgembxe.cfd/qfx4038p-95');
                 addStream('Willow Cricket HD', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
             }
 
-            // G. TopStreamer Match for NBA / NFL games
+            // 5. NBA / Basketball
             const isBasketball = hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
                                  hLow.includes('wizards') || hLow.includes('hornets') || hLow.includes('bulls') ||
                                  hLow.includes('heat') || hLow.includes('knicks') || aLow.includes('lakers') ||
@@ -310,15 +345,39 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             if (isBasketball) {
                 const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nba').toLowerCase();
                 addStream(`TopStreamer HD (NBA)`, `https://topstreamer.site/nba/${team}`, `https://topstreamer.site/nba/${team}`);
+                addStream(`NBA League Pass HD`, `https://ehgembxe.cfd/1zatl1pk-8978`, `https://ehgembxe.cfd/1zatl1pk-8978`);
             }
 
+            // 6. NFL / American Football
             const isNFL = hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
                           hLow.includes('bills') || hLow.includes('steelers') || hLow.includes('patriots') ||
                           aLow.includes('packers') || aLow.includes('cowboys') || aLow.includes('chiefs');
             if (isNFL) {
                 const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nfl').toLowerCase();
                 addStream(`TopStreamer HD (NFL)`, `https://topstreamer.site/nfl/${team}`, `https://topstreamer.site/nfl/${team}`);
+                addStream(`NFL RedZone / Game Pass`, `https://ehgembxe.cfd/f4ijr4sl-187`, `https://ehgembxe.cfd/f4ijr4sl-187`);
             }
+
+            // 7. Formula 1 / Motorsport
+            if (hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('f1') || aLow.includes('f1') || hLow.includes('formula 1') || aLow.includes('formula 1')) {
+                addStream('Sky Sports F1 HD', 'https://ehgembxe.cfd/f596f98r-6977', 'https://ehgembxe.cfd/f596f98r-6977');
+                addStream('DAZN F1 HD', 'https://ehgembxe.cfd/5rvazszz-6983', 'https://ehgembxe.cfd/5rvazszz-6983');
+            }
+
+            // 8. Tennis
+            if (hLow.includes('atp') || aLow.includes('atp') || hLow.includes('wta') || aLow.includes('wta') || hLow.includes('tennis') || aLow.includes('tennis')) {
+                addStream('Sky Sports Tennis HD', 'https://ehgembxe.cfd/kkbb5x8i-1991', 'https://ehgembxe.cfd/kkbb5x8i-1991');
+                addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
+            }
+
+            // Prioritize direct HTTPS streams (ehgembxe.cfd, bintv, topstreamer) so Server 1 plays instantly
+            customUrls.sort((a, b) => {
+                const aDirect = a.url.startsWith('https://');
+                const bDirect = b.url.startsWith('https://');
+                if (aDirect && !bDirect) return -1;
+                if (!aDirect && bDirect) return 1;
+                return 0;
+            });
 
             const matchHeaders = {
                 ...corsHeaders,
