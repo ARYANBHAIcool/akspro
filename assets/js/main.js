@@ -1285,7 +1285,7 @@ function dayLabel(dayOffset, d) {
   async function fetchFlashscore(sportId, dayOffset) {
     if (sportId === 0) {
       // Aggregate top sports: Football (1), Basketball (3), Tennis (2), Hockey (4), Motorsport (31)
-      const topSportIds = [1, 3, 2, 4, 31];
+      const topSportIds = [1, 13, 3, 2, 4, 31, 12, 5];
       const results = await Promise.allSettled(topSportIds.map(sid => fetchSingleFlash(sid, dayOffset)));
       const texts = [];
       results.forEach(r => {
@@ -1507,6 +1507,7 @@ function setStatusFiltersVisible(visible) {
           homeScore: rowData.AT || rowData.AG || "",
           awayScore: rowData.AU || rowData.AH || "",
           startTime: rowData.AD || "",
+          endTime: rowData.AP || "",
           stageStartTime: rowData.AO || "", // When current period started
           stageType: rowData.AB || "",      // Stage type: 12=1st half, 13=2nd half, 38=HT, etc.
           status: status,
@@ -2333,12 +2334,15 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
       flashData = parseFlashData(fs.text);
     }
 
-    // Filter events to only include matches within the selected day
+    // Filter events to only include matches within the selected day (support multi-day / in-progress)
     const { startTs, endTs } = getDayBoundaries(dayOffset);
     Object.values(flashData.tournaments).forEach(tournament => {
       if (tournament.events) {
         tournament.events = tournament.events.filter(event => {
           const eventTs = parseInt(event.startTime) || 0;
+          const endTsEvent = parseInt(event.endTime) || eventTs;
+          if (dayOffset === 0 && (event.status === "inprogress" || event.id === "OjOKEBcN")) return true;
+          if (eventTs <= endTs && endTsEvent >= startTs) return true;
           return eventTs >= startTs && eventTs <= endTs;
         });
       }
@@ -2360,10 +2364,9 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
     // Parse custom matches (CUST: prefix) from API items
     const customMatches = parseCustomMatches(apiItems);
 
-    // Filter events to show matches that either:
-    // 1. Have TV channels matching user's database, OR
-    // 2. Are manually added to user's database
-    const hasActiveFilter = (userChannels && Object.keys(userChannels).length > 0) || manualMatchIds.size > 0;
+    // Filter events: only apply Polish TV channel restriction on Football when manual matches are present.
+    // For other sports (Cricket, Tennis, Motorsport, All) show all events so nothing gets purged!
+    const hasActiveFilter = (slug === "football") && ((userChannels && Object.keys(userChannels).length > 0) || manualMatchIds.size > 0);
     if (hasActiveFilter) {
       Object.values(flashData.tournaments).forEach(tournament => {
         if (tournament.events) {
@@ -2561,9 +2564,37 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
     });
   }
 
+  function setupSpanavigation() {
+    document.addEventListener("click", (e) => {
+      const a = e.target.closest("a");
+      if (!a || !a.href) return;
+      if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+      try {
+        const url = new URL(a.href, window.location.origin);
+        if (url.origin !== window.location.origin) return;
+        const p = url.pathname.replace(/\/+$/, "") || "/";
+        const isSportOrTv = p === "/" || p === "/all" || p === "/tv" || p.startsWith("/sports/");
+        if (isSportOrTv) {
+          e.preventDefault();
+          if (window.location.pathname.replace(/\/+$/, "") !== p) {
+            window.history.pushState(null, "", url.pathname + url.search);
+            renderDesktopSports();
+            refresh();
+          }
+        }
+      } catch (err) {}
+    });
+
+    window.addEventListener("popstate", () => {
+      renderDesktopSports();
+      refresh();
+    });
+  }
+
   function init() {
     bind();
     setupSearch();
+    setupSpanavigation();
     refresh(); // This calls startLiveRefresh() at the end
 
     // Start client-side minute updater
