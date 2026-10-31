@@ -609,17 +609,18 @@
 
   function getActiveSport() {
     const p = location.pathname.replace(/\/+$/, "") || "/";
+    let found = null;
     if (p === "/" || p === "/all" || p.startsWith("/all/")) {
-      return SPORTS.find(x => x.id === "all") || { id: "all", sportId: 0, key: "sport.all", href: "/", enabled: true };
+      found = SPORTS.find(x => x.id === "all");
+    } else if (p === "/tv" || p.startsWith("/tv/")) {
+      found = SPORTS.find(x => x.id === "tv");
+    } else if (p === "/sports/football" || p.startsWith("/sports/football")) {
+      found = SPORTS.find(x => x.id === "football");
+    } else {
+      found = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
     }
-    if (p === "/tv" || p.startsWith("/tv/")) {
-      return SPORTS.find(x => x.id === "tv") || { id: "tv", sportId: 99, key: "sport.tv", href: "/tv", enabled: true };
-    }
-    if (p === "/sports/football" || p.startsWith("/sports/football")) {
-      return SPORTS.find(x => x.id === "football") || { id: "football", sportId: 1, key: "sport.football", href: "/sports/football", enabled: true };
-    }
-    const s = SPORTS.find((x) => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
-    return s || SPORTS.find(x => x.id === "all") || SPORTS[0];
+    const item = found || SPORTS.find(x => x.id === "all") || SPORTS[0];
+    return { ...item, slug: item.id };
   }
 
   function sportLabel(lang, sport) {
@@ -987,8 +988,8 @@ async function init() {
 (function () {
   "use strict";
 
-  const MIN_OFFSET = -1;
-  const MAX_OFFSET =  2;
+  const MIN_OFFSET = 0;
+  const MAX_OFFSET = 0;
 
   // Use shared SPORTS config from main module
   const SPORTS = window.SPORTS_CONFIG || [];
@@ -1043,21 +1044,6 @@ function dayLabel(dayOffset, d) {
   return d.toLocaleDateString(undefined, { month: "short", day: "2-digit", year: "numeric" });
 }
 
-  function getActiveSport() {
-    const p = location.pathname.replace(/\/+$/, "") || "/";
-    if (p === "/" || p === "/all" || p.startsWith("/all/")) {
-      return { id: "all", slug: "all", sportId: 0, href: "/" };
-    }
-    if (p === "/tv" || p.startsWith("/tv/")) {
-      return { id: "tv", slug: "tv", sportId: 99, href: "/tv" };
-    }
-    if (p === "/sports/football" || p.startsWith("/sports/football")) {
-      return { id: "football", slug: "football", sportId: 1, href: "/sports/football" };
-    }
-    const s = SPORTS.find(x => x.href === p || (x.href !== "/" && p.startsWith(x.href)));
-    if (s) return { id: s.id, slug: s.id, sportId: s.sportId, href: s.href };
-    return { id: "all", slug: "all", sportId: 0, href: "/" };
-  }
 
   // ============================================
   // TV CHANNELS FILTERING
@@ -2422,15 +2408,12 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
       const flashEventIds = new Set(Object.values(flashData.tournaments).flatMap(t => (t.events || []).map(e => e.id)));
       const customMatches = parseCustomMatches(apiItems, flashEventIds);
 
-      // Filter events: only apply Polish TV channel restriction on Football when manual matches are present.
-      // For other sports (Cricket, Tennis, Motorsport, All) show all events so nothing gets purged!
-      const hasActiveFilter = (slug === "football") && ((userChannels && Object.keys(userChannels).length > 0) || manualMatchIds.size > 0);
-      if (hasActiveFilter) {
+      // Strict streamable filtering: ONLY retain matches that have confirmed stream sources!
+      // If a match is not in manualMatchIds, it has NO streams from any provider, so remove it!
+      if (manualMatchIds.size > 0) {
         Object.values(flashData.tournaments).forEach(tournament => {
           if (tournament.events) {
-            tournament.events = tournament.events.filter(event =>
-              hasMatchingChannels(event.tvChannelIds) || manualMatchIds.has(event.id)
-            );
+            tournament.events = tournament.events.filter(event => manualMatchIds.has(event.id));
           }
         });
 
@@ -2442,12 +2425,17 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
         });
       }
 
+      // Filter custom matches by active sport if not "all"
+      const activeCustomMatches = (slug === "all")
+        ? customMatches
+        : customMatches.filter(m => m.sport === slug);
+
       // Count events by status (including custom matches)
-      const counts = countEventsByStatus(flashData.tournaments, customMatches);
+      const counts = countEventsByStatus(flashData.tournaments, activeCustomMatches);
       const hasAnyEvents = counts.live > 0 || counts.finished > 0 || counts.upcoming > 0;
 
       // Setup filters (only show if we have events for today/past)
-      if (dayOffset <= 0 && hasAnyEvents) {
+      if (hasAnyEvents) {
         setupFilters(counts);
       } else {
         setStatusFiltersVisible(false);
@@ -2456,6 +2444,84 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
       // Render matches or empty state
       if (!hasAnyEvents) {
         container.innerHTML = createEmptyStateHTML();
+      } else if (slug === "all") {
+        // Group all streamable matches by sport category
+        const sportCategories = [
+          { id: 'football', name: 'Football', icon: '⚽' },
+          { id: 'cricket', name: 'Cricket', icon: '🏏' },
+          { id: 'basketball', name: 'Basketball', icon: '🏀' },
+          { id: 'motorsport', name: 'Motorsport', icon: '🏎️' },
+          { id: 'american-football', name: 'American Football', icon: '🏈' },
+          { id: 'tennis', name: 'Tennis', icon: '🎾' },
+          { id: 'hockey', name: 'Ice Hockey', icon: '🏒' },
+          { id: 'mma', name: 'Combat & MMA', icon: '🥊' },
+          { id: 'other', name: 'Other Sports', icon: '🏆' }
+        ];
+
+        let sectionsHTML = "";
+
+        sportCategories.forEach(cat => {
+          // Find Flashscore tournaments belonging to this sport
+          const catTournaments = Object.values(flashData.tournaments).filter(t => {
+            return t.events && t.events.some(e => e.sport === cat.id);
+          });
+          // Find custom matches belonging to this sport
+          const catCustom = activeCustomMatches.filter(m => m.sport === cat.id);
+
+          const totalMatches = catTournaments.reduce((acc, t) => acc + (t.events ? t.events.length : 0), 0) + catCustom.length;
+          if (totalMatches === 0) return;
+
+          const liveCount = catTournaments.reduce((acc, t) => acc + (t.events ? t.events.filter(e => e.status === 'inprogress').length : 0), 0) +
+                            catCustom.filter(m => m.status === 'inprogress').length;
+
+          const liveBadge = liveCount > 0 ? `
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-600 text-white animate-pulse">
+              <span class="w-1.5 h-1.5 rounded-full bg-white"></span>${liveCount} LIVE
+            </span>` : '';
+
+          sectionsHTML += `
+            <div class="mb-6 sport-section" data-sport="${cat.id}">
+              <div class="flex items-center justify-between px-3 sm:px-4 py-2.5 mb-2.5 rounded-xl bg-surface border border-border/50 shadow-sm">
+                <div class="flex items-center gap-2 sm:gap-2.5">
+                  <span class="text-base sm:text-lg">${cat.icon}</span>
+                  <h3 class="text-xs sm:text-sm font-bold text-foreground tracking-wide uppercase">${cat.name}</h3>
+                </div>
+                <div class="flex items-center gap-2">
+                  ${liveBadge}
+                  <span class="text-[11px] font-medium text-muted-foreground px-2 py-0.5 rounded-md bg-surface-secondary border border-border/30">${totalMatches} Matches</span>
+                </div>
+              </div>
+          `;
+
+          // Render Flashscore tournaments for this sport (live tournaments first)
+          const sortedTournaments = [...catTournaments].sort((a, b) => {
+            const aHasLive = a.events.some(e => e.status === 'inprogress');
+            const bHasLive = b.events.some(e => e.status === 'inprogress');
+            if (aHasLive && !bHasLive) return -1;
+            if (!aHasLive && bHasLive) return 1;
+            return 0;
+          });
+
+          sortedTournaments.forEach(t => {
+            const sortedEvents = [...t.events].sort((a, b) => {
+              if (a.status === 'inprogress' && b.status !== 'inprogress') return -1;
+              if (a.status !== 'inprogress' && b.status === 'inprogress') return 1;
+              return (parseInt(a.startTime) || 0) - (parseInt(b.startTime) || 0);
+            });
+            sectionsHTML += renderTournament(t, sortedEvents);
+          });
+
+          // Render custom matches for this sport
+          if (catCustom.length > 0) {
+            sectionsHTML += renderCustomMatches(catCustom);
+          }
+
+          sectionsHTML += `</div>`;
+        });
+
+        container.innerHTML = sectionsHTML;
+        applyFilters();
+        cacheLiveEvents(flashData.tournaments);
       } else {
         // Split tournaments by time slots and flatten into array
         const tournamentSlots = [];
@@ -2483,12 +2549,12 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
           });
 
         // Add custom matches as a special slot (no tournament header)
-        if (customMatches.length > 0) {
-          const customEarliestTime = Math.min(...customMatches.map(e => parseInt(e.startTime) || Infinity));
-          const customHasLive = customMatches.some(e => e.status === "inprogress");
+        if (activeCustomMatches.length > 0) {
+          const customEarliestTime = Math.min(...activeCustomMatches.map(e => parseInt(e.startTime) || Infinity));
+          const customHasLive = activeCustomMatches.some(e => e.status === "inprogress");
           tournamentSlots.push({
             tournament: null, // No tournament = custom matches
-            events: customMatches,
+            events: activeCustomMatches,
             earliestTime: customEarliestTime,
             slotKey: "custom",
             hasLive: customHasLive,

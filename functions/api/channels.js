@@ -36,9 +36,14 @@ export async function onRequest(context) {
                     const streams = [];
                     for (const s of (c.streams || [])) {
                         if (s.url) {
+                            let playUrl = s.url;
+                            if (/^https?:\/\/ehgembxe\.cfd\//i.test(playUrl)) {
+                                playUrl = `/api/v1/stream?src=${encodeURIComponent(playUrl)}`;
+                            }
                             streams.push({
                                 name: s.name || 'Live Stream',
-                                url: s.url
+                                url: playUrl,
+                                direct_url: s.url
                             });
                         }
                     }

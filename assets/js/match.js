@@ -1472,7 +1472,7 @@
     const matchDetailsHtml = detailItems.join("");
 
     // Update page title
-    document.title = `${homeName} vs ${awayName} | dzeko11.de`;
+    document.title = `${homeName} vs ${awayName} | AS AryanStreams`;
 
     // Tab translations
     const lblOverview = t(lang, "match.tab.overview") || "Overview";

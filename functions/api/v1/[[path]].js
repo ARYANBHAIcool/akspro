@@ -139,8 +139,9 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
         // ----------------------------------------------------
         if (parts[0] === 'match' && parts.length > 1) {
             const rawId = parts.slice(1).join('/');
-            const cleanId = rawId.replace(/^(FS:|CUST:|TIM:|TOP:)/, '');
-            const fsId = rawId.startsWith('CUST:') || rawId.startsWith('TIM:') || rawId.startsWith('TOP:') ? rawId : `FS:${cleanId}`;
+            let cleanId = rawId.replace(/^(FS:|CUST:|TIM:|TOP:|BIN:)/, '');
+            try { cleanId = decodeURIComponent(cleanId); } catch (e) {}
+            const fsId = rawId.startsWith('CUST:') || rawId.startsWith('TIM:') || rawId.startsWith('TOP:') || rawId.startsWith('BIN:') ? rawId : `FS:${cleanId}`;
 
             const urlObj = new URL(request.url);
             const qSport = (urlObj.searchParams.get('sport') || '').toLowerCase();
@@ -221,12 +222,15 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // Special handle for TIM: or TOP: IDs
+            // Special handle for TIM:, BIN:, or TOP: IDs
             if (rawId.startsWith('TIM:')) {
-                const decoded = decodeURIComponent(cleanId);
-                const parts = decoded.split(/\s*(?:vs\.?|@|-)\s*/i);
-                homeName = parts[0] || decoded;
-                awayName = parts[1] || '';
+                const parts = cleanId.split(/\s*(?:vs\.?|@|-)\s*/i);
+                homeName = parts[0]?.trim() || cleanId;
+                awayName = parts[1]?.trim() || '';
+            } else if (rawId.startsWith('BIN:')) {
+                const parts = cleanId.split(/\s*(?:vs\.?|@|-)\s*/i);
+                homeName = parts[0]?.trim() || cleanId;
+                awayName = parts[1]?.trim() || '';
             } else if (rawId.startsWith('TOP:')) {
                 const team = cleanId.replace(/^(nba_|nfl_)/, '');
                 homeName = team.toUpperCase();
@@ -260,16 +264,22 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                         ...(bintvData['Live Events'] || []),
                         ...(bintvData['Upcoming Events'] || [])
                     ];
+                    const cLow = cleanId.toLowerCase();
+                    const hLow = (homeName || '').toLowerCase();
+                    const aLow = (awayName || '').toLowerCase();
+
                     for (const ev of allEvents) {
                         const evName = (ev.name || '').toLowerCase();
+                        const evId = (ev.id || '').toLowerCase();
                         let isMatch = false;
-                        if (cleanId.length > 3 && evName.includes(cleanId.toLowerCase())) isMatch = true;
-                        else if (homeName && homeName.length > 3 && evName.includes(homeName.toLowerCase())) isMatch = true;
-                        else if (awayName && awayName.length > 3 && evName.includes(awayName.toLowerCase())) isMatch = true;
+                        if (rawId.startsWith('BIN:') && (evId.includes(cLow) || cLow.includes(evId) || evName.includes(cLow) || cLow.includes(evName))) isMatch = true;
+                        else if (cLow.length > 3 && (evName.includes(cLow) || evId.includes(cLow))) isMatch = true;
+                        else if (hLow.length > 3 && (evName.includes(hLow) || evId.includes(hLow))) isMatch = true;
+                        else if (aLow.length > 3 && (evName.includes(aLow) || evId.includes(aLow))) isMatch = true;
 
                         if (isMatch) {
                             for (const s of (ev.streams || [])) {
-                                if (s.url) addStream(s.name || `Live Stream ${customUrls.length + 1}`, s.url);
+                                if (s.url) addStream(s.name || `BinTV Live Stream ${customUrls.length + 1}`, s.url);
                             }
                         }
                     }
@@ -283,15 +293,19 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     const tEvents = tLiveData.events || [];
                     const hLow = (homeName || '').toLowerCase();
                     const aLow = (awayName || '').toLowerCase();
+                    const cLow = cleanId.toLowerCase();
 
                     for (const ev of tEvents) {
                         const evName = (ev.name || '').toLowerCase();
+                        const evUrl = (ev.url || '').toLowerCase();
                         let isMatch = false;
-                        if (rawId.startsWith('TIM:') && evName.includes(cleanId.toLowerCase())) {
+                        if (rawId.startsWith('TIM:') && (evName.includes(cLow) || cLow.includes(evName) || evUrl.includes(cLow) || cLow.includes(evUrl))) {
                             isMatch = true;
-                        } else if (hLow.length > 3 && evName.includes(hLow)) {
+                        } else if (cLow.length > 3 && (evName.includes(cLow) || evUrl.includes(cLow))) {
                             isMatch = true;
-                        } else if (aLow.length > 3 && evName.includes(aLow)) {
+                        } else if (hLow.length > 3 && (evName.includes(hLow) || evUrl.includes(hLow))) {
+                            isMatch = true;
+                        } else if (aLow.length > 3 && (evName.includes(aLow) || evUrl.includes(aLow))) {
                             isMatch = true;
                         }
 
@@ -440,14 +454,6 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
             }
 
-            // 9. Universal Fallback - Ensure NO MATCH ever shows "no sources"
-            if (customUrls.length === 0) {
-                addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
-                addStream('TNT Sports 1 HD', 'https://ehgembxe.cfd/e0lyrkhr-1002', 'https://ehgembxe.cfd/e0lyrkhr-1002');
-                addStream('ARENA SPORT 1 HD', 'https://ehgembxe.cfd/pmk4006b-7099', 'https://ehgembxe.cfd/pmk4006b-7099');
-                addStream('CANAL+ Sport HD', 'https://ehgembxe.cfd/jr4cynbo-9272', 'https://ehgembxe.cfd/jr4cynbo-9272');
-            }
-
             // Prioritize direct HTTPS streams (ehgembxe.cfd, bintv, topstreamer) so Server 1 plays instantly
             customUrls.sort((a, b) => {
                 const aDirect = a.url.startsWith('https://');
@@ -533,14 +539,61 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                             const tRes = await fastFetch2('https://tim-streams.com/api/live-upcoming', { 'User-Agent': 'Mozilla/5.0' }, 2200);
                             if (tRes && tRes.ok) {
                                 const tData = await tRes.json();
+                                const genreToSport = {
+                                    1: 'football',
+                                    2: 'motorsport',
+                                    3: 'basketball',
+                                    7: 'basketball',
+                                    5: 'mma',
+                                    8: 'american-football',
+                                    11: 'hockey',
+                                    16: 'boxing',
+                                    28: 'mma'
+                                };
                                 for (const ev of (tData.events || [])) {
                                     const tId = `TIM:${encodeURIComponent(ev.name || 'Event')}`;
                                     if (!seenIds.has(tId)) {
                                         seenIds.add(tId);
+                                        const sp = genreToSport[ev.genre] || 'football';
                                         allItems.push({
                                             match_id: tId,
                                             name: ev.name,
-                                            sport: 'other',
+                                            sport: sp,
+                                            start_ts: Math.floor(Date.now() / 1000)
+                                        });
+                                    }
+                                }
+                            }
+                        } catch (e) {}
+                    })(),
+                    // B2. Query BinTV Live & Upcoming Events
+                    (async () => {
+                        try {
+                            const bRes = await fastFetch2('https://bintvjson.lovable.app/api/public/bintvjson', { 'Accept': 'application/json' }, 2000);
+                            if (bRes && bRes.ok) {
+                                const bData = await bRes.json();
+                                const bEvents = [
+                                    ...(bData['Live Events'] || []),
+                                    ...(bData['Upcoming Events'] || [])
+                                ];
+                                for (const ev of bEvents) {
+                                    const bId = `BIN:${encodeURIComponent(ev.id || ev.name || 'Event')}`;
+                                    if (!seenIds.has(bId)) {
+                                        seenIds.add(bId);
+                                        let sp = 'football';
+                                        const cat = (ev.category || '').toLowerCase();
+                                        if (cat.includes('cricket')) sp = 'cricket';
+                                        else if (cat.includes('basket') || cat.includes('nba')) sp = 'basketball';
+                                        else if (cat.includes('motor') || cat.includes('racing') || cat.includes('f1')) sp = 'motorsport';
+                                        else if (cat.includes('nfl') || cat.includes('american')) sp = 'american-football';
+                                        else if (cat.includes('hockey') || cat.includes('nhl')) sp = 'hockey';
+                                        else if (cat.includes('tennis')) sp = 'tennis';
+                                        else if (cat.includes('mma') || cat.includes('ufc') || cat.includes('fight')) sp = 'mma';
+
+                                        allItems.push({
+                                            match_id: bId,
+                                            name: ev.name,
+                                            sport: sp,
                                             start_ts: Math.floor(Date.now() / 1000)
                                         });
                                     }
