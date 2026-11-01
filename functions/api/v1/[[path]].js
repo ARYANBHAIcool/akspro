@@ -32,6 +32,53 @@ export async function onRequest(context) {
             const token = (url.searchParams.get('token') || url.searchParams.get('id') || parts[1] || '').trim();
             const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
+            // Handle ehgembxe / Tim-Streams / BinTV embeds (strip anti-sandbox & ads, spoof Referer)
+            if (rawUrl && (/^https?:\/\/ehgembxe\.cfd\//i.test(rawUrl) || /^https?:\/\/bintv-sources\.pages\.dev\//i.test(rawUrl))) {
+                let targetUrl = rawUrl;
+                if (/bintv-sources\.pages\.dev/i.test(rawUrl)) {
+                    try {
+                        const u = new URL(rawUrl);
+                        const idParam = u.searchParams.get('id');
+                        if (idParam) {
+                            const decoded = atob(idParam.replace(/-/g, '+').replace(/_/g, '/'));
+                            if (/^https?:\/\//i.test(decoded)) targetUrl = decoded;
+                        }
+                    } catch (e) {}
+                }
+                try {
+                    const resp = await fetch(targetUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                            'Referer': 'https://tim-streams.com/'
+                        }
+                    });
+                    if (resp.ok) {
+                        let html = await resp.text();
+                        // Strip the anti-sandbox probe script cleanly!
+                        html = html.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?Remove sandbox attributes[\s\S]*?<\/script>/gi, '');
+                        html = html.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?__sb_probe[\s\S]*?<\/script>/gi, '');
+                        html = html.replace(/<script[^>]*disable-devtool[^>]*>[\s\S]*?<\/script>/gi, '');
+                        html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
+                        html = html.replace('<head>', '<head><base href="https://ehgembxe.cfd/">');
+                        const darkCss = `<style>
+html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
+#player, .jwplayer { width: 100% !important; height: 100% !important; }
+video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+</style>`;
+                        html = html.replace('</head>', darkCss + '</head>');
+                        return new Response(html, {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'text/html; charset=utf-8',
+                                'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+                                'Access-Control-Allow-Origin': '*'
+                            }
+                        });
+                    }
+                } catch (e) {}
+                return Response.redirect(targetUrl, 302);
+            }
+
             // Handle TopStreamer proxy (strip X-Frame-Options and CSP frame-ancestors)
             if (rawUrl && /^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(rawUrl)) {
                 try {
@@ -186,12 +233,11 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 let playUrl = url.trim();
                 let direct = directUrl || playUrl;
 
-                // Exclude hosts that enforce same-origin or anti-sandbox scripts
+                // Route anti-sandbox/cors hosts through edge stream proxy
                 if (/ehgembxe\.cfd/i.test(playUrl) || /bintv-sources\.pages\.dev/i.test(playUrl)) {
-                    return;
-                }
-
-                if (/^[a-f0-9]{32}$/i.test(playUrl)) {
+                    direct = playUrl;
+                    playUrl = `/api/v1/stream?src=${encodeURIComponent(playUrl)}`;
+                } else if (/^[a-f0-9]{32}$/i.test(playUrl)) {
                     direct = `https://iplayer24.me/beta/${playUrl}`;
                     playUrl = `/api/v1/stream?token=${playUrl}`;
                 } else if (/^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(playUrl)) {
@@ -268,14 +314,34 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             if (cleanId === 'OWc65atm' && !homeName) { homeName = 'Chelsea'; awayName = 'Manchester Utd'; }
 
             // Special handle for TIM:, BIN:, or TOP: IDs
+            function parseCustomTeams(str) {
+                if (!str) return { home: '', away: '' };
+                if (str.includes('-v-') || str.includes('-vs-')) {
+                    const vParts = str.split(/-vs?-/i);
+                    const h = vParts[0].replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
+                    const a = (vParts[1] || '').replace(/-\d+$/, '').replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim();
+                    return { home: h, away: a };
+                } else if (str.includes('@')) {
+                    const atParts = str.split(/\s*@\s*/);
+                    return { home: atParts[0]?.trim() || '', away: atParts[1]?.trim() || '' };
+                } else if (/\s+vs\.?\s+/i.test(str)) {
+                    const vsParts = str.split(/\s+vs\.?\s+/i);
+                    return { home: vsParts[0]?.trim() || '', away: vsParts[1]?.trim() || '' };
+                } else if (/\s+-\s+/.test(str)) {
+                    const dashParts = str.split(/\s+-\s+/);
+                    return { home: dashParts[0]?.trim() || '', away: dashParts[1]?.trim() || '' };
+                }
+                return { home: str.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase()).trim(), away: '' };
+            }
+
             if (rawId.startsWith('TIM:')) {
-                const parts = cleanId.split(/\s*(?:vs\.?|@|-)\s*/i);
-                homeName = parts[0]?.trim() || cleanId;
-                awayName = parts[1]?.trim() || '';
+                const parsed = parseCustomTeams(cleanId);
+                homeName = parsed.home;
+                awayName = parsed.away;
             } else if (rawId.startsWith('BIN:')) {
-                const parts = cleanId.split(/\s*(?:vs\.?|@|-)\s*/i);
-                homeName = parts[0]?.trim() || cleanId;
-                awayName = parts[1]?.trim() || '';
+                const parsed = parseCustomTeams(cleanId);
+                homeName = parsed.home;
+                awayName = parsed.away;
             } else if (rawId.startsWith('TOP:')) {
                 const isNba = cleanId.startsWith('nba_');
                 const isNfl = cleanId.startsWith('nfl_');
@@ -397,7 +463,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                 const evHtml = await evRes.text();
                                 const embedLinks = evHtml.match(/https?:\/\/[^\s"'<>]+/g) || [];
                                 const validEmbeds = embedLinks.filter(u => 
-                                    (u.includes('hitcast.st') || u.includes('streamec.st') || u.includes('rockyembed.st') || u.includes('flyembed.cfd') || u.includes('daddylive1') || u.includes('taifood-blog')) &&
+                                    (u.includes('hitcast.st') || u.includes('streamec.st') || u.includes('rockyembed.st') || u.includes('flyembed.cfd') || u.includes('daddylive1') || u.includes('taifood-blog') || u.includes('trendy48') || u.includes('vivtops') || u.includes('vertex') || u.includes('embedcenter') || u.includes('gblog')) &&
                                     !u.endsWith('.png') && !u.endsWith('.jpg') && !u.endsWith('.js') && !u.endsWith('.css')
                                 );
                                 let idx = 1;
@@ -414,15 +480,21 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // F. Match against Tim-Streams 24/7 Channels if team names match TV broadcaster
+            // F. Parse Tim-Streams 24/7 Channels
+            let timChannels = [];
             if (timChanRes.status === 'fulfilled' && timChanRes.value && timChanRes.value.ok) {
                 try {
                     const tChanData = await timChanRes.value.json();
-                    const channels = tChanData.channels || [];
+                    timChannels = tChanData.channels || [];
+                } catch (e) {}
+            }
+
+            if (timChannels.length > 0) {
+                try {
                     const hNorm = normalizeTeam(homeName);
                     const aNorm = normalizeTeam(awayName);
 
-                    for (const ch of channels) {
+                    for (const ch of timChannels) {
                         const chName = (ch.name || '').toLowerCase();
                         let matchesChannel = false;
                         if (hNorm.length >= 4 && chName.includes(hNorm)) matchesChannel = true;
@@ -437,20 +509,44 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
+            // G. Cricket match broadcaster channels (Sky Sports Cricket, Willow, Sony Sports, Fox Sports, Ten Sports)
+            const isCricket = qSport === 'cricket' ||
+                ['Sf1w7jsR', 'OjOKEBcN', 'f3Cirdak', 'l2XddLp9'].includes(cleanId) ||
+                /cricket|pakistan|sri lanka|south africa|australia|india|new zealand|bangladesh|west indies/i.test(`${homeName} ${awayName} ${cleanId}`);
+
+            if (isCricket && timChannels.length > 0) {
+                try {
+                    for (const ch of timChannels) {
+                        const chName = (ch.name || '').toLowerCase();
+                        if (chName.includes('cricket') || chName.includes('willow') || chName.includes('sony sports') || chName.includes('ptv') || chName.includes('ten sports')) {
+                            for (const s of (ch.streams || [])) {
+                                if (s.url) addStream(`${ch.name} (Live TV)`, s.url, s.url);
+                            }
+                        }
+                    }
+                } catch (e) {}
+            }
+
             // Prioritize reliable embeddable match streams:
-            // 1. Dzeko/Strumyk proxied match streams (/api/v1/stream?token=)
-            // 2. Direct embed streams without iframe restrictions (streamec, rockyembed, flyembed, vivtops, etc.)
-            // 3. TopStreamer streams (which work directly via pop-out)
+            // 1. Direct embed streams without iframe restrictions (streamec, rockyembed, flyembed, vivtops, trendy48, taifood, vertex, daddylive, hitcast)
+            // 2. Proxied streams (/api/v1/stream?src=)
+            // 3. Dzeko/Strumyk proxied match streams (/api/v1/stream?token=)
+            // 4. TopStreamer streams (which work directly via pop-out)
             customUrls.sort((a, b) => {
+                const aEmbed = Boolean(a.url && (a.url.includes('streamec') || a.url.includes('rockyembed') || a.url.includes('flyembed') || a.url.includes('daddylive') || a.url.includes('vivtops') || a.url.includes('trendy48') || a.url.includes('taifood') || a.url.includes('hitcast') || a.url.includes('vertex')));
+                const bEmbed = Boolean(b.url && (b.url.includes('streamec') || b.url.includes('rockyembed') || b.url.includes('flyembed') || b.url.includes('daddylive') || b.url.includes('vivtops') || b.url.includes('trendy48') || b.url.includes('taifood') || b.url.includes('hitcast') || b.url.includes('vertex')));
+                if (aEmbed && !bEmbed) return -1;
+                if (!aEmbed && bEmbed) return 1;
+
+                const aSrc = Boolean(a.url && a.url.startsWith('/api/v1/stream?src='));
+                const bSrc = Boolean(b.url && b.url.startsWith('/api/v1/stream?src='));
+                if (aSrc && !bSrc) return -1;
+                if (!aSrc && bSrc) return 1;
+
                 const aToken = Boolean(a.url && a.url.startsWith('/api/v1/stream?token='));
                 const bToken = Boolean(b.url && b.url.startsWith('/api/v1/stream?token='));
                 if (aToken && !bToken) return -1;
                 if (!aToken && bToken) return 1;
-
-                const aEmbed = Boolean(a.url && (a.url.includes('streamec') || a.url.includes('rockyembed') || a.url.includes('flyembed') || a.url.includes('daddylive') || a.url.includes('vivtops') || a.url.includes('trendy48') || a.url.includes('taifood')));
-                const bEmbed = Boolean(b.url && (b.url.includes('streamec') || b.url.includes('rockyembed') || b.url.includes('flyembed') || b.url.includes('daddylive') || b.url.includes('vivtops') || b.url.includes('trendy48') || b.url.includes('taifood')));
-                if (aEmbed && !bEmbed) return -1;
-                if (!aEmbed && bEmbed) return 1;
 
                 const aTop = Boolean(a.url && a.url.includes('topstreamer.site'));
                 const bTop = Boolean(b.url && b.url.includes('topstreamer.site'));
@@ -780,7 +876,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                         const tData = await timRes.value.json();
                         for (const ev of (tData.events || [])) {
                             if (ev.genre === 7 || (ev.sport || '').toLowerCase().includes('basket') || (ev.name || '').toLowerCase().includes('nba')) {
-                                const tId = `TIM:${ev.url}`;
+                                const tId = `TIM:${encodeURIComponent(ev.name || ev.url || 'Event')}`;
                                 if (!bSeen.has(tId)) {
                                     bSeen.add(tId);
                                     bItems.push({

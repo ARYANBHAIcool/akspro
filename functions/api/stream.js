@@ -8,6 +8,53 @@ export async function onRequest(context) {
     const token = (url.searchParams.get('token') || url.searchParams.get('id') || '').trim();
     const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
+    // Handle ehgembxe / Tim-Streams / BinTV embeds (strip anti-sandbox & ads, spoof Referer)
+    if (rawUrl && (/^https?:\/\/ehgembxe\.cfd\//i.test(rawUrl) || /^https?:\/\/bintv-sources\.pages\.dev\//i.test(rawUrl))) {
+        let targetUrl = rawUrl;
+        if (/bintv-sources\.pages\.dev/i.test(rawUrl)) {
+            try {
+                const u = new URL(rawUrl);
+                const idParam = u.searchParams.get('id');
+                if (idParam) {
+                    const decoded = atob(idParam.replace(/-/g, '+').replace(/_/g, '/'));
+                    if (/^https?:\/\//i.test(decoded)) targetUrl = decoded;
+                }
+            } catch (e) {}
+        }
+        try {
+            const resp = await fetch(targetUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                    'Referer': 'https://tim-streams.com/'
+                }
+            });
+            if (resp.ok) {
+                let html = await resp.text();
+                // Strip the anti-sandbox probe script cleanly!
+                html = html.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?Remove sandbox attributes[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*>(?:(?!<\/script>)[\s\S])*?__sb_probe[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*disable-devtool[^>]*>[\s\S]*?<\/script>/gi, '');
+                html = html.replace(/<script[^>]*aclib\.runPop[\s\S]*?<\/script>/gi, '');
+                html = html.replace('<head>', '<head><base href="https://ehgembxe.cfd/">');
+                const darkCss = `<style>
+html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
+#player, .jwplayer { width: 100% !important; height: 100% !important; }
+video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+</style>`;
+                html = html.replace('</head>', darkCss + '</head>');
+                return new Response(html, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                });
+            }
+        } catch (e) {}
+        return Response.redirect(targetUrl, 302);
+    }
+
     // TopStreamer proxy: strip X-Frame-Options and CSP frame-ancestors
     if (rawUrl && /^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(rawUrl)) {
         try {
