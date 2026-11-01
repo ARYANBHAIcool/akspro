@@ -40,8 +40,12 @@ video { width: 100% !important; height: 100% !important; object-fit: contain !im
                         'Access-Control-Allow-Origin': '*'
                     }
                 });
+            } else {
+                return new Response(`TopStreamer upstream status: ${topResp.status}`, { status: 502 });
             }
-        } catch (e) {}
+        } catch (e) {
+            return new Response(`TopStreamer fetch error: ${e.message}`, { status: 500 });
+        }
     }
 
     if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
