@@ -64,12 +64,9 @@ video { width: 100% !important; height: 100% !important; object-fit: contain !im
                                 'Access-Control-Allow-Origin': '*'
                             }
                         });
-                    } else {
-                        return new Response(`TopStreamer upstream status: ${topResp.status}`, { status: 502 });
                     }
-                } catch (e) {
-                    return new Response(`TopStreamer fetch error: ${e.message}`, { status: 500 });
-                }
+                } catch (e) {}
+                return Response.redirect(rawUrl, 302);
             }
 
             // Direct iframe proxy with upstream referer bypass
@@ -440,18 +437,25 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // Prioritize reliable proxied match streams (/api/v1/stream?token=... and /api/v1/stream?src=...)
-            // so Server 1 plays instantly without ad-block or sandbox issues!
+            // Prioritize reliable embeddable match streams:
+            // 1. Dzeko/Strumyk proxied match streams (/api/v1/stream?token=)
+            // 2. Direct embed streams without iframe restrictions (streamec, rockyembed, flyembed, vivtops, etc.)
+            // 3. TopStreamer streams (which work directly via pop-out)
             customUrls.sort((a, b) => {
                 const aToken = Boolean(a.url && a.url.startsWith('/api/v1/stream?token='));
                 const bToken = Boolean(b.url && b.url.startsWith('/api/v1/stream?token='));
                 if (aToken && !bToken) return -1;
                 if (!aToken && bToken) return 1;
 
-                const aTop = Boolean(a.url && a.url.startsWith('/api/v1/stream?src='));
-                const bTop = Boolean(b.url && b.url.startsWith('/api/v1/stream?src='));
-                if (aTop && !bTop) return -1;
-                if (!aTop && bTop) return 1;
+                const aEmbed = Boolean(a.url && (a.url.includes('streamec') || a.url.includes('rockyembed') || a.url.includes('flyembed') || a.url.includes('daddylive') || a.url.includes('vivtops') || a.url.includes('trendy48') || a.url.includes('taifood')));
+                const bEmbed = Boolean(b.url && (b.url.includes('streamec') || b.url.includes('rockyembed') || b.url.includes('flyembed') || b.url.includes('daddylive') || b.url.includes('vivtops') || b.url.includes('trendy48') || b.url.includes('taifood')));
+                if (aEmbed && !bEmbed) return -1;
+                if (!aEmbed && bEmbed) return 1;
+
+                const aTop = Boolean(a.url && a.url.includes('topstreamer.site'));
+                const bTop = Boolean(b.url && b.url.includes('topstreamer.site'));
+                if (aTop && !bTop) return 1;
+                if (!aTop && bTop) return -1;
 
                 return 0;
             });
