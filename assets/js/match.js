@@ -1039,7 +1039,7 @@
         name: data.name || `${homeName} - ${awayName}`,
         homeName,
         awayName,
-        status: status === "3" && (data.custom_urls && data.custom_urls.length > 0) ? "2" : status,
+        status: data.status ? String(data.status) : (status === "3" && (data.custom_urls && data.custom_urls.length > 0) ? "2" : status),
         channels: data.channels || [],
         customUrls: data.custom_urls || [],
         isCustomEvent: true

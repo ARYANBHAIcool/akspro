@@ -572,12 +572,16 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
             };
 
             const matchName = (homeName && awayName) ? `${homeName} - ${awayName}` : (homeName || cleanId);
+            let matchStatus = '2';
+            if (cleanId === 'Sf1w7jsR' || cleanId === 'OWc65atm' || cleanId === 'f3Cirdak' || cleanId === 'OjOKEBcN') {
+                matchStatus = '3'; // Ended / Full Time
+            }
             return new Response(JSON.stringify({
                 match_id: rawId,
                 name: matchName,
                 sport: qSport || 'football',
                 start_ts: Math.floor(Date.now() / 1000) - 1800,
-                status: '2',
+                status: matchStatus,
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
                 channels: []
@@ -609,16 +613,6 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 const allSports = ['football', 'cricket', 'basketball', 'motorsport', 'hockey', 'tennis', 'volleyball', 'american-football'];
                 const allItems = [];
                 const seenIds = new Set();
-
-                // Always include top priority matches (Cricket tests & Chelsea vs Man Utd)
-                seenIds.add('FS:OjOKEBcN');
-                allItems.push({ match_id: 'FS:OjOKEBcN', sport: 'cricket', name: 'Australia vs South Africa (Test)' });
-                seenIds.add('FS:Sf1w7jsR');
-                allItems.push({ match_id: 'FS:Sf1w7jsR', sport: 'cricket', name: 'Pakistan vs Sri Lanka' });
-                seenIds.add('FS:f3Cirdak');
-                allItems.push({ match_id: 'FS:f3Cirdak', sport: 'cricket', name: 'Bangladesh vs West Indies' });
-                seenIds.add('FS:OWc65atm');
-                allItems.push({ match_id: 'FS:OWc65atm', sport: 'football', name: 'Chelsea vs Manchester United' });
 
                 // Fetch multi-sport fixtures concurrently
                 await Promise.allSettled([
@@ -783,30 +777,72 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 });
             }
 
-            // Sport: Cricket
+            // Sport: Cricket (Dynamic Fixtures & Live Matches)
             if (sport === 'cricket') {
-                const cItems = [
-                    { match_id: 'FS:OjOKEBcN', name: 'Australia vs South Africa (Test)' },
-                    { match_id: 'FS:Sf1w7jsR', name: 'Pakistan vs Sri Lanka' },
-                    { match_id: 'FS:f3Cirdak', name: 'Bangladesh vs West Indies' },
-                    { match_id: 'FS:l2XddLp9', name: 'United Arab Emirates vs Netherlands' }
-                ];
-                const cSeen = new Set(['FS:OjOKEBcN', 'FS:Sf1w7jsR', 'FS:f3Cirdak', 'FS:l2XddLp9']);
-                for (const host of ['dzeko11.pk', 'strumyk.pk']) {
-                    try {
-                        const hostUrl = `https://${host}/api/v1/cricket/${encodeURIComponent(date)}`;
-                        const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2000);
-                        if (resp && resp.ok) {
-                            const data = await resp.json();
+                const cItems = [];
+                const cSeen = new Set();
+                const [dzekoRes, strumykRes, bintvRes, timRes] = await Promise.allSettled([
+                    fastFetch2(`https://dzeko11.pk/api/v1/cricket/${encodeURIComponent(date)}`, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://dzeko11.pk/' }, 2000),
+                    fastFetch2(`https://strumyk.pk/api/v1/cricket/${encodeURIComponent(date)}`, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://strumyk.pk/' }, 2000),
+                    fastFetch2('https://bintvjson.lovable.app/api/public/bintvjson', { 'Accept': 'application/json' }, 2000),
+                    fastFetch2('https://tim-streams.com/api/live-upcoming', { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 2000)
+                ]);
+
+                for (const r of [dzekoRes, strumykRes]) {
+                    if (r.status === 'fulfilled' && r.value && r.value.ok) {
+                        try {
+                            const data = await r.value.json();
                             for (const it of (data.items || [])) {
                                 if (it.match_id && !cSeen.has(it.match_id)) {
                                     cSeen.add(it.match_id);
                                     cItems.push(it);
                                 }
                             }
+                        } catch (e) {}
+                    }
+                }
+
+                if (bintvRes.status === 'fulfilled' && bintvRes.value && bintvRes.value.ok) {
+                    try {
+                        const bData = await bintvRes.value.json();
+                        const allEvents = [...(bData['Live Events'] || []), ...(bData['Upcoming Events'] || [])];
+                        for (const ev of allEvents) {
+                            if ((ev.category || '').toLowerCase().includes('cricket') || (ev.name || '').toLowerCase().includes('cricket')) {
+                                const bId = `BIN:${ev.id}`;
+                                if (!cSeen.has(bId)) {
+                                    cSeen.add(bId);
+                                    cItems.push({
+                                        match_id: bId,
+                                        name: ev.name,
+                                        sport: 'cricket',
+                                        start_ts: Math.floor(Date.now() / 1000)
+                                    });
+                                }
+                            }
                         }
                     } catch (e) {}
                 }
+
+                if (timRes.status === 'fulfilled' && timRes.value && timRes.value.ok) {
+                    try {
+                        const tData = await timRes.value.json();
+                        for (const ev of (tData.events || [])) {
+                            if ((ev.sport || '').toLowerCase().includes('cricket') || (ev.name || '').toLowerCase().includes('cricket')) {
+                                const tId = `TIM:${encodeURIComponent(ev.name || ev.url || 'Event')}`;
+                                if (!cSeen.has(tId)) {
+                                    cSeen.add(tId);
+                                    cItems.push({
+                                        match_id: tId,
+                                        name: ev.name,
+                                        sport: 'cricket',
+                                        start_ts: Math.floor(Date.now() / 1000)
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+
                 return new Response(JSON.stringify({ date: date, items: cItems }), {
                     status: 200,
                     headers: corsHeaders

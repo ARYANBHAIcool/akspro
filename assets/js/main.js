@@ -2405,7 +2405,7 @@ class="w-full group block px-3 sm:px-5 py-3 sm:py-3 cursor-pointer transition-al
           tournament.events = tournament.events.filter(event => {
             const eventTs = parseInt(event.startTime) || 0;
             const endTsEvent = parseInt(event.endTime) || eventTs;
-            if (dayOffset === 0 && (event.status === "inprogress" || event.id === "OjOKEBcN")) return true;
+            if (dayOffset === 0 && event.status === "inprogress") return true;
             if (eventTs <= endTs && endTsEvent >= startTs) return true;
             return eventTs >= startTs && eventTs <= endTs;
           });
