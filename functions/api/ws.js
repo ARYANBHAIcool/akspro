@@ -11,50 +11,42 @@ export async function onRequest(context) {
 
     try {
         const [client, server] = Object.values(new WebSocketPair());
+        server.accept();
 
-        const reqHeaders = {
-            'Upgrade': 'websocket',
-            'Connection': 'Upgrade',
-            'Host': 'l1.strims24.st',
-            'Origin': 'https://iplayer24.me',
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36'
-        };
-        const secKey = context.request.headers.get('Sec-WebSocket-Key');
-        if (secKey) reqHeaders['Sec-WebSocket-Key'] = secKey;
-        const secVer = context.request.headers.get('Sec-WebSocket-Version');
-        if (secVer) reqHeaders['Sec-WebSocket-Version'] = secVer;
+        const headers = new Headers();
+        headers.set('Upgrade', 'websocket');
+        headers.set('Origin', 'https://iplayer24.me');
+        headers.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36');
 
         const backendResponse = await fetch('https://l1.strims24.st/ws', {
-            headers: reqHeaders
+            headers: headers
         });
 
         const backendWs = backendResponse.webSocket;
         if (!backendWs) {
-            return new Response('Upstream WS failed: status=' + backendResponse.status + ' ' + backendResponse.statusText, { status: 502 });
+            return new Response(`Upstream WS failed: status=${backendResponse.status} text=${backendResponse.statusText}`, { status: 502 });
         }
-
         backendWs.accept();
-        server.accept();
 
         server.addEventListener('message', event => {
-            try { backendWs.send(event.data); } catch(e){}
+            try { backendWs.send(event.data); } catch (e) {}
         });
         backendWs.addEventListener('message', event => {
-            try { server.send(event.data); } catch(e){}
+            try { server.send(event.data); } catch (e) {}
         });
 
         server.addEventListener('close', event => {
-            try { backendWs.close(event.code, event.reason); } catch(e){}
+            try { backendWs.close(event.code, event.reason); } catch (e) {}
         });
         backendWs.addEventListener('close', event => {
-            try { server.close(event.code, event.reason); } catch(e){}
+            try { server.close(event.code, event.reason); } catch (e) {}
         });
 
         server.addEventListener('error', () => {
-            try { backendWs.close(); } catch(e){}
+            try { backendWs.close(); } catch (e) {}
         });
         backendWs.addEventListener('error', () => {
-            try { server.close(); } catch(e){}
+            try { server.close(); } catch (e) {}
         });
 
         return new Response(null, {

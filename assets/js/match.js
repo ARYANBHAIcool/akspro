@@ -1009,25 +1009,37 @@
       const data = await response.json();
 
       // Calculate status based on start time and sport duration
-      const status = calculateCustomEventStatus(data.start_ts, data.sport, data.end_ts);
+      const status = data.status || calculateCustomEventStatus(data.start_ts, data.sport, data.end_ts);
 
-      // Parse the name - might have " - " separator or not
-      let homeName = data.name || "Event";
-      let awayName = "";
-      if (data.name && data.name.includes(" - ")) {
-        const parts = data.name.split(" - ");
-        homeName = parts[0].trim();
-        awayName = parts[1]?.trim() || "";
+      // Parse the name - handle teams object, " - ", " vs ", " @ "
+      let homeName = data.teams?.home || data.name || "Event";
+      let awayName = data.teams?.away || "";
+      if (!data.teams?.away && data.name) {
+        if (data.name.includes(" - ")) {
+          const parts = data.name.split(" - ");
+          homeName = parts[0].trim();
+          awayName = parts[1]?.trim() || "";
+        } else if (data.name.includes(" vs ")) {
+          const parts = data.name.split(" vs ");
+          homeName = parts[0].trim();
+          awayName = parts[1]?.trim() || "";
+        } else if (data.name.includes(" @ ")) {
+          const parts = data.name.split(" @ ");
+          homeName = parts[1].trim();
+          awayName = parts[0].trim();
+        }
       }
 
+      const startTs = data.start_ts || Math.floor(Date.now() / 1000) - 1800;
+
       return {
-        matchID: data.match_id,
-        sport: data.sport,
-        startTs: data.start_ts,
-        name: data.name,
+        matchID: data.match_id || matchID,
+        sport: data.sport || (spObj && spObj.id) || "football",
+        startTs: startTs,
+        name: data.name || `${homeName} - ${awayName}`,
         homeName,
         awayName,
-        status,
+        status: status === "3" && (data.custom_urls && data.custom_urls.length > 0) ? "2" : status,
         channels: data.channels || [],
         customUrls: data.custom_urls || [],
         isCustomEvent: true
@@ -1778,8 +1790,8 @@
             </div>
           </div>
 
-          ${status !== "3" ? `
-          <!-- Broadcast Content (hidden when finished) -->
+          ${(status !== "3" || (customUrls && customUrls.length > 0)) ? `
+          <!-- Broadcast Content -->
           <div id="tab-content-broadcast" class="tab-content">
             <div class="card card--default p-6">
               <div class="flex items-center justify-center gap-3">

@@ -105,8 +105,8 @@ video { width: 100% !important; height: 100% !important; object-fit: contain !im
                 return new Response('Stream token unavailable or expired.', { status: 502 });
             }
 
-            // 1. Direct upstream WebSocket (no proxy needed - browsers connect directly without CORS)
-            // html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
+            // 1. Edge WebSocket proxy (forwards with Origin: https://iplayer24.me to bypass 403)
+            html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
             html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
 
             // 2. Strip intrusive ads/popups/runtime completely
@@ -468,8 +468,13 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 'Cache-Control': 'public, max-age=20, stale-while-revalidate=60'
             };
 
+            const matchName = (homeName && awayName) ? `${homeName} - ${awayName}` : (homeName || cleanId);
             return new Response(JSON.stringify({
-                match_id: fsId,
+                match_id: rawId,
+                name: matchName,
+                sport: qSport || 'football',
+                start_ts: Math.floor(Date.now() / 1000) - 1800,
+                status: '2',
                 teams: { home: homeName, away: awayName },
                 custom_urls: customUrls,
                 channels: []

@@ -79,8 +79,8 @@ video { width: 100% !important; height: 100% !important; object-fit: contain !im
         return new Response('Stream token expired or unavailable.', { status: 502 });
     }
 
-    // 1. Direct upstream WebSocket (no proxy needed - browsers connect directly without CORS)
-    // html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
+    // 1. Edge WebSocket proxy (forwards with Origin: https://iplayer24.me to bypass 403)
+    html = html.replace('wss://l1.strims24.st/ws', '/api/ws');
 
     // 2. Fix relative script paths
     html = html.replace('src="/lib/tk.js"', 'src="https://iplayer24.me/lib/tk.js"');
