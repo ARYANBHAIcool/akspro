@@ -11,6 +11,10 @@ export async function onRequest(context) {
     // Handle ehgembxe / Tim-Streams / BinTV embeds (strip anti-sandbox & ads, spoof Referer)
     if (rawUrl && (/^https?:\/\/ehgembxe\.cfd\//i.test(rawUrl) || /^https?:\/\/bintv-sources\.pages\.dev\//i.test(rawUrl))) {
         let targetUrl = rawUrl;
+        let referer = 'https://tim-streams.com/';
+        if (/bintv/i.test(rawUrl)) {
+            referer = 'https://bintv-sources.pages.dev/';
+        }
         if (/bintv-sources\.pages\.dev/i.test(rawUrl)) {
             try {
                 const u = new URL(rawUrl);
@@ -21,11 +25,14 @@ export async function onRequest(context) {
                 }
             } catch (e) {}
         }
+        if (targetUrl.includes('/bintv/')) {
+            referer = 'https://bintv-sources.pages.dev/';
+        }
         try {
             const resp = await fetch(targetUrl, {
                 headers: {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-                    'Referer': 'https://tim-streams.com/'
+                    'Referer': referer
                 }
             });
             if (resp.ok) {
