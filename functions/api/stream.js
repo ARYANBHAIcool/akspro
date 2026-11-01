@@ -8,6 +8,42 @@ export async function onRequest(context) {
     const token = (url.searchParams.get('token') || url.searchParams.get('id') || '').trim();
     const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
+    // TopStreamer proxy: strip X-Frame-Options and CSP frame-ancestors
+    if (rawUrl && /^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(rawUrl)) {
+        try {
+            const topResp = await fetch(rawUrl, {
+                headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                    'Referer': 'https://topstreamer.site/'
+                }
+            });
+            if (topResp.ok) {
+                let topHtml = await topResp.text();
+                topHtml = topHtml.replace('<head>', '<head><base href="https://topstreamer.site/">');
+                topHtml = topHtml.replace(/<script[^>]*popunder[^>]*>[\s\S]*?<\/script>/gi, '');
+                topHtml = topHtml.replace(/<script[^>]*aclib\.runPop[^>]*>[\s\S]*?<\/script>/gi, '');
+                const customCss = `<style>
+html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
+#container, .container { display: none !important; }
+#main-video, #playerContainer, .playerContainer { position: fixed !important; inset: 0 !important; width: 100% !important; height: 100% !important; max-width: 100% !important; border-radius: 0 !important; background: #000 !important; z-index: 10 !important; }
+video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+#dialog, .ui-dialog, .ui-widget-overlay, .banner, [class*="ad-"] { display: none !important; }
+.stream-picker { position: fixed !important; bottom: 12px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99 !important; background: rgba(0,0,0,0.7) !important; padding: 6px 12px !important; border-radius: 20px !important; display: flex !important; gap: 8px !important; }
+.stream-btn { font-size: 11px !important; height: 26px !important; line-height: 26px !important; padding: 0 10px !important; border-radius: 13px !important; }
+</style>`;
+                topHtml = topHtml.replace('</head>', customCss + '</head>');
+                return new Response(topHtml, {
+                    status: 200,
+                    headers: {
+                        'Content-Type': 'text/html; charset=utf-8',
+                        'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+                        'Access-Control-Allow-Origin': '*'
+                    }
+                });
+            }
+        } catch (e) {}
+    }
+
     if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
         return Response.redirect(rawUrl, 302);
     }

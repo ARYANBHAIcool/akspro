@@ -32,6 +32,42 @@ export async function onRequest(context) {
             const token = (url.searchParams.get('token') || url.searchParams.get('id') || parts[1] || '').trim();
             const rawUrl = url.searchParams.get('src') || url.searchParams.get('url');
 
+            // Handle TopStreamer proxy (strip X-Frame-Options and CSP frame-ancestors)
+            if (rawUrl && /^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(rawUrl)) {
+                try {
+                    const topResp = await fetch(rawUrl, {
+                        headers: {
+                            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                            'Referer': 'https://topstreamer.site/'
+                        }
+                    });
+                    if (topResp.ok) {
+                        let topHtml = await topResp.text();
+                        topHtml = topHtml.replace('<head>', '<head><base href="https://topstreamer.site/">');
+                        topHtml = topHtml.replace(/<script[^>]*popunder[^>]*>[\s\S]*?<\/script>/gi, '');
+                        topHtml = topHtml.replace(/<script[^>]*aclib\.runPop[^>]*>[\s\S]*?<\/script>/gi, '');
+                        const customCss = `<style>
+html, body { width: 100% !important; height: 100% !important; margin: 0 !important; padding: 0 !important; background: #000 !important; overflow: hidden !important; }
+#container, .container { display: none !important; }
+#main-video, #playerContainer, .playerContainer { position: fixed !important; inset: 0 !important; width: 100% !important; height: 100% !important; max-width: 100% !important; border-radius: 0 !important; background: #000 !important; z-index: 10 !important; }
+video { width: 100% !important; height: 100% !important; object-fit: contain !important; }
+#dialog, .ui-dialog, .ui-widget-overlay, .banner, [class*="ad-"] { display: none !important; }
+.stream-picker { position: fixed !important; bottom: 12px !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 99 !important; background: rgba(0,0,0,0.7) !important; padding: 6px 12px !important; border-radius: 20px !important; display: flex !important; gap: 8px !important; }
+.stream-btn { font-size: 11px !important; height: 26px !important; line-height: 26px !important; padding: 0 10px !important; border-radius: 13px !important; }
+</style>`;
+                        topHtml = topHtml.replace('</head>', customCss + '</head>');
+                        return new Response(topHtml, {
+                            status: 200,
+                            headers: {
+                                'Content-Type': 'text/html; charset=utf-8',
+                                'Cache-Control': 'public, max-age=60, stale-while-revalidate=120',
+                                'Access-Control-Allow-Origin': '*'
+                            }
+                        });
+                    }
+                } catch (e) {}
+            }
+
             // Direct iframe proxy with upstream referer bypass
             if (rawUrl && /^https?:\/\//i.test(rawUrl)) {
                 return Response.redirect(rawUrl, 302);
@@ -148,9 +184,18 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 if (!url) return;
                 let playUrl = url.trim();
                 let direct = directUrl || playUrl;
+
+                // Exclude hosts that enforce same-origin or anti-sandbox scripts
+                if (/ehgembxe\.cfd/i.test(playUrl) || /bintv-sources\.pages\.dev/i.test(playUrl)) {
+                    return;
+                }
+
                 if (/^[a-f0-9]{32}$/i.test(playUrl)) {
                     direct = `https://iplayer24.me/beta/${playUrl}`;
                     playUrl = `/api/v1/stream?token=${playUrl}`;
+                } else if (/^https?:\/\/(?:www\.)?topstreamer\.site\//i.test(playUrl)) {
+                    direct = playUrl;
+                    playUrl = `/api/v1/stream?src=${encodeURIComponent(playUrl)}`;
                 }
                 const key = `${name.toLowerCase()}:${playUrl}`;
                 if (!seenUrls.has(playUrl) && !seenNames.has(key)) {
@@ -231,12 +276,39 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 homeName = parts[0]?.trim() || cleanId;
                 awayName = parts[1]?.trim() || '';
             } else if (rawId.startsWith('TOP:')) {
-                const team = cleanId.replace(/^(nba_|nfl_)/, '');
-                homeName = team.toUpperCase();
-                awayName = '';
-                if (cleanId.startsWith('nba_')) {
+                const isNba = cleanId.startsWith('nba_');
+                const isNfl = cleanId.startsWith('nfl_');
+                const team = cleanId.replace(/^(nba_|nfl_)/, '').toLowerCase().trim();
+
+                const nbaMap = {
+                    bucks: { name: 'Milwaukee Bucks', opp: 'Cleveland Cavaliers' },
+                    cavaliers: { name: 'Cleveland Cavaliers', opp: 'Milwaukee Bucks' },
+                    spurs: { name: 'San Antonio Spurs', opp: 'Minnesota Timberwolves' },
+                    timberwolves: { name: 'Minnesota Timberwolves', opp: 'San Antonio Spurs' },
+                    grizzlies: { name: 'Memphis Grizzlies', opp: 'Sacramento Kings' },
+                    kings: { name: 'Sacramento Kings', opp: 'Memphis Grizzlies' },
+                    rockets: { name: 'Houston Rockets', opp: 'Oklahoma City Thunder' },
+                    thunder: { name: 'Oklahoma City Thunder', opp: 'Houston Rockets' },
+                    jazz: { name: 'Utah Jazz', opp: 'Portland Trail Blazers' },
+                    trailblazers: { name: 'Portland Trail Blazers', opp: 'Utah Jazz' },
+                    blazers: { name: 'Portland Trail Blazers', opp: 'Utah Jazz' },
+                    hornets: { name: 'Charlotte Hornets', opp: 'Philadelphia 76ers' },
+                    '76ers': { name: 'Philadelphia 76ers', opp: 'Charlotte Hornets' },
+                    pelicans: { name: 'New Orleans Pelicans', opp: 'Atlanta Hawks' },
+                    hawks: { name: 'Atlanta Hawks', opp: 'New Orleans Pelicans' }
+                };
+
+                if (isNba) {
+                    const matchInfo = nbaMap[team];
+                    if (matchInfo) {
+                        if (!homeName) homeName = matchInfo.name;
+                        if (!awayName) awayName = matchInfo.opp;
+                    } else {
+                        if (!homeName) homeName = team.toUpperCase();
+                    }
                     addStream(`TopStreamer HD (NBA)`, `https://topstreamer.site/nba/${team}`, `https://topstreamer.site/nba/${team}`);
-                } else if (cleanId.startsWith('nfl_')) {
+                } else if (isNfl) {
+                    if (!homeName) homeName = team.toUpperCase();
                     addStream(`TopStreamer HD (NFL)`, `https://topstreamer.site/nfl/${team}`, `https://topstreamer.site/nfl/${team}`);
                 }
             }
@@ -364,77 +436,19 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 } catch (e) {}
             }
 
-            // G. Match-Specific Verified Channels
-            const hLow = (homeName || '').toLowerCase();
-            const aLow = (awayName || '').toLowerCase();
-
-            // Chelsea vs Man Utd specifically
-            if (cleanId === 'OWc65atm' || (hLow.includes('chelsea') && aLow.includes('manchester')) || (hLow.includes('manchester') && aLow.includes('chelsea'))) {
-                addStream('Sky Sports Premier League HD', 'https://ehgembxe.cfd/kzd3hrqz-4314', 'https://ehgembxe.cfd/kzd3hrqz-4314');
-                addStream('Sky Sports Main Event HD', 'https://ehgembxe.cfd/n58ajgfx-472', 'https://ehgembxe.cfd/n58ajgfx-472');
-                addStream('TNT Sports 1 HD', 'https://ehgembxe.cfd/e0lyrkhr-1002', 'https://ehgembxe.cfd/e0lyrkhr-1002');
-                addStream('DAZN 1 Portugal HD', 'https://ehgembxe.cfd/3zhczzbl-9086', 'https://ehgembxe.cfd/3zhczzbl-9086');
-            }
-
-            // Cricket Matches
-            const isCricket = cleanId === 'OjOKEBcN' || cleanId === 'Sf1w7jsR' || cleanId === 'f3Cirdak' ||
-                qSport === 'cricket' ||
-                (hLow.includes('pakistan') && aLow.includes('sri lanka')) ||
-                (hLow.includes('australia') && aLow.includes('south africa')) ||
-                (hLow.includes('bangladesh') && aLow.includes('west indies')) ||
-                (hLow.includes('india') || aLow.includes('india'));
-
-            if (isCricket) {
-                addStream('Sony Sports Ten 1 HD', 'https://ehgembxe.cfd/toarnao3-525', 'https://ehgembxe.cfd/toarnao3-525');
-                addStream('A Sports HD / PTV Sports', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
-                addStream('Sony Sports Ten 5 HD', 'https://ehgembxe.cfd/oay9sxar-3985', 'https://ehgembxe.cfd/oay9sxar-3985');
-                addStream('Sky Sports Cricket HD', 'https://ehgembxe.cfd/qfx4038p-95', 'https://ehgembxe.cfd/qfx4038p-95');
-                addStream('Willow Cricket HD', 'https://ehgembxe.cfd/spd8gpoh-6586', 'https://ehgembxe.cfd/spd8gpoh-6586');
-                addStream('Fox Sports 501 (Cricket)', 'https://ehgembxe.cfd/imifneoj-1417', 'https://ehgembxe.cfd/imifneoj-1417');
-                addStream('SuperSport Cricket HD', 'https://ehgembxe.cfd/np4biwf3-3097', 'https://ehgembxe.cfd/np4biwf3-3097');
-            }
-
-            // NBA / Basketball
-            const isBasketball = qSport === 'basketball' ||
-                                 hLow.includes('celtics') || hLow.includes('lakers') || hLow.includes('warriors') ||
-                                 hLow.includes('wizards') || hLow.includes('hornets') || hLow.includes('bulls') ||
-                                 hLow.includes('heat') || hLow.includes('knicks') || aLow.includes('lakers') ||
-                                 aLow.includes('warriors') || aLow.includes('celtics');
-            if (isBasketball) {
-                const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nba').toLowerCase();
-                addStream(`TopStreamer HD (NBA)`, `https://topstreamer.site/nba/${team}`, `https://topstreamer.site/nba/${team}`);
-                addStream(`NBA League Pass HD`, `https://ehgembxe.cfd/1zatl1pk-8978`, `https://ehgembxe.cfd/1zatl1pk-8978`);
-            }
-
-            // NFL / American Football
-            const isNFL = qSport === 'american-football' || qSport === 'nfl' ||
-                          hLow.includes('packers') || hLow.includes('cowboys') || hLow.includes('chiefs') ||
-                          hLow.includes('bills') || hLow.includes('steelers') || hLow.includes('patriots') ||
-                          aLow.includes('packers') || aLow.includes('cowboys') || aLow.includes('chiefs');
-            if (isNFL) {
-                const team = (hLow.split(' ').pop() || aLow.split(' ').pop() || 'nfl').toLowerCase();
-                addStream(`TopStreamer HD (NFL)`, `https://topstreamer.site/nfl/${team}`, `https://topstreamer.site/nfl/${team}`);
-                addStream(`NFL RedZone / Game Pass`, `https://ehgembxe.cfd/f4ijr4sl-187`, `https://ehgembxe.cfd/f4ijr4sl-187`);
-            }
-
-            // Formula 1 / Motorsport
-            if (qSport === 'motorsport' || hLow.includes('grand prix') || aLow.includes('grand prix') || hLow.includes('formula 1') || hLow.includes(' f1') || aLow.includes(' f1')) {
-                addStream('Sky Sports F1 HD', 'https://ehgembxe.cfd/f596f98r-6977', 'https://ehgembxe.cfd/f596f98r-6977');
-                addStream('DAZN F1 HD', 'https://ehgembxe.cfd/5rvazszz-6983', 'https://ehgembxe.cfd/5rvazszz-6983');
-            }
-
-            // Tennis
-            if (qSport === 'tennis' || hLow.includes('atp') || aLow.includes('atp') || hLow.includes('wta') || aLow.includes('wta') || hLow.includes('tennis') || aLow.includes('tennis')) {
-                addStream('Sky Sports Tennis HD', 'https://ehgembxe.cfd/kkbb5x8i-1991', 'https://ehgembxe.cfd/kkbb5x8i-1991');
-                addStream('Tennis Channel HD', 'https://ehgembxe.cfd/80nrh660-13', 'https://ehgembxe.cfd/80nrh660-13');
-            }
-
-            // Prioritize direct playable streams (https://) so Server 1 plays instantly
+            // Prioritize reliable proxied match streams (/api/v1/stream?token=... and /api/v1/stream?src=...)
+            // so Server 1 plays instantly without ad-block or sandbox issues!
             customUrls.sort((a, b) => {
-                const aIsDirect = Boolean(a.url && (a.url.startsWith('https://') || a.url.startsWith('http://')));
-                const bIsDirect = Boolean(b.url && (b.url.startsWith('https://') || b.url.startsWith('http://')));
-                if (aIsDirect && !bIsDirect) return -1;
-                if (!aIsDirect && bIsDirect) return 1;
+                const aToken = Boolean(a.url && a.url.startsWith('/api/v1/stream?token='));
+                const bToken = Boolean(b.url && b.url.startsWith('/api/v1/stream?token='));
+                if (aToken && !bToken) return -1;
+                if (!aToken && bToken) return 1;
+
+                const aTop = Boolean(a.url && a.url.startsWith('/api/v1/stream?src='));
+                const bTop = Boolean(b.url && b.url.startsWith('/api/v1/stream?src='));
+                if (aTop && !bTop) return -1;
+                if (!aTop && bTop) return 1;
+
                 return 0;
             });
             customUrls.forEach((u, i) => {
@@ -586,8 +600,8 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                     (async () => {
                         try {
                             const [nbaRes, nflRes] = await Promise.allSettled([
-                                fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200),
-                                fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200)
+                                fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 3500),
+                                fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 3500)
                             ]);
                             function parseTopSchedule(rawHtml, prefix, sportName) {
                                 const blocks = rawHtml.split('class="item upcoming');
@@ -683,30 +697,23 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 });
             }
 
-            // Sport: Basketball (Add TopStreamer NBA games)
+            // Sport: Basketball (Unified NBA Schedule: TopStreamer + BinTV + Tim-Streams + Dzeko)
             if (sport === 'basketball') {
                 const bItems = [];
                 const bSeen = new Set();
-                for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+
+                const [topRes, bintvRes, timRes, dzekoRes, strumykRes] = await Promise.allSettled([
+                    fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 3500),
+                    fastFetch2('https://bintvjson.lovable.app/api/public/bintvjson', { 'Accept': 'application/json' }, 2500),
+                    fastFetch2('https://tim-streams.com/api/live-upcoming', { 'User-Agent': 'Mozilla/5.0', 'Accept': 'application/json' }, 2500),
+                    fastFetch2(`https://dzeko11.pk/api/v1/basketball/${encodeURIComponent(date)}`, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://dzeko11.pk/' }, 2500),
+                    fastFetch2(`https://strumyk.pk/api/v1/basketball/${encodeURIComponent(date)}`, { 'User-Agent': 'Mozilla/5.0', 'Referer': 'https://strumyk.pk/' }, 2500)
+                ]);
+
+                // 1. TopStreamer Live NBA Games
+                if (topRes.status === 'fulfilled' && topRes.value && topRes.value.ok) {
                     try {
-                        const hostUrl = `https://${host}/api/v1/basketball/${encodeURIComponent(date)}`;
-                        const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2000);
-                        if (resp && resp.ok) {
-                            const data = await resp.json();
-                            for (const it of (data.items || [])) {
-                                if (it.match_id && !bSeen.has(it.match_id)) {
-                                    bSeen.add(it.match_id);
-                                    bItems.push(it);
-                                }
-                            }
-                            break;
-                        }
-                    } catch (e) {}
-                }
-                try {
-                    const topRes = await fastFetch2('https://topstreamer.site/nba/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
-                    if (topRes && topRes.ok) {
-                        const html = await topRes.text();
+                        const html = await topRes.value.text();
                         const blocks = html.split('class="item upcoming');
                         for (let i = 1; i < blocks.length; i++) {
                             const b = blocks[i];
@@ -720,12 +727,76 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                 const tId = `TOP:nba_${teamKey.toLowerCase().trim()}`;
                                 if (!bSeen.has(tId)) {
                                     bSeen.add(tId);
-                                    bItems.push({ match_id: tId, name: `${names[0]} - ${names[1]}`, sport: 'basketball', start_ts: Math.floor(Date.now() / 1000) });
+                                    bItems.push({
+                                        match_id: tId,
+                                        name: `${names[0]} vs ${names[1]}`,
+                                        sport: 'basketball',
+                                        start_ts: Math.floor(Date.now() / 1000)
+                                    });
                                 }
                             }
                         }
+                    } catch (e) {}
+                }
+
+                // 2. BinTV Live NBA Games
+                if (bintvRes.status === 'fulfilled' && bintvRes.value && bintvRes.value.ok) {
+                    try {
+                        const bData = await bintvRes.value.json();
+                        const allEvents = [...(bData['Live Events'] || []), ...(bData['Upcoming Events'] || [])];
+                        for (const ev of allEvents) {
+                            if ((ev.category || '').toLowerCase().includes('basket') || (ev.name || '').toLowerCase().includes('nba')) {
+                                const bId = `BIN:${ev.id}`;
+                                if (!bSeen.has(bId)) {
+                                    bSeen.add(bId);
+                                    bItems.push({
+                                        match_id: bId,
+                                        name: ev.name,
+                                        sport: 'basketball',
+                                        start_ts: Math.floor(Date.now() / 1000)
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // 3. Tim-Streams Live NBA Games
+                if (timRes.status === 'fulfilled' && timRes.value && timRes.value.ok) {
+                    try {
+                        const tData = await timRes.value.json();
+                        for (const ev of (tData.events || [])) {
+                            if (ev.genre === 7 || (ev.sport || '').toLowerCase().includes('basket') || (ev.name || '').toLowerCase().includes('nba')) {
+                                const tId = `TIM:${ev.url}`;
+                                if (!bSeen.has(tId)) {
+                                    bSeen.add(tId);
+                                    bItems.push({
+                                        match_id: tId,
+                                        name: ev.name,
+                                        sport: 'basketball',
+                                        start_ts: Math.floor(Date.now() / 1000)
+                                    });
+                                }
+                            }
+                        }
+                    } catch (e) {}
+                }
+
+                // 4. Dzeko & Strumyk Basketball Fixtures
+                for (const r of [dzekoRes, strumykRes]) {
+                    if (r.status === 'fulfilled' && r.value && r.value.ok) {
+                        try {
+                            const data = await r.value.json();
+                            for (const it of (data.items || [])) {
+                                if (it.match_id && !bSeen.has(it.match_id)) {
+                                    bSeen.add(it.match_id);
+                                    bItems.push(it);
+                                }
+                            }
+                            break;
+                        } catch (e) {}
                     }
-                } catch (e) {}
+                }
 
                 return new Response(JSON.stringify({ date: date, items: bItems }), {
                     status: 200,
@@ -738,7 +809,7 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                 const nflItems = [];
                 const nflSeen = new Set();
                 try {
-                    const topRes = await fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 2200);
+                    const topRes = await fastFetch2('https://topstreamer.site/nfl/schedule', { 'User-Agent': 'Mozilla/5.0' }, 3500);
                     if (topRes && topRes.ok) {
                         const html = await topRes.text();
                         const blocks = html.split('class="item upcoming');
@@ -754,12 +825,30 @@ body.beta .ad, body.beta .vpn-notice, body.beta footer, body.beta header, body.b
                                 const tId = `TOP:nfl_${teamKey.toLowerCase().trim()}`;
                                 if (!nflSeen.has(tId)) {
                                     nflSeen.add(tId);
-                                    nflItems.push({ match_id: tId, name: `${names[0]} - ${names[1]}`, sport: 'american-football', start_ts: Math.floor(Date.now() / 1000) });
+                                    nflItems.push({ match_id: tId, name: `${names[0]} vs ${names[1]}`, sport: 'american-football', start_ts: Math.floor(Date.now() / 1000) });
                                 }
                             }
                         }
                     }
                 } catch (e) {}
+
+                // Also fetch Dzeko & Strumyk for NFL
+                for (const host of ['dzeko11.pk', 'strumyk.pk']) {
+                    try {
+                        const hostUrl = `https://${host}/api/v1/american-football/${encodeURIComponent(date)}`;
+                        const resp = await fastFetch2(hostUrl, { 'User-Agent': 'Mozilla/5.0', 'Referer': `https://${host}/` }, 2500);
+                        if (resp && resp.ok) {
+                            const data = await resp.json();
+                            for (const it of (data.items || [])) {
+                                if (it.match_id && !nflSeen.has(it.match_id)) {
+                                    nflSeen.add(it.match_id);
+                                    nflItems.push(it);
+                                }
+                            }
+                            break;
+                        }
+                    } catch (e) {}
+                }
 
                 return new Response(JSON.stringify({ date: date, items: nflItems }), {
                     status: 200,
