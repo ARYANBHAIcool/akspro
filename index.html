@@ -42,16 +42,16 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;padding:18px 0;border-bottom:1px solid var(--line)}
 .brand-group{display:flex;align-items:center;gap:14px}
 .brand-badge{
-  width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--brass),#9b6b19);
-  color:#12342b;font:800 20px/40px "Barlow Condensed",sans-serif;text-align:center;letter-spacing:1px;
-  box-shadow:0 4px 12px rgba(232,180,74,0.3);flex-shrink:0;
+  width:42px;height:42px;border-radius:11px;background:linear-gradient(135deg,var(--brass),#9b6b19);
+  color:#12342b;font:800 22px/42px "Barlow Condensed",sans-serif;text-align:center;letter-spacing:1px;
+  box-shadow:0 4px 14px rgba(232,180,74,0.35);flex-shrink:0;user-select:none;
 }
-.brand{font:700 28px/1 "Barlow Condensed",sans-serif;letter-spacing:1px;text-decoration:none;color:var(--text)}
+.brand{font:700 30px/1 "Barlow Condensed",sans-serif;letter-spacing:1px;text-decoration:none;color:var(--text)}
 .brand span{color:var(--brass);margin-left:5px}
 
 .header-links{display:flex;align-items:center;gap:10px}
 .header-btn{
-  display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:9px;
+  display:inline-flex;align-items:center;gap:7px;padding:9px 15px;border-radius:10px;
   background:var(--bg2);border:1px solid var(--line);color:var(--text);
   font-size:13px;font-weight:600;text-decoration:none;transition:all .15s;
 }
@@ -62,7 +62,8 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
 /* Scorebar */
 .scorebar{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
-.score{padding:8px 18px;border-right:1px solid var(--line);text-align:center;min-width:84px}
+.score{padding:8px 18px;border-right:1px solid var(--line);text-align:center;min-width:84px;cursor:pointer;transition:background .15s}
+.score:hover{background:#163d32}
 .score strong{display:block;font:700 24px/1.1 "Barlow Condensed",sans-serif}
 .score span{font-size:11px;color:var(--muted)}
 .score.live strong{color:var(--ball)}
@@ -72,14 +73,19 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
 /* Controls */
 .controls{display:grid;grid-template-columns:minmax(220px,460px) 220px;gap:12px;padding:20px 0 12px}
+.searchbox{position:relative;display:flex;align-items:center}
 .searchbox input,select{width:100%;background:var(--bg2);border:1px solid var(--line);border-radius:10px;padding:13px 15px;color:var(--text);outline:none;font-size:15px}
 .searchbox input:focus,select:focus{border-color:var(--brass);box-shadow:0 0 0 3px #e8b44a22}
+.search-clear{position:absolute;right:12px;background:none;border:none;color:var(--muted);font-size:16px;display:none;cursor:pointer;padding:4px}
+.search-clear:hover{color:var(--text)}
+
 .chips{display:flex;gap:8px;overflow-x:auto;padding:4px 0 10px;scrollbar-width:thin}
-.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--bg2);color:var(--muted);border-radius:8px;padding:9px 15px;font-size:14px;font-weight:500;transition:background .15s,color .15s,border-color .15s}
+.chip{flex:0 0 auto;border:1px solid var(--line);background:var(--bg2);color:var(--muted);border-radius:8px;padding:9px 15px;font-size:14px;font-weight:500;transition:background .15s,color .15s,border-color .15s;display:inline-flex;align-items:center;gap:6px}
 .chip:hover{color:var(--text);border-color:#3d7a62}
 .chip.active{background:var(--brass);border-color:var(--brass);color:#2a1c04;font-weight:600}
 .chip.cricket:not(.active){border-color:#8a6a2a;color:var(--brass)}
-.chip-badge{display:inline-block;padding:1px 6px;margin-left:5px;border-radius:10px;font-size:11px;background:#e5484d33;color:#ff8085}
+.chip-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:#e5484d33;color:#ff8085}
+.chip.active .chip-badge{background:#2a1c04;color:var(--brass)}
 
 /* Section Head */
 .section-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin:22px 0 4px}
@@ -89,8 +95,8 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
 /* Grid & Cards */
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:16px;padding-bottom:50px}
-.group{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin:16px 0 2px}
-.group h3{font-size:24px;color:var(--brass)}
+.group{grid-column:1/-1;display:flex;align-items:center;gap:14px;margin:18px 0 2px}
+.group h3{font-size:24px;color:var(--brass);display:flex;align-items:center;gap:7px}
 .group.rest h3{color:var(--text)}
 .group:after{content:"";flex:1;height:1px;background:var(--line)}
 .group small{color:var(--muted);font-size:13px;order:3}
@@ -98,15 +104,14 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .card{
   background:var(--card);border:1px solid var(--line);border-radius:14px;
   overflow:hidden;display:flex;flex-direction:column;min-width:0;
-  transition:border-color .2s,transform .2s;
+  transition:border-color .2s,transform .2s,box-shadow .2s;
   animation:cardIn .55s cubic-bezier(.22,.8,.25,1) backwards;
-  animation-delay:calc(var(--i,0)*45ms);
+  animation-delay:calc(var(--i,0)*40ms);
 }
-@keyframes cardIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:none}}
-@keyframes softIn{from{opacity:0;transform:translateX(-10px)}to{opacity:1;transform:none}}
+@keyframes cardIn{from{opacity:0;transform:translateY(16px) scale(.98)}to{opacity:1;transform:none}}
 
 .card.live-match{cursor:pointer;border-left:4px solid var(--ball)}
-.card.live-match:hover{border-color:var(--brass);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.35)}
+.card.live-match:hover{border-color:var(--brass);transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,0.4)}
 .card.non-live{cursor:pointer;opacity:.88}
 .card.non-live:hover{border-color:#3d7a62}
 .card.cricket-card.live-match{border-left-color:var(--brass)}
@@ -125,7 +130,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .status.ended{background:#ffffff10;color:#889988}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ball);display:inline-block;animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35}}
-.category{font-size:12px;color:var(--brass);border:1px solid #8a6a2a;border-radius:6px;padding:3px 9px}
+.category{font-size:12px;color:var(--brass);border:1px solid #8a6a2a;border-radius:6px;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
 
 .card-body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .event-title{font-size:20px;line-height:1.2;font-family:"Barlow Condensed",sans-serif}
@@ -183,10 +188,10 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       </a>
     </div>
 
-    <div class="scorebar">
-      <div class="score"><strong id="matchCount">—</strong><span>Matches</span></div>
-      <div class="score live"><strong id="liveCount">—</strong><span>Live</span></div>
-      <div class="score up"><strong id="upcomingCount">—</strong><span>Upcoming</span></div>
+    <div class="scorebar" id="scorebar">
+      <div class="score" id="scoreAll" title="Show all matches"><strong id="matchCount">—</strong><span>Matches</span></div>
+      <div class="score live" id="scoreLive" title="Filter live matches"><strong id="liveCount">—</strong><span>Live</span></div>
+      <div class="score up" id="scoreUp" title="Filter upcoming matches"><strong id="upcomingCount">—</strong><span>Upcoming</span></div>
       <div class="score ch" style="border-right:0"><strong id="streamCount">—</strong><span>Channels</span></div>
     </div>
     <div class="updated" id="updatedPill">● Connecting…</div>
@@ -195,6 +200,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
   <div class="controls">
     <div class="searchbox">
       <input id="search" type="search" placeholder="Search teams, leagues, channels…" autocomplete="off" aria-label="Search">
+      <button class="search-clear" id="searchClear" aria-label="Clear search">✕</button>
     </div>
     <select id="sortFilter" aria-label="Sort events">
       <option value="default">Recommended order</option>
@@ -205,13 +211,13 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
   <nav class="chips" id="statusTabs" aria-label="Status filters">
     <button class="chip status-tab active" data-status="ALL">All status</button>
-    <button class="chip status-tab" data-status="LIVE">Live <span class="chip-badge" id="liveBadge" style="display:none">0</span></button>
+    <button class="chip status-tab" data-status="LIVE"><i class="dot"></i> Live <span class="chip-badge" id="liveBadge" style="display:none">0</span></button>
     <button class="chip status-tab" data-status="UPCOMING">Upcoming</button>
     <button class="chip status-tab" data-status="ENDED">Ended</button>
   </nav>
 
   <nav class="chips" id="categoryTabs" aria-label="Sport categories">
-    <button class="chip active" data-category="ALL">All sports</button>
+    <button class="chip active" data-category="ALL">🏆 All sports</button>
   </nav>
 
   <div class="section-head">
@@ -252,6 +258,29 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
   const FALLBACK_DATA_URL = "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json";
   const PRIORITY_CATEGORY = "cricket";
 
+  const SPORT_ICONS = {
+    "cricket": "🏏",
+    "football": "⚽",
+    "basketball": "🏀",
+    "american football": "🏈",
+    "motorsports": "🏎️",
+    "hockey": "🏒",
+    "rugby": "🏉",
+    "boxing": "🥊",
+    "mixed martial arts": "🥋",
+    "mma": "🥋",
+    "aussie rules": "🦘",
+    "tennis": "🎾",
+    "baseball": "⚾",
+    "golf": "⛳",
+    "other": "🎯"
+  };
+
+  function getSportIcon(name) {
+    const k = String(name || "").toLowerCase().trim();
+    return SPORT_ICONS[k] || "🏆";
+  }
+
   const $ = s => document.querySelector(s);
   const grid = $("#grid");
   let allMatches = [];
@@ -263,7 +292,11 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
   
   function safeUrl(val){
     try{
-      const u = new URL(val);
+      if(!val) return "";
+      let s = String(val).trim();
+      // Auto-upgrade insecure http images to https to avoid mixed-content warnings
+      if (s.startsWith("http://img.sofascore.com")) s = s.replace("http://", "https://");
+      const u = new URL(s);
       return ["http:","https:"].includes(u.protocol) ? u.href : "";
     }catch(_){ return ""; }
   }
@@ -329,15 +362,41 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
   }
 
+  // Parse DD/MM/YYYY HH:MM:SS AM/PM accurately
+  function parseMatchDate(str) {
+    if (!str) return null;
+    const match = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      let hours = parseInt(match[4], 10);
+      const minutes = parseInt(match[5], 10);
+      const ampm = (match[7] || "").toUpperCase();
+      if (ampm === "PM" && hours < 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+      return new Date(year, month, day, hours, minutes);
+    }
+    const fallback = new Date(str);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
   function timeText(m){
     const i = eventInfo(m);
-    if (!i.startTime) return "Time not listed";
-    try {
-      const d = new Date(i.startTime);
-      if(!isNaN(d.getTime())) {
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true }) + " (" + d.toLocaleDateString([], { month: 'short', day: 'numeric' }) + ")";
-      }
-    } catch (_) {}
+    if (!i.startTime) return "Time TBA";
+    const d = parseMatchDate(i.startTime);
+    if (d) {
+      const now = new Date();
+      const isToday = d.toDateString() === now.toDateString();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const isTomorrow = d.toDateString() === tomorrow.toDateString();
+      
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+      if (isToday) return `Today · ${timeStr}`;
+      if (isTomorrow) return `Tomorrow · ${timeStr}`;
+      return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${timeStr}`;
+    }
     return i.startTime;
   }
 
@@ -345,8 +404,9 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     const i = eventInfo(m), status = matchStatus(m), live = status === "LIVE", streams = validStreams(m);
     const a = teamA(m), b = teamB(m), logo = safeUrl(i.event_logo), flagA = safeUrl(i.teamAFlag), flagB = safeUrl(i.teamBFlag);
     const cat = m.Category || "Other";
+    const catIcon = getSportIcon(cat);
     const sourceLabel = live
-      ? (streams.length ? `<strong>${streams.length}</strong> server${streams.length===1?"":"s"}` : "Checking servers…")
+      ? (streams.length ? `<strong>${streams.length}</strong> server${streams.length===1?"":"s"}` : "Configuring stream…")
       : (status === "ENDED" ? "Ended" : "Upcoming");
     const statusLabel = live ? '<i class="dot"></i> LIVE' : (status === "ENDED" ? "ENDED" : "UPCOMING");
 
@@ -358,7 +418,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       </div>
       <div class="badges">
         <span class="status ${status.toLowerCase()}">${statusLabel}</span>
-        <span class="category">${esc(cat)}</span>
+        <span class="category">${catIcon} ${esc(cat)}</span>
       </div>
       <div class="card-body">
         <h3 class="event-title">${esc(m.event_name || eventName(m))}</h3>
@@ -376,7 +436,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     const q = ($("#search").value || "").trim().toLowerCase();
     let rows = allMatches.map((m, index) => ({ m, index })).filter(({ m }) => {
       const statusMatches = (activeStatus === "ALL")
-        ? (matchStatus(m) !== "ENDED") // By default don't clutter with ended games
+        ? (matchStatus(m) !== "ENDED")
         : (activeStatus === matchStatus(m));
       const matchCat = activeCategory === "ALL" || (m.Category || "Other") === activeCategory;
       const text = [m.event_name, eventName(m), teamA(m), teamB(m), m.Category, ...streamsOf(m).map(s => s.channel_name)].join(" ").toLowerCase();
@@ -397,7 +457,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       return;
     }
     if(!sources.length){
-      showToast("Live stream feed is being configured. Please refresh in a moment!");
+      showToast("Live stream feed is being connected. Please refresh in a moment!");
       return;
     }
 
@@ -432,7 +492,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     title.style.cssText = "font-size:24px;margin:0 0 4px;font-family:'Barlow Condensed',sans-serif;padding-right:32px";
 
     const sub = document.createElement("p");
-    sub.textContent = "Choose a stream source below to launch in the hybrid high-definition player:";
+    sub.textContent = "Select a stream source below to launch the hybrid high-definition player:";
     sub.style.cssText = "color:#9fb8aa;font-size:13px;margin:0 0 16px";
 
     panel.append(closeBtn, title, sub);
@@ -454,6 +514,8 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       panel.appendChild(b);
     });
 
+    const escListener = e => { if (e.key === "Escape") { overlay.remove(); window.removeEventListener("keydown", escListener); } };
+    window.addEventListener("keydown", escListener);
     overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
     overlay.appendChild(panel);
     document.body.appendChild(overlay);
@@ -474,8 +536,8 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     const rest = rows.filter(r => !isCricket(r.m));
     let html = "";
     if (activeCategory === "ALL" && cricket.length && rest.length) {
-      html += `<div class="group"><h3>Cricket Priority</h3><small>${cricket.length} event${cricket.length===1?"":"s"}</small></div>` + cricket.map(({m,index}) => cardHtml(m,index)).join("");
-      html += `<div class="group rest"><h3>All Sports</h3><small>${rest.length} event${rest.length===1?"":"s"}</small></div>` + rest.map(({m,index}) => cardHtml(m,index)).join("");
+      html += `<div class="group"><h3>🏏 Cricket Priority</h3><small>${cricket.length} event${cricket.length===1?"":"s"}</small></div>` + cricket.map(({m,index}) => cardHtml(m,index)).join("");
+      html += `<div class="group rest"><h3>🏆 All Sports</h3><small>${rest.length} event${rest.length===1?"":"s"}</small></div>` + rest.map(({m,index}) => cardHtml(m,index)).join("");
     } else {
       html = [...cricket, ...rest].map(({m,index}) => cardHtml(m,index)).join("");
     }
@@ -497,10 +559,11 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       return ca !== cb ? (ca ? -1 : 1) : a.localeCompare(b);
     });
 
-    const allBtn = `<button class="chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">All sports</button>`;
+    const allBtn = `<button class="chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">🏆 All sports</button>`;
     const catBtns = cats.map(c => {
       const isCric = c.toLowerCase() === PRIORITY_CATEGORY;
-      return `<button class="chip ${isCric?"cricket":""} ${activeCategory===c?"active":""}" data-category="${esc(c)}">${esc(c)}</button>`;
+      const icon = getSportIcon(c);
+      return `<button class="chip ${isCric?"cricket":""} ${activeCategory===c?"active":""}" data-category="${esc(c)}">${icon} ${esc(c)}</button>`;
     }).join("");
 
     const box = $("#categoryTabs");
@@ -571,7 +634,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       const liveBadge = $("#liveBadge");
       if (liveBadge) {
         liveBadge.textContent = live;
-        liveBadge.style.display = live > 0 ? "inline-block" : "none";
+        liveBadge.style.display = live > 0 ? "inline-flex" : "none";
       }
 
       const timeStr = data.last_update_time ? `● Updated ${data.last_update_time}` : `● Live sync active`;
@@ -593,7 +656,25 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
   window.AryanReload = () => loadData(false);
 
-  $("#search").addEventListener("input", render);
+  // Interactive scorebar
+  $("#scoreAll").onclick = () => { activeStatus = "ALL"; render(); };
+  $("#scoreLive").onclick = () => { activeStatus = "LIVE"; render(); };
+  $("#scoreUp").onclick = () => { activeStatus = "UPCOMING"; render(); };
+
+  // Search input with quick clear
+  const searchInput = $("#search");
+  const searchClear = $("#searchClear");
+  searchInput.addEventListener("input", () => {
+    searchClear.style.display = searchInput.value ? "block" : "none";
+    render();
+  });
+  searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    searchClear.style.display = "none";
+    render();
+    searchInput.focus();
+  });
+
   document.querySelectorAll(".status-tab").forEach(button => {
     button.addEventListener("click", () => {
       activeStatus = button.dataset.status;
@@ -604,6 +685,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
   loadData(false);
 
+  // Auto-refresh every 60s
   setInterval(() => {
     loadData(true);
   }, 60000);
