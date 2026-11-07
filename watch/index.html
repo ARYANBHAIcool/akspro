@@ -1,214 +1,529 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>AS | AryanStreams - Live High-Speed Player</title>
-  <meta name="theme-color" content="#050814"/>
-  <link rel="icon" href="/favicon.ico" sizes="48x48"/>
-  <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
-  <link rel="stylesheet" href="/assets/globals-SB89wHXU.css"/>
-  <link rel="stylesheet" href="/assets/mobile-button-fix.css"/>
-  <link rel="stylesheet" href="/assets/theme-as.css"/>
-  <style>
-    body {
-      background: #0a0a0f;
-      color: #fff;
-      font-family: Nunito, system-ui, -apple-system, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-    }
-    .player-aspect {
-      aspect-ratio: 16 / 9;
-      width: 100%;
-      background: #000;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.7);
-    }
-    .server-btn {
-      transition: all 0.2s ease;
-      touch-action: manipulation;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-      max-width: 100%;
-    }
-    .server-btn.active {
-      background-color: var(--primary, #3b82f6);
-      color: #fff;
-      border-color: var(--primary, #3b82f6);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.4);
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0c2620">
+<meta name="referrer" content="no-referrer">
+<title>AryanStreams · Live Player</title>
+<link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
+
+<script src="https://cdn.jwplayer.com/libraries/IDzF9Zmk.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/controls.min.css">
+
+<style>
+:root{
+  color-scheme:dark;
+  --bg:#050d0a;
+  --panel:#12342b;
+  --panel2:#163d32;
+  --line:#24513f;
+  --text:#f3efe2;
+  --muted:#9fb8aa;
+  --brass:#e8b44a;
+  --ball:#e5484d;
+  --sky:#7cc7e8;
+}
+*{box-sizing:border-box}
+html,body{
+  width:100%;height:100%;min-height:100%;margin:0;padding:0;
+  overflow:hidden;background:#000;color:var(--text);
+  font:15px/1.4 Barlow,system-ui,-apple-system,"Segoe UI",sans-serif;
+  user-select:none;-webkit-tap-highlight-color:transparent;
+}
+.player-shell,.engine-container{
+  position:fixed;inset:0;width:100vw;height:100vh;height:100dvh;
+  background:#000;overflow:hidden;
+}
+.engine-container{display:none}
+#shaka-container{display:none}
+#jw-container{display:none}
+#iframe-container{display:none}
+
+#shaka-container video{
+  position:absolute!important;inset:0!important;display:block!important;
+  width:100vw!important;height:100vh!important;height:100dvh!important;
+  min-width:100%!important;min-height:100%!important;max-width:none!important;max-height:none!important;
+  object-fit:contain!important;object-position:center center!important;background:#000;
+}
+#jw-container .jwplayer{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+#jw-container video{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-width:0!important;min-height:0!important;max-width:none!important;max-height:none!important;
+  object-fit:contain!important;background:#000;
+}
+#iframe-container iframe{
+  position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;
+}
+
+#shaka-container:fullscreen,#shaka-container:-webkit-full-screen,#jw-container:fullscreen,#jw-container:-webkit-full-screen{
+  position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;height:100dvh!important;
+  padding:0!important;margin:0!important;background:#000!important;overflow:hidden!important;
+}
+
+#shaka-container video.fit-cover,#jw-container.fit-cover video{object-fit:cover!important;object-position:center center!important}
+#shaka-container video.fit-stretch,#jw-container.fit-stretch video{object-fit:fill!important;object-position:center center!important}
+#shaka-container.full-cover video,#jw-container.full-cover video{object-fit:cover!important}
+#shaka-container.full-stretch video,#jw-container.full-stretch video{object-fit:fill!important}
+
+#jw-container video.fit-contain{object-fit:contain!important;object-position:center center!important}
+#jw-container video.fit-cover{object-fit:cover!important;object-position:center center!important}
+#jw-container video.fit-stretch{object-fit:fill!important;object-position:center center!important}
+
+/* Header & Controls Overlay */
+.top-nav{
+  position:fixed;top:0;left:0;right:0;z-index:9000;
+  display:flex;align-items:center;justify-content:space-between;
+  gap:12px;padding:clamp(8px,1.5vh,14px) clamp(10px,2vw,20px);
+  background:linear-gradient(180deg,rgba(5,13,10,0.88) 0%,rgba(5,13,10,0.4) 65%,transparent 100%);
+  backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
+  transition:opacity .3s ease,transform .3s ease;
+}
+.top-nav.hidden-controls{
+  opacity:0;transform:translateY(-10px);pointer-events:none;
+}
+.nav-left{display:flex;align-items:center;gap:10px;min-width:0}
+.back-btn{
+  display:inline-flex;align-items:center;gap:6px;
+  background:#12342b;border:1px solid #24513f;color:var(--text);
+  border-radius:9px;padding:7px 12px;font-size:13px;font-weight:600;
+  text-decoration:none;cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.back-btn:hover{background:#163d32;border-color:var(--brass);color:var(--brass)}
+.brand-pill{
+  font-family:"Barlow Condensed",sans-serif;font-size:18px;font-weight:700;
+  color:#fff;letter-spacing:.5px;display:flex;align-items:center;gap:5px;flex-shrink:0;
+}
+.brand-pill span{color:var(--brass)}
+.event-info{min-width:0;display:flex;flex-direction:column}
+.event-title{
+  font-family:"Barlow Condensed",sans-serif;font-size:16px;font-weight:700;
+  color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.stream-label{font-size:12px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stream-label strong{color:#7be0a8}
+
+.nav-right{display:flex;align-items:center;gap:8px;flex-shrink:0}
+.action-btn{
+  border:1px solid rgba(255,255,255,.24);background:rgba(18,52,43,.85);
+  color:#fff;border-radius:9px;padding:7px 12px;font-size:12px;font-weight:600;
+  cursor:pointer;display:inline-flex;align-items:center;gap:5px;transition:all .15s;
+}
+.action-btn:hover{background:#163d32;border-color:var(--brass);color:var(--brass)}
+.video-fit-btn{min-width:96px;text-align:center}
+
+.player-message{
+  position:absolute;z-index:10001;left:50%;bottom:clamp(40px,10vh,80px);
+  transform:translateX(-50%);max-width:calc(100% - 32px);padding:10px 16px;
+  border:1px solid var(--line);border-radius:10px;background:#12342bed;
+  color:#e7edf7;font-size:13px;text-align:center;display:none;box-shadow:0 10px 30px #000a;
+}
+.player-message.show{display:block}
+
+/* Server Modal */
+.modal-overlay{
+  position:fixed;inset:0;z-index:9999;background:rgba(3,13,11,0.85);
+  backdrop-filter:blur(8px);display:none;align-items:center;justify-content:center;padding:16px;
+}
+.modal-overlay.open{display:flex}
+.modal-card{
+  width:min(520px,100%);max-height:85vh;overflow-y:auto;
+  background:var(--panel);border:1px solid var(--line);border-radius:16px;
+  padding:20px;box-shadow:0 30px 100px #000c;
+}
+.modal-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.modal-title{font-family:"Barlow Condensed",sans-serif;font-size:22px;font-weight:700;margin:0}
+.close-btn{
+  background:#ffffff14;border:1px solid #ffffff24;color:#fff;
+  border-radius:8px;width:32px;height:32px;cursor:pointer;font-size:16px;
+  display:flex;align-items:center;justify-content:center;
+}
+.close-btn:hover{background:#ffffff2b}
+.server-item{
+  display:flex;align-items:center;justify-content:space-between;
+  width:100%;padding:12px 14px;margin-bottom:8px;background:var(--panel2);
+  border:1px solid var(--line);border-radius:10px;color:var(--text);
+  font-weight:600;font-size:14px;cursor:pointer;transition:all .15s;
+}
+.server-item:hover{border-color:var(--brass);background:#1e5143}
+.server-item.active{border-color:var(--brass);background:#23594b;color:var(--brass)}
+.server-tag{font-size:11px;padding:2px 7px;border-radius:5px;background:#ffffff1a;color:var(--muted)}
+
+@media(max-width:700px){
+  .brand-pill{display:none}
+  .event-title{font-size:14px;max-width:160px}
+  .stream-label{font-size:11px;max-width:160px}
+  .back-btn{padding:6px 9px;font-size:12px}
+  .action-btn{padding:6px 9px;font-size:11px}
+  .video-fit-btn{min-width:82px}
+}
+</style>
 </head>
-<body class="bg-[#0a0a0f] text-foreground">
-  <!-- Top Bar -->
-  <header class="border-b border-border/40 bg-surface/80 backdrop-blur sticky top-0 z-40">
-    <div class="container mx-auto px-4 h-14 flex items-center justify-between">
-      <div class="flex items-center gap-2 sm:gap-3 min-w-0">
-        <a id="backBtn" href="/" class="p-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-muted-foreground hover:text-foreground transition-all shrink-0">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
-          </svg>
-        </a>
-        <div class="flex items-center gap-1.5 sm:gap-2 min-w-0">
-          <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-red-600/20 text-red-400 border border-red-500/30 shrink-0">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>LIVE
-          </span>
-          <h1 id="matchHeading" class="font-bold text-xs sm:text-base truncate max-w-[130px] xs:max-w-[180px] sm:max-w-md">Live Stream</h1>
-        </div>
+<body>
+<main class="player-shell" id="player-shell">
+  <!-- Shaka Player Container for DASH (ClearKey DRM) -->
+  <div id="shaka-container" class="engine-container">
+    <video id="shaka-video" autoplay playsinline preload="auto"></video>
+  </div>
+  <!-- JW Player Container for HLS -->
+  <div id="jw-container" class="engine-container" aria-label="JW HLS player"></div>
+  <!-- Clean Iframe Container for External Embeds (NO SANDBOX!) -->
+  <div id="iframe-container" class="engine-container"></div>
+
+  <!-- Header Overlay -->
+  <header class="top-nav" id="topNav">
+    <div class="nav-left">
+      <a href="/" class="back-btn" id="backBtn" title="Back to All Matches">← Matches</a>
+      <div class="brand-pill">AS<span>LIVE</span></div>
+      <div class="event-info">
+        <span class="event-title" id="displayTitle">Live Stream</span>
+        <span class="stream-label" id="displaySubtitle">Connecting…</span>
       </div>
-      <div class="flex items-center gap-1.5 sm:gap-2 shrink-0">
-        <a href="/tv" class="as-tv-pill inline-flex items-center gap-1 px-2.5 sm:px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs font-bold text-foreground border border-border/50 transition-all hover:border-primary/50 shadow-sm">
-          <span class="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span class="hidden xs:inline">📺 24/7 TV</span>
-          <span class="xs:hidden">📺 TV</span>
-        </a>
-        <a href="https://discord.gg/aryanstreams" target="_blank" rel="noopener noreferrer" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground inline-flex items-center gap-1" aria-label="Join Discord">
-          <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="text-sm">
-            <path fill="currentColor" d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"/>
-          </svg>
-          <span class="hidden sm:inline">Discord</span>
-        </a>
-        <button type="button" onclick="toggleFullscreen()" class="px-2.5 sm:px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs border border-border/50 text-foreground">
-          Fullscreen
-        </button>
-      </div>
+    </div>
+    <div class="nav-right">
+      <button class="action-btn" id="serverPickerBtn" type="button" style="display:none">⚡ Servers</button>
+      <button class="action-btn video-fit-btn" id="videoFitBtn" type="button" title="Aspect ratio">FIT: CONTAIN</button>
     </div>
   </header>
 
-  <!-- Player Stage -->
-  <main class="container mx-auto px-4 py-4 sm:py-6 flex-1 flex flex-col items-center justify-center max-w-5xl">
-    <!-- Video Frame -->
-    <div class="w-full player-aspect relative border border-border/40 mb-4 bg-black">
-      <iframe id="videoIframe" src="" class="w-full h-full border-0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" allowfullscreen referrerpolicy="no-referrer-when-downgrade"></iframe>
-      <div id="playerPlaceholder" class="absolute inset-0 flex flex-col items-center justify-center bg-black/90 text-center p-6 hidden">
-        <div class="animate-spin rounded-full h-10 w-10 border-b-2 border-primary mb-3"></div>
-        <p class="text-sm text-muted-foreground">Connecting to live stream server...</p>
-      </div>
+  <div id="playerMessage" class="player-message" role="status"></div>
+</main>
+
+<!-- Server Selector Modal -->
+<div class="modal-overlay" id="serverModal">
+  <div class="modal-card">
+    <div class="modal-header">
+      <h3 class="modal-title">Select Stream Server</h3>
+      <button class="close-btn" id="modalCloseBtn" aria-label="Close">✕</button>
     </div>
+    <div id="serversList"></div>
+  </div>
+</div>
 
-    <!-- Server Control Bar -->
-    <div class="w-full bg-surface border border-border/40 rounded-xl p-4 shadow-lg">
-      <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-        <div class="flex flex-col">
-          <span class="text-xs text-muted-foreground font-medium uppercase tracking-wider mb-2">Available Stream Servers:</span>
-          <div id="serverList" class="flex flex-wrap gap-2">
-            <!-- Server Buttons injected by JS -->
-          </div>
-        </div>
-        <div class="flex items-center gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-border/30">
-          <button type="button" onclick="reloadStream()" class="text-xs px-3 py-2 rounded-lg bg-surface-secondary hover:bg-surface-tertiary border border-border/50 text-foreground flex items-center gap-1.5">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-            </svg>
-            Reload Stream
-          </button>
-        </div>
-      </div>
-    </div>
-  </main>
+<script>
+(() => {
+  "use strict";
 
-  <footer class="py-4 text-center text-xs text-muted-foreground border-t border-border/30">
-    &copy; 2026 AS | AryanStreams. High-Speed Edge Sports Player.
-  </footer>
+  const params = new URLSearchParams(location.search);
+  const sourceUrl = params.get("url") || params.get("src") || params.get("stream") || "";
+  const streamName = params.get("name") || "";
+  const eventTitle = params.get("title") || "";
+  const category = params.get("category") || "";
+  const kid = (params.get("kid") || params.get("keyId") || "").trim();
+  const key = (params.get("key") || "").trim();
+  const explicitType = (params.get("type") || "").toLowerCase();
 
-  <script>
-    const params = new URLSearchParams(window.location.search);
-    const initialSrc = params.get('src');
-    const matchTitle = params.get('title') || 'Live Match';
-    const matchId = params.get('id');
-    const sport = params.get('sport') || '';
+  const shell = document.getElementById("player-shell");
+  const shakaContainer = document.getElementById("shaka-container");
+  const jwContainer = document.getElementById("jw-container");
+  const iframeContainer = document.getElementById("iframe-container");
+  const shakaVideo = document.getElementById("shaka-video");
+  const fitButton = document.getElementById("videoFitBtn");
+  const messageEl = document.getElementById("playerMessage");
+  const topNav = document.getElementById("topNav");
+  const displayTitle = document.getElementById("displayTitle");
+  const displaySubtitle = document.getElementById("displaySubtitle");
+  const serverPickerBtn = document.getElementById("serverPickerBtn");
+  const serverModal = document.getElementById("serverModal");
+  const modalCloseBtn = document.getElementById("modalCloseBtn");
+  const serversList = document.getElementById("serversList");
 
-    if (matchTitle) {
-      document.getElementById('matchHeading').textContent = matchTitle;
-      document.title = matchTitle + ' | Live Player';
+  let shakaPlayer = null;
+  let jwPlayer = null;
+  let activeEngine = "";
+  let retryCount = 0;
+  let retryTimer = null;
+  let stopped = false;
+  let fitModeIndex = 0;
+  let controlsHideTimer = null;
+
+  if (eventTitle) displayTitle.textContent = eventTitle;
+  if (streamName) displaySubtitle.innerHTML = `Source: <strong>${streamName}</strong>`;
+  document.title = [eventTitle || streamName || "AryanStreams Live", category].filter(Boolean).join(" · ");
+
+  function showMessage(msg) {
+    messageEl.textContent = msg;
+    messageEl.classList.add("show");
+  }
+  function hideMessage() {
+    messageEl.textContent = "";
+    messageEl.classList.remove("show");
+  }
+  function validHttpUrl(value) {
+    try {
+      const parsed = new URL(value, location.href);
+      return ["http:", "https:"].includes(parsed.protocol) ? parsed.href : "";
+    } catch (_) { return ""; }
+  }
+
+  function classifyStream(url) {
+    if (explicitType.includes("hls")) return "hls";
+    if (explicitType.includes("dash") || explicitType.includes("mpd")) return "dash";
+    if (explicitType.includes("embed") || explicitType.includes("iframe")) return "iframe";
+    let path = "";
+    try { path = new URL(url).pathname.toLowerCase(); } catch (_) { path = String(url).toLowerCase(); }
+    if (/\.m3u8$/i.test(path)) return "hls";
+    if (/\.mpd$/i.test(path)) return "dash";
+    if (/(\/embed\/|\.html$|ehgembxe|bintv|topstreamer)/i.test(url)) return "iframe";
+    return "dash";
+  }
+
+  const fitModes = [
+    {key:"contain", label:"FIT: CONTAIN", hint:"Original aspect ratio"},
+    {key:"cover", label:"FULL: COVER", hint:"Fill screen (crop)"},
+    {key:"stretch", label:"FULL: STRETCH", hint:"Fill screen (stretch)"}
+  ];
+
+  function applyFitMode(index) {
+    fitModeIndex = (index + fitModes.length) % fitModes.length;
+    const mode = fitModes[fitModeIndex];
+    [shakaVideo].forEach(el => {
+      el.classList.remove("fit-contain","fit-cover","fit-stretch");
+      el.classList.add("fit-" + mode.key);
+    });
+    [shakaContainer,jwContainer].forEach(el => {
+      el.classList.remove("fit-contain","fit-cover","fit-stretch","full-cover","full-stretch");
+      el.classList.add("fit-" + mode.key);
+      if (mode.key === "cover") el.classList.add("full-cover");
+      if (mode.key === "stretch") el.classList.add("full-stretch");
+    });
+    fitButton.textContent = mode.label;
+    fitButton.title = mode.hint;
+
+    const jwVideo = jwContainer.querySelector("video");
+    if (jwVideo) {
+      jwVideo.style.objectFit = mode.key === "cover" ? "cover" : mode.key === "stretch" ? "fill" : "contain";
+      jwVideo.style.objectPosition = "center center";
+    }
+  }
+
+  fitButton.addEventListener("click", ev => {
+    ev.preventDefault();
+    ev.stopPropagation();
+    applyFitMode(fitModeIndex + 1);
+    showControls();
+  });
+
+  function showControls() {
+    topNav.classList.remove("hidden-controls");
+    clearTimeout(controlsHideTimer);
+    controlsHideTimer = setTimeout(() => {
+      topNav.classList.add("hidden-controls");
+    }, 3800);
+  }
+
+  shell.addEventListener("mousemove", showControls, {passive:true});
+  shell.addEventListener("pointerdown", showControls, {passive:true});
+  shell.addEventListener("touchstart", showControls, {passive:true});
+
+  function showEngine(engine) {
+    activeEngine = engine;
+    shakaContainer.style.display = engine === "dash" ? "block" : "none";
+    jwContainer.style.display = engine === "hls" ? "block" : "none";
+    iframeContainer.style.display = engine === "iframe" ? "block" : "none";
+    fitButton.style.display = engine === "iframe" ? "none" : "inline-flex";
+    applyFitMode(fitModeIndex);
+  }
+
+  function clearJW() {
+    clearTimeout(retryTimer);
+    if (jwPlayer && typeof jwPlayer.remove === "function") {
+      try { jwPlayer.remove(); } catch (_) {}
+    }
+    jwPlayer = null;
+    jwContainer.innerHTML = "";
+  }
+
+  function startJW(url) {
+    if (stopped) return;
+    if (typeof window.jwplayer !== "function") {
+      showMessage("JW Player library loading failed.");
+      return;
+    }
+    clearJW();
+    showEngine("hls");
+    jwContainer.innerHTML = '<div id="jw-instance" style="position:absolute;inset:0;width:100%;height:100%"></div>';
+    jwPlayer = window.jwplayer("jw-instance").setup({
+      file: url,
+      width: "100%",
+      height: "100%",
+      aspectratio: "16:9",
+      autostart: true,
+      mute: false,
+      controls: true,
+      stretching: "uniform",
+      displaytitle: false,
+      preload: "auto",
+      skin: {name:"seven"}
+    });
+
+    jwPlayer.on("ready", () => {
+      applyFitMode(fitModeIndex);
+      showControls();
+    });
+    jwPlayer.on("play", () => {
+      retryCount = 0;
+      hideMessage();
+      showControls();
+    });
+    jwPlayer.on("firstFrame", hideMessage);
+    jwPlayer.on("buffer", () => showMessage("Buffering stream…"));
+    jwPlayer.on("error", () => {
+      if (stopped) return;
+      if (retryCount >= 3) {
+        showMessage("HLS Stream failed after 3 retries. Please choose another server.");
+        return;
+      }
+      retryCount++;
+      clearTimeout(retryTimer);
+      retryTimer = setTimeout(() => { if (!stopped) startJW(url); }, retryCount * 1500);
+    });
+  }
+
+  async function startShaka(url, streamKid, streamKey) {
+    showEngine("dash");
+    hideMessage();
+    if (!window.shaka) throw new Error("Shaka Player library failed to load.");
+    shaka.polyfill.installAll();
+    if (!shaka.Player.isBrowserSupported()) throw new Error("Browser does not support Shaka Player.");
+
+    if (shakaPlayer) {
+      try { await shakaPlayer.destroy(); } catch (_) {}
+      shakaPlayer = null;
+    }
+    shakaVideo.removeAttribute("src");
+    shakaVideo.load();
+
+    shakaPlayer = new shaka.Player();
+    await shakaPlayer.attach(shakaVideo);
+    new shaka.ui.Overlay(shakaPlayer, shakaContainer, shakaVideo);
+
+    const useKid = streamKid || kid;
+    const useKey = streamKey || key;
+    const clearKeys = {};
+    if (useKid && useKey) {
+      clearKeys[useKid.replace(/-/g,"").toLowerCase()] = useKey;
     }
 
-    const backBtn = document.getElementById('backBtn');
-    if (backBtn) {
-      if (matchId) {
-        backBtn.href = (sport ? '/match/' + sport + '/' : '/match/') + matchId;
+    shakaPlayer.configure({
+      drm: { clearKeys },
+      streaming: {
+        lowLatencyMode: true,
+        bufferingGoal: 10,
+        rebufferingGoal: 2
       }
-      backBtn.addEventListener('click', (e) => {
-        if (window.history.length > 1) {
-          e.preventDefault();
-          window.history.back();
-        }
-      });
+    });
+
+    shakaPlayer.addEventListener("error", ev => {
+      const detail = ev.detail || ev;
+      console.warn("Shaka player error:", detail);
+    });
+
+    await shakaPlayer.load(url);
+    await shakaVideo.play().catch(()=>{});
+    applyFitMode(fitModeIndex);
+    hideMessage();
+    showControls();
+  }
+
+  function startIframe(url) {
+    showEngine("iframe");
+    hideMessage();
+    // CRITICAL: NEVER ADD SANDBOX ATTRIBUTES!
+    iframeContainer.innerHTML = `<iframe src="${url}" allow="autoplay; fullscreen; picture-in-picture; encrypted-media" allowfullscreen referrerpolicy="no-referrer"></iframe>`;
+    showControls();
+  }
+
+  async function playStream(url, optName, optKid, optKey) {
+    if (!url) {
+      showMessage("No stream URL specified.");
+      return;
+    }
+    const cleanUrl = validHttpUrl(url);
+    if (!cleanUrl) {
+      showMessage("Invalid stream URL provided.");
+      return;
     }
 
-    const iframe = document.getElementById('videoIframe');
-    const serverList = document.getElementById('serverList');
+    if (optName) displaySubtitle.innerHTML = `Source: <strong>${optName}</strong>`;
+    const engine = classifyStream(cleanUrl);
 
-    function setStreamUrl(url, name) {
-      iframe.src = url;
-      if (name) {
-        document.getElementById('matchHeading').textContent = matchTitle + ' - ' + name;
-      }
-      document.querySelectorAll('.server-btn').forEach(btn => {
-        if (btn.dataset.url === url) {
-          btn.classList.add('active', 'bg-primary', 'text-white', 'border-primary');
-          btn.classList.remove('bg-surface-secondary', 'text-foreground');
-        } else {
-          btn.classList.remove('active', 'bg-primary', 'text-white', 'border-primary');
-          btn.classList.add('bg-surface-secondary', 'text-foreground');
-        }
-      });
+    if (engine === "hls") {
+      startJW(cleanUrl);
+      return;
+    }
+    if (engine === "iframe") {
+      startIframe(cleanUrl);
+      return;
     }
 
-    function reloadStream() {
-      const cur = iframe.src;
-      iframe.src = '';
-      setTimeout(() => { iframe.src = cur; }, 200);
+    try {
+      await startShaka(cleanUrl, optKid, optKey);
+    } catch (err) {
+      console.warn("DASH playback error:", err);
+      showMessage("DASH playback error. Switching or retrying...");
+      // Fallback to JW if possible
+      try { startJW(cleanUrl); } catch (_) {}
     }
+  }
 
-    function toggleFullscreen() {
-      if (iframe.requestFullscreen) iframe.requestFullscreen();
-      else if (iframe.webkitRequestFullscreen) iframe.webkitRequestFullscreen();
+  // Setup multi-server switching if match data was passed or stored in sessionStorage
+  function setupServerSwitcher() {
+    let streams = [];
+    try {
+      const raw = sessionStorage.getItem("current_match_streams");
+      if (raw) streams = JSON.parse(raw);
+    } catch (_) {}
+
+    if (Array.isArray(streams) && streams.length > 1) {
+      serverPickerBtn.style.display = "inline-flex";
+      serverPickerBtn.onclick = () => {
+        serversList.innerHTML = streams.map((s, idx) => {
+          const isDash = /\.mpd(?:$|\?)/i.test(s.stream_url);
+          const active = s.stream_url === sourceUrl ? "active" : "";
+          const name = s.channel_name || `Server ${idx + 1}`;
+          return `<button class="server-item ${active}" data-idx="${idx}">
+            <span>${name}</span>
+            <span class="server-tag">${isDash ? "DASH" : "HLS"}</span>
+          </button>`;
+        }).join("");
+
+        serversList.querySelectorAll(".server-item").forEach(btn => {
+          btn.onclick = () => {
+            const idx = Number(btn.dataset.idx);
+            const st = streams[idx];
+            if (st) {
+              serverModal.classList.remove("open");
+              playStream(st.stream_url, st.channel_name, st.kid, st.key);
+            }
+          };
+        });
+        serverModal.classList.add("open");
+      };
+
+      modalCloseBtn.onclick = () => serverModal.classList.remove("open");
+      serverModal.onclick = e => { if (e.target === serverModal) serverModal.classList.remove("open"); };
     }
+  }
 
-    async function init() {
-      let streams = [];
-
-      if (matchId) {
-        try {
-          const cleanId = matchId.replace(/^(FS:|CUST:|TIM:|TOP:)/, '');
-          const res = await fetch('/api/v1/match/' + encodeURIComponent(cleanId) + (sport ? '?sport=' + encodeURIComponent(sport) : ''));
-          if (res.ok) {
-            const data = await res.json();
-            streams = data.custom_urls || [];
-          }
-        } catch (e) {}
-      }
-
-      if (initialSrc && !streams.some(s => s.url === initialSrc)) {
-        streams.unshift({ id: 'primary', name: 'Server 1 (Direct)', url: initialSrc });
-      }
-
-      if (!streams.length) {
-        // Fallback default stream
-        streams.push({ id: 'default', name: 'Server 1: Premier Sports', url: initialSrc || '/api/v1/stream?src=https%3A%2F%2Fehgembxe.cfd%2Fbintv%2F01mq6wxa-9816' });
-      }
-
-      serverList.innerHTML = streams.map((s, idx) => `
-        <button type="button" data-url="${s.url}" onclick="setStreamUrl('${s.url}', '${s.name.replace(/'/g, "\\'")}')"
-                class="server-btn px-3.5 py-2 rounded-lg text-xs font-semibold border border-border/50 bg-surface-secondary hover:bg-surface-tertiary transition-all ${idx === 0 ? 'active bg-primary text-white border-primary' : 'text-foreground'}">
-          ${s.name || 'Server ' + (idx + 1)}
-        </button>
-      `).join('');
-
-      // Play stream
-      if (initialSrc) {
-        const found = streams.find(s => s.url === initialSrc);
-        setStreamUrl(initialSrc, found ? found.name : 'Server 1');
-      } else {
-        setStreamUrl(streams[0].url, streams[0].name);
-      }
+  window.addEventListener("pagehide", async () => {
+    stopped = true;
+    clearTimeout(retryTimer);
+    clearTimeout(controlsHideTimer);
+    clearJW();
+    if (shakaPlayer) {
+      try { await shakaPlayer.destroy(); } catch (_) {}
+      shakaPlayer = null;
     }
+  }, {once:true});
 
-    init();
-  </script>
+  setupServerSwitcher();
+  playStream(sourceUrl, streamName, kid, key);
+  showControls();
+})();
+</script>
 </body>
 </html>

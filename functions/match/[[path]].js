@@ -1,23 +1,14 @@
 /**
  * Cloudflare Pages Function: /match/[[path]]
- * Serves match/index.html for any match route (e.g. /match/football/xdLoJd4b)
+ * Legacy route handler: redirects to home or player page
  */
 
 export async function onRequest(context) {
     const url = new URL(context.request.url);
     const origin = url.origin;
-    try {
-        const res = await fetch(`${origin}/match/index.html`);
-        if (res.ok) {
-            const html = await res.text();
-            return new Response(html, {
-                status: 200,
-                headers: {
-                    'Content-Type': 'text/html; charset=utf-8',
-                    'Cache-Control': 'public, max-age=60, stale-while-revalidate=120'
-                }
-            });
-        }
-    } catch (e) {}
-    return context.next();
+    const streamUrl = url.searchParams.get('url') || url.searchParams.get('src');
+    if (streamUrl) {
+        return Response.redirect(`${origin}/player.html?${url.searchParams.toString()}`, 302);
+    }
+    return Response.redirect(`${origin}/`, 302);
 }
