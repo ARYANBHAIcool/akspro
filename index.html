@@ -377,18 +377,17 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     return `<img src="${esc(first)}" alt="${esc(teamName)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-fallback="${esc(second)}" onerror="if(this.dataset.fallback){const next=this.dataset.fallback;this.dataset.fallback='';this.src=next}else{this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex'}">${fallbackHtml}`;
   }
 
-  function buildPlayerUrl(match, stream){
-    const params = new URLSearchParams();
-    params.set("url", stream.stream_url);
-    params.set("name", stream.channel_name || "Live stream");
-    params.set("title", match.event_name || eventName(match));
-    params.set("category", match.Category || "");
-    if(stream.kid) params.set("kid", stream.kid);
-    if(stream.key) params.set("key", stream.key);
-    if(stream.user_agent) params.set("user_agent", stream.user_agent);
-    if(stream.referer) params.set("referer", stream.referer);
-    params.set("type", /\.mpd(?:$|\?)/i.test(stream.stream_url) ? "mpd" : "hls");
-    return PLAYER_PAGE + "?" + params.toString();
+  function matchToSlug(m) {
+    const raw = (m.event_name || eventName(m) || "match").trim();
+    return raw.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function buildPlayerUrl(match, stream, serverIdx = 0){
+    const slug = matchToSlug(match);
+    const serverNum = serverIdx + 1;
+    return `${PLAYER_PAGE}?match=${encodeURIComponent(slug)}-ser${serverNum}`;
   }
 
   function showToast(msg){
@@ -517,7 +516,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     } catch (_) {}
 
     if (sources.length === 1) {
-      window.open(buildPlayerUrl(match, sources[0]), "_blank", "noopener");
+      window.open(buildPlayerUrl(match, sources[0], 0), "_blank", "noopener");
       return;
     }
 
@@ -560,7 +559,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
           sessionStorage.setItem("current_match_streams", JSON.stringify(sources));
           sessionStorage.setItem("current_match", JSON.stringify(match));
         } catch (_) {}
-        const url = buildPlayerUrl(match, s);
+        const url = buildPlayerUrl(match, s, idx);
         const win = window.open(url, "_blank", "noopener");
         if (!win) showToast("Pop-up blocked. Please allow pop-ups for AryanStreams.");
         overlay.remove();

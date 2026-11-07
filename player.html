@@ -237,14 +237,15 @@ html,body{
   "use strict";
 
   const params = new URLSearchParams(location.search);
+  const matchParam = (params.get("match") || params.get("m") || "").trim();
   const channelId = (params.get("id") || params.get("channel") || "").trim();
-  const sourceUrl = params.get("url") || params.get("src") || params.get("stream") || "";
-  const streamName = params.get("name") || "";
-  const eventTitle = params.get("title") || "";
-  const category = params.get("category") || "";
-  const kid = (params.get("kid") || params.get("keyId") || "").trim();
-  const key = (params.get("key") || "").trim();
-  const explicitType = (params.get("type") || "").toLowerCase();
+  let sourceUrl = params.get("url") || params.get("src") || params.get("stream") || "";
+  let streamName = params.get("name") || "";
+  let eventTitle = params.get("title") || "";
+  let category = params.get("category") || "";
+  let kid = (params.get("kid") || params.get("keyId") || "").trim();
+  let key = (params.get("key") || "").trim();
+  let explicitType = (params.get("type") || "").toLowerCase();
 
   const shell = document.getElementById("player-shell");
   const shakaContainer = document.getElementById("shaka-container");
@@ -278,12 +279,75 @@ html,body{
   let controlsHideTimer = null;
   let toastTimer = null;
   let currentActiveUrl = sourceUrl;
+  let currentActiveMatch = null;
+  let currentActiveMatchSlug = "";
+  let currentServerNumber = 1;
   const autoFailoverAttempted = new Set();
   if (sourceUrl) autoFailoverAttempted.add(sourceUrl);
 
   if (eventTitle) displayTitle.textContent = eventTitle;
   if (streamName) displaySubtitle.innerHTML = `Source: <strong>${streamName}</strong>`;
   document.title = [eventTitle || streamName || "AryanStreams Live", category].filter(Boolean).join(" · ");
+
+  function matchToSlug(text) {
+    return String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function parseMatchParam(param) {
+    if (!param) return null;
+    const m = param.match(/^(.+?)[-_](?:ser|server)(\d+)$/i);
+    if (m) {
+      return { slug: m[1], serverIndex: Math.max(0, parseInt(m[2], 10) - 1) };
+    }
+    const sFromParam = parseInt(params.get("server") || params.get("s") || "1", 10) - 1;
+    return { slug: param, serverIndex: Math.max(0, sFromParam) };
+  }
+
+  function findMatchBySlug(matches, slug) {
+    if (!Array.isArray(matches) || !slug) return null;
+    const cleanSlug = slug.toLowerCase().replace(/[^a-z0-9]/g, "");
+
+    let found = matches.find(m => (m.event_name || m.eventInfo?.eventName || "").toLowerCase().replace(/[^a-z0-9]/g, "") === cleanSlug);
+    if (found) return found;
+
+    found = matches.find(m => {
+      const mSlug = (m.event_name || m.eventInfo?.eventName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      return mSlug.includes(cleanSlug) || cleanSlug.includes(mSlug);
+    });
+    if (found) return found;
+
+    if (cleanSlug.includes("vs")) {
+      const parts = cleanSlug.split("vs");
+      if (parts.length >= 2 && parts[0] && parts[1]) {
+        found = matches.find(m => {
+          const text = (m.event_name || m.eventInfo?.eventName || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+          return text.includes(parts[0]) && text.includes(parts[1]);
+        });
+        if (found) return found;
+      }
+    }
+
+    const words = slug.split(/[^a-z0-9]+/).filter(w => w.length > 2 && w !== "vs");
+    if (words.length > 0) {
+      found = matches.find(m => {
+        const text = (m.event_name || m.eventInfo?.eventName || "").toLowerCase();
+        return words.every(w => text.includes(w));
+      });
+    }
+    return found || null;
+  }
+
+  function updateCleanUrl(slug, serverNum) {
+    try {
+      if (slug && window.history && window.history.replaceState) {
+        const cleanSearch = `?match=${encodeURIComponent(slug)}-ser${serverNum}`;
+        window.history.replaceState(null, "", `${location.pathname}${cleanSearch}`);
+      }
+    } catch (_) {}
+  }
 
   function showToast(msg) {
     toastEl.textContent = msg;
@@ -355,11 +419,23 @@ html,body{
     showControls();
   });
 
+  // Clean Share link generator (e.g. ?match=arsenalvshull-ser1)
   shareBtn.addEventListener("click", () => {
-    navigator.clipboard.writeText(location.href).then(() => {
-      showToast("Match link copied to clipboard!");
+    let cleanUrl = location.href;
+    const slug = currentActiveMatchSlug || (currentActiveMatch ? matchToSlug(currentActiveMatch.event_name) : "") || matchToSlug(displayTitle.textContent);
+    if (slug) {
+      const u = new URL(location.href);
+      u.search = `?match=${slug}-ser${currentServerNumber}`;
+      cleanUrl = u.toString();
+    } else if (channelId) {
+      const u = new URL(location.href);
+      u.search = `?id=${channelId}`;
+      cleanUrl = u.toString();
+    }
+    navigator.clipboard.writeText(cleanUrl).then(() => {
+      showToast("Clean match link copied to clipboard!");
     }).catch(() => {
-      showToast("Link: " + location.href);
+      showToast("Link: " + cleanUrl);
     });
   });
 
@@ -523,7 +599,7 @@ html,body{
         if (res.ok) {
           const data = await res.json();
           const matches = Array.isArray(data) ? data : (data.matches || []);
-          const curTitle = (eventTitle || "").toLowerCase().trim();
+          const curTitle = (eventTitle || displayTitle.textContent || "").toLowerCase().trim();
           const match = matches.find(m => {
             const evTitle = (m.event_name || m.eventInfo?.eventName || "").toLowerCase().trim();
             return evTitle && (evTitle.includes(curTitle) || curTitle.includes(evTitle));
@@ -548,6 +624,13 @@ html,body{
     if (streams.length > 1) {
       const nextStream = streams.find(s => s && s.stream_url && !autoFailoverAttempted.has(s.stream_url));
       if (nextStream) {
+        const nextIdx = streams.indexOf(nextStream);
+        if (nextIdx >= 0) {
+          currentServerNumber = nextIdx + 1;
+          if (currentActiveMatchSlug) {
+            updateCleanUrl(currentActiveMatchSlug, currentServerNumber);
+          }
+        }
         showMessage(`Source issue. Auto-switching to: ${nextStream.channel_name || 'Backup server'}…`);
         currentActiveUrl = nextStream.stream_url;
         setTimeout(() => {
@@ -614,8 +697,9 @@ html,body{
       checkAndShowUnmute();
     });
     jwPlayer.on("buffer", () => showMessage("Buffering stream…"));
-    jwPlayer.on("error", () => {
+    jwPlayer.on("error", (err) => {
       if (stopped) return;
+      console.warn("JW HLS error:", err);
       triggerAutoFailover("JW HLS stream error");
     });
   }
@@ -673,7 +757,7 @@ html,body{
       const code = detail?.code || "";
       const cat = detail?.category || "";
       console.warn(`Shaka player error (code=${code}, category=${cat}):`, detail);
-      triggerAutoFailover(`DASH error (${code})`);
+      triggerAutoFailover(`DASH stream error (${code})`);
     });
 
     await shakaPlayer.load(url);
@@ -733,14 +817,14 @@ html,body{
     }
   }
 
-  async function setupServerSwitcher() {
-    const streams = await getAvailableStreams();
+  async function setupServerSwitcher(customStreams) {
+    const streams = customStreams || await getAvailableStreams();
     if (streams.length > 1) {
       serverPickerBtn.style.display = "inline-flex";
       serverPickerBtn.onclick = () => {
         serversList.innerHTML = streams.map((s, idx) => {
           const isDash = /\.mpd(?:$|\?)/i.test(s.stream_url);
-          const active = s.stream_url === currentActiveUrl ? "active" : "";
+          const active = (s.stream_url === currentActiveUrl || idx + 1 === currentServerNumber) ? "active" : "";
           const name = s.channel_name || `Server ${idx + 1}`;
           return `<button class="server-item ${active}" data-idx="${idx}">
             <span>⚡ ${esc(name)}</span>
@@ -753,6 +837,10 @@ html,body{
             const idx = Number(btn.dataset.idx);
             const st = streams[idx];
             if (st) {
+              currentServerNumber = idx + 1;
+              if (currentActiveMatchSlug) {
+                updateCleanUrl(currentActiveMatchSlug, currentServerNumber);
+              }
               serverModal.classList.remove("open");
               playStream(st.stream_url, st.channel_name, st.kid, st.key);
             }
@@ -766,52 +854,7 @@ html,body{
     }
   }
 
-  // Keyboard Shortcuts
-  window.addEventListener("keydown", e => {
-    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
-    if (e.key === " " || e.key === "k") {
-      e.preventDefault();
-      if (activeEngine === "hls" && jwPlayer) {
-        jwPlayer.getState() === "playing" ? jwPlayer.pause() : jwPlayer.play();
-      } else if (activeEngine === "dash" && shakaVideo) {
-        shakaVideo.paused ? shakaVideo.play() : shakaVideo.pause();
-      }
-    } else if (e.key === "f" || e.key === "F") {
-      e.preventDefault();
-      if (!document.fullscreenElement) shell.requestFullscreen().catch(() => {});
-      else document.exitFullscreen().catch(() => {});
-    } else if (e.key === "m" || e.key === "M") {
-      e.preventDefault();
-      if (activeEngine === "hls" && jwPlayer) {
-        jwPlayer.setMute(!jwPlayer.getMute());
-      } else if (activeEngine === "dash" && shakaVideo) {
-        shakaVideo.muted = !shakaVideo.muted;
-      }
-      if (unmuteBanner) unmuteBanner.style.display = "none";
-    } else if (e.key === "c" || e.key === "C") {
-      e.preventDefault();
-      applyFitMode(fitModeIndex + 1);
-      showControls();
-    } else if (e.key === "s" || e.key === "S") {
-      e.preventDefault();
-      if (serverPickerBtn.style.display !== "none") serverPickerBtn.click();
-    } else if (e.key === "Escape") {
-      serverModal.classList.remove("open");
-    }
-  });
-
-  window.addEventListener("pagehide", async () => {
-    stopped = true;
-    clearInterval(stallWatchdog);
-    clearTimeout(retryTimer);
-    clearTimeout(controlsHideTimer);
-    clearJW();
-    if (shakaPlayer) {
-      try { await shakaPlayer.destroy(); } catch (_) {}
-      shakaPlayer = null;
-    }
-  }, {once:true});
-
+  // Direct channel loading by ID (e.g. ?id=PC2 or ?channel=SKYPL)
   async function initChannelById(id) {
     showMessage(`Loading channel ${id}…`);
     try {
@@ -873,7 +916,117 @@ html,body{
     } catch (_) {}
   }
 
-  if (!sourceUrl && channelId) {
+  // Clean slug-based match loading (e.g. ?match=arsenalvshull-ser1)
+  async function initMatchBySlug(parsed) {
+    let streams = [];
+    let matchObj = null;
+
+    try {
+      const rawStreams = sessionStorage.getItem("current_match_streams");
+      const rawMatch = sessionStorage.getItem("current_match");
+      if (rawStreams) streams = JSON.parse(rawStreams);
+      if (rawMatch) matchObj = JSON.parse(rawMatch);
+    } catch (_) {}
+
+    if (matchObj && parsed.slug) {
+      const cachedSlug = (matchObj.event_name || "").toLowerCase().replace(/[^a-z0-9]/g, "");
+      const requestedSlug = parsed.slug.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (!cachedSlug.includes(requestedSlug) && !requestedSlug.includes(cachedSlug)) {
+        streams = [];
+        matchObj = null;
+      }
+    }
+
+    if (!Array.isArray(streams) || streams.length === 0) {
+      showMessage("Connecting to match servers…");
+      try {
+        const res = await fetch("/api/sports");
+        if (res.ok) {
+          const data = await res.json();
+          const matches = Array.isArray(data) ? data : (data.matches || []);
+          matchObj = findMatchBySlug(matches, parsed.slug);
+          if (matchObj && Array.isArray(matchObj.streams)) {
+            streams = sortStreamsReliability(matchObj.streams);
+            try {
+              sessionStorage.setItem("current_match", JSON.stringify(matchObj));
+              sessionStorage.setItem("current_match_streams", JSON.stringify(streams));
+            } catch (_) {}
+          }
+        }
+      } catch (e) {
+        console.warn("Failed to fetch match:", e);
+      }
+    }
+
+    if (!Array.isArray(streams) || streams.length === 0) {
+      showMessage("Match stream not available or starting soon.");
+      return;
+    }
+
+    currentActiveMatch = matchObj;
+    currentActiveMatchSlug = parsed.slug;
+    currentServerNumber = Math.min(parsed.serverIndex + 1, streams.length);
+    const chosen = streams[currentServerNumber - 1] || streams[0];
+
+    const mTitle = (matchObj ? (matchObj.event_name || matchObj.eventInfo?.eventName) : "") || eventTitle || "Live Match";
+    displayTitle.textContent = mTitle;
+    document.title = `${mTitle} · AryanStreams Live`;
+
+    updateCleanUrl(parsed.slug, currentServerNumber);
+    setupServerSwitcher(streams);
+    playStream(chosen.stream_url, chosen.channel_name, chosen.kid, chosen.key);
+  }
+
+  // Keyboard Shortcuts
+  window.addEventListener("keydown", e => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key === " " || e.key === "k") {
+      e.preventDefault();
+      if (activeEngine === "hls" && jwPlayer) {
+        jwPlayer.getState() === "playing" ? jwPlayer.pause() : jwPlayer.play();
+      } else if (activeEngine === "dash" && shakaVideo) {
+        shakaVideo.paused ? shakaVideo.play() : shakaVideo.pause();
+      }
+    } else if (e.key === "f" || e.key === "F") {
+      e.preventDefault();
+      if (!document.fullscreenElement) shell.requestFullscreen().catch(() => {});
+      else document.exitFullscreen().catch(() => {});
+    } else if (e.key === "m" || e.key === "M") {
+      e.preventDefault();
+      if (activeEngine === "hls" && jwPlayer) {
+        jwPlayer.setMute(!jwPlayer.getMute());
+      } else if (activeEngine === "dash" && shakaVideo) {
+        shakaVideo.muted = !shakaVideo.muted;
+      }
+      if (unmuteBanner) unmuteBanner.style.display = "none";
+    } else if (e.key === "c" || e.key === "C") {
+      e.preventDefault();
+      applyFitMode(fitModeIndex + 1);
+      showControls();
+    } else if (e.key === "s" || e.key === "S") {
+      e.preventDefault();
+      if (serverPickerBtn.style.display !== "none") serverPickerBtn.click();
+    } else if (e.key === "Escape") {
+      serverModal.classList.remove("open");
+    }
+  });
+
+  window.addEventListener("pagehide", async () => {
+    stopped = true;
+    clearInterval(stallWatchdog);
+    clearTimeout(retryTimer);
+    clearTimeout(controlsHideTimer);
+    clearJW();
+    if (shakaPlayer) {
+      try { await shakaPlayer.destroy(); } catch (_) {}
+      shakaPlayer = null;
+    }
+  }, {once:true});
+
+  if (matchParam) {
+    const parsed = parseMatchParam(matchParam);
+    initMatchBySlug(parsed);
+  } else if (!sourceUrl && channelId) {
     initChannelById(channelId);
   } else {
     setupServerSwitcher();
