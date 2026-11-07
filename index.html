@@ -7,6 +7,7 @@
 <title>AryanStreams — Live Sports & Match Center</title>
 <meta name="description" content="Watch free live sports streams online. Football, Cricket, Basketball, MMA, Motorsport, Tennis and more on AryanStreams!">
 <link rel="icon" href="/favicon.ico" sizes="48x48">
+<link rel="manifest" href="/assets/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap" rel="stylesheet">
@@ -59,6 +60,8 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .discord-btn{border-color:#5865F2;background:rgba(88,101,242,0.12);color:#9bb4ff}
 .discord-btn:hover{background:#5865F2;color:#fff;border-color:#5865F2}
 .discord-icon{width:16px;height:16px;fill:currentColor}
+.pwa-btn{border-color:var(--brand-green);background:rgba(0,255,163,0.12);color:var(--brand-green);display:none}
+.pwa-btn:hover{background:var(--brand-green);color:#0a1f1a}
 
 /* Scorebar */
 .scorebar{display:flex;gap:0;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--bg2)}
@@ -85,6 +88,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .chip.active{background:var(--brass);border-color:var(--brass);color:#2a1c04;font-weight:600}
 .chip.cricket:not(.active){border-color:#8a6a2a;color:var(--brass)}
 .chip-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 7px;border-radius:10px;font-size:11px;font-weight:700;background:#e5484d33;color:#ff8085}
+.chip-count{font-size:11px;opacity:0.75;padding-left:2px}
 .chip.active .chip-badge{background:#2a1c04;color:var(--brass)}
 
 /* Section Head */
@@ -123,11 +127,13 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .team span{font-weight:600;font-size:14px;text-align:center;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .versus{font:700 14px "Barlow Condensed",sans-serif;color:var(--muted)}
 
-.badges{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--card2);border-top:1px solid var(--line)}
+.badges{display:flex;justify-content:space-between;align-items:center;padding:8px 14px;background:var(--card2);border-top:1px solid var(--line);gap:6px}
+.badges-left{display:flex;align-items:center;gap:6px}
 .status{font:600 12px Barlow,sans-serif;letter-spacing:.6px;padding:3px 9px;border-radius:6px;background:#ffffff12;color:var(--muted);display:inline-flex;align-items:center;gap:6px}
 .status.live{background:#e5484d26;color:#ff8085}
 .status.upcoming{background:#7cc7e820;color:var(--sky)}
 .status.ended{background:#ffffff10;color:#889988}
+.hot-badge{font:700 11px Barlow,sans-serif;padding:3px 7px;border-radius:6px;background:linear-gradient(135deg,#f59e0b,#d97706);color:#12342b;letter-spacing:.4px;display:inline-flex;align-items:center}
 .dot{width:7px;height:7px;border-radius:50%;background:var(--ball);display:inline-block;animation:pulse 1.6s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35}}
 .category{font-size:12px;color:var(--brass);border:1px solid #8a6a2a;border-radius:6px;padding:3px 9px;display:inline-flex;align-items:center;gap:4px}
@@ -135,7 +141,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 .card-body{padding:14px;display:flex;flex-direction:column;gap:6px;flex:1}
 .event-title{font-size:20px;line-height:1.2;font-family:"Barlow Condensed",sans-serif}
 .league{color:var(--muted);font-size:13px}
-.meta{color:var(--muted);font-size:13px;padding-top:4px}
+.meta{color:var(--muted);font-size:13px;padding-top:4px;display:flex;align-items:center;gap:5px}
 .stream-row{margin-top:auto;padding-top:12px;display:flex;justify-content:space-between;align-items:center}
 .stream-count{font-size:13px;font-weight:600;color:#7be0a8;background:#0e3a2a;border:1px solid #1e6a49;border-radius:8px;padding:6px 11px}
 .stream-count.none{color:var(--muted);background:var(--bg2);border-color:var(--line)}
@@ -181,6 +187,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     </div>
 
     <div class="header-links">
+      <button id="pwaInstallBtn" class="header-btn pwa-btn" type="button" title="Install AryanStreams on your device">📱 Install App</button>
       <a href="/tv/" class="header-btn" title="Watch 200+ 24/7 TV Channels">📺 24/7 TV Channels</a>
       <a href="https://discord.gg/aryanstreams" target="_blank" rel="noopener noreferrer" class="header-btn discord-btn" title="Join AryanStreams Discord Community">
         <svg class="discord-icon" viewBox="0 0 127.14 96.36"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-18.86-72.25ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
@@ -255,7 +262,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
 
   const PLAYER_PAGE = "/player/";
   const PRIMARY_DATA_URL = "/api/sports";
-  const FALLBACK_DATA_URL = "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json";
+  const FALLBACK_DATA_URL = "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json";
   const PRIORITY_CATEGORY = "cricket";
 
   const SPORT_ICONS = {
@@ -281,6 +288,11 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     return SPORT_ICONS[k] || "🏆";
   }
 
+  function isHotMatch(m) {
+    const txt = (String(m.event_name || "") + " " + String(eventName(m)) + " " + String(m.Category || "")).toLowerCase();
+    return /premier league|champions league|la liga|serie a|bundesliga|ipl|bbl|t20|world cup|nba|formula 1|motogp|ufc/i.test(txt);
+  }
+
   const $ = s => document.querySelector(s);
   const grid = $("#grid");
   let allMatches = [];
@@ -294,7 +306,6 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     try{
       if(!val) return "";
       let s = String(val).trim();
-      // Auto-upgrade insecure http images to https to avoid mixed-content warnings
       if (s.startsWith("http://img.sofascore.com")) s = s.replace("http://", "https://");
       const u = new URL(s);
       return ["http:","https:"].includes(u.protocol) ? u.href : "";
@@ -362,7 +373,6 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
   }
 
-  // Parse DD/MM/YYYY HH:MM:SS AM/PM accurately
   function parseMatchDate(str) {
     if (!str) return null;
     const match = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
@@ -391,8 +401,18 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       const tomorrow = new Date(now);
       tomorrow.setDate(tomorrow.getDate() + 1);
       const isTomorrow = d.toDateString() === tomorrow.toDateString();
-      
       const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      if (matchStatus(m) === "UPCOMING") {
+        const diffMin = Math.round((d.getTime() - now.getTime()) / 60000);
+        if (diffMin > 0 && diffMin < 60) return `Starts in ${diffMin}m (${timeStr})`;
+        if (diffMin >= 60 && diffMin < 720) {
+          const h = Math.floor(diffMin / 60);
+          const remM = diffMin % 60;
+          return `Starts in ${h}h ${remM > 0 ? remM + 'm' : ''} (${timeStr})`;
+        }
+      }
+
       if (isToday) return `Today · ${timeStr}`;
       if (isTomorrow) return `Tomorrow · ${timeStr}`;
       return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${timeStr}`;
@@ -405,6 +425,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     const a = teamA(m), b = teamB(m), logo = safeUrl(i.event_logo), flagA = safeUrl(i.teamAFlag), flagB = safeUrl(i.teamBFlag);
     const cat = m.Category || "Other";
     const catIcon = getSportIcon(cat);
+    const hot = isHotMatch(m);
     const sourceLabel = live
       ? (streams.length ? `<strong>${streams.length}</strong> server${streams.length===1?"":"s"}` : "Configuring stream…")
       : (status === "ENDED" ? "Ended" : "Upcoming");
@@ -417,7 +438,10 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
         <div class="team">${teamLogoHtml(flagB, logo, b)}<span title="${esc(b)}">${esc(b)}</span></div>
       </div>
       <div class="badges">
-        <span class="status ${status.toLowerCase()}">${statusLabel}</span>
+        <div class="badges-left">
+          <span class="status ${status.toLowerCase()}">${statusLabel}</span>
+          ${hot ? '<span class="hot-badge">🔥 HOT</span>' : ''}
+        </div>
         <span class="category">${catIcon} ${esc(cat)}</span>
       </div>
       <div class="card-body">
@@ -453,7 +477,7 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     if(!match) return;
     const sources = validStreams(match);
     if (!isLive(match)) {
-      showToast(`${eventName(match)} starts at ${timeText(match)}`);
+      showToast(`${eventName(match)} starts ${timeText(match)}`);
       return;
     }
     if(!sources.length){
@@ -554,16 +578,23 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
   }
 
   function renderCategories(){
+    const counts = {};
+    allMatches.forEach(m => {
+      const c = m.Category || "Other";
+      counts[c] = (counts[c] || 0) + 1;
+    });
+
     const cats = [...new Set(allMatches.map(m => m.Category || "Other"))].filter(Boolean).sort((a,b) => {
       const ca = a.toLowerCase() === PRIORITY_CATEGORY, cb = b.toLowerCase() === PRIORITY_CATEGORY;
       return ca !== cb ? (ca ? -1 : 1) : a.localeCompare(b);
     });
 
-    const allBtn = `<button class="chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">🏆 All sports</button>`;
+    const allBtn = `<button class="chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">🏆 All sports <span class="chip-count">${allMatches.length}</span></button>`;
     const catBtns = cats.map(c => {
       const isCric = c.toLowerCase() === PRIORITY_CATEGORY;
       const icon = getSportIcon(c);
-      return `<button class="chip ${isCric?"cricket":""} ${activeCategory===c?"active":""}" data-category="${esc(c)}">${icon} ${esc(c)}</button>`;
+      const cnt = counts[c] || 0;
+      return `<button class="chip ${isCric?"cricket":""} ${activeCategory===c?"active":""}" data-category="${esc(c)}">${icon} ${esc(c)} <span class="chip-count">${cnt}</span></button>`;
     }).join("");
 
     const box = $("#categoryTabs");
@@ -682,6 +713,26 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
     });
   });
   $("#sortFilter").addEventListener("change", render);
+
+  // PWA Install Prompt
+  let deferredPrompt = null;
+  const pwaBtn = $("#pwaInstallBtn");
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (pwaBtn) pwaBtn.style.display = "inline-flex";
+  });
+
+  if (pwaBtn) {
+    pwaBtn.addEventListener("click", async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") pwaBtn.style.display = "none";
+        deferredPrompt = null;
+      }
+    });
+  }
 
   loadData(false);
 

@@ -185,6 +185,8 @@ html,body{
     </div>
     <div class="nav-right">
       <button class="action-btn" id="serverPickerBtn" type="button" style="display:none">⚡ Servers</button>
+      <button class="action-btn" id="reloadBtn" type="button" title="Reconnect stream">🔄</button>
+      <button class="action-btn" id="pipBtn" type="button" title="Picture in Picture">🖼️ <span class="btn-text">PiP</span></button>
       <button class="action-btn" id="shareBtn" type="button" title="Share Match Link">🔗 <span id="shareBtnText">Share</span></button>
       <button class="action-btn video-fit-btn" id="videoFitBtn" type="button" title="Aspect ratio">FIT: CONTAIN</button>
     </div>
@@ -326,6 +328,33 @@ html,body{
       showToast("Link: " + location.href);
     });
   });
+
+  const pipBtn = document.getElementById("pipBtn");
+  const reloadBtn = document.getElementById("reloadBtn");
+
+  if (reloadBtn) {
+    reloadBtn.addEventListener("click", () => {
+      showToast("Reconnecting stream…");
+      playStream(currentActiveUrl, streamName, kid, key);
+    });
+  }
+
+  if (pipBtn) {
+    pipBtn.addEventListener("click", async () => {
+      try {
+        const vid = activeEngine === "hls" ? jwContainer.querySelector("video") : shakaVideo;
+        if (vid) {
+          if (document.pictureInPictureElement) {
+            await document.exitPictureInPicture();
+          } else if (document.pictureInPictureEnabled) {
+            await vid.requestPictureInPicture();
+          }
+        }
+      } catch (err) {
+        console.warn("PiP error:", err);
+      }
+    });
+  }
 
   function showControls() {
     topNav.classList.remove("hidden-controls");

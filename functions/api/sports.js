@@ -1,10 +1,13 @@
 /**
  * Cloudflare Pages Function: /api/sports
  * Proxies and caches the automated real-time sports JSON feed.
- * Provides instant global edge caching with automatic refresh.
+ * Features multi-mirror failover (GitHub Raw + JSDelivr CDN) with global edge caching.
  */
 
-const UPSTREAM_URL = "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json";
+const UPSTREAM_MIRRORS = [
+    "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json",
+    "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json"
+];
 
 export async function onRequest(context) {
     const corsHeaders = {
@@ -20,7 +23,7 @@ export async function onRequest(context) {
 
     try {
         const cache = caches.default;
-        const cacheKey = new Request("https://aryanstreamspro.internal/cache/sports_data_v2.json");
+        const cacheKey = new Request("https://aryanstreamspro.internal/cache/sports_data_v3.json");
         let cachedResponse = await cache.match(cacheKey);
 
         if (cachedResponse) {
@@ -33,22 +36,38 @@ export async function onRequest(context) {
             });
         }
 
-        const upstreamRes = await fetch(UPSTREAM_URL, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
-                'Accept': 'application/json'
-            },
-            cf: {
-                cacheTtl: 45,
-                cacheEverything: true
-            }
-        });
+        let dataText = null;
+        let lastError = null;
 
-        if (!upstreamRes.ok) {
-            throw new Error(`Upstream returned ${upstreamRes.status}`);
+        for (const mirror of UPSTREAM_MIRRORS) {
+            try {
+                const upstreamRes = await fetch(mirror, {
+                    headers: {
+                        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                        'Accept': 'application/json'
+                    },
+                    cf: {
+                        cacheTtl: 45,
+                        cacheEverything: true
+                    }
+                });
+
+                if (upstreamRes.ok) {
+                    const text = await upstreamRes.text();
+                    if (text && text.length > 500 && text.includes('"matches"')) {
+                        dataText = text;
+                        break;
+                    }
+                }
+            } catch (err) {
+                lastError = err;
+            }
         }
 
-        const dataText = await upstreamRes.text();
+        if (!dataText) {
+            throw new Error(lastError ? lastError.message : "All upstream mirrors unavailable");
+        }
+
         const responseHeaders = {
             ...corsHeaders,
             'Cache-Control': 'public, max-age=45, stale-while-revalidate=90',
@@ -66,7 +85,7 @@ export async function onRequest(context) {
         return new Response(JSON.stringify({
             error: "Failed to fetch live sports data",
             message: err.message,
-            fallback_url: UPSTREAM_URL
+            fallback_urls: UPSTREAM_MIRRORS
         }), {
             status: 502,
             headers: corsHeaders
