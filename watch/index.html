@@ -348,6 +348,37 @@ html,body{
     applyFitMode(fitModeIndex);
   }
 
+  let currentActiveUrl = sourceUrl;
+  let autoFailoverAttempted = new Set();
+
+  function triggerAutoFailover(reason) {
+    console.warn("Auto-failover triggered:", reason);
+    if (currentActiveUrl) autoFailoverAttempted.add(currentActiveUrl);
+    
+    let streams = [];
+    try {
+      const raw = sessionStorage.getItem("current_match_streams");
+      if (raw) streams = JSON.parse(raw);
+    } catch (_) {}
+
+    if (Array.isArray(streams) && streams.length > 1) {
+      const nextStream = streams.find(s => s && s.stream_url && !autoFailoverAttempted.has(s.stream_url));
+      if (nextStream) {
+        showMessage(`Source issue. Auto-switching to: ${nextStream.channel_name || 'Backup server'}…`);
+        currentActiveUrl = nextStream.stream_url;
+        setTimeout(() => {
+          playStream(nextStream.stream_url, nextStream.channel_name, nextStream.kid, nextStream.key);
+        }, 1200);
+        return;
+      }
+    }
+
+    showMessage("Stream unavailable. Click '⚡ Servers' to choose another source.");
+    if (serverPickerBtn && serverPickerBtn.style.display !== "none") {
+      serverPickerBtn.click();
+    }
+  }
+
   function clearJW() {
     clearTimeout(retryTimer);
     if (jwPlayer && typeof jwPlayer.remove === "function") {
@@ -393,14 +424,13 @@ html,body{
     jwPlayer.on("buffer", () => showMessage("Buffering stream…"));
     jwPlayer.on("error", () => {
       if (stopped) return;
-      if (retryCount >= 3) {
-        showMessage("HLS Stream failed after 3 retries. Please choose another server.");
-        if (serverPickerBtn.style.display !== "none") serverPickerBtn.click();
+      if (retryCount >= 2) {
+        triggerAutoFailover("JW HLS error");
         return;
       }
       retryCount++;
       clearTimeout(retryTimer);
-      retryTimer = setTimeout(() => { if (!stopped) startJW(url); }, retryCount * 1500);
+      retryTimer = setTimeout(() => { if (!stopped) startJW(url); }, 1500);
     });
   }
 
@@ -441,7 +471,7 @@ html,body{
     shakaPlayer.addEventListener("error", ev => {
       const detail = ev.detail || ev;
       console.warn("Shaka player error:", detail);
-      showMessage("DASH playback encountered an issue. Try Server picker above.");
+      triggerAutoFailover("Shaka DASH error");
     });
 
     await shakaPlayer.load(url);
@@ -469,6 +499,7 @@ html,body{
       return;
     }
 
+    currentActiveUrl = cleanUrl;
     if (optName) displaySubtitle.innerHTML = `Source: <strong>${optName}</strong>`;
     const engine = classifyStream(cleanUrl);
 
@@ -485,8 +516,7 @@ html,body{
       await startShaka(cleanUrl, optKid, optKey);
     } catch (err) {
       console.warn("DASH playback error:", err);
-      showMessage("DASH playback error. Switching or retrying...");
-      try { startJW(cleanUrl); } catch (_) {}
+      triggerAutoFailover("DASH load error");
     }
   }
 
