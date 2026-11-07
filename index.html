@@ -322,7 +322,33 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
   function isLive(m){ return matchStatus(m) === "LIVE"; }
   function isCricket(m){ return String(m.Category || "").trim().toLowerCase() === PRIORITY_CATEGORY; }
   function streamsOf(m){ return Array.isArray(m.streams) ? m.streams : []; }
-  function validStreams(m){ return streamsOf(m).filter(s => safeUrl(s.stream_url)); }
+
+  function sortStreamsReliability(streams) {
+    if (!Array.isArray(streams)) return [];
+    return [...streams].sort((a, b) => {
+      const score = s => {
+        const u = (s.stream_url || "").toLowerCase();
+        let pts = 0;
+        if (u.includes("otte.cache.aiv-cdn.net") || (u.includes("aiv-cdn.net") && !u.includes("fly.ww"))) pts += 150;
+        else if (u.includes("aiv-cdn.net") || u.includes("amazon") || (s.kid && s.key)) pts += 100;
+
+        if (u.includes("fubo") || u.includes("tnt") || u.includes("espn") || u.includes("nbc") || u.includes("star")) pts += 40;
+        if (u.includes(".mpd")) pts += 30;
+        else if (u.includes(".m3u8")) pts += 20;
+
+        if (u.includes("fly.ww.aiv-cdn.net")) pts -= 40;
+        if (u.includes("rutube") || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(s.stream_url)) pts -= 60;
+        if (/vpn/i.test(s.channel_name || "")) pts -= 80;
+        return pts;
+      };
+      return score(b) - score(a);
+    });
+  }
+
+  function validStreams(m){
+    const raw = streamsOf(m).filter(s => safeUrl(s.stream_url));
+    return sortStreamsReliability(raw);
+  }
   function eventInfo(m){ return m.eventInfo || {}; }
   function eventName(m){ const i = eventInfo(m); return i.eventName || m.event_name || "Sports event"; }
 
@@ -530,6 +556,10 @@ h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;lette
       b.onmouseenter = () => { b.style.borderColor = "#e8b44a"; b.style.background = "#1b493c"; };
       b.onmouseleave = () => { b.style.borderColor = "#24513f"; b.style.background = "#163d32"; };
       b.onclick = () => {
+        try {
+          sessionStorage.setItem("current_match_streams", JSON.stringify(sources));
+          sessionStorage.setItem("current_match", JSON.stringify(match));
+        } catch (_) {}
         const url = buildPlayerUrl(match, s);
         const win = window.open(url, "_blank", "noopener");
         if (!win) showToast("Pop-up blocked. Please allow pop-ups for AryanStreams.");

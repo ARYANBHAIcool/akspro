@@ -123,6 +123,24 @@ html,body{
 }
 .player-message.show{display:block}
 
+/* Unmute floating banner */
+.unmute-banner{
+  position:fixed;top:clamp(64px, 11vh, 88px);left:50%;transform:translateX(-50%);
+  z-index:9500;pointer-events:auto;animation:pulseUnmute 2s infinite ease-in-out;
+}
+@keyframes pulseUnmute{
+  0%,100%{transform:translateX(-50%) scale(1)}
+  50%{transform:translateX(-50%) scale(1.05)}
+}
+.unmute-btn{
+  background:linear-gradient(135deg,var(--brass),#9b6b19);
+  color:#12342b;border:1px solid rgba(255,255,255,0.4);border-radius:24px;
+  padding:10px 22px;font:700 16px/1 "Barlow Condensed",sans-serif;
+  letter-spacing:.6px;display:inline-flex;align-items:center;gap:8px;
+  cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,0.6);transition:all .15s;
+}
+.unmute-btn:hover{background:#fff;transform:scale(1.04)}
+
 /* Server Modal */
 .modal-overlay{
   position:fixed;inset:0;z-index:9999;background:rgba(3,13,11,0.85);
@@ -168,7 +186,7 @@ html,body{
 <body>
 <main class="player-shell" id="player-shell">
   <div id="shaka-container" class="engine-container">
-    <video id="shaka-video" autoplay playsinline preload="auto"></video>
+    <video id="shaka-video" autoplay playsinline preload="auto" muted></video>
   </div>
   <div id="jw-container" class="engine-container" aria-label="JW HLS player"></div>
   <div id="iframe-container" class="engine-container"></div>
@@ -191,6 +209,13 @@ html,body{
       <button class="action-btn video-fit-btn" id="videoFitBtn" type="button" title="Aspect ratio">FIT: CONTAIN</button>
     </div>
   </header>
+
+  <!-- Tap to Unmute Banner -->
+  <div class="unmute-banner" id="unmuteBanner" style="display:none">
+    <button class="unmute-btn" id="unmuteBtn" type="button">
+      <span>🔊</span> Tap anywhere to Unmute
+    </button>
+  </div>
 
   <div id="playerMessage" class="player-message" role="status"></div>
   <div id="playerToast" class="toast" role="status"></div>
@@ -236,16 +261,24 @@ html,body{
   const serverModal = document.getElementById("serverModal");
   const modalCloseBtn = document.getElementById("modalCloseBtn");
   const serversList = document.getElementById("serversList");
+  const unmuteBanner = document.getElementById("unmuteBanner");
+  const unmuteBtn = document.getElementById("unmuteBtn");
+
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
 
   let shakaPlayer = null;
   let jwPlayer = null;
   let activeEngine = "";
   let retryCount = 0;
   let retryTimer = null;
+  let stallWatchdog = null;
   let stopped = false;
   let fitModeIndex = 0;
   let controlsHideTimer = null;
   let toastTimer = null;
+  let currentActiveUrl = sourceUrl;
+  const autoFailoverAttempted = new Set();
+  if (sourceUrl) autoFailoverAttempted.add(sourceUrl);
 
   if (eventTitle) displayTitle.textContent = eventTitle;
   if (streamName) displaySubtitle.innerHTML = `Source: <strong>${streamName}</strong>`;
@@ -361,7 +394,7 @@ html,body{
     clearTimeout(controlsHideTimer);
     controlsHideTimer = setTimeout(() => {
       topNav.classList.add("hidden-controls");
-    }, 3800);
+    }, 4000);
   }
 
   shell.addEventListener("mousemove", showControls, {passive:true});
@@ -377,32 +410,153 @@ html,body{
     applyFitMode(fitModeIndex);
   }
 
-  let currentActiveUrl = sourceUrl;
-  let autoFailoverAttempted = new Set();
+  // Audio unmute management
+  function checkAndShowUnmute() {
+    const isMuted = activeEngine === "hls"
+      ? (jwPlayer && typeof jwPlayer.getMute === "function" ? jwPlayer.getMute() : true)
+      : (shakaVideo ? shakaVideo.muted : true);
+    if (isMuted && unmuteBanner) {
+      unmuteBanner.style.display = "block";
+    }
+  }
 
-  function triggerAutoFailover(reason) {
-    console.warn("Auto-failover triggered:", reason);
-    if (currentActiveUrl) autoFailoverAttempted.add(currentActiveUrl);
-    
+  function doUnmute() {
+    try {
+      if (shakaVideo) shakaVideo.muted = false;
+      if (jwPlayer && typeof jwPlayer.setMute === "function") jwPlayer.setMute(false);
+      const jwVid = jwContainer.querySelector("video");
+      if (jwVid) jwVid.muted = false;
+    } catch (_) {}
+    if (unmuteBanner) unmuteBanner.style.display = "none";
+    showToast("🔊 Audio Unmuted");
+  }
+
+  if (unmuteBtn) {
+    unmuteBtn.addEventListener("click", e => {
+      e.stopPropagation();
+      doUnmute();
+    });
+  }
+
+  shell.addEventListener("pointerdown", () => {
+    const isMuted = activeEngine === "hls"
+      ? (jwPlayer && typeof jwPlayer.getMute === "function" ? jwPlayer.getMute() : false)
+      : (shakaVideo ? shakaVideo.muted : false);
+    if (isMuted) {
+      doUnmute();
+    }
+  }, { passive: true });
+
+  // Stream stall watchdog
+  function startStallWatchdog(timeoutMs = 10000) {
+    clearInterval(stallWatchdog);
+    const startTimestamp = Date.now();
+    let prevSec = -1;
+    let hasPlayedOnce = false;
+    let lastProgressTime = Date.now();
+
+    stallWatchdog = setInterval(() => {
+      if (stopped) { clearInterval(stallWatchdog); return; }
+
+      const vid = activeEngine === "hls" ? jwContainer.querySelector("video") : shakaVideo;
+      if (!vid) return;
+
+      if (vid.readyState >= 2 && !vid.paused && vid.currentTime > 0) {
+        if (prevSec < 0) {
+          prevSec = vid.currentTime;
+          lastProgressTime = Date.now();
+        } else if (Math.abs(vid.currentTime - prevSec) > 0.25) {
+          hasPlayedOnce = true;
+          prevSec = vid.currentTime;
+          lastProgressTime = Date.now();
+          hideMessage();
+          return;
+        }
+      }
+
+      // Initial buffer timeout
+      if (!hasPlayedOnce && (Date.now() - startTimestamp > timeoutMs)) {
+        clearInterval(stallWatchdog);
+        triggerAutoFailover("Buffering timeout (no video signal)");
+        return;
+      }
+
+      // Mid-stream freeze timeout
+      if (hasPlayedOnce && !vid.paused && (Date.now() - lastProgressTime > 8000)) {
+        clearInterval(stallWatchdog);
+        triggerAutoFailover("Stream frozen / stalled during playback");
+      }
+    }, 1000);
+  }
+
+  function sortStreamsReliability(streams) {
+    if (!Array.isArray(streams)) return [];
+    return [...streams].sort((a, b) => {
+      const score = s => {
+        const u = (s.stream_url || "").toLowerCase();
+        let pts = 0;
+        if (u.includes("otte.cache.aiv-cdn.net") || (u.includes("aiv-cdn.net") && !u.includes("fly.ww"))) pts += 150;
+        else if (u.includes("aiv-cdn.net") || u.includes("amazon") || (s.kid && s.key)) pts += 100;
+        if (u.includes("fubo") || u.includes("tnt") || u.includes("espn") || u.includes("nbc") || u.includes("star")) pts += 40;
+        if (u.includes(".mpd")) pts += 30;
+        else if (u.includes(".m3u8")) pts += 20;
+        if (u.includes("fly.ww.aiv-cdn.net")) pts -= 40;
+        if (u.includes("rutube") || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(s.stream_url)) pts -= 60;
+        if (/vpn/i.test(s.channel_name || "")) pts -= 80;
+        return pts;
+      };
+      return score(b) - score(a);
+    });
+  }
+
+  async function getAvailableStreams() {
     let streams = [];
     try {
       const raw = sessionStorage.getItem("current_match_streams");
       if (raw) streams = JSON.parse(raw);
     } catch (_) {}
 
-    if (Array.isArray(streams) && streams.length > 1) {
+    if (!Array.isArray(streams) || streams.length === 0) {
+      try {
+        const res = await fetch("/api/sports");
+        if (res.ok) {
+          const data = await res.json();
+          const matches = Array.isArray(data) ? data : (data.matches || []);
+          const curTitle = (eventTitle || "").toLowerCase().trim();
+          const match = matches.find(m => {
+            const evTitle = (m.event_name || m.eventInfo?.eventName || "").toLowerCase().trim();
+            return evTitle && (evTitle.includes(curTitle) || curTitle.includes(evTitle));
+          });
+          if (match && Array.isArray(match.streams)) {
+            streams = match.streams;
+            try { sessionStorage.setItem("current_match_streams", JSON.stringify(streams)); } catch (_) {}
+          }
+        }
+      } catch (_) {}
+    }
+    return Array.isArray(streams) ? sortStreamsReliability(streams) : [];
+  }
+
+  async function triggerAutoFailover(reason) {
+    if (stopped) return;
+    console.warn("Auto-failover triggered:", reason);
+    clearInterval(stallWatchdog);
+    if (currentActiveUrl) autoFailoverAttempted.add(currentActiveUrl);
+
+    const streams = await getAvailableStreams();
+    if (streams.length > 1) {
       const nextStream = streams.find(s => s && s.stream_url && !autoFailoverAttempted.has(s.stream_url));
       if (nextStream) {
         showMessage(`Source issue. Auto-switching to: ${nextStream.channel_name || 'Backup server'}…`);
         currentActiveUrl = nextStream.stream_url;
         setTimeout(() => {
           playStream(nextStream.stream_url, nextStream.channel_name, nextStream.kid, nextStream.key);
-        }, 1200);
+        }, 1000);
         return;
       }
     }
 
-    showMessage("Stream unavailable. Click '⚡ Servers' to choose another source.");
+    showMessage("Stream unavailable. Click '⚡ Servers' to select another source.");
     if (serverPickerBtn && serverPickerBtn.style.display !== "none") {
       serverPickerBtn.click();
     }
@@ -410,6 +564,7 @@ html,body{
 
   function clearJW() {
     clearTimeout(retryTimer);
+    clearInterval(stallWatchdog);
     if (jwPlayer && typeof jwPlayer.remove === "function") {
       try { jwPlayer.remove(); } catch (_) {}
     }
@@ -425,6 +580,7 @@ html,body{
     }
     clearJW();
     showEngine("hls");
+    showMessage("Connecting to HLS stream…");
     jwContainer.innerHTML = '<div id="jw-instance" style="position:absolute;inset:0;width:100%;height:100%"></div>';
     jwPlayer = window.jwplayer("jw-instance").setup({
       file: url,
@@ -432,7 +588,7 @@ html,body{
       height: "100%",
       aspectratio: "16:9",
       autostart: true,
-      mute: false,
+      mute: true,
       controls: true,
       stretching: "uniform",
       displaytitle: false,
@@ -443,29 +599,29 @@ html,body{
     jwPlayer.on("ready", () => {
       applyFitMode(fitModeIndex);
       showControls();
+      checkAndShowUnmute();
+      startStallWatchdog(8000);
     });
     jwPlayer.on("play", () => {
       retryCount = 0;
       hideMessage();
       showControls();
+      checkAndShowUnmute();
     });
-    jwPlayer.on("firstFrame", hideMessage);
+    jwPlayer.on("firstFrame", () => {
+      hideMessage();
+      checkAndShowUnmute();
+    });
     jwPlayer.on("buffer", () => showMessage("Buffering stream…"));
     jwPlayer.on("error", () => {
       if (stopped) return;
-      if (retryCount >= 2) {
-        triggerAutoFailover("JW HLS error");
-        return;
-      }
-      retryCount++;
-      clearTimeout(retryTimer);
-      retryTimer = setTimeout(() => { if (!stopped) startJW(url); }, 1500);
+      triggerAutoFailover("JW HLS stream error");
     });
   }
 
   async function startShaka(url, streamKid, streamKey) {
     showEngine("dash");
-    hideMessage();
+    showMessage("Connecting to high-speed stream…");
     if (!window.shaka) throw new Error("Shaka Player library failed to load.");
     shaka.polyfill.installAll();
     if (!shaka.Player.isBrowserSupported()) throw new Error("Browser does not support Shaka Player.");
@@ -481,33 +637,60 @@ html,body{
     await shakaPlayer.attach(shakaVideo);
     new shaka.ui.Overlay(shakaPlayer, shakaContainer, shakaVideo);
 
-    const useKid = streamKid || kid;
-    const useKey = streamKey || key;
+    const useKid = (streamKid || kid || "").replace(/[^a-fA-F0-9]/g, "").toLowerCase();
+    const useKey = (streamKey || key || "").replace(/[^a-fA-F0-9]/g, "").toLowerCase();
     const clearKeys = {};
     if (useKid && useKey) {
-      clearKeys[useKid.replace(/-/g,"").toLowerCase()] = useKey;
+      clearKeys[useKid] = useKey;
     }
 
     shakaPlayer.configure({
       drm: { clearKeys },
       streaming: {
-        lowLatencyMode: true,
-        bufferingGoal: 10,
-        rebufferingGoal: 2
+        bufferingGoal: 15,
+        rebufferingGoal: 2,
+        bufferBehind: 30,
+        retryParameters: {
+          maxAttempts: 3,
+          baseDelay: 1000,
+          backoffFactor: 1.5,
+          timeout: 6000
+        }
+      },
+      manifest: {
+        retryParameters: {
+          maxAttempts: 3,
+          baseDelay: 1000,
+          backoffFactor: 1.5,
+          timeout: 6000
+        }
       }
     });
 
     shakaPlayer.addEventListener("error", ev => {
       const detail = ev.detail || ev;
-      console.warn("Shaka player error:", detail);
-      triggerAutoFailover("Shaka DASH error");
+      const code = detail?.code || "";
+      const cat = detail?.category || "";
+      console.warn(`Shaka player error (code=${code}, category=${cat}):`, detail);
+      triggerAutoFailover(`DASH error (${code})`);
     });
 
     await shakaPlayer.load(url);
-    await shakaVideo.play().catch(()=>{});
+
+    // Ensure muted for 100% reliable autoplay across all browsers
+    shakaVideo.muted = true;
+    shakaVideo.setAttribute("muted", "");
+    try {
+      await shakaVideo.play();
+    } catch (err) {
+      console.warn("Autoplay attempt:", err);
+    }
+
     applyFitMode(fitModeIndex);
     hideMessage();
     showControls();
+    checkAndShowUnmute();
+    startStallWatchdog(8000);
   }
 
   function startIframe(url) {
@@ -549,22 +732,17 @@ html,body{
     }
   }
 
-  function setupServerSwitcher() {
-    let streams = [];
-    try {
-      const raw = sessionStorage.getItem("current_match_streams");
-      if (raw) streams = JSON.parse(raw);
-    } catch (_) {}
-
-    if (Array.isArray(streams) && streams.length > 1) {
+  async function setupServerSwitcher() {
+    const streams = await getAvailableStreams();
+    if (streams.length > 1) {
       serverPickerBtn.style.display = "inline-flex";
       serverPickerBtn.onclick = () => {
         serversList.innerHTML = streams.map((s, idx) => {
           const isDash = /\.mpd(?:$|\?)/i.test(s.stream_url);
-          const active = s.stream_url === sourceUrl ? "active" : "";
+          const active = s.stream_url === currentActiveUrl ? "active" : "";
           const name = s.channel_name || `Server ${idx + 1}`;
           return `<button class="server-item ${active}" data-idx="${idx}">
-            <span>⚡ ${name}</span>
+            <span>⚡ ${esc(name)}</span>
             <span class="server-tag">${isDash ? "DASH (DRM)" : "HLS HD"}</span>
           </button>`;
         }).join("");
@@ -608,6 +786,7 @@ html,body{
       } else if (activeEngine === "dash" && shakaVideo) {
         shakaVideo.muted = !shakaVideo.muted;
       }
+      if (unmuteBanner) unmuteBanner.style.display = "none";
     } else if (e.key === "c" || e.key === "C") {
       e.preventDefault();
       applyFitMode(fitModeIndex + 1);
@@ -622,6 +801,7 @@ html,body{
 
   window.addEventListener("pagehide", async () => {
     stopped = true;
+    clearInterval(stallWatchdog);
     clearTimeout(retryTimer);
     clearTimeout(controlsHideTimer);
     clearJW();
