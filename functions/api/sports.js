@@ -1,14 +1,23 @@
 /**
  * Cloudflare Pages Function: /api/sports
  * Proxies, caches, and delivers real-time sports JSON feed.
+ * Normalizes dead hostnames (e.g. fly.ww.aiv-cdn.net -> cache.aiv-cdn.net).
  * Delivers authentic match streams without indiscriminate channel dumping.
- * Parent channels registry is preserved separately in /api/channels.
  */
 
 const UPSTREAM_MIRRORS = [
     "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json",
     "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json"
 ];
+
+function sanitizeStreamUrl(url) {
+    if (!url || typeof url !== 'string') return url;
+    // Fix known broken fly.ww hostname which throws 400 Bad Request on Akamai
+    if (url.includes('.live.fly.ww.aiv-cdn.net')) {
+        return url.replace('.live.fly.ww.aiv-cdn.net', '.cache.aiv-cdn.net');
+    }
+    return url;
+}
 
 export async function onRequest(context) {
     const corsHeaders = {
@@ -24,7 +33,7 @@ export async function onRequest(context) {
 
     try {
         const cache = caches.default;
-        const cacheKey = new Request("https://aryanstreamspro.internal/cache/sports_data_v5.json");
+        const cacheKey = new Request("https://aryanstreamspro.internal/cache/sports_data_v6.json");
         let cachedResponse = await cache.match(cacheKey);
 
         if (cachedResponse) {
@@ -62,10 +71,24 @@ export async function onRequest(context) {
             throw new Error("Unable to fetch master sports feed from upstream mirrors");
         }
 
-        // Return authentic matches directly without dumping unverified channels across matches
+        // Clean & repair stream URLs (e.g. fix dead fly.ww 400 Bad Request endpoints)
+        const repairedMatches = upstreamRes.matches.map(m => {
+            if (!m || !Array.isArray(m.streams)) return m;
+            return {
+                ...m,
+                streams: m.streams.map(s => {
+                    if (!s || !s.stream_url) return s;
+                    return {
+                        ...s,
+                        stream_url: sanitizeStreamUrl(s.stream_url)
+                    };
+                })
+            };
+        });
+
         const responsePayload = {
             ...upstreamRes,
-            matches: upstreamRes.matches
+            matches: repairedMatches
         };
 
         const responseHeaders = {
