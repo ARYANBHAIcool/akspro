@@ -8,7 +8,7 @@ export async function onRequest(context) {
     const origin = url.origin;
     const streamUrl = url.searchParams.get('url') || url.searchParams.get('src');
     if (streamUrl) {
-        return Response.redirect(`${origin}/player.html?${url.searchParams.toString()}`, 302);
+        return Response.redirect(`${origin}/player/?${url.searchParams.toString()}`, 302);
     }
     return Response.redirect(`${origin}/`, 302);
 }
