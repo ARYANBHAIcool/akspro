@@ -419,20 +419,46 @@ html,body{
     showControls();
   });
 
+  function copyToClipboard(text) {
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      return navigator.clipboard.writeText(text).catch(() => fallbackCopy(text));
+    }
+    return fallbackCopy(text);
+  }
+
+  function fallbackCopy(text) {
+    return new Promise((resolve, reject) => {
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.focus();
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        if (ok) resolve(); else reject(new Error("Copy failed"));
+      } catch (e) {
+        reject(e);
+      }
+    });
+  }
+
   // Clean Share link generator (e.g. ?match=arsenalvshull-ser1)
   shareBtn.addEventListener("click", () => {
     let cleanUrl = location.href;
     const slug = currentActiveMatchSlug || (currentActiveMatch ? matchToSlug(currentActiveMatch.event_name) : "") || matchToSlug(displayTitle.textContent);
     if (slug) {
       const u = new URL(location.href);
-      u.search = `?match=${slug}-ser${currentServerNumber}`;
+      u.search = `?match=${encodeURIComponent(slug)}-ser${currentServerNumber}`;
       cleanUrl = u.toString();
     } else if (channelId) {
       const u = new URL(location.href);
       u.search = `?id=${channelId}`;
       cleanUrl = u.toString();
     }
-    navigator.clipboard.writeText(cleanUrl).then(() => {
+    copyToClipboard(cleanUrl).then(() => {
       showToast("Clean match link copied to clipboard!");
     }).catch(() => {
       showToast("Link: " + cleanUrl);
