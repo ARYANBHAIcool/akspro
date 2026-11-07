@@ -237,6 +237,7 @@ html,body{
   "use strict";
 
   const params = new URLSearchParams(location.search);
+  const channelId = (params.get("id") || params.get("channel") || "").trim();
   const sourceUrl = params.get("url") || params.get("src") || params.get("stream") || "";
   const streamName = params.get("name") || "";
   const eventTitle = params.get("title") || "";
@@ -811,8 +812,73 @@ html,body{
     }
   }, {once:true});
 
-  setupServerSwitcher();
-  playStream(sourceUrl, streamName, kid, key);
+  async function initChannelById(id) {
+    showMessage(`Loading channel ${id}…`);
+    try {
+      const res = await fetch(`/api/channels?id=${encodeURIComponent(id)}`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data && data.url) {
+          currentActiveUrl = data.url;
+          displayTitle.textContent = data.name || id;
+          displaySubtitle.innerHTML = `Source: <strong>${data.name || id}</strong>`;
+          document.title = `${data.name || id} · AryanStreams Live`;
+          setupServerSwitcherFromChannels(data.id);
+          playStream(data.url, data.name || id, data.kid, data.key);
+          return;
+        }
+      }
+    } catch (e) {
+      console.warn("Channel lookup failed:", e);
+    }
+    showMessage(`Channel "${id}" unavailable or offline.`);
+  }
+
+  async function setupServerSwitcherFromChannels(activeId) {
+    try {
+      const res = await fetch("/api/channels");
+      if (res.ok) {
+        const json = await res.json();
+        const chList = Object.values(json.channels || {});
+        if (chList.length > 1) {
+          serverPickerBtn.style.display = "inline-flex";
+          serverPickerBtn.onclick = () => {
+            serversList.innerHTML = chList.map((ch, idx) => {
+              const active = ch.id === activeId || ch.url === currentActiveUrl ? "active" : "";
+              return `<button class="server-item ${active}" data-id="${ch.id}">
+                <span>${ch.icon || '⚡'} ${esc(ch.name)}</span>
+                <span class="server-tag">${ch.category || 'Sports'}</span>
+              </button>`;
+            }).join("");
+
+            serversList.querySelectorAll(".server-item").forEach(btn => {
+              btn.onclick = () => {
+                const cId = btn.dataset.id;
+                const found = chList.find(x => x.id === cId);
+                if (found) {
+                  serverModal.classList.remove("open");
+                  displayTitle.textContent = found.name;
+                  displaySubtitle.innerHTML = `Source: <strong>${found.name}</strong>`;
+                  playStream(found.url, found.name, found.kid, found.key);
+                }
+              };
+            });
+            serverModal.classList.add("open");
+          };
+
+          modalCloseBtn.onclick = () => serverModal.classList.remove("open");
+          serverModal.onclick = e => { if (e.target === serverModal) serverModal.classList.remove("open"); };
+        }
+      }
+    } catch (_) {}
+  }
+
+  if (!sourceUrl && channelId) {
+    initChannelById(channelId);
+  } else {
+    setupServerSwitcher();
+    playStream(sourceUrl, streamName, kid, key);
+  }
   showControls();
 })();
 </script>
