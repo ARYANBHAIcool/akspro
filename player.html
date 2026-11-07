@@ -79,11 +79,14 @@ html,body{
 .shaka-spinner-svg,
 .shaka-buffering-spinner,
 .shaka-spinner-path,
-.shaka-buffering-spinner-path {
+.shaka-buffering-spinner-path,
+.shaka-overflow-menu-button.shaka-buffering-spinner {
   display: none !important;
   opacity: 0 !important;
   visibility: hidden !important;
   pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
 }
 
 /* Minimalist glowing loader overlay for initial stream connection */
@@ -353,11 +356,21 @@ html,body{
 
   function showLoader(txt = "Connecting live stream…") {
     if (loaderText) loaderText.textContent = txt;
-    if (coolLoader) coolLoader.classList.remove("hidden");
+    if (coolLoader) {
+      coolLoader.style.display = "flex";
+      coolLoader.classList.remove("hidden");
+    }
   }
 
   function hideLoader() {
-    if (coolLoader) coolLoader.classList.add("hidden");
+    if (coolLoader) {
+      coolLoader.classList.add("hidden");
+      setTimeout(() => {
+        if (coolLoader && coolLoader.classList.contains("hidden")) {
+          coolLoader.style.display = "none";
+        }
+      }, 350);
+    }
     hideMessage();
   }
 
@@ -617,18 +630,13 @@ html,body{
   }, { passive: true });
 
   // Video playback events: hide loader instantly on actual frames
-  shakaVideo.addEventListener("playing", () => {
-    hasPlayedSuccessfully = true;
-    hideLoader();
-  });
-  shakaVideo.addEventListener("canplay", () => {
-    hideLoader();
-  });
-  shakaVideo.addEventListener("timeupdate", () => {
-    if (shakaVideo.currentTime > 0) {
-      hasPlayedSuccessfully = true;
-      hideLoader();
-    }
+  ["playing", "canplay", "loadeddata", "play", "timeupdate"].forEach(evt => {
+    shakaVideo.addEventListener(evt, () => {
+      if (shakaVideo.readyState >= 2 || shakaVideo.currentTime > 0) {
+        hasPlayedSuccessfully = true;
+        hideLoader();
+      }
+    });
   });
 
   // Connection watchdog: ONLY monitors initial connect.
