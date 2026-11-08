@@ -1,362 +1,1870 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-   <head>
-      <meta charset="utf-8"/>
-      <meta name="viewport" content="width=device-width, initial-scale=1"/>
-      <title>AS | AryanStreams - Live & Upcoming Sports Streams</title>
-      <meta name="description" content="Watch free live sports streams online. Football, basketball, MMA, tennis, 200+ TV channels and more on AryanStreams!"/>
-      <meta name="keywords" content="live streams, sports streaming, free streams, football streams, cricket, aryanstreams, as pro"/>
-      <meta name="author" content="AryanStreams"/>
-      <meta name="application-name" content="AryanStreams"/>
-      <meta name="creator" content="AryanStreams"/>
-      <meta name="publisher" content="AryanStreams"/>
-      <meta name="robots" content="index, follow"/>
-      <meta name="googlebot" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1"/>
-      <meta property="og:type" content="website"/>
-      <meta property="og:title" content="Free Sports Streams Online | AryanStreams"/>
-      <meta property="og:description" content="Watch free live sports streams online. Football, basketball, MMA, tennis, 200+ TV channels and more on AryanStreams!"/>
-      <meta property="og:site_name" content="AryanStreams"/>
-      <meta property="og:url" content="/"/>
-      <meta property="og:locale" content="en"/>
-      <meta property="og:image" content="/assets/og-image.png"/>
-      <meta property="og:image:width" content="1200"/>
-      <meta property="og:image:height" content="630"/>
-      <meta name="twitter:card" content="summary_large_image"/>
-      <meta name="twitter:title" content="Free Sports Streams Online | AryanStreams"/>
-      <meta name="twitter:site" content="AryanStreams"/>
-      <meta name="twitter:creator" content="@aryanstreams"/>
-      <meta name="twitter:description" content="Watch free live sports streams online. Football, basketball, MMA, tennis, 200+ TV channels and more on AryanStreams!"/>
-      <meta name="twitter:image" content="/assets/og-image.png"/>
-      <meta name="theme-color" content="#0a0a0f"/>
-      <link rel="canonical" href="/"/>
-      <link rel="alternate" href="/" hrefLang="x-default"/>
-      <link rel="icon" href="/favicon.ico" sizes="48x48"/>
-      <link rel="icon" href="/assets/favicon.svg" type="image/svg+xml"/>
-      <link rel="icon" type="image/png" sizes="96x96" href="/assets/favicon-96x96.png"/>
-      <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png"/>
-      <link rel="manifest" href="/assets/site.webmanifest"/>
-      
-      <link rel="preconnect" href="https://2.flashscore.ninja" crossorigin>
-      <link rel="preconnect" href="https://www.flashscore.com" crossorigin>
-      <link rel="dns-prefetch" href="https://2.flashscore.ninja">
-      <link rel="dns-prefetch" href="https://www.flashscore.com">
-      <link rel="stylesheet" href="/assets/globals-SB89wHXU.css"/>
-      <link rel="stylesheet" href="/assets/mobile-button-fix.css"/>
-      <link rel="stylesheet" href="/assets/theme-as.css"/>
-      
-      <!-- Ads Removed for Fast Clean Streaming -->
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#080c14">
+<title>AryanStreams — Live Sports Command Center</title>
+<meta name="description" content="Watch ad-free live sports streams in HD. Football, Cricket, Basketball, MMA, Formula 1, Tennis, and 24/7 TV channels on AryanStreams!">
+<link rel="icon" type="image/x-icon" href="/favicon.ico">
+<link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
+<link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
+<link rel="preload" as="image" href="/assets/img/logo-icon.png" fetchpriority="high">
+<link rel="preload" as="image" href="/assets/img/logo-text.png" fetchpriority="high">
+<link rel="manifest" href="/assets/site.webmanifest">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  color-scheme: dark;
+  --bg: #080c14;
+  --bg-card: rgba(18, 24, 38, 0.78);
+  --bg-card-hover: rgba(26, 35, 54, 0.9);
+  --border: rgba(255, 255, 255, 0.08);
+  --border-hover: rgba(232, 180, 74, 0.45);
+  --text: #f8fafc;
+  --muted: #94a3b8;
+  --gold: #e8b44a;
+  --gold-glow: 0 0 24px rgba(232, 180, 74, 0.4);
+  --live: #ef4444;
+  --volt: #00ffa3;
+  --sky: #38bdf8;
+  --shadow-gold: 0 14px 40px -10px rgba(232, 180, 74, 0.25);
+  --gradient-hero: radial-gradient(ellipse at 20% 0%, rgba(56, 189, 248, 0.12), transparent 55%), radial-gradient(ellipse at 90% 100%, rgba(0, 255, 163, 0.08), transparent 50%);
+}
 
-   </head>
-   <body class="antialiased bg-background text-foreground flex flex-col min-h-screen">
-      
-      <nav class="bg-surface sticky top-0 z-50 shadow-sm">
-         
-         <div class="container mx-auto flex justify-between items-center px-4 sm:px-6 h-16">
-            <div class="flex items-center gap-4">
-               <a aria-label="AS AryanStreams" class="as-brand-logo active" href="/" data-status="active" aria-current="page">
-                  <span class="as-badge">AS</span>
-                  <span class="as-brand-text">AryanStreams <span class="as-brand-pro">PRO</span></span>
-               </a>
-            </div>
-            <div class="flex flex-1 max-w-2xl mx-0 md:mx-8 justify-end sm:justify-end md:justify-center">
-               <div class="hidden sm:block relative">
-                  <div data-slot="search-field" class="search-field search-field--secondary w-150 cursor-pointer" data-empty="true" data-readonly="true">
-                     <div class="search-field__group" role="group">
-                        <svg aria-hidden="true" fill="none" height="16" role="presentation" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg" class="search-field__search-icon">
-                           <path clip-rule="evenodd" d="M11.5 7a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-.82 4.74a6 6 0 1 1 1.06-1.06l2.79 2.79a.75.75 0 1 1-1.06 1.06z" fill="currentColor" fill-rule="evenodd"></path>
-                        </svg>
-                        <input
-                           id="navbarSearchInput"
-                           type="search"
-                           data-i18n-placeholder="nav.search.placeholder"
-                           placeholder="Search teams, players, leagues, matches..."
-                           tabindex="-1"
-                           class="search-field__input cursor-text" autocomplete="off"
-                           value=""
-                           />
-                        <div class="mr-1 flex flex-row gap-1">
-                           <kbd class="kbd bg-surface shadow-sm"><abbr class="kbd__abbr" title="Control">⌃</abbr></kbd>
-                           <kbd class="kbd bg-surface shadow-sm"><span class="kbd__content">K</span></kbd>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <button id="mobileSearchBtn" data-slot="button" class="button button--icon-only button--md button--ghost md:hidden p-0" type="button" tabindex="0" aria-expanded="false" aria-label="Search">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="text-xl h-5 w-5 text-muted-foreground">
-                     <path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="m14 14l2.5 2.5m-.067 2.025a1.48 1.48 0 1 1 2.092-2.092l3.042 3.042a1.48 1.48 0 1 1-2.092 2.092zM16 9A7 7 0 1 0 2 9a7 7 0 0 0 14 0" />
-                  </svg>
-               </button>
-            </div>
-            <div class="flex items-center gap-1">
-               <a href="/tv" class="as-tv-pill inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-surface-secondary hover:bg-surface-tertiary text-xs font-bold text-foreground border border-border/50 transition-all hover:border-primary/50 shadow-sm mr-1"><span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span><span>📺 24/7 TV</span></a>
-               <a href="https://discord.gg/aryanstreams" target="_blank" rel="noopener noreferrer" data-slot="button" class="button button--icon-only button--md button--ghost" aria-label="Join our Discord">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="text-xl text-foreground">
-                     <path fill="currentColor" d="M19.27 5.33C17.94 4.71 16.5 4.26 15 4a.09.09 0 0 0-.07.03c-.18.33-.39.76-.53 1.09a16.09 16.09 0 0 0-4.8 0c-.14-.34-.35-.76-.54-1.09c-.01-.02-.04-.03-.07-.03c-1.5.26-2.93.71-4.27 1.33c-.01 0-.02.01-.03.02c-2.72 4.07-3.47 8.03-3.1 11.95c0 .02.01.04.03.05c1.8 1.32 3.53 2.12 5.24 2.65c.03.01.06 0 .07-.02c.4-.55.76-1.13 1.07-1.74c.02-.04 0-.08-.04-.09c-.57-.22-1.11-.48-1.64-.78c-.04-.02-.04-.08-.01-.11c.11-.08.22-.17.33-.25c.02-.02.05-.02.07-.01c3.44 1.57 7.15 1.57 10.55 0c.02-.01.05-.01.07.01c.11.09.22.17.33.26c.04.03.04.09-.01.11c-.52.31-1.07.56-1.64.78c-.04.01-.05.06-.04.09c.32.61.68 1.19 1.07 1.74c.03.01.06.02.09.01c1.72-.53 3.45-1.33 5.25-2.65c.02-.01.03-.03.03-.05c.44-4.53-.73-8.46-3.1-11.95c-.01-.01-.02-.02-.04-.02M8.52 14.91c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.84 2.12-1.89 2.12m6.97 0c-1.03 0-1.89-.95-1.89-2.12s.84-2.12 1.89-2.12c1.06 0 1.9.96 1.89 2.12c0 1.17-.83 2.12-1.89 2.12"/>
-                  </svg>
-               </a>
-               <button data-slot="button" class="button button--icon-only button--md button--ghost" type="button" tabindex="0" aria-label="Select a language">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="text-xl text-foreground">
-                     <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
-                        <path d="M5 5.828h2.7m3.3 0H9.5m-1.8 0h1.8m-1.8 0V5m1.8.828c-.316 1.131-.98 2.201-1.736 3.141M5.836 11a19 19 0 0 0 1.928-2.03m0 0c-.385-.453-.925-1.184-1.08-1.515m1.08 1.514l1.157 1.203M13.5 19l.833-2m4.167 2l-.833-2m-3.334 0L16 13l1.667 4m-3.334 0h3.334"></path>
-                        <path d="M14 10V8c0-2.828 0-4.243-.879-5.121C12.243 2 10.828 2 8 2s-4.243 0-5.121.879C2 3.757 2 5.172 2 8s0 4.243.879 5.121C3.757 14 5.172 14 8 14h2"></path>
-                        <path d="M10 16c0-2.828 0-4.243.879-5.121C11.757 10 13.172 10 16 10s4.243 0 5.121.879C22 11.757 22 13.172 22 16s0 4.243-.879 5.121C20.243 22 18.828 22 16 22s-4.243 0-5.121-.879C10 20.243 10 18.828 10 16m-6 .5c0 1.404 0 2.107.337 2.611a2 2 0 0 0 .552.552C5.393 20 6.096 20 7.5 20M20 7.5c0-1.404 0-2.107-.337-2.611a2 2 0 0 0-.552-.552C18.607 4 17.904 4 16.5 4"></path>
-                     </g>
-                  </svg>
-               </button>
-               <button data-slot="button" class="button button--icon-only button--md button--ghost" type="button" tabindex="0" aria-label="Toggle theme">
-                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" class="h-5 w-5">
-                     <path d="M21.5 14.0784C20.3003 14.7189 18.9301 15.0821 17.4751 15.0821C12.7491 15.0821 8.91792 11.2509 8.91792 6.52485C8.91792 5.06986 9.28105 3.69968 9.92163 2.5C5.66765 3.49698 2.5 7.31513 2.5 11.8731C2.5 17.1899 6.8101 21.5 12.1269 21.5C16.6849 21.5 20.503 18.3324 21.5 14.0784Z"
-                        stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path>
-                  </svg>
-               </button>
-            </div>
-         </div>
-         
-         <div class="hidden md:block">
-            <div class="container mx-auto px-6">
-               <div
-                  id="sportsRow"
-                  class="flex items-center gap-0.5 overflow-x-auto scrollbar-hide scroll-smooth"
-                  style="scrollbar-width:none;-ms-overflow-style:none"
-                  >
-                  <a class="sport-item flex items-center gap-2.5 h-10 px-4 rounded-tl-2xl rounded-tr-2xl hover:bg-background-tertiary transition-all" href="/" data-sportid="0">
-                     <svg class="h-5 w-5 shrink-0 text-amber-400" viewBox="0 0 24 24" fill="currentColor"><path d="M12 23c-4.97 0-9-4.03-9-9 0-4.04 2.87-7.46 6.74-8.66.42-.13.84.18.84.62 0 .28-.16.53-.41.65C8.82 7.23 8 8.65 8 10.2c0 2.21 1.79 4 4 4s4-1.79 4-4c0-.76-.23-1.48-.63-2.08-.22-.33-.14-.77.17-1 1.95 1.45 3.26 3.73 3.44 6.32.03.38-.26.7-.64.72-.03 0-.05 0-.08 0-1.89-.13-3.6 1.05-3.9 2.91-.07.41-.42.72-.84.73-.02 0-.04 0-.06 0z"/><path d="M13.5 2.21c-.34-.41-.95-.46-1.35-.11-.12.1-.21.23-.27.38C10.59 5.86 12.3 8.36 12 11c-.13-1.07-.63-2.02-1.42-2.73-.39-.35-1-.31-1.35.08-.15.17-.23.39-.23.62 0 3.87 3.13 7 7 7 1.04 0 2.02-.23 2.91-.64.44-.2.66-.7.51-1.16-.14-.42-.55-.7-1-.67-2.12.15-4.01-1.34-4.27-3.46-.22-1.79.84-3.48 2.55-4.07.45-.16.71-.63.6-1.09-.1-.39-.43-.68-.83-.71-.97-.08-1.92-.37-2.76-.87-.33-.2-.51-.57-.46-.96.05-.38.31-.69.69-.76.73-.13 1.48-.1 2.2.09.46.12.93-.15 1.05-.61.12-.46-.15-.93-.61-1.05-1.12-.29-2.28-.35-3.43-.16z"/></svg>
-                     <span class="text-sm font-semibold whitespace-nowrap">🔥 Live &amp; Top</span>
-                  </a>
-                  <a class="sport-item flex items-center gap-2.5 h-10 px-4 rounded-tl-2xl rounded-tr-2xl hover:bg-background-tertiary transition-all" href="/sports/football" data-sportid="1">
-                     <svg class="h-5 w-5 shrink-0" aria-hidden="true"><use href="/assets/sport.svg#football"></use></svg>
-                     <span class="text-sm font-semibold whitespace-nowrap">Football</span>
-                  </a>
-                  <a class="sport-item flex items-center gap-2.5 h-10 px-4 rounded-tl-2xl rounded-tr-2xl hover:bg-background-tertiary transition-all" href="/tv" data-sportid="99">
-                     <span class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></span>
-                     <span class="text-sm font-semibold whitespace-nowrap">📺 24/7 Channels</span>
-                  </a>
-                  <div class="sport-item relative shrink-0" id="moreWrap" style="display:none;">
-                     <button
-                        id="moreBtn"
-                        class="button button--sm button--ghost flex items-center gap-2 h-10 rounded-none rounded-tl-2xl rounded-tr-2xl opacity-50 px-4 text-muted-foreground border-b-2 border-transparent hover:opacity-60 transition-opacity"
-                        type="button"
-                        aria-haspopup="menu"
-                        aria-expanded="false"
-                        >
-                        <span class="text-sm font-medium" data-i18n="ui.more">More</span>
-                        <svg class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                        </svg>
-                     </button>
-                     <div
-                        id="moreMenu"
-                        class="absolute right-0 mt-2 w-56 rounded-xl shadow-lg bg-background-secondary border border-border p-2 z-50"
-                        style="display:none;"
-                        role="menu"
-                        aria-label="More sports"
-                        ></div>
-                  </div>
-               </div>
-            </div>
-         </div>
-         
-         
-         <div class="md:hidden relative" id="mobileSports" data-sports-menu="true">
-            <div class="px-4 container mx-auto sm:px-6 lg:px-8">
-               
-               <button
-                  id="mobileSportsBtn"
-                  class="flex items-center gap-2 h-12 px-4 w-full justify-between bg-background-secondary rounded-tl-2xl rounded-tr-2xl hover:bg-background-tertiary"
-                  type="button"
-                  aria-expanded="false"
-                  aria-controls="mobileSportsMenu"
-                  >
-                  <div class="flex items-center gap-2" id="mobileSportsActive">
-                     
-                  </div>
-                  <svg id="mobileSportsChevron" class="h-4 w-4 transition-transform duration-200"
-                     fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
-                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
-                  </svg>
-               </button>
-               
-               <div
-                  id="mobileSportsMenu"
-                  class="card card--default absolute left-1/2 -translate-x-1/2 top-full w-[calc(100%-3rem)] max-w-sm bg-surface z-50
-                  animate-in slide-in-from-top-2 fade-in duration-200 rounded-tl-none rounded-tr-none hidden"
-                  data-slot="card"
-                  >
-                  
-               </div>
-               
-               <div id="mobileSportsBackdrop" class="fixed inset-0 z-40 hidden"></div>
-            </div>
-         </div>
-      </nav>
-      
-      
-      
-      <div class="grid grid-cols-12 container mx-auto gap-6 p-6">
-         
-         <div class="hidden lg:block lg:col-span-3">
-            <div class="sticky top-28 space-y-4">
-               
-            </div>
-         </div>
-         <div class="col-span-12 lg:col-span-6 space-y-6">
-          
-          <div class="block lg:hidden">
-             <div class="flex justify-center">
-                
-             </div>
-          </div>
-          
-<div class="card card--default w-full" data-slot="card">
-  <div class="card__content" data-slot="card-content">
-    <div class="flex flex-col gap-3">
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  background-color: var(--bg);
+  background-image: var(--gradient-hero), repeating-linear-gradient(90deg, transparent 0 79px, rgba(255, 255, 255, 0.015) 79px 80px);
+  color: var(--text);
+  font: 15px/1.5 "Inter", system-ui, -apple-system, sans-serif;
+  min-height: 100vh;
+  -webkit-font-smoothing: antialiased;
+}
 
-      
-            <div class="flex items-center justify-between px-3.5 py-2.5 rounded-xl bg-surface-secondary/70 border border-border/40">
-        <div class="flex items-center gap-2">
-          <span class="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse"></span>
-          <span class="text-xs sm:text-sm font-bold text-foreground">🔥 Live &amp; Hot Fixtures</span>
-        </div>
-        <span id="dayLabel" class="text-xs text-muted-foreground font-semibold px-2.5 py-0.5 rounded-md bg-surface border border-border/30">Today</span>
+button, input, select { font: inherit; }
+button { cursor: pointer; }
+a { color: inherit; text-decoration: none; }
+.tnum { font-variant-numeric: tabular-nums; }
+.gold-glow { text-shadow: var(--gold-glow); }
+.glass { background: var(--bg-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border); }
+.no-scrollbar { scrollbar-width: none; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+
+/* Radar Live Dot */
+@keyframes radar {
+  0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.75); }
+  100% { box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+}
+.live-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--live);
+  animation: radar 1.4s infinite;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+/* Ambient Breathe */
+@keyframes breathe {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.05); }
+}
+.ambient { animation: breathe 6s ease-in-out infinite; }
+
+/* Card Lift */
+.card-lift {
+  transition: transform 200ms cubic-bezier(.2,.8,.2,1), box-shadow 200ms, border-color 200ms, background 200ms;
+}
+.card-lift:hover {
+  transform: translateY(-3px) scale(1.015);
+  box-shadow: var(--shadow-gold);
+  border-color: var(--border-hover);
+  background: var(--bg-card-hover);
+}
+
+/* Left Command Dock (Desktop) */
+.dock-desktop {
+  position: fixed;
+  inset-y: 0;
+  left: 0;
+  z-index: 40;
+  width: 64px;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid var(--border);
+  background: rgba(8, 12, 20, 0.88);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 16px 0;
+  transition: width 0.2s cubic-bezier(.2,.8,.2,1);
+  overflow: hidden;
+  white-space: nowrap;
+}
+.dock-desktop:hover {
+  width: 220px;
+  box-shadow: 6px 0 30px rgba(0,0,0,0.5);
+}
+.dock-brand {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 16px;
+  margin-bottom: 24px;
+  text-decoration: none;
+}
+.dock-brand-badge {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--gold), #9b6b19);
+  color: #080c14;
+  font: 800 18px/32px "Barlow Condensed", sans-serif;
+  text-align: center;
+  flex-shrink: 0;
+  box-shadow: 0 4px 12px rgba(232, 180, 74, 0.3);
+}
+.dock-brand-name {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  color: var(--text);
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dock-brand-name span { color: var(--gold); }
+.dock-desktop:hover .dock-brand-name { opacity: 1; }
+
+.dock-nav {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 0 8px;
+  flex: 1;
+}
+.dock-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 12px;
+  padding: 10px 14px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--muted);
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.15s ease;
+}
+.dock-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+.dock-item.active {
+  background: rgba(232, 180, 74, 0.15);
+  color: var(--gold);
+}
+.dock-item-icon {
+  width: 20px;
+  text-align: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.dock-item-label {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dock-desktop:hover .dock-item-label { opacity: 1; }
+
+.dock-footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  font-size: 12px;
+  color: var(--volt);
+}
+.dock-footer-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--volt);
+  flex-shrink: 0;
+}
+.dock-footer-text {
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.dock-desktop:hover .dock-footer-text { opacity: 1; }
+
+/* Main layout wrapper */
+.main-wrapper {
+  padding-left: 64px;
+  min-height: 100vh;
+  transition: padding-left 0.2s ease;
+}
+@media (max-width: 768px) {
+  .dock-desktop { display: none; }
+  .main-wrapper { padding-left: 0; }
+}
+
+/* Mobile Bottom Dock */
+.dock-mobile {
+  display: none;
+  position: fixed;
+  bottom: 12px;
+  left: 12px;
+  right: 12px;
+  z-index: 50;
+  background: rgba(14, 20, 32, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 8px 4px;
+  justify-content: space-around;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+}
+.dock-mobile-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 4px 10px;
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.dock-mobile-item.active { color: var(--gold); }
+.dock-mobile-item span:first-child { font-size: 18px; }
+@media (max-width: 768px) {
+  .dock-mobile { display: flex; }
+}
+
+/* Top HUD */
+.top-hud {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  border-bottom: 1px solid var(--border);
+  background: rgba(8, 12, 20, 0.85);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+}
+.top-hud-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+@media (max-width: 768px) {
+  .top-hud-inner {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+  .brand-logo-icon { height: 30px; }
+  .brand-logo-text { height: 19px; }
+  .search-container {
+    order: 3;
+    max-width: 100%;
+    width: 100%;
+    margin: 2px 0 0;
+  }
+  .hud-actions {
+    gap: 6px;
+  }
+  .hud-btn {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+}
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  text-decoration: none;
+  transition: transform 0.2s ease;
+}
+.brand-link:hover { transform: scale(1.02); }
+.brand-logo-icon {
+  height: clamp(32px, 3.5vw, 42px);
+  width: auto;
+  object-fit: contain;
+}
+.brand-logo-text {
+  height: clamp(22px, 2.5vw, 28px);
+  width: auto;
+  object-fit: contain;
+}
+
+.search-container {
+  position: relative;
+  flex: 1;
+  max-width: 440px;
+  margin: 0 auto;
+}
+.search-input {
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 10px 42px 10px 14px;
+  color: var(--text);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.15s, box-shadow 0.15s;
+}
+.search-input:focus {
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px rgba(232, 180, 74, 0.2);
+}
+.search-input::placeholder { color: var(--muted); }
+.search-kbd {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 2px 6px;
+  font-size: 10px;
+  color: var(--muted);
+  pointer-events: none;
+  background: rgba(255, 255, 255, 0.04);
+}
+.search-clear-btn {
+  position: absolute;
+  right: 44px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 14px;
+  display: none;
+  padding: 4px;
+  cursor: pointer;
+}
+.search-clear-btn:hover { color: var(--text); }
+
+.hud-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: auto;
+}
+.hud-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+  transition: all 0.15s;
+  text-decoration: none;
+}
+.hud-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(232, 180, 74, 0.1);
+}
+.hud-btn-primary {
+  background: linear-gradient(135deg, var(--gold), #d97706);
+  color: #080c14;
+  border: none;
+  font-weight: 700;
+}
+.hud-btn-primary:hover {
+  opacity: 0.92;
+  color: #080c14;
+}
+.hud-btn-discord {
+  border-color: #5865F2;
+  background: rgba(88, 101, 242, 0.12);
+  color: #9bb4ff;
+}
+.hud-btn-discord:hover {
+  background: #5865F2;
+  color: #fff;
+}
+.discord-svg { width: 16px; height: 16px; fill: currentColor; }
+
+/* Ticker Strip */
+.ticker-strip {
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+  background: rgba(8, 12, 20, 0.6);
+  padding: 6px 20px;
+}
+.ticker-inner {
+  max-width: 1440px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  font-size: 12px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.ticker-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+}
+.ticker-item strong { color: var(--text); font-weight: 700; }
+.ticker-updated { margin-left: auto; color: var(--muted); font-size: 11px; }
+
+/* Page Container */
+.page-container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 24px 20px 80px;
+}
+
+/* Marquee Hero Spotlight */
+.hero-spotlight {
+  position: relative;
+  overflow: hidden;
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(18, 24, 38, 0.75);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  padding: 28px 24px;
+  margin-bottom: 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+@media (min-width: 769px) {
+  .hero-spotlight {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: center;
+    gap: 36px;
+    padding: 36px 40px;
+  }
+}
+.hero-ambient-glow {
+  position: absolute;
+  top: -80px;
+  right: -80px;
+  width: 340px;
+  height: 340px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(232, 180, 74, 0.22), transparent 70%);
+  pointer-events: none;
+  filter: blur(50px);
+}
+.hero-badges {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.hero-badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 4px 12px;
+  border-radius: 9999px;
+}
+.hero-badge-league {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  padding: 4px 12px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+.hero-badge-quality {
+  border: 1px solid rgba(0, 255, 163, 0.4);
+  color: var(--volt);
+  padding: 3px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+.hero-badge-servers {
+  border: 1px solid rgba(56, 189, 248, 0.4);
+  color: var(--sky);
+  padding: 3px 12px;
+  border-radius: 9999px;
+  font-weight: 600;
+}
+.hero-matchup {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin: 12px 0 8px;
+}
+.hero-crest-box {
+  width: 68px;
+  height: 68px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+@media (min-width: 769px) {
+  .hero-crest-box { width: 84px; height: 84px; }
+}
+.hero-crest-box img { width: 75%; height: 75%; object-fit: contain; }
+.hero-crest-mono { font-family: "Barlow Condensed", sans-serif; font-size: 20px; font-weight: 800; color: var(--gold); }
+.hero-score {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 44px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: var(--text);
+  line-height: 1;
+  text-align: center;
+  min-width: 60px;
+}
+@media (min-width: 769px) {
+  .hero-score { font-size: 68px; }
+}
+.hero-title {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 28px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin: 6px 0 0;
+  color: var(--text);
+}
+@media (min-width: 769px) {
+  .hero-title { font-size: 42px; }
+}
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 200px;
+}
+.hero-play-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  background: linear-gradient(135deg, var(--gold), #d97706);
+  color: #080c14;
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  padding: 16px 36px;
+  border-radius: 16px;
+  text-decoration: none;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 14px 40px -10px rgba(232, 180, 74, 0.4);
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+.hero-play-btn:hover {
+  transform: scale(1.04);
+  box-shadow: 0 16px 48px -6px rgba(232, 180, 74, 0.55);
+}
+.hero-share-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 12px 24px;
+  border-radius: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.hero-share-btn:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(232, 180, 74, 0.08);
+}
+
+/* Category Pills */
+.sport-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 6px 0 18px;
+}
+.sport-chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+  color: var(--muted);
+  border-radius: 9999px;
+  padding: 8px 16px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: all 0.15s ease;
+}
+.sport-chip:hover {
+  color: var(--text);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+.sport-chip.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: #080c14;
+}
+.sport-chip-count {
+  font-size: 11px;
+  opacity: 0.8;
+  font-weight: 700;
+}
+
+/* Section Header */
+.section-hud {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  margin: 16px 0 16px;
+}
+.section-hud h2 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  text-transform: uppercase;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+.section-hud p {
+  margin: 2px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+.event-count-badge {
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* Match Grid */
+.matches-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 18px;
+  padding-bottom: 60px;
+}
+@media (max-width: 480px) {
+  .matches-grid { grid-template-columns: 1fr; gap: 14px; }
+}
+
+/* Match Card */
+.match-card {
+  border-radius: 20px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-card);
+}
+.match-card.is-live {
+  border-left: 4px solid var(--live);
+}
+.match-card.is-cricket.is-live {
+  border-left-color: var(--gold);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 14px;
+  font-size: 12px;
+}
+.badge-live {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(239, 68, 68, 0.15);
+  color: #ef4444;
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  padding: 3px 10px;
+  border-radius: 9999px;
+}
+.badge-upcoming {
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--muted);
+  padding: 3px 10px;
+  border-radius: 9999px;
+  font-weight: 500;
+}
+.badge-upcoming b { color: var(--gold); font-weight: 600; }
+.card-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-hot {
+  font-family: "Barlow Condensed", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  color: var(--gold);
+}
+.fav-btn {
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 17px;
+  line-height: 1;
+  padding: 2px 4px;
+  cursor: pointer;
+  transition: transform 0.15s ease, color 0.15s ease;
+}
+.fav-btn:hover { transform: scale(1.25); }
+.fav-btn.active { color: var(--gold); }
+
+/* Card Matchup */
+.card-matchup {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 8px;
+  margin: 4px 0 14px;
+}
+.team-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  min-width: 0;
+}
+.crest-circle {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  flex-shrink: 0;
+}
+.crest-circle img {
+  width: 75%;
+  height: 75%;
+  object-fit: contain;
+}
+.crest-fallback {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--gold);
+}
+.team-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+.vs-col {
+  text-align: center;
+}
+.vs-score {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--text);
+}
+.vs-text {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--muted);
+}
+
+.card-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 12px;
+  padding-top: 4px;
+  border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+.card-league {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 60%;
+}
+
+/* Card Server Chips */
+.card-servers {
+  margin-top: auto;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-top: 4px;
+}
+.server-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.server-chip:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(232, 180, 74, 0.12);
+  transform: translateY(-1px);
+}
+.server-chip-more {
+  padding: 4px 8px;
+  font-size: 11px;
+  color: var(--muted);
+  cursor: pointer;
+  border-radius: 6px;
+}
+.server-chip-more:hover { color: var(--gold); }
+
+/* Priority Section Divider */
+.priority-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 12px 0 2px;
+}
+.priority-divider h3 {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 24px;
+  font-weight: 800;
+  color: var(--gold);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.priority-divider.rest h3 { color: var(--text); }
+.priority-divider:after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+.priority-divider small { color: var(--muted); font-size: 12px; }
+
+/* Empty / Loading States */
+.state-box {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 60px 20px;
+  border: 1px dashed var(--border);
+  border-radius: 20px;
+  color: var(--muted);
+}
+.state-box strong {
+  display: block;
+  color: var(--text);
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  margin-bottom: 8px;
+}
+.state-retry-btn {
+  display: inline-block;
+  background: var(--gold);
+  color: #080c14;
+  border: 0;
+  border-radius: 10px;
+  padding: 10px 22px;
+  font-weight: 700;
+  margin-top: 14px;
+  cursor: pointer;
+}
+
+/* Modal Overlay */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(8, 12, 20, 0.88);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  display: grid;
+  place-items: center;
+  padding: 16px;
+}
+.modal-panel {
+  width: min(540px, 100%);
+  max-height: 85vh;
+  overflow-y: auto;
+  background: #0e1524;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 24px;
+  box-shadow: 0 30px 100px rgba(0, 0, 0, 0.8);
+  color: var(--text);
+}
+.modal-close-btn {
+  float: right;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 14px;
+  cursor: pointer;
+}
+.modal-close-btn:hover { background: rgba(255, 255, 255, 0.16); }
+.modal-title {
+  font-family: "Barlow Condensed", sans-serif;
+  font-size: 26px;
+  font-weight: 800;
+  margin: 0 0 4px;
+  padding-right: 32px;
+}
+.modal-subtitle {
+  color: var(--muted);
+  font-size: 13px;
+  margin: 0 0 18px;
+}
+.modal-server-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  margin: 8px 0;
+  padding: 13px 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  color: var(--text);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.modal-server-item:hover {
+  border-color: var(--gold);
+  background: rgba(232, 180, 74, 0.1);
+  color: var(--gold);
+}
+
+/* Toast */
+.toast-msg {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 22px;
+  background: rgba(14, 21, 36, 0.95);
+  border: 1px solid var(--gold);
+  color: var(--text);
+  border-radius: 12px;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.7);
+  font-size: 14px;
+  font-weight: 500;
+  z-index: 10000;
+  display: none;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--border);
+  padding: 30px 20px 40px;
+  color: var(--muted);
+  font-size: 13px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+  max-width: 1440px;
+  margin: 0 auto;
+}
+.site-footer a { color: var(--muted); transition: color 0.15s; }
+.site-footer a:hover { color: var(--gold); }
+</style>
+</head>
+<body>
+
+<!-- Left Command Dock (Desktop) -->
+<aside class="dock-desktop" id="dockDesktop">
+  <a href="/" class="dock-brand" aria-label="AryanStreams Home">
+    <div class="dock-brand-badge">A</div>
+    <div class="dock-brand-name">ARYAN<span>STREAMS</span></div>
+  </a>
+  <nav class="dock-nav" id="dockNav">
+    <button class="dock-item" data-view="live" title="Live Matches Center">
+      <span class="dock-item-icon">⚡</span>
+      <span class="dock-item-label">Live Center</span>
+    </button>
+    <button class="dock-item active" data-view="all" title="All Sports Matches">
+      <span class="dock-item-icon">🏆</span>
+      <span class="dock-item-label">All Sports</span>
+    </button>
+    <button class="dock-item" data-view="schedule" title="Match Schedule">
+      <span class="dock-item-icon">📅</span>
+      <span class="dock-item-label">Schedule</span>
+    </button>
+    <button class="dock-item" data-view="favs" title="Favorite Matches">
+      <span class="dock-item-icon">⭐</span>
+      <span class="dock-item-label">Favorites</span>
+    </button>
+    <a href="/tv/" class="dock-item" title="24/7 TV Channels">
+      <span class="dock-item-icon">📺</span>
+      <span class="dock-item-label">24/7 TV</span>
+    </a>
+  </nav>
+  <div class="dock-footer">
+    <div class="dock-footer-dot"></div>
+    <div class="dock-footer-text tnum">24ms · Edge Healthy</div>
+  </div>
+</aside>
+
+<!-- Mobile Bottom Dock -->
+<nav class="dock-mobile" id="dockMobile" aria-label="Mobile Navigation">
+  <button class="dock-mobile-item" data-view="live">
+    <span>⚡</span>
+    <span>Live</span>
+  </button>
+  <button class="dock-mobile-item active" data-view="all">
+    <span>🏆</span>
+    <span>All</span>
+  </button>
+  <button class="dock-mobile-item" data-view="schedule">
+    <span>📅</span>
+    <span>Schedule</span>
+  </button>
+  <button class="dock-mobile-item" data-view="favs">
+    <span>⭐</span>
+    <span>Favs</span>
+  </button>
+  <a href="/tv/" class="dock-mobile-item">
+    <span>📺</span>
+    <span>TV</span>
+  </a>
+</nav>
+
+<!-- Main Wrapper -->
+<div class="main-wrapper">
+  <!-- Top HUD Header -->
+  <header class="top-hud">
+    <div class="top-hud-inner">
+      <a href="/" class="brand-link" aria-label="Aryan Streams home">
+        <img src="/assets/img/logo-icon.png" alt="Aryan Streams Icon" class="brand-logo-icon" loading="eager" fetchpriority="high">
+        <img src="/assets/img/logo-text.png" alt="Aryan Streams" class="brand-logo-text" loading="eager" fetchpriority="high">
+      </a>
+
+      <div class="search-container">
+        <input id="searchInput" class="search-input" type="search" placeholder="Search teams, leagues, channels…" autocomplete="off" aria-label="Search">
+        <button class="search-clear-btn" id="searchClearBtn" aria-label="Clear search">✕</button>
+        <span class="search-kbd">Ctrl K</span>
       </div>
 
-      
-      <div data-slot="search-field" class="search-field search-field--secondary h-8 w-full" data-rac="" data-empty="true">
-        <div class="search-field__group" data-slot="search-field-group" data-rac="" role="group">
-          <svg aria-hidden="true" aria-label="Search icon" fill="none" height="16" role="presentation" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg" class="search-field__search-icon" data-slot="search-field-search-icon">
-            <path clip-rule="evenodd" d="M11.5 7a4.5 4.5 0 1 1-9 0a4.5 4.5 0 0 1 9 0m-.82 4.74a6 6 0 1 1 1.06-1.06l2.79 2.79a.75.75 0 1 1-1.06 1.06z" fill="currentColor" fill-rule="evenodd"></path>
-          </svg>
-
-          <input
-            id="matchSearch"
-            data-i18n-placeholder="search.matches.placeholder"
-            placeholder="Search teams, leagues..."
-            class="search-field__input"
-            data-slot="search-field-input"
-            type="search"
-            value=""
-            title=""
-            autocomplete="off"
-          />
-        </div>
+      <div class="hud-actions">
+        <a href="/tv/" class="hud-btn" title="Watch 200+ 24/7 Sports TV Channels">📺 24/7 TV</a>
+        <button id="pwaInstallBtn" class="hud-btn hud-btn-primary" type="button" style="display:none" title="Install AryanStreams Web App">📱 Install App</button>
+        <a href="https://discord.gg/aryanstreams" target="_blank" rel="noopener noreferrer" class="hud-btn hud-btn-discord" title="Join Discord Community">
+          <svg class="discord-svg" viewBox="0 0 127.14 96.36"><path d="M107.7,8.07A105.15,105.15,0,0,0,81.47,0a72.06,72.06,0,0,0-3.36,6.83A97.68,97.68,0,0,0,49,6.83,72.37,72.37,0,0,0,45.64,0,105.89,105.89,0,0,0,19.39,8.09C2.79,32.65-1.71,56.6.54,80.21h0A105.73,105.73,0,0,0,32.71,96.36,77.7,77.7,0,0,0,39.6,85.25a68.42,68.42,0,0,1-10.85-5.18c.91-.66,1.8-1.34,2.66-2a75.57,75.57,0,0,0,64.32,0c.87.71,1.76,1.39,2.66,2a68.68,68.68,0,0,1-10.87,5.19,77,77,0,0,0,6.89,11.1,105.25,105.25,0,0,0,32.19-16.14c2.64-27.38-4.51-51.11-18.86-72.25ZM42.45,65.69C36.18,65.69,31,60,31,53s5-12.74,11.43-12.74S54,45.91,53.89,53,48.84,65.69,42.45,65.69Zm42.24,0C78.41,65.69,73.25,60,73.25,53s5-12.74,11.44-12.74S96.23,45.91,96.12,53,91.08,65.69,84.69,65.69Z"/></svg>
+          Discord
+        </a>
       </div>
     </div>
-  </div>
+
+    <!-- Ticker Stats Strip -->
+    <div class="ticker-strip">
+      <div class="ticker-inner tnum">
+        <div class="ticker-item" id="tickerLive" title="Filter live matches">
+          <span class="live-dot"></span> <strong id="statLive">—</strong> Live now
+        </div>
+        <div class="ticker-item" id="tickerUpcoming" title="Filter upcoming matches">
+          <span>📅</span> <strong id="statUpcoming">—</strong> Upcoming
+        </div>
+        <div class="ticker-item" id="tickerServers" title="Total active stream servers">
+          <span>⚡</span> <strong id="statServers">—</strong> Servers online
+        </div>
+        <div class="ticker-updated" id="statUpdated">● Connecting…</div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Page Content -->
+  <main class="page-container">
+    <!-- Hero Spotlight Section -->
+    <section class="hero-spotlight" id="heroSpotlight" style="display:none">
+      <div class="hero-ambient-glow ambient"></div>
+      <div class="hero-content">
+        <div class="hero-badges" id="heroBadges"></div>
+        <div class="hero-matchup" id="heroMatchup"></div>
+        <h1 class="hero-title" id="heroTitle">MATCH SPOTLIGHT</h1>
+      </div>
+      <div class="hero-actions" id="heroActions"></div>
+    </section>
+
+    <!-- Category Filter Chips -->
+    <nav class="sport-chips no-scrollbar" id="sportChips" aria-label="Sports Categories">
+      <button class="sport-chip active" data-category="ALL">🏆 All sports</button>
+    </nav>
+
+    <!-- Section Heading -->
+    <div class="section-hud">
+      <div>
+        <h2 id="sectionTitle">ALL MATCHES</h2>
+        <p id="sectionSubtitle">Select any live match or click a verified server chip to start viewing in HD.</p>
+      </div>
+      <div class="event-count-badge tnum" id="eventCountBadge">Loading events…</div>
+    </div>
+
+    <!-- Matches Grid -->
+    <section class="matches-grid" id="matchesGrid">
+      <div class="state-box">
+        <strong>Connecting to Global Sports Feed…</strong>
+        <p>Loading real-time matches and verifying low-latency edge streams.</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Site Footer -->
+  <footer class="site-footer">
+    <div>
+      <a href="/" style="display:inline-flex;align-items:center;gap:8px;font-weight:700">
+        <img src="/assets/img/logo-icon.png" alt="Aryan Streams" style="height:22px;width:auto">
+        <img src="/assets/img/logo-text.png" alt="Aryan Streams" style="height:16px;width:auto">
+      </a>
+      <span style="margin-left:8px">· Free High-Definition Sports Streaming. Ad-Free &amp; Verified.</span>
+    </div>
+    <div style="display:flex;gap:16px">
+      <a href="/tv/">24/7 TV Channels</a>
+      <a href="https://discord.gg/aryanstreams" target="_blank" rel="noopener noreferrer">Discord</a>
+      <a href="#top">Back to top ↑</a>
+    </div>
+  </footer>
 </div>
 
-          
-          <div id="matchesContainer" class="space-y-4"></div>
+<!-- Toast -->
+<div class="toast-msg" id="toastMsg" role="status"></div>
 
-          
-          <div class="ads-content">
-             
-          </div>
+<script>
+(() => {
+  "use strict";
 
-         </div>
-         
-         <div class="hidden lg:block lg:col-span-3">
-            <div class="sticky top-28 space-y-4">
-               
-            </div>
-         </div>
+  const PLAYER_PAGE = "/player/";
+  const PRIMARY_DATA_URL = "/api/sports";
+  const FALLBACK_DATA_URL = "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json";
+  const PRIORITY_CATEGORY = "cricket";
+
+  const SPORT_ICONS = {
+    "cricket": "🏏",
+    "football": "⚽",
+    "basketball": "🏀",
+    "american football": "🏈",
+    "motorsports": "🏎️",
+    "hockey": "🏒",
+    "rugby": "🏉",
+    "boxing": "🥊",
+    "mixed martial arts": "🥋",
+    "mma": "🥋",
+    "aussie rules": "🦘",
+    "tennis": "🎾",
+    "baseball": "⚾",
+    "golf": "⛳",
+    "other": "🎯"
+  };
+
+  function getSportIcon(name) {
+    const k = String(name || "").toLowerCase().trim();
+    return SPORT_ICONS[k] || "🏆";
+  }
+
+  function isHotMatch(m) {
+    const txt = (String(m.event_name || "") + " " + String(eventName(m)) + " " + String(m.Category || "")).toLowerCase();
+    return /premier league|champions league|la liga|serie a|bundesliga|ipl|bbl|t20|world cup|nba|formula 1|motogp|ufc/i.test(txt);
+  }
+
+  const $ = s => document.querySelector(s);
+  const grid = $("#matchesGrid");
+  let allMatches = [];
+  let activeCategory = "ALL";
+  let activeView = "all"; // "live" | "all" | "schedule" | "favs"
+  let favs = [];
+  let toastTimer = null;
+
+  try {
+    favs = JSON.parse(localStorage.getItem("as-favs") || "[]");
+    if (!Array.isArray(favs)) favs = [];
+  } catch (_) { favs = []; }
+
+  function toggleFav(slug, e) {
+    if (e) e.stopPropagation();
+    if (!slug) return;
+    if (favs.includes(slug)) {
+      favs = favs.filter(f => f !== slug);
+      showToast("Removed from favorites");
+    } else {
+      favs.push(slug);
+      showToast("Pinned to favorites ★");
+    }
+    try { localStorage.setItem("as-favs", JSON.stringify(favs)); } catch (_) {}
+    render();
+  }
+
+  const esc = v => String(v ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+  function safeUrl(val){
+    try {
+      if (!val) return "";
+      let s = String(val).trim();
+      if (s.startsWith("http://img.sofascore.com")) s = s.replace("http://", "https://");
+      const u = new URL(s);
+      return ["http:","https:"].includes(u.protocol) ? u.href : "";
+    } catch (_) { return ""; }
+  }
+
+  function matchStatus(m){
+    const s = String(m.status || "").trim().toUpperCase();
+    if (s === "LIVE") return "LIVE";
+    if (s === "ENDED" || s === "FINISHED" || s === "COMPLETED") return "ENDED";
+    return "UPCOMING";
+  }
+
+  function isLive(m){ return matchStatus(m) === "LIVE"; }
+  function isCricket(m){ return String(m.Category || "").trim().toLowerCase() === PRIORITY_CATEGORY; }
+  function streamsOf(m){ return Array.isArray(m.streams) ? m.streams : []; }
+
+  function sortStreamsReliability(streams) {
+    if (!Array.isArray(streams)) return [];
+    return [...streams].sort((a, b) => {
+      const score = s => {
+        const u = (s.stream_url || "").toLowerCase();
+        let pts = 0;
+        if (u.includes("otte.cache.aiv-cdn.net") || (u.includes("aiv-cdn.net") && !u.includes("fly.ww"))) pts += 150;
+        else if (u.includes("aiv-cdn.net") || u.includes("amazon") || (s.kid && s.key)) pts += 100;
+
+        if (u.includes("fubo") || u.includes("tnt") || u.includes("espn") || u.includes("nbc") || u.includes("star") || u.includes("peacock") || u.includes("sky")) pts += 40;
+        if (u.includes(".mpd")) pts += 30;
+        else if (u.includes(".m3u8")) pts += 20;
+
+        if (u.includes("fly.ww.aiv-cdn.net")) pts -= 40;
+        if (u.includes("rutube") || /^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}/.test(s.stream_url)) pts -= 60;
+        if (/vpn/i.test(s.channel_name || "")) pts -= 80;
+        return pts;
+      };
+      return score(b) - score(a);
+    });
+  }
+
+  function validStreams(m){
+    const raw = streamsOf(m).filter(s => safeUrl(s.stream_url));
+    return sortStreamsReliability(raw);
+  }
+
+  function eventInfo(m){ return m.eventInfo || {}; }
+  function eventName(m){ const i = eventInfo(m); return i.eventName || m.event_name || "Sports Event"; }
+
+  function teamA(m){
+    const i = eventInfo(m);
+    if (i.teamA) return i.teamA;
+    const parts = String(m.event_name || "").split(/\s+(?:Vs|vs)\s+/i);
+    return parts[0] || eventName(m);
+  }
+
+  function teamB(m){
+    const i = eventInfo(m);
+    if (i.teamB) return i.teamB;
+    const parts = String(m.event_name || "").split(/\s+(?:Vs|vs)\s+/i);
+    return parts[1] || "";
+  }
+
+  function matchToSlug(m) {
+    const raw = (m.event_name || eventName(m) || "match").trim();
+    return raw.toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "");
+  }
+
+  function buildPlayerUrl(match, stream, serverIdx = 0){
+    const slug = matchToSlug(match);
+    const serverNum = serverIdx + 1;
+    return `${PLAYER_PAGE}?match=${encodeURIComponent(slug)}-ser${serverNum}`;
+  }
+
+  function showToast(msg){
+    const t = $("#toastMsg");
+    if (!t) return;
+    t.textContent = msg;
+    t.style.display = "block";
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
+  }
+
+  function parseMatchDate(str) {
+    if (!str) return null;
+    const match = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (match) {
+      const day = parseInt(match[1], 10);
+      const month = parseInt(match[2], 10) - 1;
+      const year = parseInt(match[3], 10);
+      let hours = parseInt(match[4], 10);
+      const minutes = parseInt(match[5], 10);
+      const ampm = (match[7] || "").toUpperCase();
+      if (ampm === "PM" && hours < 12) hours += 12;
+      if (ampm === "AM" && hours === 12) hours = 0;
+      return new Date(year, month, day, hours, minutes);
+    }
+    const fallback = new Date(str);
+    return isNaN(fallback.getTime()) ? null : fallback;
+  }
+
+  function timeText(m){
+    const i = eventInfo(m);
+    if (!i.startTime) return "Time TBA";
+    const d = parseMatchDate(i.startTime);
+    if (d) {
+      const now = new Date();
+      const isToday = d.toDateString() === now.toDateString();
+      const tomorrow = new Date(now);
+      tomorrow.setDate(tomorrow.getDate() + 1);
+      const isTomorrow = d.toDateString() === tomorrow.toDateString();
+      const timeStr = d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: true });
+
+      if (matchStatus(m) === "UPCOMING") {
+        const diffMin = Math.round((d.getTime() - now.getTime()) / 60000);
+        if (diffMin > 0 && diffMin < 60) return `Starts in ${diffMin}m`;
+        if (diffMin >= 60 && diffMin < 720) {
+          const h = Math.floor(diffMin / 60);
+          const remM = diffMin % 60;
+          return `Starts in ${h}h ${remM > 0 ? remM + 'm' : ''}`;
+        }
+      }
+
+      if (isToday) return `Today · ${timeStr}`;
+      if (isTomorrow) return `Tomorrow · ${timeStr}`;
+      return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${timeStr}`;
+    }
+    return i.startTime;
+  }
+
+  function crestHtml(url, name) {
+    const cleanUrl = safeUrl(url);
+    const mono = String(name || "?").trim().split(/\s+/).filter(Boolean).slice(0, 2).map(x => x[0]).join("").toUpperCase() || "?";
+    if (!cleanUrl) {
+      return `<div class="crest-circle"><span class="crest-fallback">${esc(mono)}</span></div>`;
+    }
+    return `<div class="crest-circle"><img src="${esc(cleanUrl)}" alt="${esc(name)}" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="crest-fallback" style="display:none">${esc(mono)}</span></div>`;
+  }
+
+  function cardHtml(m, index){
+    const i = eventInfo(m), status = matchStatus(m), live = status === "LIVE", streams = validStreams(m);
+    const a = teamA(m), b = teamB(m), logo = safeUrl(i.event_logo), flagA = safeUrl(i.teamAFlag), flagB = safeUrl(i.teamBFlag);
+    const cat = m.Category || "Other";
+    const hot = isHotMatch(m);
+    const slug = matchToSlug(m);
+    const isFav = favs.includes(slug);
+    const timeStr = timeText(m);
+
+    // 1-Click Server Chips
+    let serverChipsHtml = "";
+    if (live && streams.length > 0) {
+      const topServers = streams.slice(0, 3);
+      topServers.forEach((s, idx) => {
+        let label = (s.channel_name || `Server ${idx + 1}`).trim();
+        if (label.length > 16) label = label.slice(0, 14) + "…";
+        serverChipsHtml += `<button class="server-chip" data-direct-server="${index}:${idx}" title="Launch ${esc(s.channel_name || `Server ${idx + 1}`)}">⚡ S${idx + 1}: ${esc(label)}</button>`;
+      });
+      if (streams.length > 3) {
+        serverChipsHtml += `<span class="server-chip-more" data-more-servers="${index}">+${streams.length - 3}</span>`;
+      }
+    } else if (live) {
+      serverChipsHtml = `<span class="server-chip" style="opacity:0.7">⚡ Configuring Feed…</span>`;
+    }
+
+    const score = m.score || i.score || "";
+
+    return `<article class="match-card glass card-lift ${live ? "is-live" : ""} ${isCricket(m) ? "is-cricket" : ""}" data-card-index="${index}">
+      <div class="card-header">
+        ${live ? `<span class="badge-live"><span class="live-dot"></span> LIVE</span>` : `<span class="badge-upcoming">${esc(timeStr)}</span>`}
+        <div class="card-header-right">
+          ${hot ? '<span class="badge-hot">🔥 HOT</span>' : ''}
+          <button class="fav-btn ${isFav ? "active" : ""}" data-fav="${esc(slug)}" aria-label="Pin favorite" title="Favorite Match">${isFav ? "★" : "☆"}</button>
+        </div>
       </div>
-      <style>
-         #mobileSportsMenu {
-         overflow-y: auto;
-         -webkit-overflow-scrolling: touch;
-         overscroll-behavior: contain;
-         touch-action: pan-y;
-         }
-         body.nav-lock {
-         overflow: hidden;
-         }
-         body.nav-lock #mobileSportsMenu {
-         touch-action: pan-y;
-         }
-      </style>
-      
-      <div id="langModal" data-slot="modal-backdrop" class="modal__backdrop modal__backdrop--opaque hidden" aria-hidden="true">
-         <div data-placement="center" data-slot="modal-container" class="modal__container">
-            <section data-slot="modal-dialog" class="modal__dialog modal__dialog--scroll-inside modal__dialog--md"
-               role="dialog" aria-modal="true" aria-labelledby="langModalTitle" tabindex="-1">
-               <button data-slot="modal-close-trigger" class="close-button close-button--default modal__close-trigger"
-                  type="button" aria-label="Close" id="langModalClose">
-                  
-                  <svg aria-hidden="true" fill="none" height="16" viewBox="0 0 16 16" width="16" xmlns="http://www.w3.org/2000/svg">
-                     <path clip-rule="evenodd"
-                        d="M3.47 3.47a.75.75 0 0 1 1.06 0L8 6.94l3.47-3.47a.75.75 0 1 1 1.06 1.06L9.06 8l3.47 3.47a.75.75 0 1 1-1.06 1.06L8 9.06l-3.47 3.47a.75.75 0 0 1-1.06-1.06L6.94 8 3.47 4.53a.75.75 0 0 1 0-1.06Z"
-                        fill="currentColor" fill-rule="evenodd"></path>
-                  </svg>
-               </button>
-               <div class="modal__header" data-slot="modal-header">
-                  <div class="modal__icon bg-default" data-slot="modal-icon">
-                     
-                     <svg xmlns="http://www.w3.org/2000/svg" width="1em" height="1em" viewBox="0 0 24 24" class="text-muted text-xl">
-                        <g fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5">
-                           <path d="M5 5.828h2.7m3.3 0H9.5m-1.8 0h1.8m-1.8 0V5m1.8.828c-.316 1.131-.98 2.201-1.736 3.141M5.836 11a19 19 0 0 0 1.928-2.03m0 0c-.385-.453-.925-1.184-1.08-1.515m1.08 1.514l1.157 1.203M13.5 19l.833-2m4.167 2l-.833-2m-3.334 0L16 13l1.667 4m-3.334 0h3.334"></path>
-                           <path d="M14 10V8c0-2.828 0-4.243-.879-5.121C12.243 2 10.828 2 8 2s-4.243 0-5.121.879C2 3.757 2 5.172 2 8s0 4.243.879 5.121C3.757 14 5.172 14 8 14h2"></path>
-                           <path d="M10 16c0-2.828 0-4.243.879-5.121C11.757 10 13.172 10 16 10s4.243 0 5.121.879C22 11.757 22 13.172 22 16s0 4.243-.879 5.121C20.243 22 18.828 22 16 22s-4.243 0-5.121-.879C10 20.243 10 18.828 10 16m-6 .5c0 1.404 0 2.107.337 2.611a2 2 0 0 0 .552.552C5.393 20 6.096 20 7.5 20M20 7.5c0-1.404 0-2.107-.337-2.611a2 2 0 0 0-.552-.552C18.607 4 17.904 4 16.5 4"></path>
-                        </g>
-                     </svg>
-                  </div>
-                  <h2 id="langModalTitle" data-slot="modal-heading" class="modal__heading" data-i18n="lang.title">
-                     Select a language
-                  </h2>
-               </div>
-               <div class="modal__body modal__body--scroll-inside" data-slot="modal-body">
-                  <div class="grid grid-cols-12 gap-5">
-                     <div class="col-span-6 flex flex-col items-center cursor-pointer hover:bg-surface-tertiary transition-all p-5 rounded-2xl bg-surface-secondary border border-primary"
-                        role="button" tabindex="0" data-lang="en">
-                        <span>English</span>
-                        <span class="text-xs">United States</span>
-                     </div>
-                     <div class="col-span-6 flex flex-col items-center cursor-pointer hover:bg-surface-tertiary transition-all p-5 rounded-2xl bg-surface-secondary border border-border"
-                        role="button" tabindex="0" data-lang="pl">
-                        <span>Polski</span>
-                        <span class="text-xs">Poland</span>
-                     </div>
-                     <div class="col-span-6 flex flex-col items-center cursor-pointer hover:bg-surface-tertiary transition-all p-5 rounded-2xl bg-surface-secondary border border-border"
-                        role="button" tabindex="0" data-lang="pt">
-                        <span>Português</span>
-                        <span class="text-xs">Portugal</span>
-                     </div>
-                  </div>
-               </div>
-            </section>
-         </div>
+      <div class="card-matchup">
+        <div class="team-col">
+          ${crestHtml(flagA || logo, a)}
+          <span class="team-name" title="${esc(a)}">${esc(a)}</span>
+        </div>
+        <div class="vs-col">
+          ${score ? `<span class="vs-score tnum">${esc(score)}</span>` : '<span class="vs-text">VS</span>'}
+        </div>
+        <div class="team-col">
+          ${crestHtml(flagB || logo, b)}
+          <span class="team-name" title="${esc(b)}">${esc(b)}</span>
+        </div>
       </div>
+      <div class="card-meta">
+        <span class="card-league">${esc(eventName(m))}</span>
+        <span>${getSportIcon(cat)} ${esc(cat)}</span>
+      </div>
+      <div class="card-servers">
+        ${serverChipsHtml}
+      </div>
+    </article>`;
+  }
 
+  function renderHeroSpotlight(matches) {
+    const heroBox = $("#heroSpotlight");
+    if (!heroBox) return;
 
+    // Pick the top live match (prioritizing Hot/Cricket/Premier League) or the top upcoming match
+    let hero = matches.find(m => isLive(m) && isHotMatch(m));
+    if (!hero) hero = matches.find(isLive);
+    if (!hero) hero = matches.find(isHotMatch);
+    if (!hero) hero = matches[0];
 
+    if (!hero) {
+      heroBox.style.display = "none";
+      return;
+    }
 
+    const live = isLive(hero);
+    const i = eventInfo(hero);
+    const a = teamA(hero);
+    const b = teamB(hero);
+    const flagA = safeUrl(i.teamAFlag) || safeUrl(i.event_logo);
+    const flagB = safeUrl(i.teamBFlag) || safeUrl(i.event_logo);
+    const streams = validStreams(hero);
+    const league = eventName(hero);
+    const slug = matchToSlug(hero);
 
+    const monoA = a.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
+    const monoB = b.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
 
+    $("#heroBadges").innerHTML = `
+      ${live ? '<span class="hero-badge-live"><span class="live-dot"></span> LIVE NOW</span>' : `<span class="hero-badge-league">${esc(timeText(hero))}</span>`}
+      <span class="hero-badge-league">${esc(league)}</span>
+      <span class="hero-badge-quality">1080p 60FPS</span>
+      <span class="hero-badge-servers">⚡ ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
+    `;
 
-      
-      <footer class="bg-surface text-gray-300 mt-20 relative overflow-hidden drop-shadow-2xl">
-         <div class="container mx-auto px-4 sm:px-6 lg:px-8">
-            <div class="mx-auto px-4 py-16 sm:px-6 lg:py-20 relative">
-               <div class="pt-8 border-t border-surface-secondary">
-                  <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                     <div class="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm w-full">
-                        <p class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-secondary hover:bg-surface-tertiary text-surface-foreground">
-                           © 2026 AryanStreams. All rights reserved.
-                        </p>
-                        <div class="flex items-center gap-4">
-                           <a aria-label="Privacy Policy" href="/legal/privacy-policy" class="text-sm text-foreground hover:underline">Privacy Policy</a>
-                           <a aria-label="Cookie Policy" href="/legal/cookie-policy" class="text-sm text-foreground hover:underline">Cookie Policy</a>
-                           <a aria-label="Terms of Use" href="/legal/terms-of-service" class="text-sm text-foreground hover:underline">Terms of Use</a>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </footer>
+    const heroScore = hero.score || i.score || "";
 
-      <script src="/assets/js/main.js" defer></script>
-      
-      
-   </body>
+    $("#heroMatchup").innerHTML = `
+      <div class="hero-crest-box">
+        ${flagA ? `<img src="${esc(flagA)}" alt="${esc(a)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoA)}</span>` : `<span class="hero-crest-mono">${esc(monoA)}</span>`}
+      </div>
+      ${heroScore ? `<div class="hero-score tnum">${esc(heroScore)}</div>` : `<div class="hero-score" style="font-size: clamp(28px, 4.5vw, 50px); color: var(--muted); letter-spacing: 2px;">VS</div>`}
+      <div class="hero-crest-box">
+        ${flagB ? `<img src="${esc(flagB)}" alt="${esc(b)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoB)}</span>` : `<span class="hero-crest-mono">${esc(monoB)}</span>`}
+      </div>
+    `;
+
+    $("#heroTitle").innerHTML = `${esc(a)} <span style="color:var(--muted);font-weight:600">vs</span> ${esc(b)}`;
+
+    $("#heroActions").innerHTML = `
+      <button class="hero-play-btn" id="heroPlayBtn">▶ WATCH LIVE</button>
+      <button class="hero-share-btn" id="heroShareBtn">🔗 Share match link</button>
+    `;
+
+    $("#heroPlayBtn").onclick = () => openMatch(hero, 0);
+    $("#heroShareBtn").onclick = () => {
+      const url = `${location.origin}/player/?match=${encodeURIComponent(slug)}-ser1`;
+      if (navigator.clipboard) {
+        navigator.clipboard.writeText(url).then(() => showToast("Match link copied to clipboard!"));
+      } else {
+        showToast("Match link: " + url);
+      }
+    };
+
+    heroBox.style.display = "grid";
+  }
+
+  function getFiltered(){
+    const q = ($("#searchInput").value || "").trim().toLowerCase();
+    return allMatches.map((m, index) => ({ m, index })).filter(({ m }) => {
+      const status = matchStatus(m);
+      const isFav = favs.includes(matchToSlug(m));
+
+      // View filtering from Left Dock / Mobile Dock
+      if (activeView === "live" && status !== "LIVE") return false;
+      if (activeView === "schedule" && status !== "UPCOMING") return false;
+      if (activeView === "favs" && !isFav) return false;
+
+      // Category filter
+      if (activeCategory !== "ALL" && (m.Category || "Other") !== activeCategory) return false;
+
+      // Text search query
+      if (q) {
+        const text = [m.event_name, eventName(m), teamA(m), teamB(m), m.Category, ...streamsOf(m).map(s => s.channel_name)].join(" ").toLowerCase();
+        if (!text.includes(q)) return false;
+      }
+
+      return true;
+    });
+  }
+
+  function openMatch(match, serverIdx = 0){
+    if (!match) return;
+    const sources = validStreams(match);
+    if (!isLive(match)) {
+      showToast(`${eventName(match)} starts ${timeText(match)}`);
+      return;
+    }
+    if (!sources.length) {
+      showToast("Live stream feed is being connected. Please refresh in a moment!");
+      return;
+    }
+
+    try {
+      sessionStorage.setItem("current_match_streams", JSON.stringify(sources));
+      sessionStorage.setItem("current_match", JSON.stringify(match));
+    } catch (_) {}
+
+    const url = buildPlayerUrl(match, sources[serverIdx] || sources[0], serverIdx);
+    window.open(url, "_blank", "noopener");
+  }
+
+  function showStreamPicker(match, sources){
+    const overlay = document.createElement("div");
+    overlay.className = "modal-overlay";
+
+    const panel = document.createElement("section");
+    panel.className = "modal-panel";
+
+    const closeBtn = document.createElement("button");
+    closeBtn.className = "modal-close-btn";
+    closeBtn.textContent = "✕";
+    closeBtn.onclick = () => overlay.remove();
+
+    const title = document.createElement("h2");
+    title.className = "modal-title";
+    title.textContent = match.event_name || eventName(match);
+
+    const sub = document.createElement("p");
+    sub.className = "modal-subtitle";
+    sub.textContent = "Select a verified high-speed server below to launch the theater player:";
+
+    panel.append(closeBtn, title, sub);
+
+    sources.forEach((s, idx) => {
+      const b = document.createElement("button");
+      b.className = "modal-server-item";
+      const isDash = /\.mpd(?:$|\?)/i.test(s.stream_url);
+      const sName = (s.channel_name || `Server ${idx + 1}`).trim();
+      b.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><span>⚡ ${esc(sName)}</span><span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:var(--muted)">${isDash ? "DASH (DRM)" : "HLS HD"}</span></div>`;
+      b.onclick = () => {
+        try {
+          sessionStorage.setItem("current_match_streams", JSON.stringify(sources));
+          sessionStorage.setItem("current_match", JSON.stringify(match));
+        } catch (_) {}
+        const url = buildPlayerUrl(match, s, idx);
+        window.open(url, "_blank", "noopener");
+        overlay.remove();
+      };
+      panel.appendChild(b);
+    });
+
+    const escListener = e => { if (e.key === "Escape") { overlay.remove(); window.removeEventListener("keydown", escListener); } };
+    window.addEventListener("keydown", escListener);
+    overlay.addEventListener("click", e => { if (e.target === overlay) overlay.remove(); });
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+  }
+
+  function render(){
+    const rows = getFiltered();
+
+    // Update section title
+    let viewTitle = "ALL MATCHES";
+    if (activeView === "live") viewTitle = "⚡ LIVE MATCHES CENTER";
+    else if (activeView === "schedule") viewTitle = "📅 MATCH SCHEDULE";
+    else if (activeView === "favs") viewTitle = "⭐ FAVORITE MATCHES";
+    if (activeCategory !== "ALL") viewTitle += ` · ${activeCategory.toUpperCase()}`;
+
+    $("#sectionTitle").textContent = viewTitle;
+    $("#eventCountBadge").textContent = `${rows.length} event${rows.length === 1 ? "" : "s"}`;
+
+    // Active dock sync
+    document.querySelectorAll("[data-view]").forEach(btn => {
+      btn.classList.toggle("active", btn.dataset.view === activeView);
+    });
+
+    if (!rows.length) {
+      if (activeView === "favs") {
+        grid.innerHTML = '<div class="state-box"><strong>No Favorite Matches Pinned</strong><p>Tap ☆ on any match card to pin it to your favorites list.</p></div>';
+      } else {
+        grid.innerHTML = '<div class="state-box"><strong>No Matches Found</strong><p>Try searching for a different team or choose another sport category.</p></div>';
+      }
+      return;
+    }
+
+    const cricket = rows.filter(r => isCricket(r.m));
+    const rest = rows.filter(r => !isCricket(r.m));
+    let html = "";
+    if (activeCategory === "ALL" && activeView === "all" && cricket.length && rest.length) {
+      html += `<div class="priority-divider"><h3>🏏 Cricket Priority</h3><small>${cricket.length} event${cricket.length===1?"":"s"}</small></div>` + cricket.map(({m,index}) => cardHtml(m,index)).join("");
+      html += `<div class="priority-divider rest"><h3>🏆 All Sports</h3><small>${rest.length} event${rest.length===1?"":"s"}</small></div>` + rest.map(({m,index}) => cardHtml(m,index)).join("");
+    } else {
+      html = [...cricket, ...rest].map(({m,index}) => cardHtml(m,index)).join("");
+    }
+
+    grid.innerHTML = html;
+
+    // Attach card event listeners
+    grid.querySelectorAll(".match-card").forEach(card => {
+      card.addEventListener("click", e => {
+        // Check if direct server chip clicked
+        const directBtn = e.target.closest("[data-direct-server]");
+        if (directBtn) {
+          e.stopPropagation();
+          const [mIdx, sIdx] = directBtn.dataset.directServer.split(":").map(Number);
+          openMatch(allMatches[mIdx], sIdx);
+          return;
+        }
+
+        // Check if more servers clicked
+        const moreBtn = e.target.closest("[data-more-servers]");
+        if (moreBtn) {
+          e.stopPropagation();
+          const mIdx = Number(moreBtn.dataset.moreServers);
+          showStreamPicker(allMatches[mIdx], validStreams(allMatches[mIdx]));
+          return;
+        }
+
+        // Check if favorite star clicked
+        const favBtn = e.target.closest("[data-fav]");
+        if (favBtn) {
+          e.stopPropagation();
+          toggleFav(favBtn.dataset.fav, e);
+          return;
+        }
+
+        const idx = Number(card.dataset.cardIndex);
+        const match = allMatches[idx];
+        const streams = validStreams(match);
+        if (streams.length > 1) {
+          showStreamPicker(match, streams);
+        } else {
+          openMatch(match, 0);
+        }
+      });
+    });
+  }
+
+  function renderCategories(){
+    const counts = {};
+    allMatches.forEach(m => {
+      const c = m.Category || "Other";
+      counts[c] = (counts[c] || 0) + 1;
+    });
+
+    const cats = [...new Set(allMatches.map(m => m.Category || "Other"))].filter(Boolean).sort((a,b) => {
+      const ca = a.toLowerCase() === PRIORITY_CATEGORY, cb = b.toLowerCase() === PRIORITY_CATEGORY;
+      return ca !== cb ? (ca ? -1 : 1) : a.localeCompare(b);
+    });
+
+    const allBtn = `<button class="sport-chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">🏆 All sports <span class="sport-chip-count">(${allMatches.length})</span></button>`;
+    const catBtns = cats.map(c => {
+      const icon = getSportIcon(c);
+      const cnt = counts[c] || 0;
+      return `<button class="sport-chip ${activeCategory===c?"active":""}" data-category="${esc(c)}">${icon} ${esc(c)} <span class="sport-chip-count">(${cnt})</span></button>`;
+    }).join("");
+
+    const box = $("#sportChips");
+    box.innerHTML = allBtn + catBtns;
+    box.querySelectorAll("[data-category]").forEach(b => {
+      b.addEventListener("click", () => {
+        activeCategory = b.dataset.category;
+        renderCategories();
+        render();
+      });
+    });
+  }
+
+  function cleanAndDedupe(rawMatches){
+    const map = new Map();
+    const result = [];
+    (rawMatches || []).forEach(m => {
+      if (!m) return;
+      const tA = (teamA(m) || "").toLowerCase().trim();
+      const tB = (teamB(m) || "").toLowerCase().trim();
+      const cat = (m.Category || "").toLowerCase().trim();
+      const key = `${cat}:${tA}:vs:${tB}`;
+      if (tA && tB && map.has(key)) {
+        const existing = map.get(key);
+        const exStreams = streamsOf(existing);
+        const newStreams = streamsOf(m);
+        const merged = [...exStreams];
+        newStreams.forEach(ns => {
+          if (!merged.some(es => es.stream_url === ns.stream_url)) merged.push(ns);
+        });
+        existing.streams = merged;
+        if (m.status === "LIVE") existing.status = "LIVE";
+        return;
+      }
+      map.set(key, m);
+      result.push(m);
+    });
+    return result;
+  }
+
+  async function loadData(silent = false){
+    try {
+      let data = null;
+      try {
+        const res = await fetch(PRIMARY_DATA_URL, { cache: "no-store" });
+        if (res.ok) data = await res.json();
+      } catch (_) {}
+
+      if (!data || (!Array.isArray(data) && !Array.isArray(data.matches))) {
+        const res2 = await fetch(FALLBACK_DATA_URL, { cache: "no-store" });
+        if (res2.ok) data = await res2.json();
+      }
+
+      if (!data) throw new Error("Could not reach sports feed.");
+
+      const rawList = Array.isArray(data) ? data : (Array.isArray(data.matches) ? data.matches : []);
+      allMatches = cleanAndDedupe(rawList);
+
+      const live = allMatches.filter(isLive).length;
+      const upcoming = allMatches.filter(m => matchStatus(m) === "UPCOMING").length;
+      const totalServers = allMatches.reduce((n, m) => n + validStreams(m).length, 0);
+
+      $("#statLive").textContent = live;
+      $("#statUpcoming").textContent = upcoming;
+      $("#statServers").textContent = totalServers.toLocaleString();
+
+      const timeStr = data.last_update_time ? `● Updated ${data.last_update_time}` : `● Live sync active`;
+      $("#statUpdated").textContent = timeStr;
+
+      renderHeroSpotlight(allMatches);
+      renderCategories();
+      render();
+    } catch (err) {
+      if (!silent) {
+        grid.innerHTML = `<div class="state-box">
+          <strong>Unable to load live sports data</strong>
+          <p>${esc(err.message || "Network issue")}</p>
+          <button class="state-retry-btn" onclick="window.AryanReload()">Retry Connection</button>
+        </div>`;
+        $("#statUpdated").textContent = "● Offline";
+      }
+    }
+  }
+
+  window.AryanReload = () => loadData(false);
+
+  // View navigation (Left dock & mobile dock)
+  document.querySelectorAll("[data-view]").forEach(btn => {
+    btn.addEventListener("click", () => {
+      activeView = btn.dataset.view;
+      render();
+    });
+  });
+
+  // Ticker fast filters
+  $("#tickerLive").onclick = () => { activeView = "live"; render(); };
+  $("#tickerUpcoming").onclick = () => { activeView = "schedule"; render(); };
+
+  // Search input with quick clear and Ctrl+K listener
+  const searchInput = $("#searchInput");
+  const searchClear = $("#searchClearBtn");
+  searchInput.addEventListener("input", () => {
+    searchClear.style.display = searchInput.value ? "block" : "none";
+    render();
+  });
+  searchClear.addEventListener("click", () => {
+    searchInput.value = "";
+    searchClear.style.display = "none";
+    render();
+    searchInput.focus();
+  });
+
+  window.addEventListener("keydown", e => {
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+      e.preventDefault();
+      searchInput.focus();
+    }
+  });
+
+  // PWA Install prompt
+  let deferredPrompt = null;
+  const pwaBtn = $("#pwaInstallBtn");
+  window.addEventListener("beforeinstallprompt", e => {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (pwaBtn) pwaBtn.style.display = "inline-flex";
+  });
+  if (pwaBtn) {
+    pwaBtn.addEventListener("click", async () => {
+      if (deferredPrompt) {
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        if (outcome === "accepted") pwaBtn.style.display = "none";
+        deferredPrompt = null;
+      } else {
+        showToast("Use browser menu → Install app");
+      }
+    });
+  }
+
+  loadData(false);
+
+  // Auto-refresh every 60s
+  setInterval(() => {
+    loadData(true);
+  }, 60000);
+
+})();
+</script>
+</body>
 </html>
