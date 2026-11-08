@@ -450,28 +450,129 @@ a { color: inherit; text-decoration: none; }
 }
 
 /* Marquee Hero Spotlight */
+/* Hero Spotlight Slider */
 .hero-spotlight {
   position: relative;
   overflow: hidden;
   border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.1);
-  background: rgba(18, 24, 38, 0.75);
+  background: rgba(18, 24, 38, 0.78);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  padding: 28px 24px;
+  padding: 0;
   margin-bottom: 32px;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6);
+}
+.hero-slider-container {
+  overflow: hidden;
+  width: 100%;
+  position: relative;
+}
+.hero-slider-track {
+  display: flex;
+  transition: transform 450ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 100%;
+}
+.hero-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  padding: 28px 24px 38px;
+  box-sizing: border-box;
+}
+@media (min-width: 769px) {
+  .hero-slide {
+    padding: 36px 44px 44px;
+  }
+}
+.hero-slide-grid {
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 @media (min-width: 769px) {
-  .hero-spotlight {
+  .hero-slide-grid {
     display: grid;
     grid-template-columns: 1fr auto;
     align-items: center;
     gap: 36px;
-    padding: 36px 40px;
   }
+}
+
+/* Arrow Navigation */
+.hero-nav-btn {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(14, 21, 36, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: var(--text);
+  font-size: 24px;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  backdrop-filter: blur(10px);
+  transition: all 0.2s ease;
+  user-select: none;
+}
+.hero-nav-btn:hover {
+  background: rgba(232, 180, 74, 0.25);
+  border-color: var(--gold);
+  color: var(--gold);
+  transform: translateY(-50%) scale(1.1);
+}
+.hero-prev-btn { left: 14px; }
+.hero-next-btn { right: 14px; }
+
+@media (max-width: 768px) {
+  .hero-nav-btn {
+    top: 115px;
+    width: 32px;
+    height: 32px;
+    font-size: 20px;
+    background: rgba(14, 21, 36, 0.88);
+  }
+  .hero-prev-btn { left: 8px; }
+  .hero-next-btn { right: 8px; }
+  .hero-title {
+    padding: 0 8px;
+    font-size: clamp(22px, 6vw, 32px);
+  }
+}
+
+/* Dots / Indicators */
+.hero-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.hero-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: rgba(255, 255, 255, 0.25);
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
+.hero-dot:hover {
+  background: rgba(255, 255, 255, 0.6);
+}
+.hero-dot.active {
+  width: 26px;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(232, 180, 74, 0.6);
 }
 .hero-ambient-glow {
   position: absolute;
@@ -1154,15 +1255,18 @@ a { color: inherit; text-decoration: none; }
 
   <!-- Page Content -->
   <main class="page-container">
-    <!-- Hero Spotlight Section -->
-    <section class="hero-spotlight" id="heroSpotlight" style="display:none">
+    <!-- Hero Spotlight Slider Section -->
+    <section class="hero-spotlight" id="heroSpotlight" style="display:none" aria-label="Featured Matches Spotlight">
       <div class="hero-ambient-glow ambient"></div>
-      <div class="hero-content">
-        <div class="hero-badges" id="heroBadges"></div>
-        <div class="hero-matchup" id="heroMatchup"></div>
-        <h1 class="hero-title" id="heroTitle">MATCH SPOTLIGHT</h1>
+      
+      <div class="hero-slider-container">
+        <div class="hero-slider-track" id="heroSliderTrack"></div>
       </div>
-      <div class="hero-actions" id="heroActions"></div>
+
+      <button class="hero-nav-btn hero-prev-btn" id="heroPrevBtn" aria-label="Previous match" title="Previous featured match">‹</button>
+      <button class="hero-nav-btn hero-next-btn" id="heroNextBtn" aria-label="Next match" title="Next featured match">›</button>
+
+      <div class="hero-dots" id="heroDots"></div>
     </section>
 
     <!-- Category Filter Chips -->
@@ -1476,71 +1580,197 @@ a { color: inherit; text-decoration: none; }
     </article>`;
   }
 
-  function renderHeroSpotlight(matches) {
+  let currentHeroIndex = 0;
+  let heroMatchesList = [];
+  let heroAutoPlayTimer = null;
+
+  function pickFeaturedMatches(matches) {
+    if (!Array.isArray(matches) || matches.length === 0) return [];
+    
+    // Sort prioritized pool:
+    // 1. Live + Hot
+    const liveHot = matches.filter(m => isLive(m) && isHotMatch(m));
+    // 2. All other Live
+    const liveOther = matches.filter(m => isLive(m) && !isHotMatch(m));
+    // 3. Upcoming Hot
+    const upcomingHot = matches.filter(m => matchStatus(m) === "UPCOMING" && isHotMatch(m));
+    // 4. Other matches
+    const others = matches.filter(m => !isLive(m) && !isHotMatch(m));
+
+    const pool = [...liveHot, ...liveOther, ...upcomingHot, ...others];
+    const seen = new Set();
+    const result = [];
+    for (const m of pool) {
+      const slug = matchToSlug(m);
+      if (!seen.has(slug)) {
+        seen.add(slug);
+        result.push(m);
+      }
+      if (result.length >= 6) break;
+    }
+    return result;
+  }
+
+  function renderHeroSlider(matches) {
     const heroBox = $("#heroSpotlight");
-    if (!heroBox) return;
+    const track = $("#heroSliderTrack");
+    const dotsBox = $("#heroDots");
+    if (!heroBox || !track || !dotsBox) return;
 
-    // Pick the top live match (prioritizing Hot/Cricket/Premier League) or the top upcoming match
-    let hero = matches.find(m => isLive(m) && isHotMatch(m));
-    if (!hero) hero = matches.find(isLive);
-    if (!hero) hero = matches.find(isHotMatch);
-    if (!hero) hero = matches[0];
-
-    if (!hero) {
+    heroMatchesList = pickFeaturedMatches(matches);
+    if (!heroMatchesList.length) {
       heroBox.style.display = "none";
       return;
     }
 
-    const live = isLive(hero);
-    const i = eventInfo(hero);
-    const a = teamA(hero);
-    const b = teamB(hero);
-    const flagA = safeUrl(i.teamAFlag) || safeUrl(i.event_logo);
-    const flagB = safeUrl(i.teamBFlag) || safeUrl(i.event_logo);
-    const streams = validStreams(hero);
-    const league = eventName(hero);
-    const slug = matchToSlug(hero);
+    track.innerHTML = heroMatchesList.map((hero, idx) => {
+      const live = isLive(hero);
+      const i = eventInfo(hero);
+      const a = teamA(hero);
+      const b = teamB(hero);
+      const flagA = safeUrl(i.teamAFlag) || safeUrl(i.event_logo);
+      const flagB = safeUrl(i.teamBFlag) || safeUrl(i.event_logo);
+      const streams = validStreams(hero);
+      const league = eventName(hero);
+      const slug = matchToSlug(hero);
+      const heroScore = hero.score || i.score || "";
 
-    const monoA = a.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
-    const monoB = b.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
+      const monoA = a.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
+      const monoB = b.split(/\s+/).slice(0, 2).map(x => x[0]).join("").toUpperCase();
 
-    $("#heroBadges").innerHTML = `
-      ${live ? '<span class="hero-badge-live"><span class="live-dot"></span> LIVE NOW</span>' : `<span class="hero-badge-league">${esc(timeText(hero))}</span>`}
-      <span class="hero-badge-league">${esc(league)}</span>
-      <span class="hero-badge-quality">1080p 60FPS</span>
-      <span class="hero-badge-servers">⚡ ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
-    `;
+      const liveBadge = live
+        ? '<span class="hero-badge-live"><span class="live-dot"></span> LIVE NOW</span>'
+        : `<span class="hero-badge-league">${esc(timeText(hero))}</span>`;
 
-    const heroScore = hero.score || i.score || "";
+      const scoreHtml = heroScore
+        ? `<div class="hero-score tnum">${esc(heroScore)}</div>`
+        : `<div class="hero-score" style="font-size: clamp(28px, 4.5vw, 50px); color: var(--muted); letter-spacing: 2px;">VS</div>`;
 
-    $("#heroMatchup").innerHTML = `
-      <div class="hero-crest-box">
-        ${flagA ? `<img src="${esc(flagA)}" alt="${esc(a)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoA)}</span>` : `<span class="hero-crest-mono">${esc(monoA)}</span>`}
-      </div>
-      ${heroScore ? `<div class="hero-score tnum">${esc(heroScore)}</div>` : `<div class="hero-score" style="font-size: clamp(28px, 4.5vw, 50px); color: var(--muted); letter-spacing: 2px;">VS</div>`}
-      <div class="hero-crest-box">
-        ${flagB ? `<img src="${esc(flagB)}" alt="${esc(b)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoB)}</span>` : `<span class="hero-crest-mono">${esc(monoB)}</span>`}
-      </div>
-    `;
+      return `
+        <div class="hero-slide" data-slide-index="${idx}">
+          <div class="hero-slide-grid">
+            <div class="hero-content">
+              <div class="hero-badges">
+                ${liveBadge}
+                <span class="hero-badge-league">${esc(league)}</span>
+                <span class="hero-badge-quality">1080p 60FPS</span>
+                <span class="hero-badge-servers">⚡ ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
+              </div>
+              <div class="hero-matchup">
+                <div class="hero-crest-box">
+                  ${flagA ? `<img src="${esc(flagA)}" alt="${esc(a)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoA)}</span>` : `<span class="hero-crest-mono">${esc(monoA)}</span>`}
+                </div>
+                ${scoreHtml}
+                <div class="hero-crest-box">
+                  ${flagB ? `<img src="${esc(flagB)}" alt="${esc(b)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoB)}</span>` : `<span class="hero-crest-mono">${esc(monoB)}</span>`}
+                </div>
+              </div>
+              <h2 class="hero-title">${esc(a)} <span style="color:var(--muted);font-weight:600">vs</span> ${esc(b)}</h2>
+            </div>
+            <div class="hero-actions">
+              <button class="hero-play-btn" data-hero-play="${idx}">${live ? "▶ WATCH LIVE" : "▶ VIEW STREAM"}</button>
+              <button class="hero-share-btn" data-hero-share="${esc(slug)}">🔗 Share match link</button>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join("");
 
-    $("#heroTitle").innerHTML = `${esc(a)} <span style="color:var(--muted);font-weight:600">vs</span> ${esc(b)}`;
+    dotsBox.innerHTML = heroMatchesList.map((_, idx) => {
+      return `<button class="hero-dot ${idx === currentHeroIndex ? "active" : ""}" data-hero-dot="${idx}" aria-label="Slide ${idx + 1}"></button>`;
+    }).join("");
 
-    $("#heroActions").innerHTML = `
-      <button class="hero-play-btn" id="heroPlayBtn">▶ WATCH LIVE</button>
-      <button class="hero-share-btn" id="heroShareBtn">🔗 Share match link</button>
-    `;
+    track.querySelectorAll("[data-hero-play]").forEach(btn => {
+      btn.onclick = () => {
+        const idx = Number(btn.dataset.heroPlay);
+        const match = heroMatchesList[idx];
+        if (match) openMatch(match, 0);
+      };
+    });
 
-    $("#heroPlayBtn").onclick = () => openMatch(hero, 0);
-    $("#heroShareBtn").onclick = () => {
-      const url = `${location.origin}/player/?match=${encodeURIComponent(slug)}-ser1`;
-      if (navigator.clipboard) {
-        navigator.clipboard.writeText(url).then(() => showToast("Match link copied to clipboard!"));
-      } else {
-        showToast("Match link: " + url);
+    track.querySelectorAll("[data-hero-share]").forEach(btn => {
+      btn.onclick = () => {
+        const slug = btn.dataset.heroShare;
+        const url = `${location.origin}/player/?match=${encodeURIComponent(slug)}-ser1`;
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(url).then(() => showToast("Match link copied to clipboard!"));
+        } else {
+          showToast("Match link: " + url);
+        }
+      };
+    });
+
+    dotsBox.querySelectorAll("[data-hero-dot]").forEach(dot => {
+      dot.onclick = () => {
+        goToHeroSlide(Number(dot.dataset.heroDot));
+      };
+    });
+
+    goToHeroSlide(currentHeroIndex || 0);
+    startHeroAutoPlay();
+    heroBox.style.display = "block";
+  }
+
+  function goToHeroSlide(idx) {
+    if (!heroMatchesList.length) return;
+    currentHeroIndex = (idx + heroMatchesList.length) % heroMatchesList.length;
+    const track = $("#heroSliderTrack");
+    if (track) {
+      track.style.transform = `translateX(-${currentHeroIndex * 100}%)`;
+    }
+    const dots = document.querySelectorAll(".hero-dot");
+    dots.forEach((d, i) => {
+      d.classList.toggle("active", i === currentHeroIndex);
+    });
+  }
+
+  function nextHeroSlide() {
+    goToHeroSlide(currentHeroIndex + 1);
+  }
+
+  function prevHeroSlide() {
+    goToHeroSlide(currentHeroIndex - 1);
+  }
+
+  function startHeroAutoPlay() {
+    stopHeroAutoPlay();
+    if (heroMatchesList.length > 1) {
+      heroAutoPlayTimer = setInterval(nextHeroSlide, 5000);
+    }
+  }
+
+  function stopHeroAutoPlay() {
+    if (heroAutoPlayTimer) {
+      clearInterval(heroAutoPlayTimer);
+      heroAutoPlayTimer = null;
+    }
+  }
+
+  const prevBtn = $("#heroPrevBtn");
+  const nextBtn = $("#heroNextBtn");
+  if (prevBtn) prevBtn.onclick = () => { prevHeroSlide(); startHeroAutoPlay(); };
+  if (nextBtn) nextBtn.onclick = () => { nextHeroSlide(); startHeroAutoPlay(); };
+
+  const heroBox = $("#heroSpotlight");
+  if (heroBox) {
+    heroBox.addEventListener("mouseenter", stopHeroAutoPlay);
+    heroBox.addEventListener("mouseleave", startHeroAutoPlay);
+
+    let touchStartX = 0;
+    heroBox.addEventListener("touchstart", e => {
+      stopHeroAutoPlay();
+      touchStartX = e.changedTouches[0].screenX;
+    }, { passive: true });
+
+    heroBox.addEventListener("touchend", e => {
+      const touchEndX = e.changedTouches[0].screenX;
+      if (touchStartX - touchEndX > 45) {
+        nextHeroSlide();
+      } else if (touchEndX - touchStartX > 45) {
+        prevHeroSlide();
       }
-    };
-
-    heroBox.style.display = "grid";
+      startHeroAutoPlay();
+    }, { passive: true });
   }
 
   function getFiltered(){
@@ -1801,7 +2031,7 @@ a { color: inherit; text-decoration: none; }
       const timeStr = data.last_update_time ? `● Updated ${data.last_update_time}` : `● Live sync active`;
       $("#statUpdated").textContent = timeStr;
 
-      renderHeroSpotlight(allMatches);
+      renderHeroSlider(allMatches);
       renderCategories();
       render();
     } catch (err) {
