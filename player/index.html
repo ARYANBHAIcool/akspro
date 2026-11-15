@@ -11,7 +11,7 @@
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
 <link rel="apple-touch-icon" sizes="180x180" href="/assets/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
 <script src="https://cdn.jwplayer.com/libraries/IDzF9Zmk.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/shaka-player/4.7.11/shaka-player.ui.min.js"></script>
@@ -35,7 +35,7 @@
 html,body{
   width:100%;height:100%;min-height:100%;margin:0;padding:0;
   overflow:hidden;background:#000;color:var(--text);
-  font:15px/1.4 "Inter",system-ui,-apple-system,sans-serif;
+  font:14px/1.4 "Outfit","Inter",system-ui,-apple-system,sans-serif;
   user-select:none;-webkit-tap-highlight-color:transparent;
 }
 .player-shell,.engine-container{
@@ -212,23 +212,38 @@ html,body{
 }
 .player-message.show{display:block}
 
-/* Unmute floating banner */
+/* Broadcast Audio Unmute Banner */
 .unmute-banner{
-  position:fixed;top:clamp(64px, 11vh, 88px);left:50%;transform:translateX(-50%);
-  z-index:9500;pointer-events:auto;animation:pulseUnmute 2s infinite ease-in-out;
+  position:fixed;top:clamp(60px,12vh,90px);left:50%;transform:translateX(-50%);
+  z-index:9500;pointer-events:auto;animation:pulseUnmute 2.4s infinite ease-in-out;
 }
 @keyframes pulseUnmute{
-  0%,100%{transform:translateX(-50%) scale(1)}
-  50%{transform:translateX(-50%) scale(1.05)}
+  0%,100%{transform:translateX(-50%) scale(1);box-shadow:0 12px 35px rgba(0,0,0,0.7),0 0 20px rgba(232,180,74,0.25)}
+  50%{transform:translateX(-50%) scale(1.03);box-shadow:0 16px 45px rgba(0,0,0,0.85),0 0 30px rgba(232,180,74,0.45)}
 }
 .unmute-btn{
-  background:linear-gradient(135deg,var(--brass),#d97706);
-  color:#080c14;border:1px solid rgba(255,255,255,0.4);border-radius:30px;
-  padding:12px 26px;font:800 16px/1 "Barlow Condensed",sans-serif;
-  letter-spacing:.6px;display:inline-flex;align-items:center;gap:8px;
-  cursor:pointer;box-shadow:0 8px 30px rgba(0,0,0,0.6);transition:all .15s;
+  background:rgba(10,15,26,0.94);color:#f8fafc;
+  border:1px solid rgba(232,180,74,0.6);border-radius:999px;
+  padding:8px 18px 8px 10px;font:700 13px/1 "Outfit",sans-serif;
+  letter-spacing:.3px;display:inline-flex;align-items:center;gap:10px;
+  cursor:pointer;backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);
+  transition:all .2s ease;
 }
-.unmute-btn:hover{background:#fff;transform:scale(1.04)}
+.unmute-btn:hover{
+  background:rgba(18,25,42,0.98);border-color:#e8b44a;transform:scale(1.03);
+}
+.unmute-icon-ring{
+  width:30px;height:30px;border-radius:50%;
+  background:linear-gradient(135deg,var(--brass),#d97706);
+  display:grid;place-items:center;color:#080c14;flex-shrink:0;
+}
+.unmute-svg{width:16px;height:16px;stroke:#080c14;fill:none}
+.unmute-text{font-size:13px;font-weight:700;color:#fff;white-space:nowrap}
+.unmute-pill{
+  font-size:9.5px;font-weight:800;background:rgba(232,180,74,0.2);
+  color:var(--brass);border:1px solid rgba(232,180,74,0.4);border-radius:4px;
+  padding:2px 6px;letter-spacing:.5px;line-height:1;
+}
 
 /* Slide-out Quick Server Drawer */
 .drawer-backdrop {
@@ -274,10 +289,10 @@ html,body{
   margin-bottom: 8px;
 }
 .drawer-title {
-  font-family: "Barlow Condensed", sans-serif;
-  font-size: 22px;
+  font-family: "Outfit", sans-serif;
+  font-size: 17px;
   font-weight: 800;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.4px;
   margin: 0;
   color: #fff;
 }
@@ -291,8 +306,9 @@ html,body{
   display: grid;
   place-items: center;
   cursor: pointer;
+  transition: all .15s;
 }
-.drawer-close-btn:hover { background: rgba(255, 255, 255, 0.18); }
+.drawer-close-btn:hover { background: rgba(255, 255, 255, 0.18); color: var(--brass); }
 .drawer-desc {
   font-size: 12px;
   color: var(--muted);
@@ -312,32 +328,86 @@ html,body{
   width: 100%;
   padding: 12px 14px;
   border: 1px solid rgba(255, 255, 255, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   background: rgba(255, 255, 255, 0.03);
   color: #fff;
   font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   text-align: left;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
 }
 .drawer-item:hover {
   border-color: var(--brass);
   background: rgba(232, 180, 74, 0.12);
-  color: var(--brass);
+  color: #fff;
 }
 .drawer-item.active {
   border-color: var(--brass);
   background: rgba(232, 180, 74, 0.18);
+  color: #fff;
+  box-shadow: 0 0 12px rgba(232, 180, 74, 0.2);
+}
+.drawer-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.drawer-bolt {
   color: var(--brass);
+  display: grid;
+  place-items: center;
+}
+.drawer-item-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.drawer-item-name {
+  font-size: 13.5px;
+  font-weight: 700;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.drawer-item-meta {
+  font-size: 11px;
+  color: var(--muted);
+}
+.drawer-item-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
 }
 .drawer-tag {
   font-size: 10px;
-  padding: 2px 7px;
-  border-radius: 6px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 4px;
   background: rgba(255, 255, 255, 0.08);
   color: var(--muted);
   text-transform: uppercase;
+}
+.drawer-active-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 10px;
+  font-weight: 800;
+  color: #22c55e;
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+.active-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #22c55e;
 }
 
 /* Modal Selector */
@@ -371,15 +441,57 @@ html,body{
 
 .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:11px 20px;background:rgba(14,21,36,0.95);border:1px solid var(--brass);color:#fff;border-radius:10px;font-size:13px;z-index:10002;display:none;box-shadow:0 10px 40px rgba(0,0,0,0.7)}
 
-@media(max-width:700px){
-  .player-logo-text{display:none}
-  .brand-pill{display:none}
-  .event-title{font-size:14px;max-width:140px}
-  .stream-label{font-size:11px;max-width:140px}
-  .back-btn{padding:6px 9px;font-size:12px}
-  .action-btn{padding:6px 9px;font-size:11px}
-  .video-fit-btn{min-width:82px}
-  #shareBtnText{display:none}
+@media(max-width:720px){
+  .top-nav {
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .nav-left {
+    gap: 8px;
+    max-width: 48%;
+  }
+  .btn-back span { display: none; }
+  .btn-back { padding: 0 9px; }
+  .event-title {
+    font-size: 13px;
+    max-width: 130px;
+  }
+  .stream-label {
+    display: none;
+  }
+  .server-active-pill {
+    font-size: 10px;
+    padding: 1px 5px;
+  }
+  .nav-right {
+    gap: 6px;
+  }
+  .btn-ctrl-servers {
+    padding: 0 9px;
+    height: 34px;
+    font-size: 12px;
+  }
+  .quick-actions-group {
+    gap: 4px;
+  }
+  .btn-ctrl-icon {
+    width: 34px;
+    height: 34px;
+    padding: 0;
+    justify-content: center;
+  }
+  .btn-label-desktop {
+    display: none;
+  }
+  .ctrl-svg {
+    width: 15px;
+    height: 15px;
+  }
+}
+@media(max-width:400px){
+  .event-title { max-width: 95px; }
+  .btn-ctrl-servers span:not(.server-count-badge) { display: none; }
+  .btn-ctrl-servers { padding: 0 8px; }
 }
 </style>
 </head>
@@ -403,36 +515,70 @@ html,body{
   <div id="jw-container" class="engine-container" aria-label="JW HLS player"></div>
   <div id="iframe-container" class="engine-container"></div>
 
-  <!-- Header Overlay -->
+  <!-- Broadcast Header Overlay -->
   <header class="top-nav" id="topNav">
     <div class="nav-left">
-      <a href="/" class="back-btn" id="backBtn" title="Back to All Matches">← Matches</a>
-      <a href="/" class="brand-pill" title="Aryan Streams">
-        <img src="/assets/img/logo-icon.png" alt="Aryan Streams Icon" class="player-logo-icon">
-        <img src="/assets/img/logo-text.png" alt="Aryan Streams" class="player-logo-text">
-        <span class="player-live-badge">LIVE</span>
+      <a href="/" class="btn-ctrl btn-back" id="backBtn" title="Back to All Matches">
+        <svg viewBox="0 0 24 24" class="ctrl-svg" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg>
+        <span>Matches</span>
       </a>
-      <div class="event-info">
-        <div style="display:flex;align-items:center;gap:6px">
+      <div class="match-meta-pill">
+        <div class="match-title-row">
           <span class="event-title" id="displayTitle">Live Stream</span>
-          <span class="server-badge-pill" id="serverBadgePill">S1</span>
+          <span class="live-pill"><span class="live-dot-pulse"></span> LIVE</span>
         </div>
-        <span class="stream-label" id="displaySubtitle">Connecting…</span>
+        <div class="match-sub-row">
+          <span class="server-active-pill" id="serverBadgePill">Server 1</span>
+          <span class="stream-label" id="displaySubtitle">Connecting…</span>
+        </div>
       </div>
     </div>
-    <div class="nav-right">
-      <button class="action-btn action-btn-servers" id="serverPickerBtn" type="button" style="display:none">⚡ Servers</button>
-      <button class="action-btn" id="reloadBtn" type="button" title="Reconnect stream">🔄</button>
-      <button class="action-btn" id="pipBtn" type="button" title="Picture in Picture">🖼️ <span class="btn-text">PiP</span></button>
-      <button class="action-btn" id="shareBtn" type="button" title="Share Match Link">🔗 <span id="shareBtnText">Share</span></button>
-      <button class="action-btn video-fit-btn" id="videoFitBtn" type="button" title="Aspect ratio">FIT: CONTAIN</button>
+
+    <div class="nav-right" id="navRight">
+      <!-- Servers Switcher Pill (Gold Highlight) -->
+      <button class="btn-ctrl btn-ctrl-servers" id="serverPickerBtn" type="button" style="display:none" title="Choose Video Server">
+        <svg viewBox="0 0 24 24" class="ctrl-svg bolt-svg" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        <span>Servers</span>
+        <span class="server-count-badge" id="serverCountBadge">1</span>
+      </button>
+
+      <!-- Quick Action Controls -->
+      <div class="quick-actions-group">
+        <button class="btn-ctrl btn-ctrl-icon" id="reloadBtn" type="button" title="Reload / Reconnect Feed">
+          <svg viewBox="0 0 24 24" class="ctrl-svg reload-icon" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 0 1 15-6.7L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-15 6.7L3 16"/><path d="M3 21v-5h5"/></svg>
+          <span class="btn-label-desktop">Reload</span>
+        </button>
+
+        <button class="btn-ctrl btn-ctrl-icon" id="pipBtn" type="button" title="Picture-in-Picture Mini Player">
+          <svg viewBox="0 0 24 24" class="ctrl-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="14" x="3" y="5" rx="2"/><rect width="6" height="4" x="13" y="13" rx="1"/></svg>
+          <span class="btn-label-desktop">PiP</span>
+        </button>
+
+        <button class="btn-ctrl btn-ctrl-icon" id="videoFitBtn" type="button" title="Cycle Aspect Ratio (Contain / Fill / Stretch)">
+          <svg viewBox="0 0 24 24" class="ctrl-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+          <span class="btn-label-desktop" id="fitModeText">Fit</span>
+        </button>
+
+        <button class="btn-ctrl btn-ctrl-icon" id="shareBtn" type="button" title="Copy Match Link">
+          <svg viewBox="0 0 24 24" class="ctrl-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+          <span class="btn-label-desktop">Share</span>
+        </button>
+      </div>
     </div>
   </header>
 
-  <!-- Tap to Unmute Banner -->
+  <!-- Broadcast Audio Unmute Banner -->
   <div class="unmute-banner" id="unmuteBanner" style="display:none">
-    <button class="unmute-btn" id="unmuteBtn" type="button">
-      <span>🔊</span> Tap anywhere to Unmute
+    <button class="unmute-btn" id="unmuteBtn" type="button" aria-label="Tap to unmute live sound">
+      <div class="unmute-icon-ring">
+        <svg viewBox="0 0 24 24" class="unmute-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/>
+          <path d="M15.54 8.46a5 5 0 0 1 0 7.07"/>
+          <path d="M19.07 4.93a10 10 0 0 1 0 14.14"/>
+        </svg>
+      </div>
+      <span class="unmute-text">Tap anywhere to Unmute</span>
+      <span class="unmute-pill">LIVE AUDIO</span>
     </button>
   </div>
 
@@ -444,11 +590,13 @@ html,body{
 <div class="drawer-backdrop" id="drawerBackdrop"></div>
 <aside class="server-drawer" id="serverDrawer">
   <div class="drawer-header">
-    <div style="display:flex;align-items:center;gap:8px">
-      <span style="color:var(--brass);font-size:18px">⚡</span>
+    <div style="display:flex;align-items:center;gap:10px">
+      <svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor" style="color:var(--brass)"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
       <h3 class="drawer-title">STREAM SERVERS</h3>
     </div>
-    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close servers drawer">✕</button>
+    <button class="drawer-close-btn" id="drawerCloseBtn" aria-label="Close servers drawer">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
   </div>
   <p class="drawer-desc">Switch between verified high-definition feeds instantly:</p>
   <div class="drawer-list" id="drawerServersList"></div>
@@ -459,7 +607,7 @@ html,body{
   <div class="modal-card">
     <div class="modal-header">
       <h3 class="modal-title">Select Stream Server</h3>
-      <button class="close-btn" id="modalCloseBtn" aria-label="Close">✕</button>
+      <button class="close-btn" id="modalCloseBtn" aria-label="Close"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
     </div>
     <div id="serversList"></div>
   </div>
@@ -607,7 +755,7 @@ html,body{
         const cleanSearch = `?match=${encodeURIComponent(slug)}-ser${serverNum}`;
         window.history.replaceState(null, "", `${location.pathname}${cleanSearch}`);
       }
-      if (serverBadgePill) serverBadgePill.textContent = "S" + serverNum;
+      if (serverBadgePill) serverBadgePill.textContent = "Server " + serverNum;
     } catch (_) {}
   }
 
@@ -650,9 +798,9 @@ html,body{
   }
 
   const FIT_MODES = [
-    { key: "contain", label: "FIT: CONTAIN", hint: "Show full frame with letterbox" },
-    { key: "cover", label: "FIT: COVER", hint: "Fill screen, crop edges" },
-    { key: "stretch", label: "FIT: STRETCH", hint: "Stretch video to fill full viewport" }
+    { key: "contain", label: "Fit", hint: "Fit frame (letterbox)" },
+    { key: "cover", label: "Fill", hint: "Fill viewport (crop)" },
+    { key: "stretch", label: "Stretch", hint: "Stretch frame" }
   ];
 
   function applyFitMode(index) {
@@ -664,7 +812,8 @@ html,body{
       if (mode.key === "cover") el.classList.add("full-cover");
       if (mode.key === "stretch") el.classList.add("full-stretch");
     });
-    fitButton.textContent = mode.label;
+    const fitText = document.getElementById("fitModeText");
+    if (fitText) fitText.textContent = mode.label;
     fitButton.title = mode.hint;
 
     const jwVideo = jwContainer.querySelector("video");
@@ -794,7 +943,7 @@ html,body{
       if (jwVid) jwVid.muted = false;
     } catch (_) {}
     if (unmuteBanner) unmuteBanner.style.display = "none";
-    showToast("🔊 Audio Unmuted");
+    showToast("Audio Unmuted");
   }
 
   if (unmuteBtn) {
@@ -909,7 +1058,7 @@ html,body{
     }
 
     hideLoader();
-    showMessage("Stream unavailable. Click '⚡ Servers' to select another source.");
+    showMessage("Stream unavailable. Click 'Servers' to select another source.");
     openDrawer();
   }
 
@@ -1071,7 +1220,7 @@ html,body{
       if (!hasPlayedSuccessfully) {
         triggerAutoFailover(`DASH stream error (${code})`);
       } else {
-        showToast("Stream signal paused. Click ⚡ Servers to reconnect.");
+        showToast("Stream signal paused. Click Servers to reconnect.");
       }
     });
 
@@ -1152,6 +1301,8 @@ html,body{
     const streams = customStreams || await getAvailableStreams();
     if (streams.length > 1) {
       serverPickerBtn.style.display = "inline-flex";
+      const countBadge = document.getElementById("serverCountBadge");
+      if (countBadge) countBadge.textContent = streams.length;
 
       const renderServerItems = (isDrawer = true) => {
         return streams.map((s, idx) => {
@@ -1162,7 +1313,7 @@ html,body{
           const cls = isDrawer ? "drawer-item" : "server-item";
           const tagCls = isDrawer ? "drawer-tag" : "server-tag";
           return `<button class="${cls} ${active}" data-idx="${idx}">
-            <span>⚡ ${esc(name)}</span>
+            <span><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="color:var(--brass);vertical-align:-1px;margin-right:6px"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>${esc(name)}</span>
             <span class="${tagCls}">${isDash ? "DASH (DRM)" : "HLS HD"}</span>
           </button>`;
         }).join("");
@@ -1254,7 +1405,7 @@ html,body{
             drawerServersList.innerHTML = chList.map((ch, idx) => {
               const active = ch.id === activeId || ch.url === currentActiveUrl ? "active" : "";
               return `<button class="drawer-item ${active}" data-id="${ch.id}">
-                <span>${ch.icon || '⚡'} ${esc(ch.name)}</span>
+                <span><svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor" style="color:var(--brass);vertical-align:-1px;margin-right:6px"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>${esc(ch.name)}</span>
                 <span class="drawer-tag">${ch.category || 'Sports'}</span>
               </button>`;
             }).join("");

@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#080c14">
 <title>AryanStreams — Live Sports Command Center</title>
-<meta name="description" content="Watch ad-free live sports streams in HD. Football, Cricket, Basketball, MMA, Formula 1, Tennis, and 24/7 TV channels on AryanStreams!">
+<meta name="description" content="Watch ad-free live sports streams in HD. Watch ad-free live sports streams in HD. Live Cricket, Football, Basketball, Formula 1, Tennis, MMA and more on AryanStreams!">
 <link rel="icon" type="image/x-icon" href="/favicon.ico">
 <link rel="icon" type="image/png" sizes="32x32" href="/assets/favicon-32x32.png">
 <link rel="icon" type="image/png" sizes="16x16" href="/assets/favicon-16x16.png">
@@ -15,7 +15,7 @@
 <link rel="manifest" href="/assets/site.webmanifest">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800;900&family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
 :root {
   color-scheme: dark;
@@ -42,7 +42,7 @@ body {
   background-color: var(--bg);
   background-image: var(--gradient-hero), repeating-linear-gradient(90deg, transparent 0 79px, rgba(255, 255, 255, 0.015) 79px 80px);
   color: var(--text);
-  font: 15px/1.5 "Inter", system-ui, -apple-system, sans-serif;
+  font: 15px/1.5 "Outfit", "Inter", system-ui, -apple-system, sans-serif;
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
 }
@@ -55,6 +55,81 @@ a { color: inherit; text-decoration: none; }
 .glass { background: var(--bg-card); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); border: 1px solid var(--border); }
 .no-scrollbar { scrollbar-width: none; }
 .no-scrollbar::-webkit-scrollbar { display: none; }
+
+
+.dock-svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  display: block;
+}
+.dock-mobile-svg {
+  width: 20px;
+  height: 20px;
+  stroke: currentColor;
+  margin-bottom: 2px;
+  display: block;
+}
+.hud-btn-svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  flex-shrink: 0;
+}
+.ticker-svg {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 4px;
+}
+.ticker-svg.bolt {
+  fill: var(--gold);
+  stroke: none;
+}
+.sport-chip-svg {
+  width: 15px;
+  height: 15px;
+  stroke: currentColor;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: -2px;
+}
+.server-chip-svg {
+  width: 12px;
+  height: 12px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+.badge-hot-svg {
+  width: 11px;
+  height: 11px;
+  fill: currentColor;
+  flex-shrink: 0;
+}
+.hero-svg-icon {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  vertical-align: -1px;
+}
+.hero-svg-bolt { fill: var(--gold); stroke: none; }
+.hero-svg-play { fill: #080c14; stroke: none; }
+.hero-svg-share { stroke: currentColor; fill: none; }
+.fav-star-svg {
+  width: 16px;
+  height: 16px;
+  stroke: currentColor;
+  stroke-width: 2;
+  fill: none;
+  transition: all 0.15s ease;
+}
+.fav-btn.active .fav-star-svg {
+  fill: var(--gold);
+  stroke: var(--gold);
+}
 
 /* Radar Live Dot */
 @keyframes radar {
@@ -1156,25 +1231,22 @@ a { color: inherit; text-decoration: none; }
   </a>
   <nav class="dock-nav" id="dockNav">
     <button class="dock-item" data-view="live" title="Live Matches Center">
-      <span class="dock-item-icon">⚡</span>
+      <span class="dock-item-icon"><svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.93 4.93a10 10 0 0 1 14.14 0"/><path d="M7.76 7.76a6 6 0 0 1 8.48 0"/><circle cx="12" cy="12" r="2"/></svg></span>
       <span class="dock-item-label">Live Center</span>
     </button>
     <button class="dock-item active" data-view="all" title="All Sports Matches">
-      <span class="dock-item-icon">🏆</span>
+      <span class="dock-item-icon"><svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg></span>
       <span class="dock-item-label">All Sports</span>
     </button>
     <button class="dock-item" data-view="schedule" title="Match Schedule">
-      <span class="dock-item-icon">📅</span>
+      <span class="dock-item-icon"><svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg></span>
       <span class="dock-item-label">Schedule</span>
     </button>
     <button class="dock-item" data-view="favs" title="Favorite Matches">
-      <span class="dock-item-icon">⭐</span>
+      <span class="dock-item-icon"><svg class="dock-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></span>
       <span class="dock-item-label">Favorites</span>
     </button>
-    <a href="/tv/" class="dock-item" title="24/7 TV Channels">
-      <span class="dock-item-icon">📺</span>
-      <span class="dock-item-label">24/7 TV</span>
-    </a>
+
   </nav>
   <div class="dock-footer">
     <div class="dock-footer-dot"></div>
@@ -1185,25 +1257,22 @@ a { color: inherit; text-decoration: none; }
 <!-- Mobile Bottom Dock -->
 <nav class="dock-mobile" id="dockMobile" aria-label="Mobile Navigation">
   <button class="dock-mobile-item" data-view="live">
-    <span>⚡</span>
+    <svg viewBox="0 0 24 24" class="dock-mobile-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4.93 4.93a10 10 0 0 1 14.14 0"/><path d="M7.76 7.76a6 6 0 0 1 8.48 0"/><circle cx="12" cy="12" r="2"/></svg>
     <span>Live</span>
   </button>
   <button class="dock-mobile-item active" data-view="all">
-    <span>🏆</span>
+    <svg viewBox="0 0 24 24" class="dock-mobile-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
     <span>All</span>
   </button>
   <button class="dock-mobile-item" data-view="schedule">
-    <span>📅</span>
+    <svg viewBox="0 0 24 24" class="dock-mobile-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg>
     <span>Schedule</span>
   </button>
   <button class="dock-mobile-item" data-view="favs">
-    <span>⭐</span>
+    <svg viewBox="0 0 24 24" class="dock-mobile-svg" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
     <span>Favs</span>
   </button>
-  <a href="/tv/" class="dock-mobile-item">
-    <span>📺</span>
-    <span>TV</span>
-  </a>
+
 </nav>
 
 <!-- Main Wrapper -->
@@ -1223,8 +1292,8 @@ a { color: inherit; text-decoration: none; }
       </div>
 
       <div class="hud-actions">
-        <a href="/tv/" class="hud-btn" title="Watch 200+ 24/7 Sports TV Channels">📺 24/7 TV</a>
-        <button id="pwaInstallBtn" class="hud-btn hud-btn-primary" type="button" style="display:none" title="Install AryanStreams Web App">📱 Install App</button>
+        
+        <button id="pwaInstallBtn" class="hud-btn hud-btn-primary" type="button" style="display:none" title="Install AryanStreams Web App"><svg class="hud-btn-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="20" x="5" y="2" rx="2" ry="2"/><path d="M12 18h.01"/></svg><span>Install App</span></button>
         <a href="https://t.me/AryanStreams" target="_blank" rel="noopener noreferrer" class="hud-btn hud-btn-telegram" title="Join Telegram Channel">
           <svg class="telegram-svg" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/></svg>
           Telegram
@@ -1243,10 +1312,10 @@ a { color: inherit; text-decoration: none; }
           <span class="live-dot"></span> <strong id="statLive">—</strong> Live now
         </div>
         <div class="ticker-item" id="tickerUpcoming" title="Filter upcoming matches">
-          <span>📅</span> <strong id="statUpcoming">—</strong> Upcoming
+          <svg class="ticker-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="4" rx="2"/><line x1="16" x2="16" y1="2" y2="6"/><line x1="8" x2="8" y1="2" y2="6"/><line x1="3" x2="21" y1="10" y2="10"/></svg> <strong id="statUpcoming">—</strong> Upcoming
         </div>
         <div class="ticker-item" id="tickerServers" title="Total active stream servers">
-          <span>⚡</span> <strong id="statServers">—</strong> Servers online
+          <svg class="ticker-svg bolt" viewBox="0 0 24 24" fill="currentColor"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> <strong id="statServers">—</strong> Servers online
         </div>
         <div class="ticker-updated" id="statUpdated">● Connecting…</div>
       </div>
@@ -1263,15 +1332,15 @@ a { color: inherit; text-decoration: none; }
         <div class="hero-slider-track" id="heroSliderTrack"></div>
       </div>
 
-      <button class="hero-nav-btn hero-prev-btn" id="heroPrevBtn" aria-label="Previous match" title="Previous featured match">‹</button>
-      <button class="hero-nav-btn hero-next-btn" id="heroNextBtn" aria-label="Next match" title="Next featured match">›</button>
+      <button class="hero-nav-btn hero-prev-btn" id="heroPrevBtn" aria-label="Previous match" title="Previous featured match"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button class="hero-nav-btn hero-next-btn" id="heroNextBtn" aria-label="Next match" title="Next featured match"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
 
       <div class="hero-dots" id="heroDots"></div>
     </section>
 
     <!-- Category Filter Chips -->
     <nav class="sport-chips no-scrollbar" id="sportChips" aria-label="Sports Categories">
-      <button class="sport-chip active" data-category="ALL">🏆 All sports</button>
+      <button class="sport-chip active" data-category="ALL"><svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg><span>All sports</span></button>
     </nav>
 
     <!-- Section Heading -->
@@ -1302,7 +1371,7 @@ a { color: inherit; text-decoration: none; }
       <span style="margin-left:8px">· Free High-Definition Sports Streaming. Ad-Free &amp; Verified.</span>
     </div>
     <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
-      <a href="/tv/">24/7 TV Channels</a>
+      
       <a href="https://t.me/AryanStreams" target="_blank" rel="noopener noreferrer">Telegram</a>
       <a href="https://discord.gg/A7nWMzCkVW" target="_blank" rel="noopener noreferrer">Discord</a>
       <a href="#top">Back to top ↑</a>
@@ -1322,27 +1391,30 @@ a { color: inherit; text-decoration: none; }
   const FALLBACK_DATA_URL = "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json";
   const PRIORITY_CATEGORY = "cricket";
 
-  const SPORT_ICONS = {
-    "cricket": "🏏",
-    "football": "⚽",
-    "basketball": "🏀",
-    "american football": "🏈",
-    "motorsports": "🏎️",
-    "hockey": "🏒",
-    "rugby": "🏉",
-    "boxing": "🥊",
-    "mixed martial arts": "🥋",
-    "mma": "🥋",
-    "aussie rules": "🦘",
-    "tennis": "🎾",
-    "baseball": "⚾",
-    "golf": "⛳",
-    "other": "🎯"
+  const SPORT_SVGS = {
+    "all": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>',
+    "cricket": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 8.5-8.5"/><path d="m14 10 3-3a2.12 2.12 0 1 1 3 3l-3 3"/><circle cx="5" cy="5" r="2.5" fill="currentColor"/></svg>',
+    "football": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 7 16 10 14.5 15 9.5 15 8 10 12 7" fill="currentColor"/></svg>',
+    "soccer": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polygon points="12 7 16 10 14.5 15 9.5 15 8 10 12 7" fill="currentColor"/></svg>',
+    "basketball": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2.1 13.4A10 10 0 0 0 13.4 2.1"/><path d="m5 4.9 14 14.2"/><path d="M21.9 10.6a10 10 0 0 0-11.3 11.3"/></svg>',
+    "american football": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/><line x1="10.5" y1="12" x2="12" y2="10.5"/><line x1="12" y1="13.5" x2="13.5" y2="12"/></svg>',
+    "motorsports": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+    "formula 1": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z"/><line x1="4" y1="22" x2="4" y2="15"/></svg>',
+    "hockey": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 3 13 13a4 4 0 0 1-5.66 5.66l-1.41-1.42"/><circle cx="18" cy="6" r="2" fill="currentColor"/></svg>',
+    "rugby": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><ellipse cx="12" cy="12" rx="10" ry="6" transform="rotate(-45 12 12)"/><line x1="8.5" y1="8.5" x2="15.5" y2="15.5"/></svg>',
+    "boxing": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 11V6a3 3 0 0 1 6 0v5"/><path d="M12 11V4a3 3 0 0 1 6 0v7"/><path d="M4 11a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4V8a2 2 0 0 0-2-2h-1"/><path d="M4 11v6a4 4 0 0 0 4 4h8a4 4 0 0 0 4-4v-6"/></svg>',
+    "mixed martial arts": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 20 6.5 20 17.5 12 22 4 17.5 4 6.5 12 2"/></svg>',
+    "mma": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 20 6.5 20 17.5 12 22 4 17.5 4 6.5 12 2"/></svg>',
+    "tennis": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M2 12a10 10 0 0 1 10-10"/><path d="M12 22a10 10 0 0 1 10-10"/></svg>',
+    "baseball": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M6 3.5a10 10 0 0 0 0 17"/><path d="M18 3.5a10 10 0 0 1 0 17"/></svg>',
+    "golf": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 18v-8l6-3-6-3v14"/><circle cx="12" cy="19" r="2"/></svg>',
+    "darts": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2" fill="currentColor"/></svg>',
+    "other": '<svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>'
   };
 
   function getSportIcon(name) {
     const k = String(name || "").toLowerCase().trim();
-    return SPORT_ICONS[k] || "🏆";
+    return SPORT_SVGS[k] || SPORT_SVGS["other"];
   }
 
   function isHotMatch(m) {
@@ -1371,7 +1443,7 @@ a { color: inherit; text-decoration: none; }
       showToast("Removed from favorites");
     } else {
       favs.push(slug);
-      showToast("Pinned to favorites ★");
+      showToast("Pinned to favorites");
     }
     try { localStorage.setItem("as-favs", JSON.stringify(favs)); } catch (_) {}
     render();
@@ -1538,13 +1610,13 @@ a { color: inherit; text-decoration: none; }
       topServers.forEach((s, idx) => {
         let label = (s.channel_name || `Server ${idx + 1}`).trim();
         if (label.length > 16) label = label.slice(0, 14) + "…";
-        serverChipsHtml += `<button class="server-chip" data-direct-server="${index}:${idx}" title="Launch ${esc(s.channel_name || `Server ${idx + 1}`)}">⚡ S${idx + 1}: ${esc(label)}</button>`;
+        serverChipsHtml += `<button class="server-chip" data-direct-server="${index}:${idx}" title="Launch ${esc(s.channel_name || `Server ${idx + 1}`)}"><svg class="server-chip-svg" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> S${idx + 1}: ${esc(label)}</button>`;
       });
       if (streams.length > 3) {
         serverChipsHtml += `<span class="server-chip-more" data-more-servers="${index}">+${streams.length - 3}</span>`;
       }
     } else if (live) {
-      serverChipsHtml = `<span class="server-chip" style="opacity:0.7">⚡ Configuring Feed…</span>`;
+      serverChipsHtml = `<span class="server-chip" style="opacity:0.7"><svg class="server-chip-svg" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> Configuring Feed…</span>`;
     }
 
     const score = m.score || i.score || "";
@@ -1553,8 +1625,8 @@ a { color: inherit; text-decoration: none; }
       <div class="card-header">
         ${live ? `<span class="badge-live"><span class="live-dot"></span> LIVE</span>` : `<span class="badge-upcoming">${esc(timeStr)}</span>`}
         <div class="card-header-right">
-          ${hot ? '<span class="badge-hot">🔥 HOT</span>' : ''}
-          <button class="fav-btn ${isFav ? "active" : ""}" data-fav="${esc(slug)}" aria-label="Pin favorite" title="Favorite Match">${isFav ? "★" : "☆"}</button>
+          ${hot ? '<span class="badge-hot"><svg class="badge-hot-svg" viewBox="0 0 24 24"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg> HOT</span>' : ''}
+          <button class="fav-btn ${isFav ? "active" : ""}" data-fav="${esc(slug)}" aria-label="Pin favorite" title="Favorite Match"><svg class="fav-star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
         </div>
       </div>
       <div class="card-matchup">
@@ -1654,7 +1726,7 @@ a { color: inherit; text-decoration: none; }
                 ${liveBadge}
                 <span class="hero-badge-league">${esc(league)}</span>
                 <span class="hero-badge-quality">1080p 60FPS</span>
-                <span class="hero-badge-servers">⚡ ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
+                <span class="hero-badge-servers"><svg class="hero-svg-icon hero-svg-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
               </div>
               <div class="hero-matchup">
                 <div class="hero-crest-box">
@@ -1668,8 +1740,8 @@ a { color: inherit; text-decoration: none; }
               <h2 class="hero-title">${esc(a)} <span style="color:var(--muted);font-weight:600">vs</span> ${esc(b)}</h2>
             </div>
             <div class="hero-actions">
-              <button class="hero-play-btn" data-hero-play="${idx}">${live ? "▶ WATCH LIVE" : "▶ VIEW STREAM"}</button>
-              <button class="hero-share-btn" data-hero-share="${esc(slug)}">🔗 Share match link</button>
+              <button class="hero-play-btn" data-hero-play="${idx}"><svg class="hero-svg-icon hero-svg-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg> ${live ? "WATCH LIVE" : "VIEW STREAM"}</button>
+              <button class="hero-share-btn" data-hero-share="${esc(slug)}"><svg class="hero-svg-icon hero-svg-share" viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg> Share match link</button>
             </div>
           </div>
         </div>
@@ -1845,7 +1917,7 @@ a { color: inherit; text-decoration: none; }
       b.className = "modal-server-item";
       const isDash = /\.mpd(?:$|\?)/i.test(s.stream_url);
       const sName = (s.channel_name || `Server ${idx + 1}`).trim();
-      b.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><span>⚡ ${esc(sName)}</span><span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:var(--muted)">${isDash ? "DASH (DRM)" : "HLS HD"}</span></div>`;
+      b.innerHTML = `<div style="display:flex;align-items:center;justify-content:space-between"><span><svg class="server-chip-svg" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${esc(sName)}</span><span style="font-size:11px;padding:3px 8px;border-radius:6px;background:rgba(255,255,255,0.08);color:var(--muted)">${isDash ? "DASH (DRM)" : "HLS HD"}</span></div>`;
       b.onclick = () => {
         try {
           sessionStorage.setItem("current_match_streams", JSON.stringify(sources));
@@ -1870,8 +1942,8 @@ a { color: inherit; text-decoration: none; }
 
     // Update section title
     let viewTitle = "ALL MATCHES";
-    if (activeView === "live") viewTitle = "⚡ LIVE MATCHES CENTER";
-    else if (activeView === "schedule") viewTitle = "📅 MATCH SCHEDULE";
+    if (activeView === "live") viewTitle = "LIVE MATCHES CENTER";
+    else if (activeView === "schedule") viewTitle = "MATCH SCHEDULE";
     else if (activeView === "favs") viewTitle = "⭐ FAVORITE MATCHES";
     if (activeCategory !== "ALL") viewTitle += ` · ${activeCategory.toUpperCase()}`;
 
@@ -1885,7 +1957,7 @@ a { color: inherit; text-decoration: none; }
 
     if (!rows.length) {
       if (activeView === "favs") {
-        grid.innerHTML = '<div class="state-box"><strong>No Favorite Matches Pinned</strong><p>Tap ☆ on any match card to pin it to your favorites list.</p></div>';
+        grid.innerHTML = '<div class="state-box"><strong>No Favorite Matches Pinned</strong><p>Tap the star icon on any match card to pin it to your favorites list.</p></div>';
       } else {
         grid.innerHTML = '<div class="state-box"><strong>No Matches Found</strong><p>Try searching for a different team or choose another sport category.</p></div>';
       }
@@ -1896,8 +1968,8 @@ a { color: inherit; text-decoration: none; }
     const rest = rows.filter(r => !isCricket(r.m));
     let html = "";
     if (activeCategory === "ALL" && activeView === "all" && cricket.length && rest.length) {
-      html += `<div class="priority-divider"><h3>🏏 Cricket Priority</h3><small>${cricket.length} event${cricket.length===1?"":"s"}</small></div>` + cricket.map(({m,index}) => cardHtml(m,index)).join("");
-      html += `<div class="priority-divider rest"><h3>🏆 All Sports</h3><small>${rest.length} event${rest.length===1?"":"s"}</small></div>` + rest.map(({m,index}) => cardHtml(m,index)).join("");
+      html += `<div class="priority-divider"><h3><svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 8.5-8.5"/><path d="m14 10 3-3a2.12 2.12 0 1 1 3 3l-3 3"/><circle cx="5" cy="5" r="2.5" fill="currentColor"/></svg> Cricket Priority</h3><small>${cricket.length} event${cricket.length===1?"":"s"}</small></div>` + cricket.map(({m,index}) => cardHtml(m,index)).join("");
+      html += `<div class="priority-divider rest"><h3><svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg> All Sports</h3><small>${rest.length} event${rest.length===1?"":"s"}</small></div>` + rest.map(({m,index}) => cardHtml(m,index)).join("");
     } else {
       html = [...cricket, ...rest].map(({m,index}) => cardHtml(m,index)).join("");
     }
@@ -1957,7 +2029,7 @@ a { color: inherit; text-decoration: none; }
       return ca !== cb ? (ca ? -1 : 1) : a.localeCompare(b);
     });
 
-    const allBtn = `<button class="sport-chip ${activeCategory==="ALL"?"active":""}" data-category="ALL">🏆 All sports <span class="sport-chip-count">(${allMatches.length})</span></button>`;
+    const allBtn = `<button class="sport-chip ${activeCategory==="ALL"?"active":""}" data-category="ALL"><svg class="sport-chip-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg><span>All sports</span> <span class="sport-chip-count">(${allMatches.length})</span></button>`;
     const catBtns = cats.map(c => {
       const icon = getSportIcon(c);
       const cnt = counts[c] || 0;
