@@ -1318,7 +1318,7 @@ html,body{
       // Initial buffer timeout: only triggers if video NEVER started playing after 14 seconds
       if (!hasPlayedSuccessfully && (Date.now() - startTimestamp > timeoutMs)) {
         clearInterval(stallWatchdog);
-        triggerAutoFailover("Initial buffer timeout (no video signal)");
+        clearInterval(stallWatchdog); hideLoader(); showToast("Stream connection taking time. Click 'Servers' to change source.");
       }
     }, 1000);
   }
@@ -1387,14 +1387,56 @@ html,body{
     openDrawer();
   }
 
-  function clearJW() {
+  async function stopAllEngines() {
     clearTimeout(retryTimer);
     clearInterval(stallWatchdog);
-    if (jwPlayer && typeof jwPlayer.remove === "function") {
-      try { jwPlayer.remove(); } catch (_) {}
+
+    // 1. Destroy and clear Shaka Player
+    if (shakaPlayer) {
+      try { await shakaPlayer.unload(); } catch (_) {}
+      try { await shakaPlayer.destroy(); } catch (_) {}
+      shakaPlayer = null;
     }
-    jwPlayer = null;
-    jwContainer.innerHTML = "";
+    if (shakaUi) {
+      try { shakaUi.destroy(); } catch (_) {}
+      shakaUi = null;
+    }
+    if (shakaVideo) {
+      try {
+        shakaVideo.pause();
+        shakaVideo.removeAttribute("src");
+        shakaVideo.load();
+      } catch (_) {}
+    }
+
+    // 2. Destroy and clear JW Player
+    if (jwPlayer) {
+      try {
+        if (typeof jwPlayer.stop === "function") jwPlayer.stop();
+        if (typeof jwPlayer.remove === "function") jwPlayer.remove();
+      } catch (_) {}
+      jwPlayer = null;
+    }
+    if (jwContainer) {
+      const vids = jwContainer.querySelectorAll("video, audio");
+      vids.forEach(v => {
+        try { v.pause(); v.src = ""; v.load(); } catch (_) {}
+      });
+      jwContainer.innerHTML = "";
+    }
+
+    // 3. Clear any active iframe
+    if (iframeContainer) {
+      const iframes = iframeContainer.querySelectorAll("iframe");
+      iframes.forEach(f => {
+        try { f.src = "about:blank"; } catch (_) {}
+      });
+      iframeContainer.innerHTML = "";
+    }
+  }
+
+  function clearJW() {
+    stopAllEngines();
   }
 
   function startJW(url) {
@@ -1584,6 +1626,8 @@ html,body{
       showMessage("Invalid stream URL provided.");
       return;
     }
+
+    await stopAllEngines();
 
     currentActiveUrl = cleanUrl;
     hasPlayedSuccessfully = false;
