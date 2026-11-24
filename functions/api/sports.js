@@ -9,6 +9,7 @@
  */
 
 const UPSTREAM_MIRRORS = [
+    "https://raw.githubusercontent.com/ARYANBHAIcool/akspro/main/data/Sports_data.json",
     "https://raw.githubusercontent.com/sm-monirulislam/Upcoming-and-Live-Sports-Data/main/Sports_data.json",
     "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json"
 ];
