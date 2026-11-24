@@ -2092,10 +2092,80 @@ a { color: inherit; text-decoration: none; }
       let data = null;
       try {
         const res = await fetch(PRIMARY_DATA_URL, { cache: "no-store" });
-        if (res.ok) data = await res.json();
+        if (res.ok) {
+          const json = await res.json();
+          const list = Array.isArray(json) ? json : (Array.isArray(json?.matches) ? json.matches : []);
+          if (list.length > 0) data = json;
+        }
       } catch (_) {}
 
-      if (!data || (!Array.isArray(data) && !Array.isArray(data.matches))) {
+      // Secondary client-side fallback: direct multi-feed fetch if /api/sports was empty or unreachable
+      if (!data) {
+        try {
+          const results = await Promise.allSettled([
+            fetch("https://sonujson-v6.pages.dev/Data/events/football.json", { cache: "no-store" }).then(r => r.json()),
+            fetch("https://sonujson-v6.pages.dev/Data/events/cricket.json", { cache: "no-store" }).then(r => r.json())
+          ]);
+          const fb = results[0].status === 'fulfilled' ? results[0].value : null;
+          const cric = results[1].status === 'fulfilled' ? results[1].value : null;
+          const fallbackMatches = [];
+          const seen = new Set();
+
+          const addSonu = (obj, cat) => {
+            if (!obj || !Array.isArray(obj.events)) return;
+            for (const ev of obj.events) {
+              if (!ev || !ev.title) continue;
+              const norm = ev.title.trim().toLowerCase();
+              if (seen.has(norm)) continue;
+              seen.add(norm);
+              const streams = (ev.streams || []).map((s, idx) => {
+                let kid = '', key = '';
+                if (typeof s.api === 'string' && s.api.includes(':')) {
+                  const p = s.api.split(':');
+                  kid = p[0].trim(); key = p[1].trim();
+                }
+                return {
+                  channel_name: s.title || ("Server " + (idx + 1)),
+                  stream_url: s.link || s.url || '',
+                  kid: kid || s.kid || '',
+                  key: key || s.key || ''
+                };
+              }).filter(s => Boolean(s.stream_url));
+              const eventObj = ev.event || {};
+              const isLive = ev.status === 'live' || (eventObj.startTimeIST && new Date(eventObj.startTimeIST.replace(' IST', '')) <= new Date());
+              fallbackMatches.push({
+                event_name: ev.title,
+                Category: ev.cat || eventObj.category || cat,
+                status: isLive ? 'LIVE' : 'UPCOMING',
+                start_time: eventObj.startTimeIST || '',
+                eventInfo: {
+                  eventName: ev.title,
+                  teamA: eventObj.teamA || ev.title.split(/\s+vs\s+/i)[0] || '',
+                  teamB: eventObj.teamB || ev.title.split(/\s+vs\s+/i)[1] || '',
+                  teamAFlag: eventObj.teamAFlag || '',
+                  teamBFlag: eventObj.teamBFlag || '',
+                  logo: eventObj.logo || ''
+                },
+                streams: streams
+              });
+            }
+          };
+
+          addSonu(cric, 'Cricket');
+          addSonu(fb, 'Football');
+
+          if (fallbackMatches.length > 0) {
+            data = {
+              name: "AryanStreams Direct Client Fallback",
+              total_matches: fallbackMatches.length,
+              live_match: fallbackMatches.filter(m => m.status === 'LIVE').length,
+              matches: fallbackMatches
+            };
+          }
+        } catch (_) {}
+      }
+
+      if (!data || (!Array.isArray(data) && !Array.isArray(data.matches)) || (data.matches && data.matches.length === 0)) {
         const res2 = await fetch(FALLBACK_DATA_URL, { cache: "no-store" });
         if (res2.ok) data = await res2.json();
       }
