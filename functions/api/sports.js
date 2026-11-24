@@ -14,6 +14,35 @@ const UPSTREAM_MIRRORS = [
     "https://cdn.jsdelivr.net/gh/sm-monirulislam/Upcoming-and-Live-Sports-Data@main/Sports_data.json"
 ];
 
+function cleanTitleString(title) {
+    if (!title) return '';
+    let clean = String(title).trim();
+    clean = clean.replace(/\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$/i, '');
+    clean = clean.replace(/\s+links?$/i, '');
+    const parts = clean.split(/\s+(?:vs|v)\s+/i);
+    if (parts.length === 2 && parts[0].trim().toLowerCase() === parts[1].trim().toLowerCase()) {
+        let base = parts[0].trim().replace(/\s+links?$/i, '');
+        if (/formula\s*1/i.test(base)) return 'Formula 1 Grand Prix';
+        if (/motogp/i.test(base)) return 'MotoGP World Championship';
+        if (/wwe\s*smackdown|smackdown/i.test(base)) return 'WWE SmackDown LIVE';
+        if (/wwe\s*raw|raw/i.test(base)) return 'WWE RAW LIVE';
+        if (/wwe\s*nxt|nxt/i.test(base)) return 'WWE NXT LIVE';
+        if (/dynamite/i.test(base)) return 'AEW Dynamite LIVE';
+        if (/laliga/i.test(base)) return 'LaLiga Matchday Live';
+        if (/coppa\s*italia/i.test(base)) return 'Coppa Italia Live';
+        if (/tour\s*de\s*france/i.test(base)) return 'Tour de France Live';
+        if (/us\s*open/i.test(base)) return 'US Open Championship';
+        if (/asian\s*games/i.test(base)) return 'Asian Games Live';
+        if (/nfl\s*redzone/i.test(base)) return 'NFL RedZone LIVE';
+        if (/crown\s*jewel/i.test(base)) return 'WWE Crown Jewel';
+        if (/road\s*to\s*ufc/i.test(base)) return 'Road to UFC LIVE';
+        if (/bkfc/i.test(base)) return 'BKFC Fighting LIVE';
+        if (/wbbl/i.test(base)) return "Women's Big Bash League";
+        return base;
+    }
+    return clean;
+}
+
 function sanitizeStreamUrl(url) {
     if (!url || typeof url !== 'string') return url;
     // Fix broken fly.ww hostname which throws 400 Bad Request on Akamai
@@ -254,20 +283,42 @@ async function getMasterSportsData() {
         try {
             const data = await fetchWithTimeout(mirror, 4000);
             if (data && Array.isArray(data.matches) && data.matches.length > 0) {
-                const repairedMatches = data.matches.map(m => {
-                    if (!m || !Array.isArray(m.streams)) return m;
+                const repairedMatches = data.matches
+                    .filter(m => {
+                        if (!m) return false;
+                        if (!Array.isArray(m.streams) || m.streams.length === 0) return false;
+                        const s = String(m.status || '').toUpperCase();
+                        if (s === 'FINISHED' || s === 'ENDED' || s === 'COMPLETED') return false;
+                        if (/^TBC\s+vs\s+TBC$/i.test(m.event_name)) return false;
+                        return true;
+                    })
+                    .map(m => {
+                        const cleanName = cleanTitleString(m.event_name);
+                        return {
+                            ...m,
+                            event_name: cleanName,
+                            eventInfo: {
+                                ...(m.eventInfo || {}),
+                                eventName: cleanTitleString(m.eventInfo?.eventName || cleanName)
+                            },
+                            streams: m.streams
+                                .map(s => {
+                                    if (!s || !s.stream_url) return null;
+                                    return { ...s, stream_url: sanitizeStreamUrl(s.stream_url) };
+                                })
+                                .filter(s => Boolean(s && s.stream_url))
+                        };
+                    });
+
+                if (repairedMatches.length > 0) {
+                    const liveCount = repairedMatches.filter(m => String(m.status).toLowerCase() === 'live').length;
                     return {
-                        ...m,
-                        streams: m.streams.map(s => {
-                            if (!s || !s.stream_url) return s;
-                            return { ...s, stream_url: sanitizeStreamUrl(s.stream_url) };
-                        })
+                        ...data,
+                        total_matches: repairedMatches.length,
+                        live_match: liveCount,
+                        matches: repairedMatches
                     };
-                });
-                return {
-                    ...data,
-                    matches: repairedMatches
-                };
+                }
             }
         } catch (_) {}
     }

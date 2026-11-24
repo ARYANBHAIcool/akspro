@@ -953,6 +953,47 @@ a { color: inherit; text-decoration: none; }
   gap: 8px;
   margin: 4px 0 14px;
 }
+.card-matchup.is-single-event {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+}
+.single-event-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.single-event-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  flex: 1;
+}
+.single-event-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.single-event-badge {
+  font-size: 11px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 2px;
+}
+.hero-matchup.is-single {
+  justify-content: flex-start;
+  gap: 16px;
+}
+.hero-matchup.is-single .hero-crest-box {
+  width: 76px;
+  height: 76px;
+}
 .team-col {
   display: flex;
   flex-direction: column;
@@ -1474,10 +1515,99 @@ a { color: inherit; text-decoration: none; }
     } catch (_) { return ""; }
   }
 
+  function cleanTitleString(title) {
+    if (!title) return "";
+    let clean = String(title).trim();
+    clean = clean.replace(/\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$/i, "");
+    clean = clean.replace(/\s+links?$/i, "");
+    const parts = clean.split(/\s+(?:vs|v)\s+/i);
+    if (parts.length === 2 && parts[0].trim().toLowerCase() === parts[1].trim().toLowerCase()) {
+      let base = parts[0].trim().replace(/\s+links?$/i, "");
+      if (/formula\s*1/i.test(base)) return "Formula 1 Grand Prix";
+      if (/motogp/i.test(base)) return "MotoGP World Championship";
+      if (/wwe\s*smackdown|smackdown/i.test(base)) return "WWE SmackDown LIVE";
+      if (/wwe\s*raw|raw/i.test(base)) return "WWE RAW LIVE";
+      if (/wwe\s*nxt|nxt/i.test(base)) return "WWE NXT LIVE";
+      if (/dynamite/i.test(base)) return "AEW Dynamite LIVE";
+      if (/laliga/i.test(base)) return "LaLiga Matchday Live";
+      if (/coppa\s*italia/i.test(base)) return "Coppa Italia Live";
+      if (/tour\s*de\s*france/i.test(base)) return "Tour de France Live";
+      if (/us\s*open/i.test(base)) return "US Open Championship";
+      if (/asian\s*games/i.test(base)) return "Asian Games Live";
+      if (/nfl\s*redzone/i.test(base)) return "NFL RedZone LIVE";
+      if (/crown\s*jewel/i.test(base)) return "WWE Crown Jewel";
+      if (/road\s*to\s*ufc/i.test(base)) return "Road to UFC LIVE";
+      if (/bkfc/i.test(base)) return "BKFC Fighting LIVE";
+      if (/wbbl/i.test(base)) return "Women's Big Bash League";
+      return base;
+    }
+    return clean;
+  }
+
+  function isSingleEvent(m) {
+    const a = (teamA(m) || "").trim().toLowerCase();
+    const b = (teamB(m) || "").trim().toLowerCase();
+    return !b || a === b || (!String(m.event_name || "").toLowerCase().includes(" vs ") && !String(m.event_name || "").toLowerCase().includes(" v "));
+  }
+
+  function parseMatchDate(str) {
+    if (!str) return null;
+    const s = String(str).trim();
+    const fcMatch = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\s+(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/i);
+    if (fcMatch) {
+      let h = parseInt(fcMatch[1], 10);
+      const m = parseInt(fcMatch[2], 10);
+      const ampm = fcMatch[4].toUpperCase();
+      const day = parseInt(fcMatch[5], 10);
+      const month = parseInt(fcMatch[6], 10) - 1;
+      const year = parseInt(fcMatch[7], 10);
+      if (ampm === "PM" && h < 12) h += 12;
+      if (ampm === "AM" && h === 12) h = 0;
+      return new Date(Date.UTC(year, month, day, h - 5, m - 30));
+    }
+    const isoIst = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*IST)?$/i);
+    if (isoIst) {
+      const year = parseInt(isoIst[1], 10);
+      const month = parseInt(isoIst[2], 10) - 1;
+      const day = parseInt(isoIst[3], 10);
+      const h = parseInt(isoIst[4], 10);
+      const m = parseInt(isoIst[5], 10);
+      if (s.toUpperCase().includes("IST")) {
+        return new Date(Date.UTC(year, month, day, h - 5, m - 30));
+      }
+      return new Date(year, month, day, h, m);
+    }
+    const dmyMatch = s.match(/^(\d{1,2})[-/](\d{1,2})[-/](\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
+    if (dmyMatch) {
+      const day = parseInt(dmyMatch[1], 10);
+      const month = parseInt(dmyMatch[2], 10) - 1;
+      const year = parseInt(dmyMatch[3], 10);
+      let h = parseInt(dmyMatch[4], 10);
+      const m = parseInt(dmyMatch[5], 10);
+      const ampm = (dmyMatch[7] || "").toUpperCase();
+      if (ampm === "PM" && h < 12) h += 12;
+      if (ampm === "AM" && h === 12) h = 0;
+      return new Date(year, month, day, h, m);
+    }
+    const fb = new Date(s);
+    return isNaN(fb.getTime()) ? null : fb;
+  }
+
   function matchStatus(m){
     const s = String(m.status || "").trim().toUpperCase();
-    if (s === "LIVE") return "LIVE";
     if (s === "ENDED" || s === "FINISHED" || s === "COMPLETED") return "ENDED";
+    if (s === "LIVE") return "LIVE";
+
+    const startTimeStr = m.start_time || eventInfo(m).startTime || "";
+    const d = parseMatchDate(startTimeStr);
+    if (d) {
+      const now = new Date();
+      const diffMs = now.getTime() - d.getTime();
+      const isCric = String(m.Category || "").toLowerCase() === "cricket";
+      const maxDur = isCric ? (7 * 3600 * 1000) : (3.5 * 3600 * 1000);
+      if (diffMs >= 0 && diffMs <= maxDur && validStreams(m).length > 0) return "LIVE";
+      if (diffMs > maxDur) return "ENDED";
+    }
     return "UPCOMING";
   }
 
@@ -1551,28 +1681,12 @@ a { color: inherit; text-decoration: none; }
     toastTimer = setTimeout(() => { t.style.display = "none"; }, 3000);
   }
 
-  function parseMatchDate(str) {
-    if (!str) return null;
-    const match = str.trim().match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?$/i);
-    if (match) {
-      const day = parseInt(match[1], 10);
-      const month = parseInt(match[2], 10) - 1;
-      const year = parseInt(match[3], 10);
-      let hours = parseInt(match[4], 10);
-      const minutes = parseInt(match[5], 10);
-      const ampm = (match[7] || "").toUpperCase();
-      if (ampm === "PM" && hours < 12) hours += 12;
-      if (ampm === "AM" && hours === 12) hours = 0;
-      return new Date(year, month, day, hours, minutes);
-    }
-    const fallback = new Date(str);
-    return isNaN(fallback.getTime()) ? null : fallback;
-  }
-
   function timeText(m){
-    const i = eventInfo(m);
-    if (!i.startTime) return "Time TBA";
-    const d = parseMatchDate(i.startTime);
+    const startTimeStr = m.start_time || eventInfo(m).startTime || "";
+    if (!startTimeStr) {
+      return matchStatus(m) === "LIVE" ? "Live Now" : "Upcoming Fixture";
+    }
+    const d = parseMatchDate(startTimeStr);
     if (d) {
       const now = new Date();
       const isToday = d.toDateString() === now.toDateString();
@@ -1595,7 +1709,7 @@ a { color: inherit; text-decoration: none; }
       if (isTomorrow) return `Tomorrow · ${timeStr}`;
       return `${d.toLocaleDateString([], { month: 'short', day: 'numeric' })} · ${timeStr}`;
     }
-    return i.startTime;
+    return startTimeStr;
   }
 
   function crestHtml(url, name) {
@@ -1642,6 +1756,17 @@ a { color: inherit; text-decoration: none; }
           <button class="fav-btn ${isFav ? "active" : ""}" data-fav="${esc(slug)}" aria-label="Pin favorite" title="Favorite Match"><svg class="fav-star-svg" viewBox="0 0 24 24"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg></button>
         </div>
       </div>
+      ${isSingleEvent(m) ? `
+      <div class="card-matchup is-single-event">
+        <div class="single-event-row">
+          ${crestHtml(flagA || logo, a)}
+          <div class="single-event-info">
+            <span class="single-event-title" title="${esc(cleanTitleString(m.event_name))}"><svg class="ticker-svg bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${esc(cleanTitleString(m.event_name))}</span>
+            <span class="single-event-badge">${esc(cat)} Special Event</span>
+          </div>
+        </div>
+      </div>
+      ` : `
       <div class="card-matchup">
         <div class="team-col">
           ${crestHtml(flagA || logo, a)}
@@ -1655,8 +1780,9 @@ a { color: inherit; text-decoration: none; }
           <span class="team-name" title="${esc(b)}">${esc(b)}</span>
         </div>
       </div>
+      `}
       <div class="card-meta">
-        <span class="card-league">${esc(eventName(m))}</span>
+        <span class="card-league">${esc(cleanTitleString(eventName(m)))}</span>
         <span>${getSportIcon(cat)} ${esc(cat)}</span>
       </div>
       <div class="card-servers">
@@ -1741,6 +1867,15 @@ a { color: inherit; text-decoration: none; }
                 <span class="hero-badge-quality">1080p 60FPS</span>
                 <span class="hero-badge-servers"><svg class="hero-svg-icon hero-svg-bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> ${streams.length || 1} Verified Server${streams.length === 1 ? "" : "s"}</span>
               </div>
+              ${isSingleEvent(hero) ? `
+              <div class="hero-matchup is-single">
+                <div class="hero-crest-box" style="width:76px;height:76px">
+                  ${(flagA || flagB) ? `<img src="${esc(flagA || flagB)}" alt="${esc(cleanTitleString(hero.event_name))}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoA)}</span>` : `<span class="hero-crest-mono">${esc(monoA)}</span>`}
+                </div>
+                <div class="hero-score" style="font-size:clamp(16px,2.4vw,24px);color:var(--gold);font-weight:700"><svg class="ticker-svg bolt" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg> FEATURED SHOWCASE</div>
+              </div>
+              <h2 class="hero-title">${esc(cleanTitleString(hero.event_name))}</h2>
+              ` : `
               <div class="hero-matchup">
                 <div class="hero-crest-box">
                   ${flagA ? `<img src="${esc(flagA)}" alt="${esc(a)}" onerror="this.style.display='none';this.nextElementSibling.style.display='inline'"><span class="hero-crest-mono" style="display:none">${esc(monoA)}</span>` : `<span class="hero-crest-mono">${esc(monoA)}</span>`}
@@ -1751,6 +1886,7 @@ a { color: inherit; text-decoration: none; }
                 </div>
               </div>
               <h2 class="hero-title">${esc(a)} <span style="color:var(--muted);font-weight:600">vs</span> ${esc(b)}</h2>
+              `}
             </div>
             <div class="hero-actions">
               <button class="hero-play-btn" data-hero-play="${idx}"><svg class="hero-svg-icon hero-svg-play" viewBox="0 0 24 24"><polygon points="6 3 20 12 6 21 6 3"/></svg> ${live ? "WATCH LIVE" : "VIEW STREAM"}</button>
@@ -1863,6 +1999,10 @@ a { color: inherit; text-decoration: none; }
     return allMatches.map((m, index) => ({ m, index })).filter(({ m }) => {
       const status = matchStatus(m);
       const isFav = favs.includes(matchToSlug(m));
+
+      // Filter ended or empty matches
+      if (status === "ENDED") return false;
+      if (validStreams(m).length === 0) return false;
 
       // View filtering from Left Dock / Mobile Dock
       if (activeView === "live" && status !== "LIVE") return false;
@@ -2065,11 +2205,20 @@ a { color: inherit; text-decoration: none; }
     const result = [];
     (rawMatches || []).forEach(m => {
       if (!m) return;
+      if (!m.streams || m.streams.length === 0) return;
+      const status = matchStatus(m);
+      if (status === "ENDED") return;
+      if (/^TBC\s+vs\s+TBC$/i.test(m.event_name)) return;
+
+      m.event_name = cleanTitleString(m.event_name);
+      if (m.eventInfo) m.eventInfo.eventName = cleanTitleString(m.eventInfo.eventName || m.event_name);
+
       const tA = (teamA(m) || "").toLowerCase().trim();
       const tB = (teamB(m) || "").toLowerCase().trim();
       const cat = (m.Category || "").toLowerCase().trim();
-      const key = `${cat}:${tA}:vs:${tB}`;
-      if (tA && tB && map.has(key)) {
+      const key = (tA && tB && tA !== tB) ? `${cat}:${[tA, tB].sort().join(":vs:")}` : `${cat}:${matchToSlug(m)}`;
+
+      if (map.has(key)) {
         const existing = map.get(key);
         const exStreams = streamsOf(existing);
         const newStreams = streamsOf(m);
@@ -2078,9 +2227,10 @@ a { color: inherit; text-decoration: none; }
           if (!merged.some(es => es.stream_url === ns.stream_url)) merged.push(ns);
         });
         existing.streams = merged;
-        if (m.status === "LIVE") existing.status = "LIVE";
+        if (status === "LIVE" || m.status === "LIVE") existing.status = "LIVE";
         return;
       }
+      m.status = status;
       map.set(key, m);
       result.push(m);
     });

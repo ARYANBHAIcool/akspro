@@ -51,6 +51,66 @@ async function fetchWithTimeout(url, timeoutMs = 7000) {
   }
 }
 
+function cleanTitleString(title) {
+  if (!title) return '';
+  let clean = title.trim();
+  clean = clean.replace(/\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$/i, '');
+  clean = clean.replace(/\s+links?$/i, '');
+  const parts = clean.split(/\s+(?:vs|v)\s+/i);
+  if (parts.length === 2 && parts[0].trim().toLowerCase() === parts[1].trim().toLowerCase()) {
+    let base = parts[0].trim().replace(/\s+links?$/i, '');
+    if (/formula\s*1/i.test(base)) return 'Formula 1 Grand Prix';
+    if (/motogp/i.test(base)) return 'MotoGP World Championship';
+    if (/wwe\s*smackdown|smackdown/i.test(base)) return 'WWE SmackDown LIVE';
+    if (/wwe\s*raw|raw/i.test(base)) return 'WWE RAW LIVE';
+    if (/wwe\s*nxt|nxt/i.test(base)) return 'WWE NXT LIVE';
+    if (/dynamite/i.test(base)) return 'AEW Dynamite LIVE';
+    if (/laliga/i.test(base)) return 'LaLiga Matchday Live';
+    if (/coppa\s*italia/i.test(base)) return 'Coppa Italia Live';
+    if (/tour\s*de\s*france/i.test(base)) return 'Tour de France Live';
+    if (/us\s*open/i.test(base)) return 'US Open Championship';
+    if (/asian\s*games/i.test(base)) return 'Asian Games Live';
+    if (/nfl\s*redzone/i.test(base)) return 'NFL RedZone LIVE';
+    if (/crown\s*jewel/i.test(base)) return 'WWE Crown Jewel';
+    if (/road\s*to\s*ufc/i.test(base)) return 'Road to UFC LIVE';
+    if (/bkfc/i.test(base)) return 'BKFC Fighting LIVE';
+    if (/wbbl/i.test(base)) return "Women's Big Bash League";
+    return base;
+  }
+  return clean;
+}
+
+function parseMatchDate(str) {
+  if (!str) return null;
+  const s = String(str).trim();
+  const fcMatch = s.match(/^(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)\s+(\d{1,2})[-/](\d{1,2})[-/](\d{4})$/i);
+  if (fcMatch) {
+    let h = parseInt(fcMatch[1], 10);
+    const m = parseInt(fcMatch[2], 10);
+    const ampm = fcMatch[4].toUpperCase();
+    const day = parseInt(fcMatch[5], 10);
+    const month = parseInt(fcMatch[6], 10) - 1;
+    const year = parseInt(fcMatch[7], 10);
+    if (ampm === 'PM' && h < 12) h += 12;
+    if (ampm === 'AM' && h === 12) h = 0;
+    return new Date(Date.UTC(year, month, day, h - 5, m - 30));
+  }
+  const isoIst = s.match(/^(\d{4})[-/](\d{1,2})[-/](\d{1,2})\s+(\d{1,2}):(\d{2})(?::(\d{2}))?(?:\s*IST)?$/i);
+  if (isoIst) {
+    const year = parseInt(isoIst[1], 10);
+    const month = parseInt(isoIst[2], 10) - 1;
+    const day = parseInt(isoIst[3], 10);
+    const h = parseInt(isoIst[4], 10);
+    const m = parseInt(isoIst[5], 10);
+    if (s.toUpperCase().includes('IST')) {
+      return new Date(Date.UTC(year, month, day, h - 5, m - 30));
+    }
+    return new Date(year, month, day, h, m);
+  }
+  const fb = new Date(s);
+  return isNaN(fb.getTime()) ? null : fb;
+}
+
 function normalizeMatchKey(title, teamA, teamB) {
   if (teamA && teamB) {
     const a = teamA.trim().toLowerCase();
@@ -317,18 +377,53 @@ async function runScraper() {
     }
   }
 
-  const allMatches = Array.from(matchesMap.values());
-  const liveCount = allMatches.filter(m => m.status === 'live' || m.status === 'LIVE').length;
   const now = new Date();
+  const rawList = Array.from(matchesMap.values());
+
+  const cleanedMatches = rawList.filter(m => {
+    // 1. Must have at least 1 valid playable stream
+    if (!m.streams || m.streams.length === 0) return false;
+
+    // 2. Prune finished/completed matches
+    const s = String(m.status || '').toUpperCase();
+    if (s === 'FINISHED' || s === 'ENDED' || s === 'COMPLETED') return false;
+
+    // 3. Prune dummy placeholder entries
+    if (/^TBC\s+vs\s+TBC$/i.test(m.event_name)) return false;
+
+    // 4. Polish and clean event title
+    m.event_name = cleanTitleString(m.event_name);
+    if (m.eventInfo) {
+      m.eventInfo.eventName = cleanTitleString(m.eventInfo.eventName || m.event_name);
+    }
+
+    // 5. Accurate live status detection & past-date pruning
+    const startTimeStr = m.start_time || m.eventInfo?.startTime || '';
+    const d = parseMatchDate(startTimeStr);
+    if (d) {
+      const diffMs = now.getTime() - d.getTime();
+      const isCric = String(m.Category || '').toLowerCase() === 'cricket';
+      const durMs = isCric ? (7 * 3600 * 1000) : (3.5 * 3600 * 1000);
+      if (diffMs >= 0 && diffMs <= durMs) {
+        m.status = 'live';
+      } else if (diffMs > durMs && m.status !== 'live' && m.status !== 'LIVE') {
+        return false; // Prune expired matches from days ago
+      }
+    }
+
+    return true;
+  });
+
+  const liveCount = cleanedMatches.filter(m => m.status === 'live' || m.status === 'LIVE').length;
   const timeStr = now.toLocaleTimeString('en-US') + ' ' + now.toLocaleDateString('en-GB');
 
   const finalPayload = {
     name: "AryanStreams Master Sports Feed",
     owner: "AryanStreams Global",
     last_update_time: timeStr,
-    total_matches: allMatches.length,
+    total_matches: cleanedMatches.length,
     live_match: liveCount,
-    matches: allMatches
+    matches: cleanedMatches
   };
 
   // Ensure data directory exists
@@ -340,7 +435,7 @@ async function runScraper() {
   const outPath = path.join(outDir, 'Sports_data.json');
   fs.writeFileSync(outPath, JSON.stringify(finalPayload, null, 2), 'utf8');
 
-  console.log(`[AryanStreams Scraper] Successfully compiled ${allMatches.length} matches (${liveCount} live) to ${outPath}`);
+  console.log(`[AryanStreams Scraper] Successfully compiled ${cleanedMatches.length} matches (${liveCount} live) to ${outPath}`);
   return finalPayload;
 }
 

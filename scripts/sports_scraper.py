@@ -48,15 +48,38 @@ def fetch_json(url, timeout=7):
         pass
     return None
 
-def normalize_key(title, team_a='', team_b=''):
-    if team_a and team_b:
-        return ' vs '.join(sorted([team_a.strip().lower(), team_b.strip().lower()]))
-    clean = re.sub(r'\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$', '', str(title or ''), flags=re.I)
-    clean = re.sub(r'\[[a-z]{2,4}\]', '', clean, flags=re.I)
-    clean = re.sub(r'\(.*?\)', '', clean).strip().lower()
+def clean_title_string(title):
+    if not title:
+        return ''
+    clean = str(title).strip()
+    clean = re.sub(r'\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$', '', clean, flags=re.I)
+    clean = re.sub(r'\s+links?$', '', clean, flags=re.I)
     parts = re.split(r'\s+(?:vs|v)\s+', clean, flags=re.I)
-    if len(parts) >= 2:
-        return ' vs '.join(sorted([parts[0].strip(), parts[1].strip()]))
+    if len(parts) == 2 and parts[0].strip().lower() == parts[1].strip().lower():
+        base = re.sub(r'\s+links?$', '', parts[0].strip(), flags=re.I)
+        if re.search(r'formula\s*1', base, re.I): return 'Formula 1 Grand Prix'
+        if re.search(r'motogp', base, re.I): return 'MotoGP World Championship'
+        if re.search(r'wwe\s*smackdown|smackdown', base, re.I): return 'WWE SmackDown LIVE'
+        if re.search(r'wwe\s*raw|raw', base, re.I): return 'WWE RAW LIVE'
+        if re.search(r'wwe\s*nxt|nxt', base, re.I): return 'WWE NXT LIVE'
+        if re.search(r'dynamite', base, re.I): return 'AEW Dynamite LIVE'
+        if re.search(r'laliga', base, re.I): return 'LaLiga Matchday Live'
+        if re.search(r'coppa\s*italia', base, re.I): return 'Coppa Italia Live'
+        if re.search(r'tour\s*de\s*france', base, re.I): return 'Tour de France Live'
+        if re.search(r'us\s*open', base, re.I): return 'US Open Championship'
+        if re.search(r'asian\s*games', base, re.I): return 'Asian Games Live'
+        if re.search(r'nfl\s*redzone', base, re.I): return 'NFL RedZone LIVE'
+        if re.search(r'crown\s*jewel', base, re.I): return 'WWE Crown Jewel'
+        if re.search(r'road\s*to\s*ufc', base, re.I): return 'Road to UFC LIVE'
+        if re.search(r'bkfc', base, re.I): return 'BKFC Fighting LIVE'
+        if re.search(r'wbbl', base, re.I): return "Women's Big Bash League"
+        return base
+    return clean
+
+def normalize_key(title, team_a='', team_b=''):
+    if team_a and team_b and team_a.strip().lower() != team_b.strip().lower():
+        return ' vs '.join(sorted([team_a.strip().lower(), team_b.strip().lower()]))
+    clean = clean_title_string(title).lower()
     return clean
 
 def run_scraper():
@@ -200,17 +223,31 @@ def run_scraper():
                         'key': dec_key or s.get('key', '')
                     })
 
-    all_matches = list(matches_map.values())
-    live_count = sum(1 for m in all_matches if str(m.get('status')).lower() == 'live')
+    raw_list = list(matches_map.values())
+    cleaned_matches = []
+    for m in raw_list:
+        if not m.get('streams') or len(m['streams']) == 0:
+            continue
+        status = str(m.get('status', '')).upper()
+        if status in ['FINISHED', 'ENDED', 'COMPLETED']:
+            continue
+        if re.match(r'^TBC\s+vs\s+TBC$', m.get('event_name', ''), re.I):
+            continue
+        m['event_name'] = clean_title_string(m.get('event_name', ''))
+        if m.get('eventInfo'):
+            m['eventInfo']['eventName'] = clean_title_string(m['eventInfo'].get('eventName') or m['event_name'])
+        cleaned_matches.append(m)
+
+    live_count = sum(1 for m in cleaned_matches if str(m.get('status')).lower() == 'live')
     now = datetime.datetime.now()
 
     payload = {
         'name': 'AryanStreams Master Sports Feed',
         'owner': 'AryanStreams Global',
         'last_update_time': now.strftime('%I:%M:%S %p %d-%m-%Y'),
-        'total_matches': len(all_matches),
+        'total_matches': len(cleaned_matches),
         'live_match': live_count,
-        'matches': all_matches
+        'matches': cleaned_matches
     }
 
     out_dir = os.path.join(os.path.dirname(__file__), '..', 'data')
@@ -219,7 +256,7 @@ def run_scraper():
     with open(out_file, 'w', encoding='utf-8') as f:
         json.dump(payload, f, indent=2, ensure_ascii=False)
 
-    print(f"[AryanStreams Python Scraper] Compiled {len(all_matches)} matches ({live_count} live) to {out_file}")
+    print(f"[AryanStreams Python Scraper] Compiled {len(cleaned_matches)} matches ({live_count} live) to {out_file}")
 
 if __name__ == '__main__':
     run_scraper()

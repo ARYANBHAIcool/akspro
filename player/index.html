@@ -1002,9 +1002,38 @@ html,body{
   const autoFailoverAttempted = new Set();
   if (currentActiveUrl) autoFailoverAttempted.add(currentActiveUrl);
 
-  if (eventTitle) displayTitle.textContent = eventTitle;
+  function cleanTitleString(title) {
+    if (!title) return "";
+    let clean = String(title).trim();
+    clean = clean.replace(/\s+-\s+\d{1,2}\s+[a-z]{3}\s+\d{4}.*$/i, "");
+    clean = clean.replace(/\s+links?$/i, "");
+    const parts = clean.split(/\s+(?:vs|v)\s+/i);
+    if (parts.length === 2 && parts[0].trim().toLowerCase() === parts[1].trim().toLowerCase()) {
+      let base = parts[0].trim().replace(/\s+links?$/i, "");
+      if (/formula\s*1/i.test(base)) return "Formula 1 Grand Prix";
+      if (/motogp/i.test(base)) return "MotoGP World Championship";
+      if (/wwe\s*smackdown|smackdown/i.test(base)) return "WWE SmackDown LIVE";
+      if (/wwe\s*raw|raw/i.test(base)) return "WWE RAW LIVE";
+      if (/wwe\s*nxt|nxt/i.test(base)) return "WWE NXT LIVE";
+      if (/dynamite/i.test(base)) return "AEW Dynamite LIVE";
+      if (/laliga/i.test(base)) return "LaLiga Matchday Live";
+      if (/coppa\s*italia/i.test(base)) return "Coppa Italia Live";
+      if (/tour\s*de\s*france/i.test(base)) return "Tour de France Live";
+      if (/us\s*open/i.test(base)) return "US Open Championship";
+      if (/asian\s*games/i.test(base)) return "Asian Games Live";
+      if (/nfl\s*redzone/i.test(base)) return "NFL RedZone LIVE";
+      if (/crown\s*jewel/i.test(base)) return "WWE Crown Jewel";
+      if (/road\s*to\s*ufc/i.test(base)) return "Road to UFC LIVE";
+      if (/bkfc/i.test(base)) return "BKFC Fighting LIVE";
+      if (/wbbl/i.test(base)) return "Women's Big Bash League";
+      return base;
+    }
+    return clean;
+  }
+
+  if (eventTitle) displayTitle.textContent = cleanTitleString(eventTitle);
   if (streamName) displaySubtitle.innerHTML = `Source: <strong>${streamName}</strong>`;
-  document.title = [eventTitle || streamName || "AryanStreams Live", category].filter(Boolean).join(" · ");
+  document.title = [cleanTitleString(eventTitle) || streamName || "AryanStreams Live", category].filter(Boolean).join(" · ");
 
   function showLoader(txt = "Connecting live stream…") {
     if (loaderText) loaderText.textContent = txt;
@@ -1318,7 +1347,8 @@ html,body{
       // Initial buffer timeout: only triggers if video NEVER started playing after 14 seconds
       if (!hasPlayedSuccessfully && (Date.now() - startTimestamp > timeoutMs)) {
         clearInterval(stallWatchdog);
-        clearInterval(stallWatchdog); hideLoader(); showToast("Stream connection taking time. Click 'Servers' to change source.");
+        hideLoader();
+        showToast("Stream connection taking time. Click 'Servers' to change source.");
       }
     }, 1000);
   }
@@ -1853,7 +1883,7 @@ html,body{
     currentServerNumber = Math.min(parsed.serverIndex + 1, streams.length);
     const chosen = streams[currentServerNumber - 1] || streams[0];
 
-    const mTitle = (matchObj ? (matchObj.event_name || matchObj.eventInfo?.eventName) : "") || eventTitle || "Live Match";
+    const mTitle = cleanTitleString((matchObj ? (matchObj.event_name || matchObj.eventInfo?.eventName) : "") || eventTitle || "Live Match");
     displayTitle.textContent = mTitle;
     document.title = `${mTitle} · AryanStreams Live`;
 
