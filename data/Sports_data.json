@@ -1,634 +1,14 @@
 {
   "name": "AryanStreams Master Sports Feed",
   "owner": "AryanStreams Global",
-  "last_update_time": "4:43:04 AM 26/11/2026",
-  "total_matches": 62,
-  "live_match": 16,
+  "last_update_time": "2:43:45 PM 26/11/2026",
+  "total_matches": 98,
+  "live_match": 14,
   "matches": [
-    {
-      "event_name": "AEW Dynamite LIVE",
-      "Category": "WWE",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "AEW Dynamite",
-        "teamA": "DYNAMITE",
-        "teamB": "DYNAMITE",
-        "teamAFlag": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB88iK4_VDCc8OWqAQ-UzYdZLl4hPmZSxXRaHiHwyf-g&s=10",
-        "teamBFlag": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQB88iK4_VDCc8OWqAQ-UzYdZLl4hPmZSxXRaHiHwyf-g&s=10",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "TSN SPORTS",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/ihys8nw4wv/out/v1/fde190f369484bc6b6117cc16cd82a9f/cenc.mpd",
-          "kid": "abc5b2883121012850ebda05b528c5ec",
-          "key": "e5250924f4b738905f7163a0134587a7"
-        },
-        {
-          "channel_name": "WWE LIVE FHD",
-          "stream_url": "https://ubuntu.fromthyheart.site/dailymotion/live/playlist/4.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "FOX SPORTS",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/fdx74zqzhu/out/v1/7d7a8c6981a842b98a683e9fbfe51d17/cenc.mpd",
-          "kid": "9f327d24c66fbd84e15ab5c9ead7c7a4",
-          "key": "83837185529c0c4048f81386c2d36426"
-        },
-        {
-          "channel_name": "EUROSPORT - AQ",
-          "stream_url": "https://wbd.skandha.tv/EuroSport_HD/EuroSport_HD.isml/.mpd",
-          "kid": "12ed56d780abcfebcd23aa27e4ac5015",
-          "key": "6784567890abcfebcd23aa27e4ac2814"
-        },
-        {
-          "channel_name": "AEW TV AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/syd-nitro/live/clients/dash/enc/m8slb42wwl/out/v1/2670a89c18a64dba9a38e6985df2ce85/cenc.mpd",
-          "kid": "90ea3ce17c88e287c41edc55f5d08073",
-          "key": "99542fa51629e7ece3f934388c0e954d"
-        },
-        {
-          "channel_name": "SM IPTV LIVE",
-          "stream_url": "https://chatgpt.hereisman.net/playlist/54227/load-playlist?",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Milwaukee Bucks Vs Brooklyn Nets",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NBA",
-        "teamA": "Milwaukee Bucks",
-        "teamB": "Brooklyn Nets",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3410/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3436/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Memphis Grizzlies Vs Los Angeles Clippers",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NBA",
-        "teamA": "Memphis Grizzlies",
-        "teamB": "Los Angeles Clippers",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3415/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3425/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Dallas Stars Vs Nashville Predators",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NHL",
-        "teamA": "Dallas Stars",
-        "teamB": "Nashville Predators",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3684/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3705/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61054\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61054/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "https://live.kinescopecdn.net/on-air/5bf2c07e-3604-42cf-959a-67ed8914ffd5/3863407e-9f85-41e8-9ab7-b607c07fba97/master.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Los Angeles Rams Vs Green Bay Packers",
-      "Category": "American football",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NFL",
-        "teamA": "Los Angeles Rams",
-        "teamB": "Green Bay Packers",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/4387/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/4420/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "TSN SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
-          "kid": "14eeabf30c14b7fbf3008c03099ce011",
-          "key": "17d2ac8dbc5429bd70af3433aa12158d"
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61028\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV HD",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-green-bay-packers-vs-los-angeles-rams-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Minnesota Wild Vs Utah Mammoth",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NHL",
-        "teamA": "Minnesota Wild",
-        "teamB": "Utah Mammoth",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3689/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/530472/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Houston Rockets Vs Phoenix Suns",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NBA",
-        "teamA": "Houston Rockets",
-        "teamB": "Phoenix Suns",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3412/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3416/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61055\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61055/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "http://193.47.62.59/hls/ECCCAA.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "https://www.rtmpcdn.com/live/7bf52dc3-99f9-4af4-b94b-273e9bfe87f6.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Western Australia Vs Tasmania",
-      "Category": "Cricket",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Sheffield Shield",
-        "teamA": "Western Australia",
-        "teamB": "Tasmania",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/187752/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/187748/image",
-        "logo": "https://img.sofascore.com/api/v1/unique-tournament/11160/image/dark"
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https://host-64-235-250-99.contentfabric.io/qlibs/ilibBFVVnZD2HsyW1Rmi5atMjddq2NQ/q/hq__2CsGiSyVyhGwFCBZH4NTiXGnVdD6JsgfiLdMNoY5zJooSjkixSz2Xawj2sN6vkKzk9kp89wiN2ic/rep/playout/default/hls-aes128/playlist.m3u8?authorization=acssjc9GqKQhD4zgqPicqVYwswYaABaCB3jwPAVvkLx1EL32F2KP8DFeqn44MqnMRhyb3p6Wpqeusjeicq8xNzCTPcJ7BL1QnMsoqBMdBQQ2Rf5pqiKHyzRJXH7YqGAtwX5xUnwwkRXHzRnH5XGPPt754h4jDns8muXs4NJ8jNe7LrtbKsjbyqZrD4KBXZDdW8bd5snaakLojDTsTdN8bSFtRmptuLfjxcZnm6MeWtsooShecHSWN9gTEfftm9EpmSZoKg9ndKURd3nwe5eS6AvSJfEL6AyQQi9EcSTEoAYpfWFP8zt4VF9yLd7CrUoMyRvNRjeCUgYThtBdNjJuMHKhK66Y3sASuAYfxNC1dL7enmuk8pbWhJ5ZqvGjhcns48NfPqK485rCSiQyFMyRFJaoGABnJJzSYJnSZys4F1p4hvbQwF2SMoh5aRQJ9rcNF6R4HSrr1qVjesjFoGvcSV3reXYWao1J89yJ2hsZkvs6nQcCDrSVyEjHc4zsY4MDDsPYaB7tPFxVGZZmmojfu156r1pc8sjPb2yna1oMCexRoqyLxwWd8iytJ3jyBGrgxrxtz58NrDVaBWJik2a&sid=5BEDAA312E9E",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "FANCODE [IND]",
-          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249675_english_hls_82f48bb70790158_1ta-di_h264/index.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Colorado Avalanche Vs Montréal Canadiens",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NHL",
-        "teamA": "Colorado Avalanche",
-        "teamB": "Montréal Canadiens",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3682/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3690/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "TSN SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/cjglydxghe/out/v1/8977baf175da4b94873194613dd3fe55/cenc.mpd",
-          "kid": "85b277daf5aae05833fe43a68f587968",
-          "key": "d52d7e9bc0bcd98787efd547ac91eca0"
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://chatgpt.hereisman.net/playlist/61058/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61058/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "https://live.kinescopecdn.net/on-air/5bf2c07e-3604-42cf-959a-67ed8914ffd5/82e41e41-d7fc-471b-80de-ed4ddf4ea9ba/master.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Seattle Kraken Vs Chicago Blackhawks",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NHL",
-        "teamA": "Seattle Kraken",
-        "teamB": "Chicago Blackhawks",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/381707/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3681/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "PREMIER SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/gru-nitro/live/clients/dash/enc/m6sqanvm2m/out/v1/f6beb46c6e9a4132ad739f3ca27df6aa/cenc.mpd",
-          "kid": "1444f4235529f183f0a5a486befe9cdb",
-          "key": "e5e3fec67a1bb3472a2089c8a0a2557f"
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61059\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61059/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "https://live.kinescopecdn.net/on-air/5bf2c07e-3604-42cf-959a-67ed8914ffd5/7098182d-7c68-4332-b430-ab53c64a18d9/master.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-chicago-blackhawks-vs-seattle-kraken-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Portland Trail Blazers Vs San Antonio Spurs",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NBA",
-        "teamA": "Portland Trail Blazers",
-        "teamB": "San Antonio Spurs",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3414/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3429/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61064\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61064/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "http://193.47.62.59/hls/ECCCAAA.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-san-antonio-spurs-vs-portland-trail-blazers-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Golden State Warriors Vs Sacramento Kings",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NBA",
-        "teamA": "Golden State Warriors",
-        "teamB": "Sacramento Kings",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3428/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3413/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "http://193.47.62.44/hls/HCCCAAA.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-sacramento-kings-vs-golden-state-warriors-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Anaheim Ducks Vs San Jose Sharks",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NHL",
-        "teamA": "Anaheim Ducks",
-        "teamB": "San Jose Sharks",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3675/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3696/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61063\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "HD SERVER",
-          "stream_url": "https://pl.playlist6.space/playlist/61063/simplefuturetower92/caxi",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SD STREAM",
-          "stream_url": "https://live.kinescopecdn.net/on-air/5bf2c07e-3604-42cf-959a-67ed8914ffd5/34222ca4-1163-4c17-bb64-05df52466631/master.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-san-jose-sharks-vs-anaheim-ducks-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Sydney Sixers Women Vs Melbourne Stars Women",
-      "Category": "Cricket",
-      "status": "UPCOMING",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Women's Big Bash League",
-        "teamA": "Sydney Sixers Women",
-        "teamB": "Melbourne Stars Women",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/274883/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/274886/image",
-        "logo": "https://www.fancode.com/skillup-uploads/cms-media/4250421_53125_SS-W_MS-W_fc-web_1793352701240.jpg"
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Great Britain Vs Germany",
-      "Category": "Tennis",
-      "status": "UPCOMING",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Davis Cup",
-        "teamA": "Great Britain",
-        "teamB": "Germany",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/15766/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/4711/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "BEIN SPORTS",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/ghwcl6hv68/out/v1/83536910d8034e9b9895a20fbe1c1687/cenc.mpd",
-          "kid": "335dad778109954503dcbb21dc92015f",
-          "key": "24bfd75d436cbf73168a2a2dccd40281"
-        },
-        {
-          "channel_name": "TENNIS TV DE AQ",
-          "stream_url": "https://hoast-plm.shop/playztv/links.php?id=tennistv1.mpd",
-          "kid": "2b8cd782fe332547063317b3f58de936",
-          "key": "98c9c8f4e23e3a7a083d26857d5881ab"
-        },
-        {
-          "channel_name": "TSN SPORTS AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/cscevwljkq/out/v1/972185041b244140860b7d56398e9aaf/cenc.mpd",
-          "kid": "385ceb9714b75e0cef61254f80b31002",
-          "key": "18dce92a2891fee68d21ede5173230f8"
-        }
-      ]
-    },
-    {
-      "event_name": "India A Vs Sri Lanka A",
-      "Category": "Cricket",
-      "status": "UPCOMING",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Men's Asia Cup Rising Stars",
-        "teamA": "India A",
-        "teamB": "Sri Lanka A",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/187765/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/187756/image",
-        "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTn2rCtrI68Agu71aIWID9YxzlqXN-3c88k4cwPQQhwEA&s=10"
-      },
-      "streams": [
-        {
-          "channel_name": "WILLOW - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/po7s7fvgjq/out/v1/5c412831b960410cb880428166b74dee/cenc.mpd",
-          "kid": "531497de47944ade5410fe5852905698",
-          "key": "574547fdae92793f4630b65dade01761"
-        },
-        {
-          "channel_name": "STARZPLAY FHD",
-          "stream_url": "https://d1ifzl5cnhi7bu.cloudfront.net/out/v1/45ba30e075ad455a8767d3f33e67ea3d/index.mpd",
-          "kid": "0ae4f162eec3e6f2b580a5bf0f4a64d4",
-          "key": "03483335db81cba5bbcf51b6d31196d9"
-        },
-        {
-          "channel_name": "TAMASHA AQ",
-          "stream_url": "https://cdn06khi-n.tamashaweb.com:8087/appcast/ACC-men-AC26-b-abr/playlist.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "WILLOW S2 - AQ",
-          "stream_url": "https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/po7s7fvgjq/out/v1/5c412831b960410cb880428166b74dee/cenc.mpd",
-          "kid": "531497de47944ade5410fe5852905698",
-          "key": "574547fdae92793f4630b65dade01761"
-        },
-        {
-          "channel_name": "PTV SPORTS HD",
-          "stream_url": "https://live.msnetworks.net/ptv-sports/master.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Tampines Rovers Vs Shanghai Shenhua",
-      "Category": "Football",
-      "status": "UPCOMING",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "AFC Champions League Two",
-        "teamA": "Tampines Rovers",
-        "teamB": "Shanghai Shenhua",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/3043/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/3373/image",
-        "logo": "https://img.sofascore.com/api/v1/unique-tournament/668/image/dark"
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
     {
       "event_name": "Italia T10",
       "Category": "Cricket",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "Italia T10 2026",
@@ -647,7 +27,7 @@
         },
         {
           "channel_name": "SM IPTV LIVE",
-          "stream_url": "https://amssandbrix.sandbrix.live/sandbrix/streams/JoLpoIfXtZdMMVVJ791008995728.m3u8",
+          "stream_url": "https://amssandbrix.sandbrix.live/sandbrix/streams/mk139q1Mi9bHznBA775016895861.m3u8",
           "kid": "",
           "key": ""
         },
@@ -662,7 +42,7 @@
     {
       "event_name": "BG Pathum United Vs Lion City Sailors",
       "Category": "Football",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "AFC Champions League Two",
@@ -670,12 +50,136 @@
         "teamB": "Lion City Sailors",
         "teamAFlag": "https://img.sofascore.com/api/v1/team/35607/image",
         "teamBFlag": "https://img.sofascore.com/api/v1/team/3041/image",
-        "logo": "https://www.fancode.com/skillup-uploads/cms-media/4249027_53057_PNU_LIO_fc-web_1789025065671.jpg"
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/668/image/dark"
       },
       "streams": [
         {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "Ok",
+          "channel_name": "TAPMAD - AQ",
+          "stream_url": "https://multiregion-asia-cdn.tapmad.com/v1/01a154a641d51567ee931e109fa59f/01a154a676281ea557841e1612cf77/main.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "FANCODE [IND]",
+          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249027_english_hls_18036fa1e376406_1ta-di_h264/index.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SD STREAM",
+          "stream_url": "http://193.47.62.41/hls/WAWAWAAAA.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Tai Po Vs Adelaide United",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "AFC Champions League Two",
+        "teamA": "Tai Po",
+        "teamB": "Adelaide United",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/40662/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/2946/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/668/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "TAPMAD - AQ",
+          "stream_url": "https://multiregion-asia-cdn.tapmad.com/v1/01a154de56151ea540a81c2b41b77a/01a154de85c41567ee931e109fa5a5/main.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SD STREAM",
+          "stream_url": "http://193.47.62.41/hls/WAWAWAAAAQQ.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "FANCODE [IND]",
+          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249028_english_hls_0cb4703b5963817_1ta-di_h264/index.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Preah Khan Reach Svay Rieng FC Vs Machida Zelvia",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "AFC Champions League Two",
+        "teamA": "Preah Khan Reach Svay Rieng FC",
+        "teamB": "Machida Zelvia",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/153474/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/44409/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/668/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "FANCODE [IND]",
+          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249030_english_hls_21a64821f080481_1ta-di_h264/index.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "TAPMAD - AQ",
+          "stream_url": "https://multiregion-asia-cdn.tapmad.com/v1/01a1548c4faf15fc600b1e3e968408/01a1548c7fde1ea557841e1612cf76/main.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "New Zealand U17 Vs Belgium U17",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "U17 World Championship",
+        "teamA": "New Zealand U17",
+        "teamB": "Belgium U17",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/22634/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/22583/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/279/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "FOX SPORTS - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/awxnrqkbo5/out/v1/716529a4091947b0877e6cb80dbd6ccb/cenc.mpd",
+          "kid": "09453ce820d65fbc675de3185f9e454c",
+          "key": "98cff9600995fa381c76fdacf3c7edae"
+        },
+        {
+          "channel_name": "HD SERVER",
+          "stream_url": "https://live3979.zundrixmediapipeline.com/live/channel16.m3u8?",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Vietnam U17 Vs Mali U17",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "U17 World Championship",
+        "teamA": "Vietnam U17",
+        "teamB": "Mali U17",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/468404/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/203876/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/279/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "SM IPTV LIVE",
+          "stream_url": "https://live3979.zundrixmediapipeline.com/live/channel1.m3u8?",
           "kid": "",
           "key": ""
         }
@@ -684,7 +188,7 @@
     {
       "event_name": "Uzbekistan U17 Vs Italy U17",
       "Category": "Football",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "U17 World Championship",
@@ -697,16 +201,72 @@
       "streams": [
         {
           "channel_name": "D Sports ES - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/z5oyxzsxdk/out/v1/7695a0f64a0e424b973d5b09a2a3eb91/cenc.mpd",
-          "kid": "f836853d8eac19446ed9535f5fc568b1",
-          "key": "b3bc5ef00602b29abac7e482d3d9fbf3"
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/ud6bnhthpj/out/v1/2639a2f4480f4269953de466d5f46463/cenc.mpd",
+          "kid": "83f81c4cc1443991543de4e22eea7586",
+          "key": "ddfd7ca653d6f35543d8edb3c688e20f"
+        },
+        {
+          "channel_name": "HD STREAM",
+          "stream_url": "https://live3979.zundrixmediapipeline.com/live/channel12.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Jamaica U17 Vs Côte d'Ivoire U17",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "U17 World Championship",
+        "teamA": "Jamaica U17",
+        "teamB": "Côte d'Ivoire U17",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/22617/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/48857/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/279/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "HD STREAM",
+          "stream_url": "https://live3979.zundrixmediapipeline.com/live/channel18.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SD STREAM",
+          "stream_url": "http://193.47.62.41/hls/QTTT.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Al-Fateh Vs Al-Riyadh",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "Saudi Pro League",
+        "teamA": "Al-Fateh",
+        "teamB": "Al-Riyadh",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/56023/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/168088/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/955/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "SD STREAM",
+          "stream_url": "http://193.47.62.41/hls/QTTTAAA.m3u8",
+          "kid": "",
+          "key": ""
         }
       ]
     },
     {
       "event_name": "ILT T20",
       "Category": "Cricket",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "International League T20",
@@ -719,9 +279,9 @@
       "streams": [
         {
           "channel_name": "WILLOW - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/lvpxnd9lm7/out/v1/ec8487d426a14be59423e84d2fb4c8ee/cenc.mpd",
-          "kid": "d7070587c4a7d8db325db4540da4777c",
-          "key": "c474bc272c73fdce1298511ac95bfdce"
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/nkhxmu8uyd/out/v1/55d2a00aa7234f7aa9910b17ff528780/cenc.mpd",
+          "kid": "d36396587a3e395dd49822bfb8876a30",
+          "key": "85bfdc16276e3c741b94203dc14cf744"
         },
         {
           "channel_name": "FANCODE - AQ",
@@ -731,9 +291,9 @@
         },
         {
           "channel_name": "TNT SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/rhf2dwosdt/out/v1/ee550d2a68d846c797e6ce4de2e8b76d/cenc.mpd",
-          "kid": "69a5aa835a061ce64a630d1046727e40",
-          "key": "d02feac8a999bd06bf4059bf33411749"
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/tdijwiga2k/out/v1/f5fde318678f4f7583bf27b7231bde1f/cenc.mpd?",
+          "kid": "fa34fa8c90336dd528c7a23871cad1fe",
+          "key": "552a78d1aeb74f1650d68255c5749408"
         },
         {
           "channel_name": "TAMASHA PRO AQ",
@@ -760,8 +320,8 @@
           "key": "11c43967054ad1765d919f854889912f"
         },
         {
-          "channel_name": "FANCODE AQ (IND)",
-          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4251054_english_hls_b961d4d41363338_1ta-di_h264/index.m3u8",
+          "channel_name": "FANCODE [IND]",
+          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4251055_english_hls_b4b255f9cb46377_1ta-di_h264/index.m3u8",
           "kid": "",
           "key": ""
         }
@@ -770,7 +330,7 @@
     {
       "event_name": "Morocco U17 Vs Spain U17",
       "Category": "Football",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "U17 World Championship",
@@ -792,6 +352,50 @@
           "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/z5oyxzsxdk/out/v1/7695a0f64a0e424b973d5b09a2a3eb91/cenc.mpd",
           "kid": "f836853d8eac19446ed9535f5fc568b1",
           "key": "b3bc5ef00602b29abac7e482d3d9fbf3"
+        }
+      ]
+    },
+    {
+      "event_name": "China U17 Vs Fiji U17",
+      "Category": "Football",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "U17 World Championship",
+        "teamA": "China U17",
+        "teamB": "Fiji U17",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/468402/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/1096685/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/279/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "HD STREAM",
+          "stream_url": "https://live3979.zundrixmediapipeline.com/live/channel17.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Abha Vs Al-Shabab",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "Saudi Pro League",
+        "teamA": "Abha",
+        "teamB": "Al-Shabab",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/168090/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/34313/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/955/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "SM IPTV Live",
+          "stream_url": "Ok",
+          "kid": "",
+          "key": ""
         }
       ]
     },
@@ -1016,6 +620,56 @@
       ]
     },
     {
+      "event_name": "Heart of Midlothian Vs AS Monaco",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "UEFA Conference League",
+        "teamA": "Heart of Midlothian",
+        "teamB": "AS Monaco",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/2353/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/1653/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/17015/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-heart-of-midlothian-vs-as-monaco-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Detroit Lions Vs Chicago Bears",
+      "Category": "American football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "NFL",
+        "teamA": "Detroit Lions",
+        "teamB": "Chicago Bears",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/4419/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/4391/image",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "TSN SPORTS - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
+          "kid": "14eeabf30c14b7fbf3008c03099ce011",
+          "key": "17d2ac8dbc5429bd70af3433aa12158d"
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-chicago-bears-vs-detroit-lions-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
       "event_name": "OFI Crete Vs RSC Anderlecht",
       "Category": "Football",
       "status": "UPCOMING",
@@ -1054,6 +708,12 @@
         {
           "channel_name": "SM IPTV Live",
           "stream_url": "Ok",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-juventus-vs-omonia-nicosia-1126",
           "kid": "",
           "key": ""
         }
@@ -1120,6 +780,12 @@
         {
           "channel_name": "SM IPTV Live",
           "stream_url": "Ok",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-torreense-vs-celtic-1126",
           "kid": "",
           "key": ""
         }
@@ -1210,6 +876,156 @@
           "stream_url": "Ok",
           "kid": "",
           "key": ""
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-crystal-palace-vs-real-sociedad-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "CSKA Sofia Vs Trabzonspor",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "UEFA Conference League",
+        "teamA": "CSKA Sofia",
+        "teamB": "Trabzonspor",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/3275/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/3051/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/17015/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-cska-sofia-vs-trabzonspor-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "SC Freiburg Vs FC Twente",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "UEFA Conference League",
+        "teamA": "SC Freiburg",
+        "teamB": "FC Twente",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/2538/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/2955/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/17015/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-sc-freiburg-vs-fc-twente-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "TSG Hoffenheim Vs SK Sturm Graz",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "UEFA Europa League",
+        "teamA": "TSG Hoffenheim",
+        "teamB": "SK Sturm Graz",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/2569/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/2051/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/679/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-tsg-hoffenheim-vs-sk-sturm-graz-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "NEC Nijmegen Vs Stade Rennais",
+      "Category": "Football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "UEFA Europa League",
+        "teamA": "NEC Nijmegen",
+        "teamB": "Stade Rennais",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/2962/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/1658/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/679/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-nec-nijmegen-vs-stade-rennais-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Alabama State Hornets Vs Tuskegee Golden Tigers",
+      "Category": "American football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "NCAA, Regular Season",
+        "teamA": "Alabama State Hornets",
+        "teamB": "Tuskegee Golden Tigers",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/296545/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/454023/image",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "SM IPTV Live",
+          "stream_url": "Ok",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Dallas Cowboys Vs Philadelphia Eagles",
+      "Category": "American football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "NFL",
+        "teamA": "Dallas Cowboys",
+        "teamB": "Philadelphia Eagles",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/4392/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/4428/image",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "Sky Top Event - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/gjsukewpxp/out/v1/ef14aacf858248839b9867eec5caf563/cenc.mpd",
+          "kid": "368bd4ebe301406897324bc777650411",
+          "key": "69d27c2c2b7de927d67aacc973259901"
+        },
+        {
+          "channel_name": "TSN SPORTS - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
+          "kid": "14eeabf30c14b7fbf3008c03099ce011",
+          "key": "17d2ac8dbc5429bd70af3433aa12158d"
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-philadelphia-eagles-vs-dallas-cowboys-1126",
+          "kid": "",
+          "key": ""
         }
       ]
     },
@@ -1290,6 +1106,68 @@
         {
           "channel_name": "CRICBUZZ (IND)",
           "stream_url": "https://dai.google.com/linear/hls/event/bS5bRXLITKKz7UK_serxVw/master.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Texas Tech Red Raiders Vs TCU Horned Frogs",
+      "Category": "American football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "NCAA Division FBS",
+        "teamA": "Texas Tech Red Raiders",
+        "teamB": "TCU Horned Frogs",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/4357/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/4303/image",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "SM IPTV Live",
+          "stream_url": "Ok",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-tcu-horned-frogs-vs-texas-tech-red-raiders-1127",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Buffalo Bills Vs Kansas City Chiefs",
+      "Category": "American football",
+      "status": "UPCOMING",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "NFL",
+        "teamA": "Buffalo Bills",
+        "teamB": "Kansas City Chiefs",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/4414/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/4422/image",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "Sky Top Event- AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/gjsukewpxp/out/v1/ef14aacf858248839b9867eec5caf563/cenc.mpd",
+          "kid": "368bd4ebe301406897324bc777650411",
+          "key": "69d27c2c2b7de927d67aacc973259901"
+        },
+        {
+          "channel_name": "TSN SPORTS - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
+          "kid": "14eeabf30c14b7fbf3008c03099ce011",
+          "key": "17d2ac8dbc5429bd70af3433aa12158d"
+        },
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-kansas-city-chiefs-vs-buffalo-bills-1127",
           "kid": "",
           "key": ""
         }
@@ -1970,64 +1848,238 @@
       ]
     },
     {
-      "event_name": "South Australia Vs Victoria",
+      "event_name": "India A Vs Sri Lanka A",
       "Category": "Cricket",
       "status": "live",
       "start_time": "",
       "eventInfo": {
-        "eventName": "Sheffield Shield",
-        "teamA": "South Australia",
-        "teamB": "Victoria",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/187750/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/187749/image",
-        "logo": "https://img.sofascore.com/api/v1/unique-tournament/11160/image/dark"
+        "eventName": "Men's Asia Cup Rising Stars",
+        "teamA": "India A",
+        "teamB": "Sri Lanka A",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/187765/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/187756/image",
+        "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTn2rCtrI68Agu71aIWID9YxzlqXN-3c88k4cwPQQhwEA&s=10"
       },
       "streams": [
         {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https://host-64-235-250-99.contentfabric.io/qlibs/ilibBFVVnZD2HsyW1Rmi5atMjddq2NQ/q/hq__PLCmgVLEuGcA9KHAyJ5DuxTcdvkMh57av3fGiwdpu6zsZ1Q8x6QcjityUzzrDHeER89HgpbehEe/rep/playout/default/hls-aes128/playlist.m3u8?authorization=acssjc9GqKQhD4zgqPicqVYwswYaABaCB3jwPAVvkLx1EL32F2KP8DFeqn44MqnMRhyb3p6Wpqeusjeicq8xNzCTPcJ7BL1QnMsoqBMdBQQ2Rf5pqiKHyzRJXH7YqGAtwX5xUnwwkRXHzRnH5XGPPt754h4jDns8muXs4NJ8jNe7LrtbKsjbyqZrD4KBXZDdW8bd5snaakLojDTsTdN8bSFtRmptuLfjxcZnm6MeWtsooShecHSWN9gTEfftm9EpmSZoKg9ndKURd3nwe5eS6AvSJfEL6AyQQi9EcSTEoAYpfWFP8zt4VF9yLd7CrUoMyRvNRjeCUgYThtBdNjJuMHKhK66Y3sASuAYfxNC1dL7enmuk8pbWhJ5ZqvGjhcns48NfPqK485rCSiQyFMyRFJaoGABnJJzSYJnSZys4F1p4hvbQwF2SMoh5aRQJ9rcNF6R4HSrr1qVjesjFoGvcSV3reXYWao1J89yJ2hsZkvs6nQcCDrSVyEjHc4zsY4MDDsPYaB7tPFxVGZZmmojfu156r1pc8sjPb2yna1oMCexRoqyLxwWd8iytJ3jyBGrgxrxtz58NrDVaBWJik2a&sid=42BD64B32A81",
+          "channel_name": "PRIME VIDEO (Multi-Audio)",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/sqn5t3keuo/out/v1/9d5e81f1ef7a4f39baa79cec0073d671/cenc.mpd?",
+          "kid": "115086768751d95aac011169ff3547bd",
+          "key": "3e3c4e34b782a6ffe98df710f8dc0a00"
+        },
+        {
+          "channel_name": "WILLOW - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/5vfqkoj2sc/out/v1/19699577f69c4ab899e135323a5de2ed/cenc.mpd",
+          "kid": "b84dc7acdbb36852e3c2f308621ef492",
+          "key": "749e3c330bfd249d934532075081f432"
+        },
+        {
+          "channel_name": "STARZPLAY FHD",
+          "stream_url": "https://d1ifzl5cnhi7bu.cloudfront.net/out/v1/45ba30e075ad455a8767d3f33e67ea3d/index.mpd",
+          "kid": "0ae4f162eec3e6f2b580a5bf0f4a64d4",
+          "key": "03483335db81cba5bbcf51b6d31196d9"
+        },
+        {
+          "channel_name": "SONYLIV ENG - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795729631~acl=/*~id=71906393317453163041642085557665~hmac=fd8747e11df1686b03df4990fad6eb167e4598ac50ff14f1841bff001ceb2234",
           "kid": "",
           "key": ""
         },
         {
-          "channel_name": "FANCODE [IND]",
-          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249676_english_hls_fffac9b5e044756_1ta-di_h264/index.m3u8",
+          "channel_name": "WILLOW S2 - AQ",
+          "stream_url": "https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/5vfqkoj2sc/out/v1/19699577f69c4ab899e135323a5de2ed/cenc.mpd",
+          "kid": "b84dc7acdbb36852e3c2f308621ef492",
+          "key": "749e3c330bfd249d934532075081f432"
+        },
+        {
+          "channel_name": "SONYLIV HIN - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795729631~acl=/*~id=71906393317453163041642085557665~hmac=fd8747e11df1686b03df4990fad6eb167e4598ac50ff14f1841bff001ceb2234",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV TAM - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795729631~acl=/*~id=71906393317453163041642085557665~hmac=fd8747e11df1686b03df4990fad6eb167e4598ac50ff14f1841bff001ceb2234",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV TEL - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795729631~acl=/*~id=71906393317453163041642085557665~hmac=fd8747e11df1686b03df4990fad6eb167e4598ac50ff14f1841bff001ceb2234",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV KAN - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795729631~acl=/*~id=71906393317453163041642085557665~hmac=fd8747e11df1686b03df4990fad6eb167e4598ac50ff14f1841bff001ceb2234",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONY TEN 1 - [IN]",
+          "stream_url": "https://dishmt.slivcdn.com/hls/live/2011747/TEN1HD/hdntl=exp=1795772059~acl=%2f*~id=68315914508524846040988993985504~data=hdntl~hmac=75067c4192109522676222a662fe0d36d31f9212431a8b13e592a82b26e66440/master_3500.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONY TEN 2 - [IN]",
+          "stream_url": "https://dishmt.slivcdn.com/hls/live/2020434/TEN2HD/hdntl=exp=1795772059~acl=%2f*~id=68315914508524846040988993985504~data=hdntl~hmac=75067c4192109522676222a662fe0d36d31f9212431a8b13e592a82b26e66440/master_3500.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONY TEN 3 - [IN]",
+          "stream_url": "https://dishmt.slivcdn.com/hls/live/2020591-b/TEN3HD/hdntl=exp=1795772059~acl=%2f*~id=68315914508524846040988993985504~data=hdntl~hmac=75067c4192109522676222a662fe0d36d31f9212431a8b13e592a82b26e66440/master_3500.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONY TEN 4 - [IN]",
+          "stream_url": "https://dishmt.slivcdn.com/hls/live/2020589/ten4hd/hdntl=exp=1795772059~acl=%2f*~id=68315914508524846040988993985504~data=hdntl~hmac=75067c4192109522676222a662fe0d36d31f9212431a8b13e592a82b26e66440/master_3500.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONY TEN 5 - [IN]",
+          "stream_url": "https://dishmt.slivcdn.com/hls/live/2020593-b/SONYSIXHD/hdntl=exp=1795772059~acl=%2f*~id=68315914508524846040988993985504~data=hdntl~hmac=75067c4192109522676222a662fe0d36d31f9212431a8b13e592a82b26e66440/master_3500.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "PTV SPORTS HD",
+          "stream_url": "https://live.msnetworks.net/ptv-sports/master.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "TAMASHA AQ",
+          "stream_url": "https://cdn06khi-n.tamashaweb.com:8087/appcast/ACC-men-AC26-b-abr/playlist.m3u8",
           "kid": "",
           "key": ""
         }
       ]
     },
     {
-      "event_name": "Sydney Thunder vs Adelaide Strikers",
-      "Category": "Football",
+      "event_name": "Sri Lanka A vs India A - Semi-Final",
+      "Category": "Cricket",
       "status": "live",
-      "start_time": "2026-11-26 16:40:00",
+      "start_time": "",
       "eventInfo": {
-        "eventName": "Group Stage - Women's Big Bash League 2026",
-        "teamA": "Sydney Thunder",
-        "teamB": "Adelaide Strikers",
+        "eventName": "ACC Men's Asia Cup Rising Stars 2026",
+        "teamA": "Sri Lanka A",
+        "teamB": "India A - Semi-Final",
         "teamAFlag": "",
         "teamBFlag": "",
-        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1795414950540x302.jpg"
+        "logo": "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000029928/1795591484279654_ACC_Rising_Star_SF_SRI_vs_IND_live_landscape_thumb.jpg"
       },
       "streams": [
         {
-          "channel_name": "Tapmad HD",
-          "stream_url": "https://tencent-cdn.tapmad.com/v1/01a14ab8af8915fc600b1e3e9683f0/01a14ab953dd1ea540a81c2b41b75f/main.m3u8",
+          "channel_name": "Sony Sports Ten 5 (ENG)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795744265~acl=/*~id=75794105895384519773599423010380~hmac=6f72c7364d26252ff70c9a485123f2f89b7b4573e7b988ba8a4fef476f12e49a",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "Sony Sports Ten 5 (HIN)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795744265~acl=/*~id=75794105895384519773599423010380~hmac=6f72c7364d26252ff70c9a485123f2f89b7b4573e7b988ba8a4fef476f12e49a",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "Sony Sports Ten 5 (TAM)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795744265~acl=/*~id=75794105895384519773599423010380~hmac=6f72c7364d26252ff70c9a485123f2f89b7b4573e7b988ba8a4fef476f12e49a",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "Sony Sports Ten 5 (TEL)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795744265~acl=/*~id=75794105895384519773599423010380~hmac=6f72c7364d26252ff70c9a485123f2f89b7b4573e7b988ba8a4fef476f12e49a",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "Sony Sports Ten 5 (KAN)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795744265~acl=/*~id=75794105895384519773599423010380~hmac=6f72c7364d26252ff70c9a485123f2f89b7b4573e7b988ba8a4fef476f12e49a",
           "kid": "",
           "key": ""
         }
       ]
     },
     {
-      "event_name": "Montreal Canadiens vs Colorado Avalanche",
-      "Category": "Hockey",
-      "status": "live",
-      "start_time": "2026-11-26T02:30:00.000Z",
+      "event_name": "RB Salzburg vs Ararat-Armenia",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-27 05:45:00",
       "eventInfo": {
-        "eventName": "Montreal Canadiens vs Colorado Avalanche",
-        "teamA": "Montreal Canadiens",
-        "teamB": "Colorado Avalanche",
+        "eventName": "MATCHDAY 5 - UEFA Europa League 2026/27",
+        "teamA": "RB Salzburg",
+        "teamB": "Ararat-Armenia",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1795367391540x302.jpg"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-rb-salzburg-vs-ararat-armenia-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Viktoria Plzen vs Benfica",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-27 05:45:00",
+      "eventInfo": {
+        "eventName": "MATCHDAY 5 - UEFA Europa League 2026/27",
+        "teamA": "Viktoria Plzen",
+        "teamB": "Benfica",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1795366665540x302.jpg"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-viktoria-plzen-vs-benfica-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Marseille vs Levski Sofia",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-27 05:45:00",
+      "eventInfo": {
+        "eventName": "MATCHDAY 5 - UEFA Europa League 2026/27",
+        "teamA": "Marseille",
+        "teamB": "Levski Sofia",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1795366129540x302.jpg"
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-marseille-vs-levski-sofia-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Besiktas vs Hapoel Be'er",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Besiktas vs Hapoel Be'er",
+        "teamA": "Besiktas",
+        "teamB": "Hapoel Be'er",
         "teamAFlag": "",
         "teamBFlag": "",
         "logo": ""
@@ -2035,7 +2087,711 @@
       "streams": [
         {
           "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-montreal-canadiens-vs-colorado-avalanche-1126",
+          "stream_url": "https://trendy48.site/embed/m-besiktas-vs-hapoel-be-er-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Celta Vigo vs AFC Bournemouth",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Celta Vigo vs AFC Bournemouth",
+        "teamA": "Celta Vigo",
+        "teamB": "AFC Bournemouth",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-celta-vigo-vs-afc-bournemouth-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Dinamo Zagreb vs Bayer Leverkusen",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Dinamo Zagreb vs Bayer Leverkusen",
+        "teamA": "Dinamo Zagreb",
+        "teamB": "Bayer Leverkusen",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-dinamo-zagreb-vs-bayer-leverkusen-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Olympiacos vs AC Milan",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Olympiacos vs AC Milan",
+        "teamA": "Olympiacos",
+        "teamB": "AC Milan",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-olympiacos-vs-ac-milan-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Union St.-Gilloise vs Lech Poznan",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Union St.-Gilloise vs Lech Poznan",
+        "teamA": "Union St.-Gilloise",
+        "teamB": "Lech Poznan",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-union-st-gilloise-vs-lech-poznan-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Ferencvaros vs NK Celje",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Ferencvaros vs NK Celje",
+        "teamA": "Ferencvaros",
+        "teamB": "NK Celje",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-ferencvaros-vs-nk-celje-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Lyon vs Lillestrom",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Lyon vs Lillestrom",
+        "teamA": "Lyon",
+        "teamB": "Lillestrom",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-lyon-vs-lillestrom-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "OFI Crete vs Anderlecht",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "OFI Crete vs Anderlecht",
+        "teamA": "OFI Crete",
+        "teamB": "Anderlecht",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-ofi-crete-vs-anderlecht-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Sparta Prague vs AZ Alkmaar",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Sparta Prague vs AZ Alkmaar",
+        "teamA": "Sparta Prague",
+        "teamB": "AZ Alkmaar",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-sparta-prague-vs-az-alkmaar-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Sunderland vs Jagiellonia Bialystok",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Sunderland vs Jagiellonia Bialystok",
+        "teamA": "Sunderland",
+        "teamB": "Jagiellonia Bialystok",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-sunderland-vs-jagiellonia-bialystok-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Kairat Almaty vs Mjallby AIF",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T15:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Kairat Almaty vs Mjallby AIF",
+        "teamA": "Kairat Almaty",
+        "teamB": "Mjallby AIF",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-kairat-almaty-vs-mjallby-aif-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Ajax Amsterdam vs FC Thun",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Ajax Amsterdam vs FC Thun",
+        "teamA": "Ajax Amsterdam",
+        "teamB": "FC Thun",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-ajax-amsterdam-vs-fc-thun-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Brighton & Hove Albion vs CSU Craiova",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Brighton & Hove Albion vs CSU Craiova",
+        "teamA": "Brighton & Hove Albion",
+        "teamB": "CSU Craiova",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-brighton-and-hove-albion-vs-csu-craiova-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Egnatia vs Lincoln Red Imps",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Egnatia vs Lincoln Red Imps",
+        "teamA": "Egnatia",
+        "teamB": "Lincoln Red Imps",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-egnatia-vs-lincoln-red-imps-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Iberia 1999 vs Getafe",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Iberia 1999 vs Getafe",
+        "teamA": "Iberia 1999",
+        "teamB": "Getafe",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-iberia-1999-vs-getafe-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Jablonec vs FC Lugano",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Jablonec vs FC Lugano",
+        "teamA": "Jablonec",
+        "teamB": "FC Lugano",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-jablonec-vs-fc-lugano-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Kauno Zalgiris vs Riga FC",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Kauno Zalgiris vs Riga FC",
+        "teamA": "Kauno Zalgiris",
+        "teamB": "Riga FC",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-kauno-zalgiris-vs-riga-fc-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Pafos vs FC Midtjylland",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T17:45:00.000Z",
+      "eventInfo": {
+        "eventName": "Pafos vs FC Midtjylland",
+        "teamA": "Pafos",
+        "teamB": "FC Midtjylland",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-pafos-vs-fc-midtjylland-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Borac Banja Luka vs Atalanta",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Borac Banja Luka vs Atalanta",
+        "teamA": "Borac Banja Luka",
+        "teamB": "Atalanta",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-borac-banja-luka-vs-atalanta-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Braga vs KuPS Kuopio",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Braga vs KuPS Kuopio",
+        "teamA": "Braga",
+        "teamB": "KuPS Kuopio",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-braga-vs-kups-kuopio-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "FC Nordsjaelland vs Panathinaikos",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "FC Nordsjaelland vs Panathinaikos",
+        "teamA": "FC Nordsjaelland",
+        "teamB": "Panathinaikos",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-fc-nordsjaelland-vs-panathinaikos-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Hajduk Split vs Sint-Truidense",
+      "Category": "Football",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Hajduk Split vs Sint-Truidense",
+        "teamA": "Hajduk Split",
+        "teamB": "Sint-Truidense",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-hajduk-split-vs-sint-truidense-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Georgetown Hoyas vs Texas Longhorns",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T19:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Georgetown Hoyas vs Texas Longhorns",
+        "teamA": "Georgetown Hoyas",
+        "teamB": "Texas Longhorns",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-georgetown-hoyas-vs-texas-longhorns-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Miami Hurricanes vs Michigan Wolverines",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Miami Hurricanes vs Michigan Wolverines",
+        "teamA": "Miami Hurricanes",
+        "teamB": "Michigan Wolverines",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-miami-hurricanes-vs-michigan-wolverines-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Tennessee Volunteers vs Iowa State Cyclones",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T20:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Tennessee Volunteers vs Iowa State Cyclones",
+        "teamA": "Tennessee Volunteers",
+        "teamB": "Iowa State Cyclones",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-tennessee-volunteers-vs-iowa-state-cyclones-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Arkansas Razorbacks vs Michigan State Spartans",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T21:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Arkansas Razorbacks vs Michigan State Spartans",
+        "teamA": "Arkansas Razorbacks",
+        "teamB": "Michigan State Spartans",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-arkansas-razorbacks-vs-michigan-state-spartans-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Utah State Aggies vs USC Trojans",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T21:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Utah State Aggies vs USC Trojans",
+        "teamA": "Utah State Aggies",
+        "teamB": "USC Trojans",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-utah-state-aggies-vs-usc-trojans-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Saint Mary's Gaels vs UCLA Bruins",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-26T22:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Saint Mary's Gaels vs UCLA Bruins",
+        "teamA": "Saint Mary's Gaels",
+        "teamB": "UCLA Bruins",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-saint-mary-s-gaels-vs-ucla-bruins-1126",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "SMU Mustangs vs LSU Tigers",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-27T00:00:00.000Z",
+      "eventInfo": {
+        "eventName": "SMU Mustangs vs LSU Tigers",
+        "teamA": "SMU Mustangs",
+        "teamB": "LSU Tigers",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-smu-mustangs-vs-lsu-tigers-1127",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Alabama Crimson Tide vs Kansas State Wildcats",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-27T02:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Alabama Crimson Tide vs Kansas State Wildcats",
+        "teamA": "Alabama Crimson Tide",
+        "teamB": "Kansas State Wildcats",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-alabama-crimson-tide-vs-kansas-state-wildcats-1127",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Louisville Cardinals vs St. John's Red Storm",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-27T02:00:00.000Z",
+      "eventInfo": {
+        "eventName": "Louisville Cardinals vs St. John's Red Storm",
+        "teamA": "Louisville Cardinals",
+        "teamB": "St. John's Red Storm",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-louisville-cardinals-vs-st-john-s-red-storm-1127",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Baylor Bears vs Gonzaga Bulldogs",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-27T04:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Baylor Bears vs Gonzaga Bulldogs",
+        "teamA": "Baylor Bears",
+        "teamB": "Gonzaga Bulldogs",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-baylor-bears-vs-gonzaga-bulldogs-1127",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "Texas Tech Red Raiders vs Oregon Ducks",
+      "Category": "Basketball",
+      "status": "upcoming",
+      "start_time": "2026-11-27T04:30:00.000Z",
+      "eventInfo": {
+        "eventName": "Texas Tech Red Raiders vs Oregon Ducks",
+        "teamA": "Texas Tech Red Raiders",
+        "teamB": "Oregon Ducks",
+        "teamAFlag": "",
+        "teamBFlag": "",
+        "logo": ""
+      },
+      "streams": [
+        {
+          "channel_name": "MANUAL",
+          "stream_url": "https://trendy48.site/embed/m-texas-tech-red-raiders-vs-oregon-ducks-1127",
           "kid": "",
           "key": ""
         }
