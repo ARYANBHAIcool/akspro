@@ -1,192 +1,14 @@
 {
   "name": "AryanStreams Master Sports Feed",
   "owner": "AryanStreams Global",
-  "last_update_time": "11:29:21 PM 26/11/2026",
-  "total_matches": 67,
-  "live_match": 10,
+  "last_update_time": "5:17:15 AM 27/11/2026",
+  "total_matches": 57,
+  "live_match": 8,
   "matches": [
-    {
-      "event_name": "Dallas Cowboys Vs Philadelphia Eagles",
-      "Category": "American football",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "NFL",
-        "teamA": "Dallas Cowboys",
-        "teamB": "Philadelphia Eagles",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/4392/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/4428/image",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "TSN SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
-          "kid": "14eeabf30c14b7fbf3008c03099ce011",
-          "key": "17d2ac8dbc5429bd70af3433aa12158d"
-        },
-        {
-          "channel_name": "SM IPTV Live - AQ",
-          "stream_url": "https:\\/\\/chatgpt.hereisman.net\\/playlist\\/61096\\/load-playlist",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "Sky Top Event - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/gjsukewpxp/out/v1/ef14aacf858248839b9867eec5caf563/cenc.mpd",
-          "kid": "368bd4ebe301406897324bc777650411",
-          "key": "69d27c2c2b7de927d67aacc973259901"
-        },
-        {
-          "channel_name": "TSN SPORTS 3 - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/lsibpqruq1/out/v1/748887d614a84913ba8bcdf3c82823e6/cenc.mpd",
-          "kid": "d3250252765347a0c2603c6cb4869f8c",
-          "key": "0c19319460da7e9ed816db46ce839b37"
-        },
-        {
-          "channel_name": "TSN SPORTS 4 - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/ihys8nw4wv/out/v1/fde190f369484bc6b6117cc16cd82a9f/cenc.mpd",
-          "kid": "abc5b2883121012850ebda05b528c5ec",
-          "key": "e5250924f4b738905f7163a0134587a7"
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-philadelphia-eagles-vs-dallas-cowboys-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "New Zealand Vs India",
-      "Category": "Cricket",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "ICC World Test Championship",
-        "teamA": "New Zealand",
-        "teamB": "India",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/187755/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/187765/image",
-        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1794815049540x302.jpg"
-      },
-      "streams": [
-        {
-          "channel_name": "WILLOW - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/vqt4ppweqx/out/v1/79d9629326f74edb996f3b3d75d3fc49/cenc.mpd",
-          "kid": "bd35d5c78d37fe5adcfd88e314d1dd3c",
-          "key": "673c68197d7960c4b1db2bb83f195171"
-        },
-        {
-          "channel_name": "TNT SPORTS - AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/tdijwiga2k/out/v1/f5fde318678f4f7583bf27b7231bde1f/cenc.mpd",
-          "kid": "fa34fa8c90336dd528c7a23871cad1fe",
-          "key": "552a78d1aeb74f1650d68255c5749408"
-        },
-        {
-          "channel_name": "TAPMAD - AQ",
-          "stream_url": "https://serieAleague.akamaized.net/hls/live/2107107/A1@25853-tapmad/master.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "WILLOW S2 - AQ",
-          "stream_url": "https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/vqt4ppweqx/out/v1/79d9629326f74edb996f3b3d75d3fc49/cenc.mpd",
-          "kid": "bd35d5c78d37fe5adcfd88e314d1dd3c",
-          "key": "673c68197d7960c4b1db2bb83f195171"
-        },
-        {
-          "channel_name": "TEN SPORTS HD",
-          "stream_url": "https://live.msnetworks.net/ten-sports/master.m3u8",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SONYLIV ENG - AQ",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SONYLIV HIN - AQ",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SONYLIV TAM - AQ",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SONYLIV TEL - AQ",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "SONYLIV KAN - AQ",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
-          "kid": "",
-          "key": ""
-        },
-        {
-          "channel_name": "Tapmad HD",
-          "stream_url": "https://tencent-cdn.tapmad.com/v1/01a145abfb3a1ea540a81c2b41b751/01a145ae0ac115fc600b1e3e9683da/main.m3u8",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "São Paulo Vs Remo",
-      "Category": "Football",
-      "status": "live",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Campeonato Brasileiro Série A",
-        "teamA": "São Paulo",
-        "teamB": "Remo",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/1981/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/2012/image",
-        "logo": "https://img.sofascore.com/api/v1/unique-tournament/325/image/dark"
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV LIVE",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/nelfyucw9a/out/v1/6ffb2c365ad14f88b154591beb43d1f6/cenc.mpd",
-          "kid": "56b79c1782b30e6b6fc973b0e8fd4104",
-          "key": "fa38aaa865a57eda7c77444697ba8ed3"
-        }
-      ]
-    },
-    {
-      "event_name": "South Australia Vs Victoria",
-      "Category": "Cricket",
-      "status": "UPCOMING",
-      "start_time": "",
-      "eventInfo": {
-        "eventName": "Sheffield Shield",
-        "teamA": "South Australia",
-        "teamB": "Victoria",
-        "teamAFlag": "https://img.sofascore.com/api/v1/team/187750/image",
-        "teamBFlag": "https://img.sofascore.com/api/v1/team/187749/image",
-        "logo": "https://www.fancode.com/skillup-uploads/cms-media/4249676_53087_SAU_VCT_FC-WEB.jpg"
-      },
-      "streams": [
-        {
-          "channel_name": "SM IPTV Live",
-          "stream_url": "https://host-64-235-250-99.contentfabric.io/qlibs/ilibBFVVnZD2HsyW1Rmi5atMjddq2NQ/q/hq__PLCmgVLEuGcA9KHAyJ5DuxTcdvkMh57av3fGiwdpu6zsZ1Q8x6QcjityUzzrDHeER89HgpbehEe/rep/playout/default/hls-aes128/playlist.m3u8?authorization=acssjc9GqKQhD4zgqPicqVYwswYaABaCB3jwPAVvkLx1EL32F2KP8DFeqn44MqnMRhyb3p6Wpqeusjeicq8xNzCTPcJ7BL1QnMsoqBMdBQQ2Rf5pqiKHyzRJXH7YqGAtwX5xUnwwkRXHzRnH5XGPPt754h4jDns8muXs4NJ8jNe7LrtbKsjbyqZrD4KBXZDdW8bd5snaakLojDTsTdN8bSFtRmptuLfjxcZnm6MeWtsooShecHSWN9gTEfftm9EpmSZoKg9ndKURd3nwe5eS6AvSJfEL6AyQQi9EcSTEoAYpfWFP8zt4VF9yLd7CrUoMyRvNRjeCUgYThtBdNjJuMHKhK66Y3sASuAYfxNC1dL7enmuk8pbWhJ5ZqvGjhcns48NfPqK485rCSiQyFMyRFJaoGABnJJzSYJnSZys4F1p4hvbQwF2SMoh5aRQJ9rcNF6R4HSrr1qVjesjFoGvcSV3reXYWao1J89yJ2hsZkvs6nQcCDrSVyEjHc4zsY4MDDsPYaB7tPFxVGZZmmojfu156r1pc8sjPb2yna1oMCexRoqyLxwWd8iytJ3jyBGrgxrxtz58NrDVaBWJik2a&sid=C13952B7494F",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
     {
       "event_name": "Buffalo Bills Vs Kansas City Chiefs",
       "Category": "American football",
-      "status": "UPCOMING",
+      "status": "live",
       "start_time": "",
       "eventInfo": {
         "eventName": "NFL",
@@ -208,12 +30,6 @@
           "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/w0rehjjrwe/out/v1/69a2a7041395406b970598f61680e7cf/cenc.mpd",
           "kid": "14eeabf30c14b7fbf3008c03099ce011",
           "key": "17d2ac8dbc5429bd70af3433aa12158d"
-        },
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-kansas-city-chiefs-vs-buffalo-bills-1127",
-          "kid": "",
-          "key": ""
         }
       ]
     },
@@ -1704,30 +1520,142 @@
       ]
     },
     {
-      "event_name": "Golazo Show",
-      "Category": "Football",
+      "event_name": "New Zealand Vs India",
+      "Category": "Cricket",
       "status": "live",
       "start_time": "",
       "eventInfo": {
-        "eventName": "The - Golazo Show",
-        "teamA": "Golazo Show",
-        "teamB": "Golazo Show",
-        "teamAFlag": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQf0OgZU9w1HJQZAizR01jaXii00guX9UNv-QR5cveBhQ&s=10",
-        "teamBFlag": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQf0OgZU9w1HJQZAizR01jaXii00guX9UNv-QR5cveBhQ&s=10",
-        "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQf0OgZU9w1HJQZAizR01jaXii00guX9UNv-QR5cveBhQ&s=10"
+        "eventName": "ICC World Test Championship",
+        "teamA": "New Zealand",
+        "teamB": "India",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/187755/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/187765/image",
+        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1794815049540x302.jpg"
       },
       "streams": [
         {
-          "channel_name": "PARAMOUNT+",
-          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/dfwewesw54/out/v1/522359f03dd5411fa96d4fb84375f0df/cenc.mpd",
-          "kid": "629217a2952c541bed541053bebb6e79",
-          "key": "78329d9e16fd79edd93ff9f7f9c758e8"
+          "channel_name": "WILLOW - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/vqt4ppweqx/out/v1/79d9629326f74edb996f3b3d75d3fc49/cenc.mpd",
+          "kid": "bd35d5c78d37fe5adcfd88e314d1dd3c",
+          "key": "673c68197d7960c4b1db2bb83f195171"
         },
         {
-          "channel_name": "CBS SPORTS GOLAZO AQ",
-          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/5qz8wmdome/out/v1/b9323e853dce427eac214b77bd48a204/cenc.mpd",
-          "kid": "d9623774ac5c8c351aafe97c5fe70267",
-          "key": "5164e6d05164a2d65fa8fcc962aa4861"
+          "channel_name": "PRIME ENGLISH",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/sywaeenri3/out/v1/eefaa601dab34fefa7a8aedbb621d03d/cenc.mpd",
+          "kid": "eda434d8c9bb747f728aa0c08f93421b",
+          "key": "b8566e37aee2e9e527ce9b0e903212a6"
+        },
+        {
+          "channel_name": "TNT SPORTS - AQ",
+          "stream_url": "https://otte.cache.aiv-cdn.net/bom-nitro/live/clients/dash/enc/tdijwiga2k/out/v1/f5fde318678f4f7583bf27b7231bde1f/cenc.mpd",
+          "kid": "fa34fa8c90336dd528c7a23871cad1fe",
+          "key": "552a78d1aeb74f1650d68255c5749408"
+        },
+        {
+          "channel_name": "PRIME HINDI",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/hrqpeoa7vf/out/v1/16c2a2e928e84263861245a9c5eece30/cenc.mpd",
+          "kid": "ad6498aabb85ee0ca2e9b2f0f7a1a255",
+          "key": "008408e2bc9f263a167db636929cef73"
+        },
+        {
+          "channel_name": "PRIME TAMIL",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/wzglv1xtre/out/v1/ce2b69c89f5547729c95f142ff4d4549/cenc.mpd",
+          "kid": "71b1d275abf3a4b49807553810668ec6",
+          "key": "c9a1357ede9b3d056719701d4edde85d"
+        },
+        {
+          "channel_name": "PRIME TELUGU",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/hs1zdb5qph/out/v1/7d427476a3c3407ca1e2289167c25878/cenc.mpd",
+          "kid": "b8484b0389ec5e0b3e420c4a88e269d7",
+          "key": "6f513ab5b3f9c94d58e4efffb62a336c"
+        },
+        {
+          "channel_name": "PRIME KANNADA",
+          "stream_url": "https://otte.cache.aiv-cdn.net/iad-nitro/live/clients/dash/enc/fdtioq1iow/out/v1/65d8542872a945e786485e67534bcc81/cenc.mpd",
+          "kid": "0d41bd6337d00cefb841c36f8c66292e",
+          "key": "3d3a364cd7d670f07dc1a046705dac0e"
+        },
+        {
+          "channel_name": "TAPMAD - AQ",
+          "stream_url": "https://serieAleague.akamaized.net/hls/live/2107107/A1@25853-tapmad/master.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "WILLOW S2 - AQ",
+          "stream_url": "https://abfjk4haaaaaaaamkitc5445rybm6.bia-cf.live.pv-cdn.net/iad-nitro/live/clients/dash/enc/vqt4ppweqx/out/v1/79d9629326f74edb996f3b3d75d3fc49/cenc.mpd",
+          "kid": "bd35d5c78d37fe5adcfd88e314d1dd3c",
+          "key": "673c68197d7960c4b1db2bb83f195171"
+        },
+        {
+          "channel_name": "TEN SPORTS HD",
+          "stream_url": "https://live.msnetworks.net/ten-sports/master.m3u8",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV ENG - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV HIN - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV TAM - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV TEL - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "SONYLIV KAN - AQ",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795771631~acl=/*~id=58959264401822565893771367052567~hmac=58cf06e57abb32c61bc9184e84304a61fbbc6115497d57c17e862faa7f907c05",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "Tapmad HD",
+          "stream_url": "https://tencent-cdn.tapmad.com/v1/01a145abfb3a1ea540a81c2b41b751/01a145ae0ac115fc600b1e3e9683da/main.m3u8",
+          "kid": "",
+          "key": ""
+        }
+      ]
+    },
+    {
+      "event_name": "South Australia Vs Victoria",
+      "Category": "Cricket",
+      "status": "live",
+      "start_time": "",
+      "eventInfo": {
+        "eventName": "Sheffield Shield",
+        "teamA": "South Australia",
+        "teamB": "Victoria",
+        "teamAFlag": "https://img.sofascore.com/api/v1/team/187750/image",
+        "teamBFlag": "https://img.sofascore.com/api/v1/team/187749/image",
+        "logo": "https://img.sofascore.com/api/v1/unique-tournament/11160/image/dark"
+      },
+      "streams": [
+        {
+          "channel_name": "AUSTRALIA TV - AQ",
+          "stream_url": "https://host-64-235-250-99.contentfabric.io/qlibs/ilibBFVVnZD2HsyW1Rmi5atMjddq2NQ/q/hq__2Du9MgQsRam4TieRDpmjQ2amd2Ps8xk627Mu6N67bjq5pwA3ZnM9VhUuWy16bbwPnXVtEeQTmkqt/rep/playout/default/hls-aes128/playlist.m3u8?authorization=acssjc9GqKQhD4zgqPicqVYwswYaABaCB3jwPAVvkLx1EL32F2KP8DFeqn44MqnMRhyb3p6Wpqeusjeicq8xNzCTPcJ7BL1QnMsoqBMdBQQ2Rf5pqiKHyzRJXH7YqGAtwX5xUnwwkRXHzRnH5XGPPt754h4jDns8muXs4NJ8jNe7LrtbKsjbyqZrD4KBXZDdW8bd5snaakLojDTsTdN8bSFtRmptuLfjxcZnm6MeWtsooShecHSWN9gTEfftm9EpmSZoKg9ndKURd3nwe5eS6AvSJfEL6AyQQi9EcSTEoAYpfWFP8zt4VF9yLd7CrUoMyRvNRjeCUgYThtBdNjJuMHKhK66Y3sASuAYfxNC1dL7enmuk8pbWhJ5ZqvGjhcns48NfPqK485rCSiQyFMyRFJaoGABnJJzSYJnSZys4F1p4hvbQwF2SMoh5aRQJ9rcNF6R4HSrr1qVjesjFoGvcSV3reXYWao1J89yJ2hsZkvs6nQcCDrSVyEjHc4zsY4MDDsPYaB7tPFxVGZZmmojfu156r1pc8sjPb2yna1oMCexRoqyLxwWd8iytJ3jyBGrgxrxtz58NrDVaBWJik2a&sid=996942628D22",
+          "kid": "",
+          "key": ""
+        },
+        {
+          "channel_name": "FANCODE [IND]",
+          "stream_url": "https://in-mc-vod.fancode.com/mumbai/4249676_english_hls_fffac9b5e066432_1ta-di_h264/index.m3u8",
+          "kid": "",
+          "key": ""
         }
       ]
     },
@@ -1747,229 +1675,75 @@
       "streams": [
         {
           "channel_name": "Sony Sports Ten 5 (ENG)",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795776496~acl=/*~id=64844336641786369310917392763476~hmac=10e3bd88483c66003d219cdc5d6d7bfff996ce402e3de7f1e9e38401b625a82d",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119931/cricodi_2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         },
         {
           "channel_name": "Sony Sports Ten 5 (HIN)",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795776496~acl=/*~id=64844336641786369310917392763476~hmac=10e3bd88483c66003d219cdc5d6d7bfff996ce402e3de7f1e9e38401b625a82d",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119921/cricodi_2611/HIN/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         },
         {
           "channel_name": "Sony Sports Ten 5 (TAM)",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795776496~acl=/*~id=64844336641786369310917392763476~hmac=10e3bd88483c66003d219cdc5d6d7bfff996ce402e3de7f1e9e38401b625a82d",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119951/cricodi_2611/TAM/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         },
         {
           "channel_name": "Sony Sports Ten 5 (TEL)",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795776496~acl=/*~id=64844336641786369310917392763476~hmac=10e3bd88483c66003d219cdc5d6d7bfff996ce402e3de7f1e9e38401b625a82d",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119941/cricodi_2611/TEL/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         },
         {
           "channel_name": "Sony Sports Ten 5 (KAN)",
-          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795776496~acl=/*~id=64844336641786369310917392763476~hmac=10e3bd88483c66003d219cdc5d6d7bfff996ce402e3de7f1e9e38401b625a82d",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2119782/cricodi_2611/KAN/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         }
       ]
     },
     {
-      "event_name": "GT1 Race Club - Qualifying Round - Adelaide, Australia",
-      "Category": "Football",
+      "event_name": "Men's & Women's Singles - Semi-Finals",
+      "Category": "Tennis",
       "status": "live",
-      "start_time": "2026-11-27 10:45:00",
+      "start_time": "",
       "eventInfo": {
-        "eventName": "Qualifying Race - GT World Challenge EU & Asia 2026",
-        "teamA": "GT1 Race Club - Qualifying Round - Adelaide, Australia",
+        "eventName": "AO Asia Pacific Wildcard Playoffs 2027",
+        "teamA": "Men's & Women's Singles - Semi-Finals",
         "teamB": "",
         "teamAFlag": "",
         "teamBFlag": "",
-        "logo": "https://d34080pnh6e62j.cloudfront.net/images/channels/ChannelFeaturedAppthumb/1795720174540456.jpg"
+        "logo": "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000030044/1795694848783427_AO_wildcard_playoffs_2027_Womens_and_Mens_singles_SFs_landscape_thumb.jpg"
       },
       "streams": [
         {
-          "channel_name": "Tapmad HD",
-          "stream_url": "https://multiregion-asia-cdn.tapmad.com/v1/01a1548c4faf15fc600b1e3e968408/01a1548c7fde1ea557841e1612cf76/main.m3u8",
+          "channel_name": "Sony Sports Ten 5 (ENG)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2118867/Tennis_A2711/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         }
       ]
     },
     {
-      "event_name": "TCU Horned Frogs vs Texas Tech Red Raiders",
-      "Category": "American-football",
-      "status": "upcoming",
-      "start_time": "2026-11-27T01:00:00.000Z",
-      "eventInfo": {
-        "eventName": "TCU Horned Frogs vs Texas Tech Red Raiders",
-        "teamA": "TCU Horned Frogs",
-        "teamB": "Texas Tech Red Raiders",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-tcu-horned-frogs-vs-texas-tech-red-raiders-1127",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Tennessee Volunteers vs Iowa State Cyclones",
-      "Category": "Basketball",
+      "event_name": "BMW Australian PGA Championship - Day 2",
+      "Category": "Golf",
       "status": "live",
-      "start_time": "2026-11-26T20:30:00.000Z",
+      "start_time": "",
       "eventInfo": {
-        "eventName": "Tennessee Volunteers vs Iowa State Cyclones",
-        "teamA": "Tennessee Volunteers",
-        "teamB": "Iowa State Cyclones",
+        "eventName": "DP World Tour",
+        "teamA": "BMW Australian PGA Championship - Day 2",
+        "teamB": "",
         "teamAFlag": "",
         "teamBFlag": "",
-        "logo": ""
+        "logo": "https://origin-staticv2.sonyliv.com/videoasset_images/manage_file/1000029986/1795622243895554_DP_World_Tour_BMW_PGA_day2_landscape_thumb.jpg"
       },
       "streams": [
         {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-tennessee-volunteers-vs-iowa-state-cyclones-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Arkansas Razorbacks vs Michigan State Spartans",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "2026-11-26T21:30:00.000Z",
-      "eventInfo": {
-        "eventName": "Arkansas Razorbacks vs Michigan State Spartans",
-        "teamA": "Arkansas Razorbacks",
-        "teamB": "Michigan State Spartans",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-arkansas-razorbacks-vs-michigan-state-spartans-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Utah State Aggies vs USC Trojans",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "2026-11-26T21:30:00.000Z",
-      "eventInfo": {
-        "eventName": "Utah State Aggies vs USC Trojans",
-        "teamA": "Utah State Aggies",
-        "teamB": "USC Trojans",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-utah-state-aggies-vs-usc-trojans-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Saint Mary's Gaels vs UCLA Bruins",
-      "Category": "Basketball",
-      "status": "live",
-      "start_time": "2026-11-26T22:00:00.000Z",
-      "eventInfo": {
-        "eventName": "Saint Mary's Gaels vs UCLA Bruins",
-        "teamA": "Saint Mary's Gaels",
-        "teamB": "UCLA Bruins",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-saint-mary-s-gaels-vs-ucla-bruins-1126",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "SMU Mustangs vs LSU Tigers",
-      "Category": "Basketball",
-      "status": "upcoming",
-      "start_time": "2026-11-27T00:00:00.000Z",
-      "eventInfo": {
-        "eventName": "SMU Mustangs vs LSU Tigers",
-        "teamA": "SMU Mustangs",
-        "teamB": "LSU Tigers",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-smu-mustangs-vs-lsu-tigers-1127",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Alabama Crimson Tide vs Kansas State Wildcats",
-      "Category": "Basketball",
-      "status": "upcoming",
-      "start_time": "2026-11-27T02:00:00.000Z",
-      "eventInfo": {
-        "eventName": "Alabama Crimson Tide vs Kansas State Wildcats",
-        "teamA": "Alabama Crimson Tide",
-        "teamB": "Kansas State Wildcats",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-alabama-crimson-tide-vs-kansas-state-wildcats-1127",
-          "kid": "",
-          "key": ""
-        }
-      ]
-    },
-    {
-      "event_name": "Louisville Cardinals vs St. John's Red Storm",
-      "Category": "Basketball",
-      "status": "upcoming",
-      "start_time": "2026-11-27T02:00:00.000Z",
-      "eventInfo": {
-        "eventName": "Louisville Cardinals vs St. John's Red Storm",
-        "teamA": "Louisville Cardinals",
-        "teamB": "St. John's Red Storm",
-        "teamAFlag": "",
-        "teamBFlag": "",
-        "logo": ""
-      },
-      "streams": [
-        {
-          "channel_name": "MANUAL",
-          "stream_url": "https://trendy48.site/embed/m-louisville-cardinals-vs-st-john-s-red-storm-1127",
+          "channel_name": "LIV (ENG)",
+          "stream_url": "https://sonyeventsglobal.akamaized.net/hls/live/2118865/Golf_BMW2611/ENG/std_lrh-800300010.m3u8?hdnea=exp=1795794779~acl=/*~id=63232267180233394037220284802570~hmac=73c525f331afbd8f9dec2d263365592b27fd8091c584e2127cda2994e043b564",
           "kid": "",
           "key": ""
         }
@@ -1978,7 +1752,7 @@
     {
       "event_name": "Baylor Bears vs Gonzaga Bulldogs",
       "Category": "Basketball",
-      "status": "upcoming",
+      "status": "live",
       "start_time": "2026-11-27T04:30:00.000Z",
       "eventInfo": {
         "eventName": "Baylor Bears vs Gonzaga Bulldogs",
@@ -2000,7 +1774,7 @@
     {
       "event_name": "Texas Tech Red Raiders vs Oregon Ducks",
       "Category": "Basketball",
-      "status": "upcoming",
+      "status": "live",
       "start_time": "2026-11-27T04:30:00.000Z",
       "eventInfo": {
         "eventName": "Texas Tech Red Raiders vs Oregon Ducks",
